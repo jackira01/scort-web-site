@@ -1,0 +1,83 @@
+export const categories = [
+  { id: "escort", label: "ESCORT", active: true },
+  { id: "gigolo", label: "GIGOLO" },
+  { id: "trans", label: "TRANS" },
+  { id: "virtual", label: "VIRTUAL" },
+  { id: "escort-gay", label: "ESCORT GAY" },
+  { id: "masajistas", label: "MASAJISTAS" },
+]
+
+export const stories = [
+  {
+    id: 1,
+    user: "Sofia Martinez",
+    avatar: "/placeholder.svg?height=60&width=60",
+    hasNew: true,
+    timestamp: "2h",
+  },
+  {
+    id: 2,
+    user: "Isabella Rodriguez",
+    avatar: "/placeholder.svg?height=60&width=60",
+    hasNew: true,
+    timestamp: "4h",
+  },
+  {
+    id: 3,
+    user: "Camila Torres",
+    avatar: "/placeholder.svg?height=60&width=60",
+    hasNew: false,
+    timestamp: "1d",
+  },
+]
+
+export const featuredProfiles = [
+  {
+    id: 1,
+    name: "Valentina Cruz",
+    age: 24,
+    location: "Bogotá",
+    image: "/placeholder.svg?height=400&width=300",
+    verified: true,
+    online: true,
+    featured: true,
+    rating: 4.9,
+    reviews: 127,
+  },
+  {
+    id: 2,
+    name: "Daniela Morales",
+    age: 26,
+    location: "Medellín",
+    image: "/placeholder.svg?height=400&width=300",
+    verified: true,
+    online: false,
+    featured: true,
+    rating: 4.8,
+    reviews: 89,
+  },
+  {
+    id: 3,
+    name: "Andrea Silva",
+    age: 23,
+    location: "Cali",
+    image: "/placeholder.svg?height=400&width=300",
+    verified: true,
+    online: true,
+    featured: true,
+    rating: 4.9,
+    reviews: 156,
+  },
+  {
+    id: 4,
+    name: "Natalia Vargas",
+    age: 25,
+    location: "Cartagena",
+    image: "/placeholder.svg?height=400&width=300",
+    verified: true,
+    online: true,
+    featured: true,
+    rating: 4.7,
+    reviews: 98,
+  },
+]
