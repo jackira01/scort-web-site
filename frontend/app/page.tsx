@@ -1,24 +1,22 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Heart, CheckCircle, Star, MapPin, Calendar, ArrowRight, Play } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import HeaderComponent from "@/components/Header/Header"
-import { categories, stories } from "@/utils/MockedData"
-import CardComponent from "@/components/Card/Card"
-
+import { ArrowRight, Play } from 'lucide-react';
+import CardComponent from '@/components/Card/Card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { categories, stories } from '@/utils/MockedData';
 
 export default function StoriesPage() {
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
-      
-      <HeaderComponent />
-
       {/* Categories */}
       <div className="bg-background/95 backdrop-blur border-b transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -28,8 +26,8 @@ export default function StoriesPage() {
                 key={category.id}
                 className={`whitespace-nowrap px-3 lg:px-4 py-2 text-xs lg:text-sm font-medium rounded-full transition-all duration-300 flex-shrink-0 hover:scale-105 ${
                   category.active
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg animate-in zoom-in-50"
-                    : "text-muted-foreground hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/20"
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg animate-in zoom-in-50'
+                    : 'text-muted-foreground hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/20'
                 }`}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
@@ -45,10 +43,10 @@ export default function StoriesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "Género", placeholder: "Seleccionar género" },
-              { label: "Ubicación", placeholder: "Seleccionar ciudad" },
-              { label: "Edad", placeholder: "Rango de edad" },
-              { label: "Cuerpo", placeholder: "Tipo de cuerpo" },
+              { label: 'Género', placeholder: 'Seleccionar género' },
+              { label: 'Ubicación', placeholder: 'Seleccionar ciudad' },
+              { label: 'Edad', placeholder: 'Rango de edad' },
+              { label: 'Cuerpo', placeholder: 'Tipo de cuerpo' },
             ].map((filter, index) => (
               <div
                 key={filter.label}
@@ -88,17 +86,20 @@ export default function StoriesPage() {
                   <div
                     className={`p-1 rounded-full transition-all duration-300 ${
                       story.hasNew
-                        ? "bg-gradient-to-r from-purple-600 to-pink-600 group-hover:scale-110"
-                        : "bg-gray-300 dark:bg-gray-600 group-hover:scale-105"
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 group-hover:scale-110'
+                        : 'bg-gray-300 dark:bg-gray-600 group-hover:scale-105'
                     }`}
                   >
                     <Avatar className="h-16 w-16 lg:h-20 lg:w-20 border-2 border-background">
-                      <AvatarImage src={story.avatar || "/placeholder.svg"} alt={story.user} />
+                      <AvatarImage
+                        src={story.avatar || '/placeholder.svg'}
+                        alt={story.user}
+                      />
                       <AvatarFallback className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900">
                         {story.user
-                          .split(" ")
+                          .split(' ')
                           .map((n) => n[0])
-                          .join("")}
+                          .join('')}
                       </AvatarFallback>
                     </Avatar>
                   </div>
@@ -111,7 +112,9 @@ export default function StoriesPage() {
                 <p className="text-xs text-center mt-2 text-muted-foreground group-hover:text-foreground transition-colors duration-200 max-w-[80px] truncate">
                   {story.user}
                 </p>
-                <p className="text-xs text-center text-muted-foreground">{story.timestamp}</p>
+                <p className="text-xs text-center text-muted-foreground">
+                  {story.timestamp}
+                </p>
               </div>
             ))}
           </div>
@@ -135,7 +138,7 @@ export default function StoriesPage() {
             </Button>
           </div>
 
-          <CardComponent/>
+          <CardComponent />
         </div>
       </div>
 
@@ -146,5 +149,5 @@ export default function StoriesPage() {
         </Badge>
       </div>
     </div>
-  )
+  );
 }

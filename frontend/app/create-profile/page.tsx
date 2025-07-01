@@ -1,126 +1,131 @@
-"use client"
+'use client';
 
-import { useState } from "react"
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
-  Plus,
-  Edit,
-  MapPin,
-  User,
   Camera,
-  Video,
-  Mic,
   CheckCircle,
-  AlertTriangle,
+  DollarSign,
+  Edit,
   Info,
   Lightbulb,
-  DollarSign,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
-import { ThemeToggle } from "@/components/theme-toggle"
-import Link from "next/link"
+  MapPin,
+  Mic,
+  Plus,
+  User,
+  Video,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useState } from 'react';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 const steps = [
-  { id: 1, title: "Lo esencial", description: "Información básica del perfil" },
-  { id: 2, title: "Descripción", description: "Descripción y servicios" },
-  { id: 3, title: "Detalles", description: "Características físicas y contacto" },
-  { id: 4, title: "Multimedia", description: "Fotos, videos y audios" },
-  { id: 5, title: "Finalizar", description: "Revisión y publicación" },
-]
+  { id: 1, title: 'Lo esencial', description: 'Información básica del perfil' },
+  { id: 2, title: 'Descripción', description: 'Descripción y servicios' },
+  {
+    id: 3,
+    title: 'Detalles',
+    description: 'Características físicas y contacto',
+  },
+  { id: 4, title: 'Multimedia', description: 'Fotos, videos y audios' },
+  { id: 5, title: 'Finalizar', description: 'Revisión y publicación' },
+];
 
 const services = [
-  "Atención Hombres",
-  "Atención Mujeres",
-  "Atención Parejas",
-  "Atención Discapacitados",
-  "Trato de novios",
-  "Besos en la boca",
-  "Beso francés",
-  "Hablar sucio",
-  "Fetiches",
-  "Juguetes",
-  "Juegos de Rol",
-  "Disfraces",
-  "Squirt",
-  "Dejarte Lamer mis pies",
-  "Besar tus pies",
-  "Masajes",
-  "Masajes relajantes",
-  "Masaje Terapeutico",
-  "Masaje cuerpo a cuerpo",
-  "Masaje Tailandés",
-  "Masaje Tántrico",
-  "Masaje Prostático",
-  "Masaje Final Feliz",
-  "Videollamada erotica",
-  "Videollamada con rostro",
-  "Strip tease",
-  "Sexting",
-  "Venta audios",
-  "Venta videos",
-  "Venta Lencería",
-  "Pack Fotos",
-  "Videos Personalizados",
-  "Valorar tu pene",
-]
+  'Atención Hombres',
+  'Atención Mujeres',
+  'Atención Parejas',
+  'Atención Discapacitados',
+  'Trato de novios',
+  'Besos en la boca',
+  'Beso francés',
+  'Hablar sucio',
+  'Fetiches',
+  'Juguetes',
+  'Juegos de Rol',
+  'Disfraces',
+  'Squirt',
+  'Dejarte Lamer mis pies',
+  'Besar tus pies',
+  'Masajes',
+  'Masajes relajantes',
+  'Masaje Terapeutico',
+  'Masaje cuerpo a cuerpo',
+  'Masaje Tailandés',
+  'Masaje Tántrico',
+  'Masaje Prostático',
+  'Masaje Final Feliz',
+  'Videollamada erotica',
+  'Videollamada con rostro',
+  'Strip tease',
+  'Sexting',
+  'Venta audios',
+  'Venta videos',
+  'Venta Lencería',
+  'Pack Fotos',
+  'Videos Personalizados',
+  'Valorar tu pene',
+];
 
 const upgradeOptions = [
   {
-    id: "presentado",
-    title: "Presentado",
+    id: 'presentado',
+    title: 'Presentado',
     price: 250000,
-    emoji: "😊",
+    emoji: '😊',
     description:
-      "Los anuncios destacados se destacan en los resultados de búsqueda y se muestran 10 veces más que los anuncios estándar.",
+      'Los anuncios destacados se destacan en los resultados de búsqueda y se muestran 10 veces más que los anuncios estándar.',
   },
   {
-    id: "patrocinado",
-    title: "Patrocinado",
+    id: 'patrocinado',
+    title: 'Patrocinado',
     price: 350000,
-    emoji: "😎",
+    emoji: '😎',
     description:
-      "Los anuncios patrocinados se muestran en rotación en la parte superior de la página de resultados de búsqueda.",
+      'Los anuncios patrocinados se muestran en rotación en la parte superior de la página de resultados de búsqueda.',
   },
   {
-    id: "pagina-principal",
-    title: "Página principal",
+    id: 'pagina-principal',
+    title: 'Página principal',
     price: 450000,
-    emoji: "🤩",
-    description: "Haga que su anuncio aparezca en nuestra página de inicio y sea visto por miles de personas.",
+    emoji: '🤩',
+    description:
+      'Haga que su anuncio aparezca en nuestra página de inicio y sea visto por miles de personas.',
   },
-]
+];
 
 export default function CreateProfilePage() {
-  const [currentStep, setCurrentStep] = useState(1)
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     // Step 1 - Lo esencial
-    profileName: "",
-    gender: "",
-    workType: "",
-    category: "",
-    location: "",
+    profileName: '',
+    gender: '',
+    workType: '',
+    category: '',
+    location: '',
 
     // Step 2 - Descripción
-    description: "",
+    description: '',
     selectedServices: [] as string[],
 
     // Step 3 - Detalles
-    phoneNumber: "",
-    age: "",
-    skinColor: "",
-    sexuality: "",
-    eyeColor: "",
-    hairColor: "",
-    bodyType: "",
-    height: "",
-    bustSize: "",
+    phoneNumber: '',
+    age: '',
+    skinColor: '',
+    sexuality: '',
+    eyeColor: '',
+    hairColor: '',
+    bodyType: '',
+    height: '',
+    bustSize: '',
     rates: [] as any[],
     availability: {},
 
@@ -132,19 +137,19 @@ export default function CreateProfilePage() {
     // Step 5 - Finalizar
     selectedUpgrades: [] as string[],
     acceptTerms: false,
-  })
+  });
 
   const handleNext = () => {
     if (currentStep < 5) {
-      setCurrentStep(currentStep + 1)
+      setCurrentStep(currentStep + 1);
     }
-  }
+  };
 
   const handlePrevious = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
+      setCurrentStep(currentStep - 1);
     }
-  }
+  };
 
   const handleServiceToggle = (service: string) => {
     setFormData((prev) => ({
@@ -152,8 +157,8 @@ export default function CreateProfilePage() {
       selectedServices: prev.selectedServices.includes(service)
         ? prev.selectedServices.filter((s) => s !== service)
         : [...prev.selectedServices, service],
-    }))
-  }
+    }));
+  };
 
   const handleUpgradeToggle = (upgradeId: string) => {
     setFormData((prev) => ({
@@ -161,8 +166,8 @@ export default function CreateProfilePage() {
       selectedUpgrades: prev.selectedUpgrades.includes(upgradeId)
         ? prev.selectedUpgrades.filter((u) => u !== upgradeId)
         : [...prev.selectedUpgrades, upgradeId],
-    }))
-  }
+    }));
+  };
 
   const getSidebarContent = () => {
     switch (currentStep) {
@@ -172,15 +177,18 @@ export default function CreateProfilePage() {
             <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
                 <Lightbulb className="h-4 w-4 text-blue-600" />
-                <h3 className="font-semibold text-blue-800 dark:text-blue-200">Consejo rápido</h3>
+                <h3 className="font-semibold text-blue-800 dark:text-blue-200">
+                  Consejo rápido
+                </h3>
                 <Edit className="h-3 w-3 text-blue-600" />
               </div>
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                Incrementa las visitas a tu sitio con un nombre y título super atrayente !
+                Incrementa las visitas a tu sitio con un nombre y título super
+                atrayente !
               </p>
             </div>
           </div>
-        )
+        );
 
       case 2:
         return (
@@ -188,7 +196,9 @@ export default function CreateProfilePage() {
             <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
                 <CheckCircle className="h-4 w-4 text-green-600" />
-                <h3 className="font-semibold text-green-800 dark:text-green-200">Consejos</h3>
+                <h3 className="font-semibold text-green-800 dark:text-green-200">
+                  Consejos
+                </h3>
               </div>
               <ul className="text-sm text-green-700 dark:text-green-300 space-y-1">
                 <li>• Sé honesto y auténtico en tu descripción</li>
@@ -201,7 +211,9 @@ export default function CreateProfilePage() {
             <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
                 <AlertTriangle className="h-4 w-4 text-red-600" />
-                <h3 className="font-semibold text-red-800 dark:text-red-200">Prohibido</h3>
+                <h3 className="font-semibold text-red-800 dark:text-red-200">
+                  Prohibido
+                </h3>
               </div>
               <ul className="text-sm text-red-700 dark:text-red-300 space-y-1">
                 <li>• Contenido explícito o vulgar</li>
@@ -211,7 +223,7 @@ export default function CreateProfilePage() {
               </ul>
             </div>
           </div>
-        )
+        );
 
       case 3:
         return (
@@ -219,17 +231,21 @@ export default function CreateProfilePage() {
             <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
                 <Info className="h-4 w-4 text-blue-600" />
-                <h3 className="font-semibold text-blue-800 dark:text-blue-200">Información importante</h3>
+                <h3 className="font-semibold text-blue-800 dark:text-blue-200">
+                  Información importante
+                </h3>
               </div>
               <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
                 <li>• Tu número de teléfono será privado</li>
                 <li>• Solo se mostrará parcialmente</li>
-                <li>• Los clientes podrán contactarte a través de la plataforma</li>
+                <li>
+                  • Los clientes podrán contactarte a través de la plataforma
+                </li>
                 <li>• Puedes cambiar tu disponibilidad en cualquier momento</li>
               </ul>
             </div>
           </div>
-        )
+        );
 
       case 4:
         return (
@@ -237,19 +253,28 @@ export default function CreateProfilePage() {
             <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
                 <Lightbulb className="h-4 w-4 text-blue-600" />
-                <h3 className="font-semibold text-blue-800 dark:text-blue-200">Recomendaciones</h3>
+                <h3 className="font-semibold text-blue-800 dark:text-blue-200">
+                  Recomendaciones
+                </h3>
                 <Edit className="h-3 w-3 text-blue-600" />
               </div>
               <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                <li>• Sube tus mejores fotos y videos, se pueden redimensionar o recortar una vez subidas.</li>
                 <li>
-                  • Sube fotos y videos bien iluminados, no tienen que ser profesionales, pero sí con luz de frente y
-                  buena resolución.
+                  • Sube tus mejores fotos y videos, se pueden redimensionar o
+                  recortar una vez subidas.
                 </li>
-                <li>• Si necesitas ocultar tu rostro púdelo, no lo ocultes con emojis o adornos.</li>
                 <li>
-                  • Agrega una foto de portada a tus videos. Puedes subir fotos/videos con otras personas, pero no se
-                  les puede ver la cara.
+                  • Sube fotos y videos bien iluminados, no tienen que ser
+                  profesionales, pero sí con luz de frente y buena resolución.
+                </li>
+                <li>
+                  • Si necesitas ocultar tu rostro púdelo, no lo ocultes con
+                  emojis o adornos.
+                </li>
+                <li>
+                  • Agrega una foto de portada a tus videos. Puedes subir
+                  fotos/videos con otras personas, pero no se les puede ver la
+                  cara.
                 </li>
               </ul>
             </div>
@@ -257,29 +282,36 @@ export default function CreateProfilePage() {
             <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
                 <AlertTriangle className="h-4 w-4 text-red-600" />
-                <h3 className="font-semibold text-red-800 dark:text-red-200">Restricciones</h3>
+                <h3 className="font-semibold text-red-800 dark:text-red-200">
+                  Restricciones
+                </h3>
               </div>
               <ul className="text-sm text-red-700 dark:text-red-300 space-y-1">
                 <li>• No agregues fotos/videos que no son tuyos.</li>
                 <li>• No añadas texto a tus fotos/videos.</li>
                 <li>
-                  • No se pueden subir fotos con niños/as o ambientes infantiles o que sugieran relaciones con niños/as.
+                  • No se pueden subir fotos con niños/as o ambientes infantiles
+                  o que sugieran relaciones con niños/as.
                 </li>
-                <li>• No se pueden subir fotos con animales o que sugieran relaciones con ellos.</li>
+                <li>
+                  • No se pueden subir fotos con animales o que sugieran
+                  relaciones con ellos.
+                </li>
                 <li>• No subas dibujos o imágenes generadas por IA.</li>
                 <li>
-                  • No subas collages (unión de varias fotos en una), sube las fotos de una en una en lugar de unirlas.
+                  • No subas collages (unión de varias fotos en una), sube las
+                  fotos de una en una en lugar de unirlas.
                 </li>
                 <li>• Si se detectan fotos repetidas se eliminarán.</li>
                 <li>• Sube solo fotos/videos con logos de otras webs.</li>
                 <li>
-                  • Fotos/videos que incumplan los límites aquí descritos se eliminarán o incluso pueden hacer que se
-                  vete el perfil.
+                  • Fotos/videos que incumplan los límites aquí descritos se
+                  eliminarán o incluso pueden hacer que se vete el perfil.
                 </li>
               </ul>
             </div>
           </div>
-        )
+        );
 
       case 5:
         return (
@@ -287,23 +319,28 @@ export default function CreateProfilePage() {
             <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
                 <Lightbulb className="h-4 w-4 text-blue-600" />
-                <h3 className="font-semibold text-blue-800 dark:text-blue-200">Consejo rápido</h3>
+                <h3 className="font-semibold text-blue-800 dark:text-blue-200">
+                  Consejo rápido
+                </h3>
                 <Edit className="h-3 w-3 text-blue-600" />
               </div>
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                Escoge el plan que más se adapte a tu necesidad y flujo de ingresos. Recuerda que adicionalmente hay un
-                Boost (impulso) que puede subir tu perfil a los primeros lugares durante 24 horas. RECUERDA que te
-                contactaremos para verificar tu perfil y tus fotos, incluyendo diferentes imágenes en tu perfil de
-                acuerdo al nivel de verificación, insignia que le dará mayor confianza a tus potenciales clientes.
+                Escoge el plan que más se adapte a tu necesidad y flujo de
+                ingresos. Recuerda que adicionalmente hay un Boost (impulso) que
+                puede subir tu perfil a los primeros lugares durante 24 horas.
+                RECUERDA que te contactaremos para verificar tu perfil y tus
+                fotos, incluyendo diferentes imágenes en tu perfil de acuerdo al
+                nivel de verificación, insignia que le dará mayor confianza a
+                tus potenciales clientes.
               </p>
             </div>
           </div>
-        )
+        );
 
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -314,19 +351,27 @@ export default function CreateProfilePage() {
               <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
                 01
               </div>
-              <h2 className="text-2xl font-bold text-foreground">Crear un nuevo perfil</h2>
+              <h2 className="text-2xl font-bold text-foreground">
+                Crear un nuevo perfil
+              </h2>
             </div>
 
             <div className="space-y-6">
               <div>
                 <Label htmlFor="profileName" className="text-foreground">
-                  Cree un nombre para mostrar para su perfil. <span className="text-red-500">*</span>
+                  Cree un nombre para mostrar para su perfil.{' '}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="profileName"
                   placeholder="Sexy Jane"
                   value={formData.profileName}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, profileName: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      profileName: e.target.value,
+                    }))
+                  }
                   className="mt-2"
                 />
               </div>
@@ -337,14 +382,24 @@ export default function CreateProfilePage() {
                     Mi género es <span className="text-red-500">*</span>
                   </Label>
                   <div className="flex space-x-2 mt-2">
-                    {["Mujer", "Hombre", "Trans"].map((gender) => (
+                    {['Mujer', 'Hombre', 'Trans'].map((gender) => (
                       <Button
                         key={gender}
-                        variant={formData.gender === gender ? "default" : "outline"}
-                        onClick={() => setFormData((prev) => ({ ...prev, gender }))}
-                        className={formData.gender === gender ? "bg-green-600 hover:bg-green-700" : ""}
+                        variant={
+                          formData.gender === gender ? 'default' : 'outline'
+                        }
+                        onClick={() =>
+                          setFormData((prev) => ({ ...prev, gender }))
+                        }
+                        className={
+                          formData.gender === gender
+                            ? 'bg-green-600 hover:bg-green-700'
+                            : ''
+                        }
                       >
-                        {formData.gender === gender && <CheckCircle className="h-4 w-4 mr-2" />}
+                        {formData.gender === gender && (
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                        )}
                         {gender}
                       </Button>
                     ))}
@@ -354,12 +409,20 @@ export default function CreateProfilePage() {
                 <div>
                   <Label className="text-foreground">trabajo para</Label>
                   <div className="flex space-x-2 mt-2">
-                    {["Yo mismo (independiente)", "Agencia"].map((type) => (
+                    {['Yo mismo (independiente)', 'Agencia'].map((type) => (
                       <Button
                         key={type}
-                        variant={formData.workType === type ? "default" : "outline"}
-                        onClick={() => setFormData((prev) => ({ ...prev, workType: type }))}
-                        className={formData.workType === type ? "bg-blue-600 hover:bg-blue-700" : ""}
+                        variant={
+                          formData.workType === type ? 'default' : 'outline'
+                        }
+                        onClick={() =>
+                          setFormData((prev) => ({ ...prev, workType: type }))
+                        }
+                        className={
+                          formData.workType === type
+                            ? 'bg-blue-600 hover:bg-blue-700'
+                            : ''
+                        }
                       >
                         {type}
                       </Button>
@@ -370,7 +433,8 @@ export default function CreateProfilePage() {
 
               <div>
                 <Label className="text-foreground">
-                  ¿Dónde quieres que se muestre tu anuncio? <span className="text-red-500">*</span>
+                  ¿Dónde quieres que se muestre tu anuncio?{' '}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <Button variant="outline" className="mt-2 w-full justify-start">
                   <Plus className="h-4 w-4 mr-2" />
@@ -389,7 +453,7 @@ export default function CreateProfilePage() {
               </div>
             </div>
           </div>
-        )
+        );
 
       case 2:
         return (
@@ -398,7 +462,9 @@ export default function CreateProfilePage() {
               <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
                 02
               </div>
-              <h2 className="text-2xl font-bold text-foreground">Descripción</h2>
+              <h2 className="text-2xl font-bold text-foreground">
+                Descripción
+              </h2>
             </div>
 
             <div className="space-y-6">
@@ -415,14 +481,21 @@ export default function CreateProfilePage() {
                   id="description"
                   placeholder="Cuéntanos sobre ti, tus intereses, personalidad y lo que te hace especial..."
                   value={formData.description}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   className="min-h-32"
                   maxLength={1000}
                 />
               </div>
 
               <div>
-                <Label className="text-foreground text-lg font-semibold mb-4 block">Servicios</Label>
+                <Label className="text-foreground text-lg font-semibold mb-4 block">
+                  Servicios
+                </Label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {services.map((service) => (
                     <div key={service} className="flex items-center space-x-2">
@@ -431,7 +504,10 @@ export default function CreateProfilePage() {
                         checked={formData.selectedServices.includes(service)}
                         onCheckedChange={() => handleServiceToggle(service)}
                       />
-                      <Label htmlFor={service} className="text-sm text-foreground cursor-pointer">
+                      <Label
+                        htmlFor={service}
+                        className="text-sm text-foreground cursor-pointer"
+                      >
                         {service}
                       </Label>
                     </div>
@@ -440,7 +516,7 @@ export default function CreateProfilePage() {
               </div>
             </div>
           </div>
-        )
+        );
 
       case 3:
         return (
@@ -468,7 +544,9 @@ export default function CreateProfilePage() {
 
               {/* Availability Section */}
               <div>
-                <Label className="text-foreground text-lg font-semibold">¿Cuándo podemos encontrarnos?</Label>
+                <Label className="text-foreground text-lg font-semibold">
+                  ¿Cuándo podemos encontrarnos?
+                </Label>
                 <Button variant="outline" className="mt-2 w-full justify-start">
                   <Plus className="h-4 w-4 mr-2" />
                   Administrar horario
@@ -489,7 +567,12 @@ export default function CreateProfilePage() {
                       id="phone"
                       placeholder="+57 300 123 4567"
                       value={formData.phoneNumber}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, phoneNumber: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          phoneNumber: e.target.value,
+                        }))
+                      }
                       className="rounded-l-none"
                     />
                   </div>
@@ -504,7 +587,9 @@ export default function CreateProfilePage() {
                     type="number"
                     placeholder="23"
                     value={formData.age}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, age: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, age: e.target.value }))
+                    }
                     className="mt-2"
                   />
                 </div>
@@ -515,12 +600,16 @@ export default function CreateProfilePage() {
                 <div>
                   <Label className="text-foreground">Piel</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {["Blanca", "Trigueña", "Morena", "Negra"].map((color) => (
+                    {['Blanca', 'Trigueña', 'Morena', 'Negra'].map((color) => (
                       <Button
                         key={color}
-                        variant={formData.skinColor === color ? "default" : "outline"}
+                        variant={
+                          formData.skinColor === color ? 'default' : 'outline'
+                        }
                         size="sm"
-                        onClick={() => setFormData((prev) => ({ ...prev, skinColor: color }))}
+                        onClick={() =>
+                          setFormData((prev) => ({ ...prev, skinColor: color }))
+                        }
                       >
                         {color}
                       </Button>
@@ -531,49 +620,84 @@ export default function CreateProfilePage() {
                 <div>
                   <Label className="text-foreground">Sexo</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {["Straight", "Gay", "Lesbian", "Bisexual", "Other"].map((sexuality) => (
-                      <Button
-                        key={sexuality}
-                        variant={formData.sexuality === sexuality ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setFormData((prev) => ({ ...prev, sexuality }))}
-                      >
-                        {sexuality}
-                      </Button>
-                    ))}
+                    {['Straight', 'Gay', 'Lesbian', 'Bisexual', 'Other'].map(
+                      (sexuality) => (
+                        <Button
+                          key={sexuality}
+                          variant={
+                            formData.sexuality === sexuality
+                              ? 'default'
+                              : 'outline'
+                          }
+                          size="sm"
+                          onClick={() =>
+                            setFormData((prev) => ({ ...prev, sexuality }))
+                          }
+                        >
+                          {sexuality}
+                        </Button>
+                      ),
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Appearance Details */}
               <div>
-                <Label className="text-foreground text-lg font-semibold mb-4 block">¿Cómo me veo?</Label>
+                <Label className="text-foreground text-lg font-semibold mb-4 block">
+                  ¿Cómo me veo?
+                </Label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <Label className="text-foreground">Ojos</Label>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {["Negros", "Café", "Avellana", "Verdes", "Azul"].map((color) => (
-                        <Button
-                          key={color}
-                          variant={formData.eyeColor === color ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setFormData((prev) => ({ ...prev, eyeColor: color }))}
-                        >
-                          {color}
-                        </Button>
-                      ))}
+                      {['Negros', 'Café', 'Avellana', 'Verdes', 'Azul'].map(
+                        (color) => (
+                          <Button
+                            key={color}
+                            variant={
+                              formData.eyeColor === color
+                                ? 'default'
+                                : 'outline'
+                            }
+                            size="sm"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                eyeColor: color,
+                              }))
+                            }
+                          >
+                            {color}
+                          </Button>
+                        ),
+                      )}
                     </div>
                   </div>
 
                   <div>
                     <Label className="text-foreground">Pelo</Label>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {["Negro", "Castaño Claro", "Castaño Oscuro", "Rubio", "Pelirrojo", "Canoso"].map((color) => (
+                      {[
+                        'Negro',
+                        'Castaño Claro',
+                        'Castaño Oscuro',
+                        'Rubio',
+                        'Pelirrojo',
+                        'Canoso',
+                      ].map((color) => (
                         <Button
                           key={color}
-                          variant={formData.hairColor === color ? "default" : "outline"}
+                          variant={
+                            formData.hairColor === color ? 'default' : 'outline'
+                          }
                           size="sm"
-                          onClick={() => setFormData((prev) => ({ ...prev, hairColor: color }))}
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              hairColor: color,
+                            }))
+                          }
                         >
                           {color}
                         </Button>
@@ -584,18 +708,28 @@ export default function CreateProfilePage() {
                   <div>
                     <Label className="text-foreground">Cuerpo</Label>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {["Curvy", "Delgado", "Atlético", "Promedio", "Voluptuoso", "Rellenito/a", "Gordibuen@/a"].map(
-                        (type) => (
-                          <Button
-                            key={type}
-                            variant={formData.bodyType === type ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setFormData((prev) => ({ ...prev, bodyType: type }))}
-                          >
-                            {type}
-                          </Button>
-                        ),
-                      )}
+                      {[
+                        'Curvy',
+                        'Delgado',
+                        'Atlético',
+                        'Promedio',
+                        'Voluptuoso',
+                        'Rellenito/a',
+                        'Gordibuen@/a',
+                      ].map((type) => (
+                        <Button
+                          key={type}
+                          variant={
+                            formData.bodyType === type ? 'default' : 'outline'
+                          }
+                          size="sm"
+                          onClick={() =>
+                            setFormData((prev) => ({ ...prev, bodyType: type }))
+                          }
+                        >
+                          {type}
+                        </Button>
+                      ))}
                     </div>
                   </div>
 
@@ -607,7 +741,12 @@ export default function CreateProfilePage() {
                       id="height"
                       placeholder="173 cm"
                       value={formData.height}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, height: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          height: e.target.value,
+                        }))
+                      }
                       className="mt-2"
                     />
                   </div>
@@ -618,7 +757,11 @@ export default function CreateProfilePage() {
                     <Label htmlFor="cuerpo" className="text-foreground">
                       Cuerpo
                     </Label>
-                    <Input id="cuerpo" placeholder="Descripción del cuerpo" className="mt-2" />
+                    <Input
+                      id="cuerpo"
+                      placeholder="Descripción del cuerpo"
+                      className="mt-2"
+                    />
                   </div>
 
                   <div>
@@ -629,7 +772,12 @@ export default function CreateProfilePage() {
                       id="bustSize"
                       placeholder="COPA_D"
                       value={formData.bustSize}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, bustSize: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          bustSize: e.target.value,
+                        }))
+                      }
                       className="mt-2"
                     />
                   </div>
@@ -637,7 +785,7 @@ export default function CreateProfilePage() {
               </div>
             </div>
           </div>
-        )
+        );
 
       case 4:
         return (
@@ -670,7 +818,9 @@ export default function CreateProfilePage() {
               <Card className="bg-card border-border">
                 <CardHeader>
                   <div className="flex justify-between items-center">
-                    <CardTitle className="text-foreground">Mis videos</CardTitle>
+                    <CardTitle className="text-foreground">
+                      Mis videos
+                    </CardTitle>
                     <Badge variant="outline">0 / 8</Badge>
                   </div>
                 </CardHeader>
@@ -686,7 +836,9 @@ export default function CreateProfilePage() {
               <Card className="bg-card border-border">
                 <CardHeader>
                   <div className="flex justify-between items-center">
-                    <CardTitle className="text-foreground">Mis archivos de audio</CardTitle>
+                    <CardTitle className="text-foreground">
+                      Mis archivos de audio
+                    </CardTitle>
                     <Badge variant="outline">0 / 6</Badge>
                   </div>
                 </CardHeader>
@@ -699,7 +851,7 @@ export default function CreateProfilePage() {
               </Card>
             </div>
           </div>
-        )
+        );
 
       case 5:
         return (
@@ -714,15 +866,17 @@ export default function CreateProfilePage() {
             <div className="space-y-6">
               {/* Upgrade Options */}
               <div>
-                <Label className="text-foreground text-lg font-semibold mb-4 block">Actualizaciones</Label>
+                <Label className="text-foreground text-lg font-semibold mb-4 block">
+                  Actualizaciones
+                </Label>
                 <div className="space-y-4">
                   {upgradeOptions.map((option) => (
                     <Card
                       key={option.id}
                       className={`cursor-pointer transition-all duration-200 ${
                         formData.selectedUpgrades.includes(option.id)
-                          ? "border-purple-500 bg-purple-50 dark:bg-purple-950/20"
-                          : "hover:border-purple-300"
+                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
+                          : 'hover:border-purple-300'
                       }`}
                       onClick={() => handleUpgradeToggle(option.id)}
                     >
@@ -730,19 +884,27 @@ export default function CreateProfilePage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <Checkbox
-                              checked={formData.selectedUpgrades.includes(option.id)}
+                              checked={formData.selectedUpgrades.includes(
+                                option.id,
+                              )}
                               onChange={() => handleUpgradeToggle(option.id)}
                             />
                             <div className="flex items-center space-x-2">
                               <span className="text-2xl">{option.emoji}</span>
                               <div>
-                                <h3 className="font-semibold text-foreground">{option.title}</h3>
-                                <p className="text-sm text-muted-foreground">{option.description}</p>
+                                <h3 className="font-semibold text-foreground">
+                                  {option.title}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {option.description}
+                                </p>
                               </div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-lg font-bold text-foreground">${option.price.toLocaleString()}</p>
+                            <p className="text-lg font-bold text-foreground">
+                              ${option.price.toLocaleString()}
+                            </p>
                           </div>
                         </div>
                       </CardContent>
@@ -763,16 +925,22 @@ export default function CreateProfilePage() {
                       <p className="text-foreground font-medium">Justo ahora</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Fecha de caducidad</span>
+                      <span className="text-muted-foreground">
+                        Fecha de caducidad
+                      </span>
                       <p className="text-foreground font-medium">Nunca</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Puntos de vista</span>
+                      <span className="text-muted-foreground">
+                        Puntos de vista
+                      </span>
                       <p className="text-foreground font-medium">0</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Estado</span>
-                      <p className="text-foreground font-medium">Aprobación pendiente</p>
+                      <p className="text-foreground font-medium">
+                        Aprobación pendiente
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -780,20 +948,36 @@ export default function CreateProfilePage() {
 
               {/* Terms and Conditions */}
               <div className="space-y-4">
-                <Label className="text-foreground text-lg font-semibold">Términos & Condiciones</Label>
+                <Label className="text-foreground text-lg font-semibold">
+                  Términos & Condiciones
+                </Label>
                 <div className="flex items-start space-x-2">
                   <Checkbox
                     id="terms"
                     checked={formData.acceptTerms}
-                    onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, acceptTerms: !!checked }))}
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        acceptTerms: !!checked,
+                      }))
+                    }
                   />
-                  <Label htmlFor="terms" className="text-sm text-muted-foreground cursor-pointer">
-                    I accept the website{" "}
-                    <Link href="/terms" className="text-blue-600 hover:underline">
+                  <Label
+                    htmlFor="terms"
+                    className="text-sm text-muted-foreground cursor-pointer"
+                  >
+                    I accept the website{' '}
+                    <Link
+                      href="/terms"
+                      className="text-blue-600 hover:underline"
+                    >
                       terms & conditions
-                    </Link>{" "}
-                    and{" "}
-                    <Link href="/privacy" className="text-blue-600 hover:underline">
+                    </Link>{' '}
+                    and{' '}
+                    <Link
+                      href="/privacy"
+                      className="text-blue-600 hover:underline"
+                    >
                       privacy policy
                     </Link>
                   </Label>
@@ -801,12 +985,12 @@ export default function CreateProfilePage() {
               </div>
             </div>
           </div>
-        )
+        );
 
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
@@ -816,14 +1000,20 @@ export default function CreateProfilePage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <Link href="/dashboard">
-                <Button variant="ghost" size="sm" className="hover:bg-muted/50 transition-colors duration-200">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hover:bg-muted/50 transition-colors duration-200"
+                >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Volver al Dashboard
                 </Button>
               </Link>
               <div className="flex items-center space-x-2">
                 <User className="h-5 w-5 text-muted-foreground" />
-                <span className="font-semibold text-foreground">Crear Nuevo Perfil</span>
+                <span className="font-semibold text-foreground">
+                  Crear Nuevo Perfil
+                </span>
               </div>
             </div>
 
@@ -848,7 +1038,7 @@ export default function CreateProfilePage() {
                 className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold py-3"
                 onClick={() => {
                   // Save draft functionality
-                  console.log("Guardando borrador...")
+                  console.log('Guardando borrador...');
                 }}
               >
                 Guardar
@@ -904,16 +1094,22 @@ export default function CreateProfilePage() {
                 key={step.id}
                 className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 ${
                   currentStep === step.id
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
                     : currentStep > step.id
-                      ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100"
-                      : "bg-muted text-muted-foreground"
+                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
+                      : 'bg-muted text-muted-foreground'
                 }`}
               >
                 <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
-                  {currentStep > step.id ? <CheckCircle className="h-3 w-3" /> : step.id}
+                  {currentStep > step.id ? (
+                    <CheckCircle className="h-3 w-3" />
+                  ) : (
+                    step.id
+                  )}
                 </div>
-                <span className="hidden sm:block font-medium">{step.title}</span>
+                <span className="hidden sm:block font-medium">
+                  {step.title}
+                </span>
               </div>
             ))}
           </div>
@@ -927,5 +1123,5 @@ export default function CreateProfilePage() {
         </Badge>
       </div>
     </div>
-  )
+  );
 }

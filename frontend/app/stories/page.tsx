@@ -1,96 +1,56 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Search, Heart, Video, CheckCircle, Star, MapPin, Calendar, User, Menu, Grid, List, Filter } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { ThemeToggle } from "@/components/theme-toggle"
+import {
+  Calendar,
+  CheckCircle,
+  Filter,
+  Grid,
+  Heart,
+  List,
+  MapPin,
+  Menu,
+  Search,
+  Star,
+  User,
+  Video,
+} from 'lucide-react';
+import { useState } from 'react';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { Switch } from '@/components/ui/switch';
 
-const categories = [
-  { id: "escort", label: "ESCORT", active: true },
-  { id: "gigolo", label: "GIGOLO" },
-  { id: "trans", label: "TRANS" },
-  { id: "virtual", label: "VIRTUAL" },
-  { id: "escort-gay", label: "ESCORT GAY" },
-  { id: "masajistas", label: "MASAJISTAS" },
-]
-
-const profiles = [
-  {
-    id: 1,
-    name: "Ximena Gutierrez",
-    age: 23,
-    location: "Ciudad Tolima",
-    height: "Altura 172",
-    image: "/placeholder.svg?height=300&width=250",
-    description:
-      "Lorem es una palabra de relleno común que se usa en diseño gráfico y web, especialmente en demostraciones de tipografías o borradores d...",
-    featured: false,
-    verified: true,
-    online: true,
-    hasVideo: false,
-  },
-  {
-    id: 2,
-    name: "Jane Ximena",
-    age: 23,
-    location: "Ciudad Huila",
-    height: "Altura 173",
-    image: "/placeholder.svg?height=300&width=250",
-    description:
-      "Lorem ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since th...",
-    featured: true,
-    verified: true,
-    online: false,
-    hasVideo: true,
-  },
-  {
-    id: 3,
-    name: "Sofia Martinez",
-    age: 25,
-    location: "Ciudad Bogotá",
-    height: "Altura 168",
-    image: "/placeholder.svg?height=300&width=250",
-    description:
-      "Profesional y elegante, ofrezco compañía de alta calidad para eventos sociales y cenas de negocios...",
-    featured: false,
-    verified: true,
-    online: true,
-    hasVideo: true,
-  },
-  {
-    id: 4,
-    name: "Isabella Rodriguez",
-    age: 24,
-    location: "Ciudad Medellín",
-    height: "Altura 170",
-    image: "/placeholder.svg?height=300&width=250",
-    description: "Experiencia única y personalizada. Disponible para acompañamiento en eventos especiales...",
-    featured: true,
-    verified: false,
-    online: true,
-    hasVideo: false,
-  },
-]
+import { categories, profiles } from '@/modules/stories/data';
 
 export default function EscortWebsite() {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({
     presentado: false,
     verificado: false,
     enLinea: false,
     video: false,
     favoritos: false,
-  })
+  });
 
   const FilterContent = () => (
     <div className="space-y-6">
@@ -100,20 +60,25 @@ export default function EscortWebsite() {
         {/* Filter Toggles */}
         <div className="space-y-4 mb-6">
           {Object.entries({
-            presentado: "Presentado",
-            verificado: "Verificado",
-            enLinea: "En línea",
-            video: "Video",
-            favoritos: "Favoritos",
+            presentado: 'Presentado',
+            verificado: 'Verificado',
+            enLinea: 'En línea',
+            video: 'Video',
+            favoritos: 'Favoritos',
           }).map(([key, label]) => (
             <div key={key} className="flex items-center justify-between">
-              <Label htmlFor={key} className="text-sm font-medium text-muted-foreground">
+              <Label
+                htmlFor={key}
+                className="text-sm font-medium text-muted-foreground"
+              >
                 {label}
               </Label>
               <Switch
                 id={key}
                 checked={filters[key as keyof typeof filters]}
-                onCheckedChange={(checked) => setFilters((prev) => ({ ...prev, [key]: checked }))}
+                onCheckedChange={(checked) =>
+                  setFilters((prev) => ({ ...prev, [key]: checked }))
+                }
               />
             </div>
           ))}
@@ -126,7 +91,12 @@ export default function EscortWebsite() {
           <h4 className="font-medium text-foreground">Género</h4>
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
-              <input type="checkbox" id="mujer" className="rounded" defaultChecked />
+              <input
+                type="checkbox"
+                id="mujer"
+                className="rounded"
+                defaultChecked
+              />
               <label htmlFor="mujer" className="text-sm text-muted-foreground">
                 Mujer
               </label>
@@ -176,7 +146,7 @@ export default function EscortWebsite() {
         </div>
       </div>
     </div>
-  )
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors">
@@ -194,7 +164,10 @@ export default function EscortWebsite() {
               <div className="hidden lg:block">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input placeholder="Buscar..." className="pl-10 w-80 bg-muted/50 border-border focus:bg-background" />
+                  <Input
+                    placeholder="Buscar..."
+                    className="pl-10 w-80 bg-muted/50 border-border focus:bg-background"
+                  />
                 </div>
               </div>
             </div>
@@ -211,11 +184,17 @@ export default function EscortWebsite() {
                   <SelectItem value="english">🇺🇸 EN</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
+              <Button
+                variant="ghost"
+                className="text-muted-foreground hover:text-foreground"
+              >
                 <Menu className="h-4 w-4 mr-2" />
                 Explorar
               </Button>
-              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
+              <Button
+                variant="ghost"
+                className="text-muted-foreground hover:text-foreground"
+              >
                 Mi cuenta
               </Button>
               <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
@@ -226,7 +205,11 @@ export default function EscortWebsite() {
             {/* Mobile Menu Button */}
             <div className="lg:hidden flex items-center space-x-2">
               <ThemeToggle />
-              <Button variant="ghost" size="sm" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
                 <Menu className="h-5 w-5" />
               </Button>
             </div>
@@ -236,18 +219,27 @@ export default function EscortWebsite() {
           <div className="lg:hidden pb-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input placeholder="Buscar..." className="pl-10 w-full bg-muted/50 border-border focus:bg-background" />
+              <Input
+                placeholder="Buscar..."
+                className="pl-10 w-full bg-muted/50 border-border focus:bg-background"
+              />
             </div>
           </div>
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
             <div className="lg:hidden border-t bg-background/95 backdrop-blur py-4 space-y-2">
-              <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground">
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-muted-foreground hover:text-foreground"
+              >
                 <Menu className="h-4 w-4 mr-2" />
                 Explorar
               </Button>
-              <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground">
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-muted-foreground hover:text-foreground"
+              >
                 Mi cuenta
               </Button>
               <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
@@ -278,8 +270,8 @@ export default function EscortWebsite() {
                 key={category.id}
                 className={`whitespace-nowrap px-3 lg:px-4 py-2 text-xs lg:text-sm font-medium rounded-full transition-all flex-shrink-0 ${
                   category.active
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
-                    : "text-muted-foreground hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/20"
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'text-muted-foreground hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/20'
                 }`}
               >
                 {category.label}
@@ -341,17 +333,17 @@ export default function EscortWebsite() {
                 </Select>
                 <div className="flex border rounded-lg">
                   <Button
-                    variant={viewMode === "grid" ? "default" : "ghost"}
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
                     size="sm"
-                    onClick={() => setViewMode("grid")}
+                    onClick={() => setViewMode('grid')}
                     className="rounded-r-none px-2 lg:px-3"
                   >
                     <Grid className="h-3 w-3 lg:h-4 lg:w-4" />
                   </Button>
                   <Button
-                    variant={viewMode === "list" ? "default" : "ghost"}
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
                     size="sm"
-                    onClick={() => setViewMode("list")}
+                    onClick={() => setViewMode('list')}
                     className="rounded-l-none px-2 lg:px-3"
                   >
                     <List className="h-3 w-3 lg:h-4 lg:w-4" />
@@ -363,7 +355,9 @@ export default function EscortWebsite() {
             {/* Profiles Grid */}
             <div
               className={`grid gap-4 lg:gap-6 ${
-                viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"
+                viewMode === 'grid'
+                  ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3'
+                  : 'grid-cols-1'
               }`}
             >
               {profiles.map((profile) => (
@@ -373,10 +367,12 @@ export default function EscortWebsite() {
                 >
                   <div className="relative">
                     <img
-                      src={profile.image || "/placeholder.svg"}
+                      src={profile.image || '/placeholder.svg'}
                       alt={profile.name}
                       className={`w-full object-cover group-hover:scale-105 transition-transform duration-300 ${
-                        viewMode === "grid" ? "h-48 sm:h-56 lg:h-64" : "h-40 sm:h-48"
+                        viewMode === 'grid'
+                          ? 'h-48 sm:h-56 lg:h-64'
+                          : 'h-40 sm:h-48'
                       }`}
                     />
                     {profile.featured && (
@@ -450,5 +446,5 @@ export default function EscortWebsite() {
         </div>
       </div>
     </div>
-  )
+  );
 }

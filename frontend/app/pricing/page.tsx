@@ -1,121 +1,132 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Check, Star, Zap, Crown, Sparkles, ArrowRight, Users, Eye, MessageCircle, Shield } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { ThemeToggle } from "@/components/theme-toggle"
-import Link from "next/link"
+import {
+  ArrowRight,
+  Check,
+  Crown,
+  Eye,
+  MessageCircle,
+  Shield,
+  Sparkles,
+  Star,
+  Users,
+  Zap,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useState } from 'react';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 
 const plans = [
   {
-    id: "basico",
-    name: "Básico",
-    description: "Perfecto para empezar",
+    id: 'basico',
+    name: 'Básico',
+    description: 'Perfecto para empezar',
     icon: Users,
     price: { monthly: 50000, yearly: 500000 },
     popular: false,
     features: [
-      "Perfil básico",
-      "Hasta 5 fotos",
-      "Descripción estándar",
-      "Contacto básico",
-      "Soporte por email",
-      "Estadísticas básicas",
+      'Perfil básico',
+      'Hasta 5 fotos',
+      'Descripción estándar',
+      'Contacto básico',
+      'Soporte por email',
+      'Estadísticas básicas',
     ],
-    limitations: ["Sin verificación", "Sin destacar", "Sin videos"],
+    limitations: ['Sin verificación', 'Sin destacar', 'Sin videos'],
   },
   {
-    id: "premium",
-    name: "Premium",
-    description: "El más popular",
+    id: 'premium',
+    name: 'Premium',
+    description: 'El más popular',
     icon: Star,
     price: { monthly: 150000, yearly: 1500000 },
     popular: true,
     features: [
-      "Todo lo del plan Básico",
-      "Hasta 15 fotos",
-      "2 videos incluidos",
-      "Perfil verificado",
-      "Destacar perfil",
-      "Estadísticas avanzadas",
-      "Soporte prioritario",
-      "Chat en tiempo real",
-      "Galería multimedia",
+      'Todo lo del plan Básico',
+      'Hasta 15 fotos',
+      '2 videos incluidos',
+      'Perfil verificado',
+      'Destacar perfil',
+      'Estadísticas avanzadas',
+      'Soporte prioritario',
+      'Chat en tiempo real',
+      'Galería multimedia',
     ],
     limitations: [],
   },
   {
-    id: "vip",
-    name: "VIP",
-    description: "Máxima visibilidad",
+    id: 'vip',
+    name: 'VIP',
+    description: 'Máxima visibilidad',
     icon: Crown,
     price: { monthly: 300000, yearly: 3000000 },
     popular: false,
     features: [
-      "Todo lo del plan Premium",
-      "Fotos ilimitadas",
-      "Videos ilimitados",
-      "Perfil en página principal",
-      "Impulso semanal gratuito",
-      "Soporte 24/7",
-      "Manager personal",
-      "Análisis detallados",
-      "Promoción en redes sociales",
-      "Sesión fotográfica gratuita",
+      'Todo lo del plan Premium',
+      'Fotos ilimitadas',
+      'Videos ilimitados',
+      'Perfil en página principal',
+      'Impulso semanal gratuito',
+      'Soporte 24/7',
+      'Manager personal',
+      'Análisis detallados',
+      'Promoción en redes sociales',
+      'Sesión fotográfica gratuita',
     ],
     limitations: [],
   },
-]
+];
 
 const addOns = [
   {
-    id: "boost",
-    name: "Impulso 24h",
-    description: "Aparece en los primeros resultados durante 24 horas",
+    id: 'boost',
+    name: 'Impulso 24h',
+    description: 'Aparece en los primeros resultados durante 24 horas',
     icon: Zap,
     price: 25000,
-    duration: "24 horas",
+    duration: '24 horas',
   },
   {
-    id: "featured",
-    name: "Perfil Destacado",
-    description: "Tu perfil aparece con una insignia especial",
+    id: 'featured',
+    name: 'Perfil Destacado',
+    description: 'Tu perfil aparece con una insignia especial',
     icon: Sparkles,
     price: 75000,
-    duration: "30 días",
+    duration: '30 días',
   },
   {
-    id: "homepage",
-    name: "Página Principal",
-    description: "Aparece en la página de inicio del sitio",
+    id: 'homepage',
+    name: 'Página Principal',
+    description: 'Aparece en la página de inicio del sitio',
     icon: Eye,
     price: 150000,
-    duration: "7 días",
+    duration: '7 días',
   },
   {
-    id: "verification",
-    name: "Verificación Express",
-    description: "Verificación prioritaria en 24 horas",
+    id: 'verification',
+    name: 'Verificación Express',
+    description: 'Verificación prioritaria en 24 horas',
     icon: Shield,
     price: 50000,
-    duration: "Una vez",
+    duration: 'Una vez',
   },
-]
+];
 
 export default function PricingPage() {
-  const [isYearly, setIsYearly] = useState(false)
+  const [isYearly, setIsYearly] = useState(false);
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
       minimumFractionDigits: 0,
-    }).format(price)
-  }
+    }).format(price);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
@@ -134,7 +145,10 @@ export default function PricingPage() {
             <div className="flex items-center space-x-4">
               <ThemeToggle />
               <Link href="/dashboard">
-                <Button variant="outline" className="hover:bg-muted/50 transition-colors duration-200">
+                <Button
+                  variant="outline"
+                  className="hover:bg-muted/50 transition-colors duration-200"
+                >
                   Dashboard
                 </Button>
               </Link>
@@ -155,26 +169,33 @@ export default function PricingPage() {
             Tarifas y Planes
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Elige el plan perfecto para tu perfil. Aumenta tu visibilidad y conecta con más clientes.
+            Elige el plan perfecto para tu perfil. Aumenta tu visibilidad y
+            conecta con más clientes.
           </p>
 
           {/* Billing Toggle */}
           <div className="flex items-center justify-center space-x-4 mb-8">
             <Label
               htmlFor="billing-toggle"
-              className={`text-sm font-medium ${!isYearly ? "text-foreground" : "text-muted-foreground"}`}
+              className={`text-sm font-medium ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}
             >
               Mensual
             </Label>
-            <Switch id="billing-toggle" checked={isYearly} onCheckedChange={setIsYearly} />
+            <Switch
+              id="billing-toggle"
+              checked={isYearly}
+              onCheckedChange={setIsYearly}
+            />
             <Label
               htmlFor="billing-toggle"
-              className={`text-sm font-medium ${isYearly ? "text-foreground" : "text-muted-foreground"}`}
+              className={`text-sm font-medium ${isYearly ? 'text-foreground' : 'text-muted-foreground'}`}
             >
               Anual
             </Label>
             {isYearly && (
-              <Badge className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100">Ahorra 17%</Badge>
+              <Badge className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100">
+                Ahorra 17%
+              </Badge>
             )}
           </div>
         </div>
@@ -185,7 +206,9 @@ export default function PricingPage() {
             <Card
               key={plan.id}
               className={`relative overflow-hidden transition-all duration-500 hover:shadow-2xl animate-in zoom-in-50 ${
-                plan.popular ? "border-purple-500 shadow-lg shadow-purple-500/25 scale-105" : "hover:border-purple-300"
+                plan.popular
+                  ? 'border-purple-500 shadow-lg shadow-purple-500/25 scale-105'
+                  : 'hover:border-purple-300'
               }`}
               style={{ animationDelay: `${index * 200}ms` }}
             >
@@ -195,40 +218,60 @@ export default function PricingPage() {
                 </div>
               )}
 
-              <CardHeader className={`text-center ${plan.popular ? "pt-12" : "pt-6"}`}>
+              <CardHeader
+                className={`text-center ${plan.popular ? 'pt-12' : 'pt-6'}`}
+              >
                 <div className="flex justify-center mb-4">
                   <div
                     className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                      plan.popular ? "bg-gradient-to-r from-purple-600 to-pink-600" : "bg-muted"
+                      plan.popular
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600'
+                        : 'bg-muted'
                     }`}
                   >
-                    <plan.icon className={`h-8 w-8 ${plan.popular ? "text-white" : "text-muted-foreground"}`} />
+                    <plan.icon
+                      className={`h-8 w-8 ${plan.popular ? 'text-white' : 'text-muted-foreground'}`}
+                    />
                   </div>
                 </div>
-                <CardTitle className="text-2xl font-bold text-foreground">{plan.name}</CardTitle>
+                <CardTitle className="text-2xl font-bold text-foreground">
+                  {plan.name}
+                </CardTitle>
                 <p className="text-muted-foreground">{plan.description}</p>
                 <div className="mt-4">
                   <span className="text-4xl font-bold text-foreground">
-                    {formatPrice(isYearly ? plan.price.yearly : plan.price.monthly)}
+                    {formatPrice(
+                      isYearly ? plan.price.yearly : plan.price.monthly,
+                    )}
                   </span>
-                  <span className="text-muted-foreground">/{isYearly ? "año" : "mes"}</span>
+                  <span className="text-muted-foreground">
+                    /{isYearly ? 'año' : 'mes'}
+                  </span>
                 </div>
               </CardHeader>
 
               <CardContent className="space-y-4">
                 <div className="space-y-3">
                   {plan.features.map((feature, featureIndex) => (
-                    <div key={featureIndex} className="flex items-center space-x-3">
+                    <div
+                      key={featureIndex}
+                      className="flex items-center space-x-3"
+                    >
                       <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
                       <span className="text-sm text-foreground">{feature}</span>
                     </div>
                   ))}
                   {plan.limitations.map((limitation, limitationIndex) => (
-                    <div key={limitationIndex} className="flex items-center space-x-3 opacity-50">
+                    <div
+                      key={limitationIndex}
+                      className="flex items-center space-x-3 opacity-50"
+                    >
                       <div className="h-4 w-4 flex-shrink-0 flex items-center justify-center">
                         <div className="h-0.5 w-3 bg-muted-foreground"></div>
                       </div>
-                      <span className="text-sm text-muted-foreground line-through">{limitation}</span>
+                      <span className="text-sm text-muted-foreground line-through">
+                        {limitation}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -236,8 +279,8 @@ export default function PricingPage() {
                 <Button
                   className={`w-full mt-6 ${
                     plan.popular
-                      ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                      : "bg-muted hover:bg-muted/80 text-foreground"
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white'
+                      : 'bg-muted hover:bg-muted/80 text-foreground'
                   } transition-all duration-200 hover:scale-105`}
                 >
                   Elegir {plan.name}
@@ -255,7 +298,8 @@ export default function PricingPage() {
               Servicios Adicionales
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Potencia tu perfil con nuestros servicios adicionales y obtén mayor visibilidad.
+              Potencia tu perfil con nuestros servicios adicionales y obtén
+              mayor visibilidad.
             </p>
           </div>
 
@@ -272,14 +316,22 @@ export default function PricingPage() {
                       <addon.icon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                     </div>
                   </div>
-                  <CardTitle className="text-lg font-semibold text-foreground">{addon.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{addon.description}</p>
+                  <CardTitle className="text-lg font-semibold text-foreground">
+                    {addon.name}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {addon.description}
+                  </p>
                 </CardHeader>
 
                 <CardContent className="text-center">
                   <div className="mb-4">
-                    <span className="text-2xl font-bold text-foreground">{formatPrice(addon.price)}</span>
-                    <p className="text-xs text-muted-foreground mt-1">{addon.duration}</p>
+                    <span className="text-2xl font-bold text-foreground">
+                      {formatPrice(addon.price)}
+                    </span>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {addon.duration}
+                    </p>
                   </div>
                   <Button
                     variant="outline"
@@ -295,13 +347,18 @@ export default function PricingPage() {
 
         {/* FAQ Section */}
         <div className="text-center animate-in fade-in-50 slide-in-from-bottom-8 duration-900">
-          <h2 className="text-3xl font-bold text-foreground mb-4">¿Tienes preguntas?</h2>
+          <h2 className="text-3xl font-bold text-foreground mb-4">
+            ¿Tienes preguntas?
+          </h2>
           <p className="text-lg text-muted-foreground mb-8">
             Consulta nuestras preguntas frecuentes o contáctanos directamente.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/faq">
-              <Button variant="outline" className="hover:bg-muted/50 transition-colors duration-200">
+              <Button
+                variant="outline"
+                className="hover:bg-muted/50 transition-colors duration-200"
+              >
                 Ver FAQ
               </Button>
             </Link>
@@ -320,5 +377,5 @@ export default function PricingPage() {
         </Badge>
       </div>
     </div>
-  )
+  );
 }

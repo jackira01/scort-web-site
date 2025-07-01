@@ -1,127 +1,130 @@
-"use client"
+'use client';
 
-import { useState } from "react"
 import {
-  User,
-  MessageCircle,
-  Receipt,
-  Settings,
-  Edit,
   BarChart3,
   Bell,
-  CheckCircle,
-  Star,
-  Eye,
   Calendar,
+  CheckCircle,
+  Edit,
+  Eye,
   MapPin,
+  MessageCircle,
   Plus,
+  Receipt,
+  Settings,
+  Star,
+  User,
   Zap,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
-import { ThemeToggle } from "@/components/theme-toggle"
-import Link from "next/link"
+} from 'lucide-react';
+import Link from 'next/link';
+import { useState } from 'react';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 
 const sidebarItems = [
   {
-    id: "perfil",
-    label: "Mi Perfil",
+    id: 'perfil',
+    label: 'Mi Perfil',
     icon: User,
-    badge: "4",
-    description: "Aquí puede ver, administrar y actualizar su perfiles existente.",
+    badge: '4',
+    description:
+      'Aquí puede ver, administrar y actualizar su perfiles existente.',
     active: true,
   },
   {
-    id: "mensajes",
-    label: "Mensajes",
+    id: 'mensajes',
+    label: 'Mensajes',
     icon: MessageCircle,
-    badge: "12",
-    description: "Aquí puedes chatear con otros usuarios usando nuestro sistema de mensajes privados.",
+    badge: '12',
+    description:
+      'Aquí puedes chatear con otros usuarios usando nuestro sistema de mensajes privados.',
     active: false,
   },
   {
-    id: "facturas",
-    label: "Saldo y Facturas",
+    id: 'facturas',
+    label: 'Saldo y Facturas',
     icon: Receipt,
     badge: null,
-    description: "Vea el saldo de su cuenta, las facturas y los retiros recientes aquí.",
+    description:
+      'Vea el saldo de su cuenta, las facturas y los retiros recientes aquí.',
     active: false,
   },
   {
-    id: "ajustes",
-    label: "Ajustes",
+    id: 'ajustes',
+    label: 'Ajustes',
     icon: Settings,
     badge: null,
     description:
-      "Los detalles de contacto, correo electrónico, contraseña y otros detalles de la cuenta se pueden encontrar aquí.",
+      'Los detalles de contacto, correo electrónico, contraseña y otros detalles de la cuenta se pueden encontrar aquí.',
     active: false,
   },
-]
+];
 
 const userProfiles = [
   {
     id: 1,
-    name: "Jane Ximena",
+    name: 'Jane Ximena',
     age: 23,
-    category: "ESCORT",
-    location: "Bogotá",
-    image: "/placeholder.svg?height=120&width=120",
-    views: "5.1k",
+    category: 'ESCORT',
+    location: 'Bogotá',
+    image: '/placeholder.svg?height=120&width=120',
+    views: '5.1k',
     rating: 4.9,
-    status: "Activo",
+    status: 'Activo',
     verified: true,
     featured: true,
   },
   {
     id: 2,
-    name: "Sofia Martinez",
+    name: 'Sofia Martinez',
     age: 25,
-    category: "ESCORT",
-    location: "Medellín",
-    image: "/placeholder.svg?height=120&width=120",
-    views: "3.8k",
+    category: 'ESCORT',
+    location: 'Medellín',
+    image: '/placeholder.svg?height=120&width=120',
+    views: '3.8k',
     rating: 4.7,
-    status: "Activo",
+    status: 'Activo',
     verified: true,
     featured: false,
   },
   {
     id: 3,
-    name: "Isabella Rodriguez",
+    name: 'Isabella Rodriguez',
     age: 24,
-    category: "VIRTUAL",
-    location: "Cali",
-    image: "/placeholder.svg?height=120&width=120",
-    views: "2.9k",
+    category: 'VIRTUAL',
+    location: 'Cali',
+    image: '/placeholder.svg?height=120&width=120',
+    views: '2.9k',
     rating: 4.8,
-    status: "Pausado",
+    status: 'Pausado',
     verified: true,
     featured: true,
   },
   {
     id: 4,
-    name: "Camila Torres",
+    name: 'Camila Torres',
     age: 26,
-    category: "ESCORT",
-    location: "Cartagena",
-    image: "/placeholder.svg?height=120&width=120",
-    views: "4.2k",
+    category: 'ESCORT',
+    location: 'Cartagena',
+    image: '/placeholder.svg?height=120&width=120',
+    views: '4.2k',
     rating: 4.6,
-    status: "Activo",
+    status: 'Activo',
     verified: false,
     featured: false,
   },
-]
+];
 
 export default function DashboardPage() {
-  const [activeSection, setActiveSection] = useState("perfil")
+  const [activeSection, setActiveSection] = useState('perfil');
 
   const renderContent = () => {
     switch (activeSection) {
-      case "perfil":
+      case 'perfil':
         return (
           <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
             <div className="flex items-center justify-between">
@@ -145,12 +148,15 @@ export default function DashboardPage() {
                     <div className="flex items-start space-x-4">
                       <div className="relative">
                         <Avatar className="h-20 w-20 border-2 border-purple-500/20 group-hover:border-purple-500/50 transition-all duration-300">
-                          <AvatarImage src={profile.image || "/placeholder.svg"} alt={profile.name} />
+                          <AvatarImage
+                            src={profile.image || '/placeholder.svg'}
+                            alt={profile.name}
+                          />
                           <AvatarFallback className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 text-lg font-semibold">
                             {profile.name
-                              .split(" ")
+                              .split(' ')
                               .map((n) => n[0])
-                              .join("")}
+                              .join('')}
                           </AvatarFallback>
                         </Avatar>
                         {profile.featured && (
@@ -166,11 +172,15 @@ export default function DashboardPage() {
                             {profile.name}
                           </h3>
                           <Badge
-                            variant={profile.status === "Activo" ? "default" : "secondary"}
+                            variant={
+                              profile.status === 'Activo'
+                                ? 'default'
+                                : 'secondary'
+                            }
                             className={
-                              profile.status === "Activo"
-                                ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100"
-                                : ""
+                              profile.status === 'Activo'
+                                ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
+                                : ''
                             }
                           >
                             {profile.status}
@@ -200,7 +210,9 @@ export default function DashboardPage() {
                             <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
                             {profile.rating}
                           </span>
-                          {profile.verified && <CheckCircle className="h-4 w-4 text-green-500" />}
+                          {profile.verified && (
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          )}
                         </div>
                       </div>
                     </div>
@@ -240,9 +252,9 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-        )
+        );
 
-      case "mensajes":
+      case 'mensajes':
         return (
           <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -251,9 +263,12 @@ export default function DashboardPage() {
             <Card className="bg-card border-border">
               <CardContent className="p-8 text-center">
                 <MessageCircle className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">Sistema de Mensajes</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  Sistema de Mensajes
+                </h3>
                 <p className="text-muted-foreground mb-4">
-                  Aquí puedes chatear con otros usuarios usando nuestro sistema de mensajes privados.
+                  Aquí puedes chatear con otros usuarios usando nuestro sistema
+                  de mensajes privados.
                 </p>
                 <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
                   Abrir Chat
@@ -261,9 +276,9 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
-        )
+        );
 
-      case "facturas":
+      case 'facturas':
         return (
           <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -274,7 +289,9 @@ export default function DashboardPage() {
                 <CardContent className="p-6">
                   <h3 className="text-lg font-semibold mb-2">Saldo Actual</h3>
                   <p className="text-3xl font-bold">$2,450.00</p>
-                  <p className="text-sm opacity-90 mt-1">Disponible para retiro</p>
+                  <p className="text-sm opacity-90 mt-1">
+                    Disponible para retiro
+                  </p>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-r from-blue-500 to-cyan-600 text-white">
@@ -294,7 +311,9 @@ export default function DashboardPage() {
             </div>
             <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-foreground">Facturas Recientes</CardTitle>
+                <CardTitle className="text-foreground">
+                  Facturas Recientes
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -304,8 +323,12 @@ export default function DashboardPage() {
                       className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors duration-200"
                     >
                       <div>
-                        <p className="font-medium text-foreground">Factura #{String(item).padStart(4, "0")}</p>
-                        <p className="text-sm text-muted-foreground">Servicios de plataforma - Diciembre 2024</p>
+                        <p className="font-medium text-foreground">
+                          Factura #{String(item).padStart(4, '0')}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Servicios de plataforma - Diciembre 2024
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-foreground">$125.00</p>
@@ -319,9 +342,9 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
-        )
+        );
 
-      case "ajustes":
+      case 'ajustes':
         return (
           <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -330,19 +353,27 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="text-foreground">Información Personal</CardTitle>
+                  <CardTitle className="text-foreground">
+                    Información Personal
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Nombre completo</label>
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Nombre completo
+                    </label>
                     <p className="text-foreground">Nicolas Alvarez</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Email</label>
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Email
+                    </label>
                     <p className="text-foreground">nicolas@example.com</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Teléfono</label>
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Teléfono
+                    </label>
                     <p className="text-foreground">+57 300 123 4567</p>
                   </div>
                   <Button
@@ -360,14 +391,18 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-foreground">Autenticación de dos factores</span>
+                    <span className="text-foreground">
+                      Autenticación de dos factores
+                    </span>
                     <Badge variant="outline" className="text-green-600">
                       Activo
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-foreground">Última sesión</span>
-                    <span className="text-muted-foreground text-sm">Hace 2 horas</span>
+                    <span className="text-muted-foreground text-sm">
+                      Hace 2 horas
+                    </span>
                   </div>
                   <Button
                     variant="outline"
@@ -379,12 +414,12 @@ export default function DashboardPage() {
               </Card>
             </div>
           </div>
-        )
+        );
 
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
@@ -394,14 +429,21 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <Avatar className="h-10 w-10 border-2 border-purple-500/20">
-                <AvatarImage src="/placeholder.svg?height=40&width=40" alt="Nicolas Alvarez" />
+                <AvatarImage
+                  src="/placeholder.svg?height=40&width=40"
+                  alt="Nicolas Alvarez"
+                />
                 <AvatarFallback className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 font-semibold">
                   NA
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h2 className="font-semibold text-foreground">NICOLAS ALVAREZ</h2>
-                <p className="text-xs text-muted-foreground">Agencia • nicolasalvarez30@gmail.com</p>
+                <h2 className="font-semibold text-foreground">
+                  NICOLAS ALVAREZ
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Agencia • nicolasalvarez30@gmail.com
+                </p>
               </div>
             </div>
 
@@ -449,24 +491,28 @@ export default function DashboardPage() {
                       onClick={() => setActiveSection(item.id)}
                       className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 group animate-in slide-in-from-left-2 ${
                         activeSection === item.id
-                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                       }`}
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <item.icon
-                        className={`h-5 w-5 ${activeSection === item.id ? "text-white" : "group-hover:text-purple-600"} transition-colors duration-200`}
+                        className={`h-5 w-5 ${activeSection === item.id ? 'text-white' : 'group-hover:text-purple-600'} transition-colors duration-200`}
                       />
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <span className="font-medium">{item.label}</span>
                           {item.badge && (
                             <Badge
-                              variant={activeSection === item.id ? "secondary" : "default"}
+                              variant={
+                                activeSection === item.id
+                                  ? 'secondary'
+                                  : 'default'
+                              }
                               className={`text-xs ${
                                 activeSection === item.id
-                                  ? "bg-white/20 text-white"
-                                  : "bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-100"
+                                  ? 'bg-white/20 text-white'
+                                  : 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-100'
                               }`}
                             >
                               {item.badge}
@@ -475,7 +521,9 @@ export default function DashboardPage() {
                         </div>
                         <p
                           className={`text-xs mt-1 ${
-                            activeSection === item.id ? "text-white/80" : "text-muted-foreground"
+                            activeSection === item.id
+                              ? 'text-white/80'
+                              : 'text-muted-foreground'
                           }`}
                         >
                           {item.description}
@@ -500,5 +548,5 @@ export default function DashboardPage() {
         </Badge>
       </div>
     </div>
-  )
+  );
 }
