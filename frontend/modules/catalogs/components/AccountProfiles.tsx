@@ -33,11 +33,11 @@ interface ProfileListProps {
   getProgressTextColor: (percentage: number) => string;
 }
 
-export default function ProfileList({
+const AccountProfiles = ({
   profiles,
   getProgressColor,
   getProgressTextColor,
-}: ProfileListProps) {
+}: ProfileListProps) => {
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <div className="flex items-center justify-between">
@@ -167,4 +167,6 @@ export default function ProfileList({
       </div>
     </div>
   );
-}
+};
+
+export default AccountProfiles;

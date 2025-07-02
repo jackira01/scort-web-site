@@ -1,34 +1,14 @@
-import { Receipt, Settings, User } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
-const sidebarItems = [
-  {
-    id: 'perfiles',
-    label: 'Mis Perfiles',
-    icon: User,
-    description: 'Administra y visualiza todos tus perfiles activos.',
-  },
-  {
-    id: 'pagos',
-    label: 'Historial de Pagos',
-    icon: Receipt,
-    description: 'Revisa tu historial completo de transacciones y pagos.',
-  },
-  {
-    id: 'ajustes',
-    label: 'Ajustes',
-    icon: Settings,
-    description: 'Configura tu cuenta, privacidad y preferencias.',
-  },
-];
+import { sidebarItems } from '../data';
 
-export default function Sidebar({
+const AccountSidebar = ({
   activeSection,
   setActiveSection,
 }: {
   activeSection: string;
   setActiveSection: (id: string) => void;
-}) {
+}) => {
   return (
     <div className="w-80 space-y-2 animate-in slide-in-from-left-4 duration-500">
       <Card className="bg-card border-border shadow-sm">
@@ -68,4 +48,6 @@ export default function Sidebar({
       </Card>
     </div>
   );
-}
+};
+
+export default AccountSidebar;

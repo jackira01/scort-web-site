@@ -169,7 +169,7 @@ export const userProfiles = [
   },
 ];
 
-export const paymentHistory = [
+export const paymentHistoryData = [
   {
     id: 1,
     date: '2024-12-15',

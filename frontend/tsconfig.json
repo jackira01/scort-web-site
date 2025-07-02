@@ -30,5 +30,5 @@
     "next-env.d.ts",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["modules/node_modules"]
 }

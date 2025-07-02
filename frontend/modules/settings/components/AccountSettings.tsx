@@ -2,10 +2,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function AccountSettings() {
+const AccountSettings = () => {
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
-      <h1 className="text-2xl lg:text-3xl font-bold text-foreground bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+      <h1 className="text-2xl lg:text-3xl font-bold  bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
         Ajustes de Cuenta
       </h1>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -17,22 +17,44 @@ export default function AccountSettings() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">
+              <label
+                htmlFor="fullName"
+                className="text-sm font-medium text-muted-foreground"
+              >
                 Nombre completo
               </label>
-              <p className="text-foreground">Nicolas Alvarez</p>
+              <input
+                id="fullName"
+                type="text"
+                className="text-foreground bg-transparent border-none p-0 m-0 focus:ring-0"
+                value="Nicolas Alvarez"
+                readOnly
+                tabIndex={-1}
+                aria-readonly="true"
+              />
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">
+              <span className="text-sm font-medium text-muted-foreground">
                 Email
-              </label>
+              </span>
               <p className="text-foreground">tecnologico03@gmail.com</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">
+              <label
+                htmlFor="accountType"
+                className="text-sm font-medium text-muted-foreground"
+              >
                 Tipo de cuenta
               </label>
-              <p className="text-foreground">Agencia</p>
+              <input
+                id="accountType"
+                type="text"
+                className="text-foreground bg-transparent border-none p-0 m-0 focus:ring-0"
+                value="Agencia"
+                readOnly
+                tabIndex={-1}
+                aria-readonly="true"
+              />
             </div>
             <Button
               variant="outline"
@@ -98,15 +120,15 @@ export default function AccountSettings() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">
+              <span className="text-sm font-medium text-muted-foreground">
                 Plan actual
-              </label>
+              </span>
               <p className="text-foreground font-semibold">Premium Plus</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">
+              <span className="text-sm font-medium text-muted-foreground">
                 Próxima facturación
-              </label>
+              </span>
               <p className="text-foreground">15 de Enero, 2025</p>
             </div>
             <Button
@@ -120,4 +142,6 @@ export default function AccountSettings() {
       </div>
     </div>
   );
-}
+};
+
+export default AccountSettings;

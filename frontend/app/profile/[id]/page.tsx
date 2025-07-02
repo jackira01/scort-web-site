@@ -1,26 +1,19 @@
 'use client';
 
 import {
-  ArrowLeft,
   CheckCircle,
   Clock,
   DollarSign,
-  Heart,
-  MapPin,
   MessageCircle,
   Pause,
   Phone,
   Play,
-  Share2,
   Star,
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useState } from 'react';
-import HeaderComponent from '@/components/MainHeader/MainHeader';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import HeaderComponent from '@/components/header/Header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -151,6 +144,7 @@ export default function ProfileDetailPage({
               <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                 {profileData.images.map((image, index) => (
                   <button
+                    type="button"
                     key={index}
                     onClick={() => setSelectedImage(index)}
                     className={`relative overflow-hidden rounded-lg aspect-square group transition-all duration-200 ${
@@ -189,9 +183,9 @@ export default function ProfileDetailPage({
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {profileData.services.map((service, index) => (
+                    {profileData.services.map((service) => (
                       <div
-                        key={index}
+                        key={service}
                         className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors duration-200"
                       >
                         <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
@@ -210,7 +204,7 @@ export default function ProfileDetailPage({
           <div className="lg:col-span-1 space-y-6">
             {/* Profile Header */}
             <div className="text-center animate-in fade-in-50 slide-in-from-right-4 duration-500">
-              <h2 className="text-2xl font-bold text-foreground bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                 {profileData.name}
               </h2>
               <p className="text-muted-foreground">

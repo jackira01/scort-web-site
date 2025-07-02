@@ -15,10 +15,10 @@ interface PaymentHistoryProps {
   payments: Payment[];
 }
 
-export default function PaymentHistory({ payments }: PaymentHistoryProps) {
+const PaymentHistory = ({ payments }: PaymentHistoryProps) => {
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
-      <h1 className="text-2xl lg:text-3xl font-bold text-foreground bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+      <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
         Historial de Pagos
       </h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -109,4 +109,6 @@ export default function PaymentHistory({ payments }: PaymentHistoryProps) {
       </Card>
     </div>
   );
-}
+};
+
+export default PaymentHistory;
