@@ -2,27 +2,17 @@
 
 import { Badge } from '@/components/ui/badge';
 import AccountContent from '@/modules/account/components/AccountContent';
-import AccountHeader from '@/modules/account/components/AccountHeader';
 import AccountProgressBar from '@/modules/account/components/AccountProgressBar';
 import AccountSidebar from '@/modules/account/components/AccountSidebar'; // si es exclusivo de account
 import { useAccountSection } from '@/modules/account/hooks/useAccountSection';
-import {
-  getProgressColor,
-  getProgressTextColor,
-} from '@/modules/account/utils/getProgressColor';
 
 export default function AccountPage() {
   const { activeSection, setActiveSection } = useAccountSection();
-  const accountCompleteness = 73;
+  const accountCompleteness = 65;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
-      <AccountHeader />
-      <AccountProgressBar
-        percentage={accountCompleteness}
-        getProgressColor={getProgressColor}
-        getProgressTextColor={getProgressTextColor}
-      />
+      <AccountProgressBar percentage={accountCompleteness} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-8">
           <AccountSidebar

@@ -1,13 +1,14 @@
+import {
+  getProgressColor,
+  getProgressTextColor,
+} from '../utils/getProgressColor';
+
 interface AccountProgressBarProps {
   percentage: number;
-  getProgressColor: (percentage: number) => string;
-  getProgressTextColor: (percentage: number) => string;
 }
 
 export default function AccountProgressBar({
   percentage,
-  getProgressColor,
-  getProgressTextColor,
 }: AccountProgressBarProps) {
   return (
     <div className="bg-background/50 backdrop-blur border-b transition-all duration-300">

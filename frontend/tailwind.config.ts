@@ -8,6 +8,12 @@ const config: Config = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     '*.{js,ts,jsx,tsx,mdx}',
   ],
+  safelist: [
+    'bg-green-500',
+    'bg-orange-500',
+    'bg-red-500',
+    // agrega aquí todos los colores que uses dinámicamente
+  ],
   theme: {
     extend: {
       colors: {

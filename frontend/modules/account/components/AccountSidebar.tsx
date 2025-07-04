@@ -1,5 +1,5 @@
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
-
 import { sidebarItems } from '../data';
 
 const AccountSidebar = ({
@@ -13,6 +13,23 @@ const AccountSidebar = ({
     <div className="w-80 space-y-2 animate-in slide-in-from-left-4 duration-500">
       <Card className="bg-card border-border shadow-sm">
         <CardContent className="p-6">
+          <div className="flex items-center space-x-4 mb-6">
+            <Avatar className="h-10 w-10 border-2 border-purple-500/20">
+              <AvatarImage
+                src="/placeholder.svg?height=40&width=40"
+                alt="Nicolas Alvarez"
+              />
+              <AvatarFallback className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 font-semibold">
+                NA
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h2 className="font-semibold text-foreground">NICOLAS ALVAREZ</h2>
+              <p className="text-xs text-muted-foreground">
+                Agencia • tecnologico03@gmail.com
+              </p>
+            </div>
+          </div>
           <nav className="space-y-2">
             {sidebarItems.map((item, index) => (
               <button

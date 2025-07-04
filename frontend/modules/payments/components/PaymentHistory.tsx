@@ -21,7 +21,7 @@ const PaymentHistory = ({ payments }: PaymentHistoryProps) => {
       <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
         Historial de Pagos
       </h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
           <CardContent className="p-6">
             <div className="flex items-center space-x-2">
@@ -55,7 +55,7 @@ const PaymentHistory = ({ payments }: PaymentHistoryProps) => {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
       <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground">

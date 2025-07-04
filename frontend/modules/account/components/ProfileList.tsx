@@ -6,6 +6,7 @@ import {
   MapPin,
   Plus,
   Star,
+  Zap,
 } from 'lucide-react';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
@@ -44,10 +45,17 @@ export default function ProfileList({
         <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
           Mis Perfiles
         </h1>
-        <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25">
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Perfil
-        </Button>
+        <div className="gap-2 flex items-center">
+          <Button className="bg-gradient-to-r from-blue-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25">
+            <Zap className="h-4 w-4 mr-2" />
+            Impulsarme
+          </Button>
+
+          <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25">
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Perfil
+          </Button>
+        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {profiles.map((profile, index) => (
