@@ -24,7 +24,7 @@ const HeaderComponent = () => {
           <div className="flex items-center space-x-4 lg:space-x-8">
             <div className="flex-shrink-0">
               <Link href="/">
-                <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent hover:scale-105 transition-transform duration-200 cursor-pointer">
+                <h1 className="text-xl lg:text-2xl font-bold title-gradient bg-clip-text text-transparent hover:scale-105 transition-transform duration-200 cursor-pointer">
                   Online Escorts
                 </h1>
               </Link>
@@ -44,15 +44,6 @@ const HeaderComponent = () => {
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-4">
             <ThemeToggle />
-            <Select defaultValue="español">
-              <SelectTrigger className="w-24 border-none bg-transparent hover:bg-muted/50 transition-colors duration-200">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="español">🇪🇸 ES</SelectItem>
-                <SelectItem value="english">🇺🇸 EN</SelectItem>
-              </SelectContent>
-            </Select>
             <Button
               variant="ghost"
               className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
@@ -68,9 +59,9 @@ const HeaderComponent = () => {
                 Mi cuenta
               </Button>
             </Link>
-            <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25">
+            {/* <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25">
               Cerrar sesión
-            </Button>
+            </Button> */}
           </div>
 
           {/* Mobile Menu Button */}
@@ -114,9 +105,9 @@ const HeaderComponent = () => {
             >
               Mi cuenta
             </Button>
-            <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all duration-200">
+            {/*  <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all duration-200">
               Cerrar sesión
-            </Button>
+            </Button> */}
             <div className="flex items-center justify-center pt-2">
               <Select defaultValue="español">
                 <SelectTrigger className="w-32">

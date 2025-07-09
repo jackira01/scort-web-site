@@ -7,7 +7,7 @@ const HomeProfiles = () => {
     <div className="animate-in fade-in-50 slide-in-from-bottom-6 duration-700">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl lg:text-3xl font-bold  bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl lg:text-3xl font-bold title-gradient bg-clip-text text-transparent">
             Scorts populares
           </h2>
           <p className="text-muted-foreground mt-1">Personas destacadas</p>

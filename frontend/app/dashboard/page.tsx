@@ -35,7 +35,7 @@ const sidebarItems = [
       'Aquí puede ver, administrar y actualizar su perfiles existente.',
     active: true,
   },
-  {
+  /* {
     id: 'mensajes',
     label: 'Mensajes',
     icon: MessageCircle,
@@ -43,7 +43,7 @@ const sidebarItems = [
     description:
       'Aquí puedes chatear con otros usuarios usando nuestro sistema de mensajes privados.',
     active: false,
-  },
+  }, */
   {
     id: 'facturas',
     label: 'Saldo y Facturas',
@@ -254,7 +254,7 @@ export default function DashboardPage() {
           </div>
         );
 
-      case 'mensajes':
+      /* case 'mensajes':
         return (
           <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -276,7 +276,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
-        );
+        ); */
 
       case 'facturas':
         return (
@@ -424,59 +424,6 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
       {/* Header */}
-      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-b transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-10 w-10 border-2 border-purple-500/20">
-                <AvatarImage
-                  src="/placeholder.svg?height=40&width=40"
-                  alt="Nicolas Alvarez"
-                />
-                <AvatarFallback className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 font-semibold">
-                  NA
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h2 className="font-semibold text-foreground">
-                  NICOLAS ALVAREZ
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Agencia • nicolasalvarez30@gmail.com
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2 lg:space-x-4">
-              <ThemeToggle />
-              <Button
-                size="sm"
-                variant="outline"
-                className="hidden sm:flex hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500 transition-all duration-200"
-              >
-                <Zap className="h-4 w-4 mr-2" />
-                Impulsarme
-              </Button>
-              <Button
-                size="sm"
-                className="hidden sm:flex bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white hover:scale-105 transition-all duration-200"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar perfil
-              </Button>
-              <Link href="/">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-500 transition-all duration-200"
-                >
-                  Cerrar sesión
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-8">
