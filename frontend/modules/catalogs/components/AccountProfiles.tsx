@@ -8,6 +8,7 @@ import {
   Star,
 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -144,14 +145,16 @@ const AccountProfiles = ({
                   </div>
                 </div>
                 <div className="flex space-x-2 pt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500 transition-all duration-200"
-                  >
-                    <Edit className="h-3 w-3 mr-1" />
-                    Editar
-                  </Button>
+                  <Link href={`/create-profile/${profile.id}`}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500 transition-all duration-200"
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Editar
+                    </Button>
+                  </Link>
                   <Button
                     size="sm"
                     className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"

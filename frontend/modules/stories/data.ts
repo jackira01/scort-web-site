@@ -56,3 +56,27 @@ export const profiles = [
     hasVideo: false,
   },
 ];
+
+export const stories = [
+  {
+    id: 1,
+    user: 'Sofia Martinez',
+    avatar: '/placeholder.svg?height=60&width=60',
+    hasNew: true,
+    timestamp: '2h',
+  },
+  {
+    id: 2,
+    user: 'Isabella Rodriguez',
+    avatar: '/placeholder.svg?height=60&width=60',
+    hasNew: true,
+    timestamp: '4h',
+  },
+  {
+    id: 3,
+    user: 'Camila Torres',
+    avatar: '/placeholder.svg?height=60&width=60',
+    hasNew: false,
+    timestamp: '1d',
+  },
+];

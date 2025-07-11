@@ -6,9 +6,9 @@ import CategoriesFilter from '@/modules/filters/components/CategoriesFilter';
 import FilterBar from '@/modules/filters/components/FilterBar';
 import StoriesCards from '@/modules/stories/components/storiesCards';
 
-export default function StoriesPage() {
+export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
+    <div className="min-h-screen dark:bg-background transition-all duration-500">
       <CategoriesFilter />
       <FilterBar />
 

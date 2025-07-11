@@ -1,18 +1,18 @@
-import { stories } from '@/utils/MockedData';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Play } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { stories } from '@/modules/stories/data';
 
 const StoriesCards = () => {
   return (
     <div className="mb-12 animate-in fade-in-50 slide-in-from-bottom-4 duration-500">
-      <h2 className="text-2xl lg:text-3xl font-bold  mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+      <h2 className="text-2xl lg:text-3xl font-bold  title-gradient bg-clip-text text-transparent m-0 mb-4">
         Últimas historias
       </h2>
       <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
         {stories.map((story, index) => (
           <div
             key={story.id}
-            className="flex-shrink-0 cursor-pointer group animate-in zoom-in-50"
+            className="flex-shrink-0 cursor-pointer group animate-in zoom-in-50 flex flex-col items-center"
             style={{ animationDelay: `${index * 150}ms` }}
           >
             <div className="relative">

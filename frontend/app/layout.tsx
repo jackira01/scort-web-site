@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import type React from 'react';
-import './globals.css';
+import '@/styles/globals.css';
 import HeaderComponent from '@/components/header/Header';
 import { ThemeProvider } from '@/components/theme-provider';
 
