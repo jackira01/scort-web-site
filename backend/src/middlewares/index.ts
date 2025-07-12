@@ -1,0 +1,3 @@
+module.exports = {
+  // ...exportar aquí los middlewares que tengas definidos...
+};
