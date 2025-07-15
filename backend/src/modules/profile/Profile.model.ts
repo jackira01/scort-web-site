@@ -9,10 +9,14 @@ export interface IProfile extends Document {
     state: string;
     city: string;
   };
-  physical_features: {
-    age: number;
+  features: {
+    age: number; 
+    sex: string;
+    gender: string;
     eyes: string;
     height: number;
+    bodyType: string;
+    hairColor: string;
   };
   media: {
     gallery: string[];
@@ -38,7 +42,11 @@ const profileSchema = new Schema<IProfile>(
       state: String,
       city: String,
     },
-    physical_features: {
+    features: {
+      bodyType: String,
+      hairColor: String,
+      sex: String,
+      gender: String,
       age: Number,
       eyes: String,
       height: Number,
