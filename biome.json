@@ -6,20 +6,18 @@
     "useIgnoreFile": false
   },
   "files": {
-    "ignoreUnknown": false
+    "ignoreUnknown": true
   },
   "formatter": {
     "enabled": true,
     "indentStyle": "space"
   },
-
   "linter": {
     "enabled": true,
     "rules": {
       "recommended": true
     }
   },
-
   "javascript": {
     "formatter": {
       "indentStyle": "space",

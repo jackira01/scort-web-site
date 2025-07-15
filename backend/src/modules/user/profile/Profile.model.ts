@@ -1,16 +1,16 @@
 import mongoose, { type Document, Schema } from 'mongoose';
-import type { IAvailability } from '../availability/Availability.model';
+import type { IAvailability } from './availability/Availability.model';
 export interface IProfile extends Document {
   user: mongoose.Types.ObjectId;
   name: string;
   description: string;
   location: {
     country: string;
-    state: string;
-    city: string;
+    department: string;
+    municipality: string;
   };
   features: {
-    age: number; 
+    age: number;
     sex: string;
     gender: string;
     eyes: string;
@@ -24,18 +24,18 @@ export interface IProfile extends Document {
     stories: string[];
   };
   availability: IAvailability[];
-  rates: {
-    title: string;
-    price: number;
-    duration: string;
-  }[];
+  verification: mongoose.Types.ObjectId;
+  rates: mongoose.Types.ObjectId[];
+  services: mongoose.Types.ObjectId[];
+  plan: mongoose.Types.ObjectId;
+  upgrades: mongoose.Types.ObjectId[];
   paymentHistory: mongoose.Types.ObjectId[];
 }
 
 const profileSchema = new Schema<IProfile>(
   {
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    name: { type: String, required: true },
+    name: { type: String, required: true, unique: true },
     description: String,
     location: {
       country: String,
@@ -56,15 +56,14 @@ const profileSchema = new Schema<IProfile>(
       videos: [String],
       stories: [String],
     },
+    verification: { type: Schema.Types.ObjectId, ref: 'ProfileVerification' },
     availability: [{ type: Schema.Types.ObjectId, ref: 'Availability' }],
-    rates: [
-      {
-        title: String,
-        price: Number,
-        duration: String,
-      },
-    ],
+    rates: [{ type: Schema.Types.ObjectId, ref: 'Rate' }],
+    services: [{ type: Schema.Types.ObjectId, ref: 'Service' }],
     paymentHistory: [{ type: Schema.Types.ObjectId, ref: 'PaymentHistory' }],
+    plan: { type: Schema.Types.ObjectId, ref: 'Plan' },
+    upgrades: [{ type: Schema.Types.ObjectId, ref: 'Upgrade' }]
+
   },
   { timestamps: true },
 );
