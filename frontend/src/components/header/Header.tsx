@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import SignIn from '../authentication/sign-in';
 
 const HeaderComponent = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -60,8 +61,9 @@ const HeaderComponent = () => {
               </Button>
             </Link>
             {/* <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25">
-              Cerrar sesión
+              Iniciar sesión
             </Button> */}
+            <SignIn />
           </div>
 
           {/* Mobile Menu Button */}

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { featuredProfiles } from '@/src/utils/MockedData'; // Assuming you have a data file
+import { featuredProfiles } from '@/utils/MockedData'; // Assuming you have a data file
 
 const CardComponent = () => {
   return (
