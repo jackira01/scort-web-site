@@ -1,15 +1,16 @@
 import mongoose, { type Document, Schema } from 'mongoose';
 
 export interface IAvailability extends Document {
-  day:
-    | 'monday'
-    | 'tuesday'
-    | 'wednesday'
-    | 'thursday'
-    | 'friday'
-    | 'saturday'
-    | 'sunday';
-  timeBlocks: {
+  profile: mongoose.Types.ObjectId;
+  dayOfWeek:
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
+  | 'sunday';
+  slots: {
     start: string; // Ej: "13:00"
     end: string; // Ej: "17:00"
     timezone: string;
@@ -17,8 +18,9 @@ export interface IAvailability extends Document {
 }
 
 const availabilitySchema = new Schema<IAvailability>({
-  day: { type: String, required: true },
-  timeBlocks: [
+  profile: { type: Schema.Types.ObjectId, ref: 'Profile' },
+  dayOfWeek: { type: String, required: true },
+  slots: [
     {
       start: String,
       end: String,

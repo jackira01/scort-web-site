@@ -2,7 +2,8 @@ import mongoose, { type Document, Schema } from 'mongoose';
 
 export interface IUser extends Document {
   email: string;
-  name?: string;
+  name: string;
+  password?: string; // Optional, as not all users may have a password
   isVerified: boolean;
   verification_in_progress?: boolean;
   profiles: mongoose.Types.ObjectId[];
