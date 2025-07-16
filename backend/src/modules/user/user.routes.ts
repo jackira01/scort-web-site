@@ -10,5 +10,8 @@ router.get('/:id', profileController.obtenerPerfilPorId);
 router.put('/:id', profileController.actualizarPerfil);
 router.delete('/:id', profileController.eliminarPerfil);*/
 router.post('/auth_google', userController.authGoogleUserController);
+router.post('/verify_user', userController.verifyUserController);
+router.post('/upload_user_document', userController.uploadUserDocumentController);
+
 
 export default router;

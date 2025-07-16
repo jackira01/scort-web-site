@@ -38,3 +38,19 @@ export const authGoogleUserController = async (req: Request, res: Response) => {
   }
   return res.json(user);
 };
+
+export const verifyUserController = async (req: Request, res: Response) => { };
+
+export const uploadUserDocumentController = async (req: Request, res: Response) => {
+  const { userId, documentsUrl } = req.body;
+  if (!userId || documentsUrl) {
+    return res.status(400).json({ message: 'Faltan datos requeridos' });
+  }
+
+  try {
+    const documentUrl = await userService.uploadUserDocument(userId, documentsUrl);
+    return res.json({ documentUrl });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error al subir el documento', error });
+  }
+};

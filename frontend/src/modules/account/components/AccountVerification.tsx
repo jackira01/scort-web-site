@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Camera, CheckCircle, Shield, AlertTriangle, Info, Clock } from "lucide-react"
+import { uploadMultipleImages } from "@/utils/tools"
 
 export default function AccountVerification({ verificationStatus, setVerificationStatus }: any) {
 
@@ -22,10 +23,18 @@ export default function AccountVerification({ verificationStatus, setVerificatio
 
     const handleSubmitVerification = () => {
         if (uploadedFiles.image1 && uploadedFiles.image2) {
-            setVerificationStatus({
-                verified: false,
-                verification_in_progress: true,
+            uploadMultipleImages([uploadedFiles.image1, uploadedFiles.image2]).then((urls) => {
+                console.log(urls)
+                setVerificationStatus({
+                    verified: false,
+                    verification_in_progress: true,
+                })
+                setShowUploadForm(false)
+                console.log('Imagenes subidas con exito')
+            }).catch((error) => {
+                console.error('Error al subir las imagenes:', error)
             })
+
             setShowUploadForm(false)
         }
     }

@@ -19,3 +19,15 @@ export const authUser = async (data: User) => {
         return { message: 'An unknown error occurred.' };
     }
 };
+
+export const uploadDocumentUser = async (userId: string, documentsUrl: string) => {
+    try {
+        const response = await axios.post(`${API_URL}/api/user/upload_user_document`, { userId, documentsUrl });
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+        return { message: 'An unknown error occurred.' };
+    }
+}
