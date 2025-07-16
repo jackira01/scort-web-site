@@ -4,6 +4,7 @@ import type React from 'react';
 import '@/styles/globals.css';
 import HeaderComponent from '@/components/header/Header';
 import { ThemeProvider } from '@/components/theme-provider';
+import { SessionProvider } from 'next-auth/react';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -28,8 +29,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <HeaderComponent />
-          {children}
+          <SessionProvider><HeaderComponent />
+            {children}</SessionProvider>
+
         </ThemeProvider>
       </body>
     </html>

@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import SignIn from '../authentication/sign-in';
+import SignIn, { SignOut } from '../authentication/sign-in';
 
 const HeaderComponent = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -52,7 +52,7 @@ const HeaderComponent = () => {
               <Menu className="h-4 w-4 mr-2" />
               Explorar
             </Button>
-            <Link href="/account">
+            <Link href="/cuenta">
               <Button
                 variant="ghost"
                 className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
@@ -64,6 +64,7 @@ const HeaderComponent = () => {
               Iniciar sesión
             </Button> */}
             <SignIn />
+            <SignOut/>
           </div>
 
           {/* Mobile Menu Button */}
