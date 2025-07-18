@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   BarChart3,
@@ -12,27 +12,29 @@ import {
   Plus,
   Receipt,
   Settings,
+  Shield,
   Star,
   User,
   Zap,
-} from 'lucide-react';
-import Link from 'next/link';
-import { useState } from 'react';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+} from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import ProfileVerificationCarousel from "@/components/ProfileVerificationCarousel";
 
 const sidebarItems = [
   {
-    id: 'perfil',
-    label: 'Mi Perfil',
+    id: "perfil",
+    label: "Mi Perfil",
     icon: User,
-    badge: '4',
+    badge: "4",
     description:
-      'Aquí puede ver, administrar y actualizar su perfiles existente.',
+      "Aquí puede ver, administrar y actualizar su perfiles existente.",
     active: true,
   },
   /* {
@@ -45,21 +47,21 @@ const sidebarItems = [
     active: false,
   }, */
   {
-    id: 'facturas',
-    label: 'Saldo y Facturas',
+    id: "facturas",
+    label: "Saldo y Facturas",
     icon: Receipt,
     badge: null,
     description:
-      'Vea el saldo de su cuenta, las facturas y los retiros recientes aquí.',
+      "Vea el saldo de su cuenta, las facturas y los retiros recientes aquí.",
     active: false,
   },
   {
-    id: 'ajustes',
-    label: 'Ajustes',
+    id: "ajustes",
+    label: "Ajustes",
     icon: Settings,
     badge: null,
     description:
-      'Los detalles de contacto, correo electrónico, contraseña y otros detalles de la cuenta se pueden encontrar aquí.',
+      "Los detalles de contacto, correo electrónico, contraseña y otros detalles de la cuenta se pueden encontrar aquí.",
     active: false,
   },
 ];
@@ -67,64 +69,131 @@ const sidebarItems = [
 const userProfiles = [
   {
     id: 1,
-    name: 'Jane Ximena',
+    name: "Jane Ximena",
     age: 23,
-    category: 'ESCORT',
-    location: 'Bogotá',
-    image: '/placeholder.svg?height=120&width=120',
-    views: '5.1k',
+    category: "ESCORT",
+    location: "Bogotá",
+    image: "/placeholder.svg?height=120&width=120",
+    views: "5.1k",
     rating: 4.9,
-    status: 'Activo',
+    status: "Activo",
     verified: true,
     featured: true,
+    verificationImages: [
+      {
+        id: 1,
+        url: "/placeholder.svg?height=400&width=300",
+        alt: "Foto de perfil principal",
+      },
+      {
+        id: 2,
+        url: "/placeholder.svg?height=400&width=300",
+        alt: "Documento de identidad",
+      },
+      {
+        id: 3,
+        url: "/placeholder.svg?height=400&width=300",
+        alt: "Foto adicional de verificación",
+      },
+    ],
   },
   {
     id: 2,
-    name: 'Sofia Martinez',
+    name: "Sofia Martinez",
     age: 25,
-    category: 'ESCORT',
-    location: 'Medellín',
-    image: '/placeholder.svg?height=120&width=120',
-    views: '3.8k',
+    category: "ESCORT",
+    location: "Medellín",
+    image: "/placeholder.svg?height=120&width=120",
+    views: "3.8k",
     rating: 4.7,
-    status: 'Activo',
+    status: "Activo",
     verified: true,
     featured: false,
+    verificationImages: [
+      {
+        id: 4,
+        url: "/placeholder.svg?height=400&width=300",
+        alt: "Foto de perfil principal",
+      },
+      {
+        id: 5,
+        url: "/placeholder.svg?height=400&width=300",
+        alt: "Documento de identidad",
+      },
+    ],
   },
   {
     id: 3,
-    name: 'Isabella Rodriguez',
+    name: "Isabella Rodriguez",
     age: 24,
-    category: 'VIRTUAL',
-    location: 'Cali',
-    image: '/placeholder.svg?height=120&width=120',
-    views: '2.9k',
+    category: "VIRTUAL",
+    location: "Cali",
+    image: "/placeholder.svg?height=120&width=120",
+    views: "2.9k",
     rating: 4.8,
-    status: 'Pausado',
+    status: "Pausado",
     verified: true,
     featured: true,
+    verificationImages: [
+      {
+        id: 6,
+        url: "/placeholder.svg?height=400&width=300",
+        alt: "Foto de perfil principal",
+      },
+      {
+        id: 7,
+        url: "/placeholder.svg?height=400&width=300",
+        alt: "Documento de identidad",
+      },
+      {
+        id: 8,
+        url: "/placeholder.svg?height=400&width=300",
+        alt: "Selfie de verificación",
+      },
+      {
+        id: 9,
+        url: "/placeholder.svg?height=400&width=300",
+        alt: "Foto adicional",
+      },
+    ],
   },
   {
     id: 4,
-    name: 'Camila Torres',
+    name: "Camila Torres",
     age: 26,
-    category: 'ESCORT',
-    location: 'Cartagena',
-    image: '/placeholder.svg?height=120&width=120',
-    views: '4.2k',
+    category: "ESCORT",
+    location: "Cartagena",
+    image: "/placeholder.svg?height=120&width=120",
+    views: "4.2k",
     rating: 4.6,
-    status: 'Activo',
+    status: "Activo",
     verified: false,
     featured: false,
+    verificationImages: [
+      {
+        id: 10,
+        url: "/placeholder.svg?height=400&width=300",
+        alt: "Foto de perfil principal",
+      },
+      {
+        id: 11,
+        url: "/placeholder.svg?height=400&width=300",
+        alt: "Documento de identidad pendiente",
+      },
+    ],
   },
 ];
 
 export default function DashboardPage() {
-  const [activeSection, setActiveSection] = useState('perfil');
+  const [activeSection, setActiveSection] = useState("perfil");
+  const [verificationCarouselOpen, setVerificationCarouselOpen] =
+    useState(false);
+  const [selectedProfileForVerification, setSelectedProfileForVerification] =
+    useState<(typeof userProfiles)[0] | null>(null);
 
   const renderContent = () => {
     switch (activeSection) {
-      case 'perfil':
+      case "perfil":
         return (
           <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
             <div className="flex items-center justify-between">
@@ -149,14 +218,14 @@ export default function DashboardPage() {
                       <div className="relative">
                         <Avatar className="h-20 w-20 border-2 border-purple-500/20 group-hover:border-purple-500/50 transition-all duration-300">
                           <AvatarImage
-                            src={profile.image || '/placeholder.svg'}
+                            src={profile.image || "/placeholder.svg"}
                             alt={profile.name}
                           />
                           <AvatarFallback className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 text-lg font-semibold">
                             {profile.name
-                              .split(' ')
+                              .split(" ")
                               .map((n) => n[0])
-                              .join('')}
+                              .join("")}
                           </AvatarFallback>
                         </Avatar>
                         {profile.featured && (
@@ -173,14 +242,14 @@ export default function DashboardPage() {
                           </h3>
                           <Badge
                             variant={
-                              profile.status === 'Activo'
-                                ? 'default'
-                                : 'secondary'
+                              profile.status === "Activo"
+                                ? "default"
+                                : "secondary"
                             }
                             className={
-                              profile.status === 'Activo'
-                                ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
-                                : ''
+                              profile.status === "Activo"
+                                ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100"
+                                : ""
                             }
                           >
                             {profile.status}
@@ -220,7 +289,7 @@ export default function DashboardPage() {
                     <Separator className="my-4" />
 
                     <div className="flex items-center justify-between">
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-2 flex-wrap gap-1">
                         <Button
                           size="sm"
                           variant="outline"
@@ -244,6 +313,18 @@ export default function DashboardPage() {
                         >
                           <Bell className="h-3 w-3 mr-1" />
                           Actualizaciones
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedProfileForVerification(profile);
+                            setVerificationCarouselOpen(true);
+                          }}
+                          className="hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:border-orange-500 transition-all duration-200"
+                        >
+                          <Shield className="h-3 w-3 mr-1" />
+                          Verificar
                         </Button>
                       </div>
                     </div>
@@ -278,7 +359,7 @@ export default function DashboardPage() {
           </div>
         ); */
 
-      case 'facturas':
+      case "facturas":
         return (
           <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -324,7 +405,7 @@ export default function DashboardPage() {
                     >
                       <div>
                         <p className="font-medium text-foreground">
-                          Factura #{String(item).padStart(4, '0')}
+                          Factura #{String(item).padStart(4, "0")}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           Servicios de plataforma - Diciembre 2024
@@ -344,7 +425,7 @@ export default function DashboardPage() {
           </div>
         );
 
-      case 'ajustes':
+      case "ajustes":
         return (
           <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -438,13 +519,13 @@ export default function DashboardPage() {
                       onClick={() => setActiveSection(item.id)}
                       className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 group animate-in slide-in-from-left-2 ${
                         activeSection === item.id
-                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                       }`}
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <item.icon
-                        className={`h-5 w-5 ${activeSection === item.id ? 'text-white' : 'group-hover:text-purple-600'} transition-colors duration-200`}
+                        className={`h-5 w-5 ${activeSection === item.id ? "text-white" : "group-hover:text-purple-600"} transition-colors duration-200`}
                       />
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
@@ -453,13 +534,13 @@ export default function DashboardPage() {
                             <Badge
                               variant={
                                 activeSection === item.id
-                                  ? 'secondary'
-                                  : 'default'
+                                  ? "secondary"
+                                  : "default"
                               }
                               className={`text-xs ${
                                 activeSection === item.id
-                                  ? 'bg-white/20 text-white'
-                                  : 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-100'
+                                  ? "bg-white/20 text-white"
+                                  : "bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-100"
                               }`}
                             >
                               {item.badge}
@@ -469,8 +550,8 @@ export default function DashboardPage() {
                         <p
                           className={`text-xs mt-1 ${
                             activeSection === item.id
-                              ? 'text-white/80'
-                              : 'text-muted-foreground'
+                              ? "text-white/80"
+                              : "text-muted-foreground"
                           }`}
                         >
                           {item.description}
@@ -494,6 +575,25 @@ export default function DashboardPage() {
           🟢 NICOLAS ALVAREZ
         </Badge>
       </div>
+
+      {/* Profile Verification Carousel */}
+      {selectedProfileForVerification && (
+        <ProfileVerificationCarousel
+          isOpen={verificationCarouselOpen}
+          onOpenChange={setVerificationCarouselOpen}
+          profileName={selectedProfileForVerification.name}
+          images={selectedProfileForVerification.verificationImages || []}
+          onVerifyProfile={() => {
+            // Aquí puedes agregar la lógica para verificar el perfil
+            console.log(
+              `Verificando perfil de ${selectedProfileForVerification.name}`,
+            );
+            setVerificationCarouselOpen(false);
+            setSelectedProfileForVerification(null);
+            // Podrías mostrar un toast de éxito aquí
+          }}
+        />
+      )}
     </div>
   );
 }
