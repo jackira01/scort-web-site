@@ -5,13 +5,22 @@ import {
   Eye,
   MapPin,
   Plus,
+  Shield,
   Star,
   Zap,
-} from 'lucide-react';
-import Image from 'next/image';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+} from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import ProfileVerificationCarousel from "@/components/ProfileVerificationCarousel";
+
+interface VerificationImage {
+  id: number;
+  url: string;
+  alt: string;
+}
 
 interface Profile {
   id: number;
@@ -26,6 +35,7 @@ interface Profile {
   verified: boolean;
   featured: boolean;
   completeness: number;
+  verificationImages?: VerificationImage[];
 }
 
 interface ProfileListProps {
@@ -39,6 +49,11 @@ export default function ProfileList({
   getProgressColor,
   getProgressTextColor,
 }: ProfileListProps) {
+  const [verificationCarouselOpen, setVerificationCarouselOpen] =
+    useState(false);
+  const [selectedProfileForVerification, setSelectedProfileForVerification] =
+    useState<Profile | null>(null);
+
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <div className="flex items-center justify-between">
@@ -68,7 +83,7 @@ export default function ProfileList({
               <Image
                 width={400}
                 height={200}
-                src={profile.image || '/placeholder.svg'}
+                src={profile.image || "/placeholder.svg"}
                 alt={profile.name}
                 className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
               />
@@ -89,12 +104,12 @@ export default function ProfileList({
                 )}
                 <Badge
                   variant={
-                    profile.status === 'Activo' ? 'default' : 'secondary'
+                    profile.status === "Activo" ? "default" : "secondary"
                   }
                   className={
-                    profile.status === 'Activo'
-                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
-                      : ''
+                    profile.status === "Activo"
+                      ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100"
+                      : ""
                   }
                 >
                   {profile.status}
@@ -162,6 +177,18 @@ export default function ProfileList({
                   </Button>
                   <Button
                     size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedProfileForVerification(profile);
+                      setVerificationCarouselOpen(true);
+                    }}
+                    className="flex-1 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:border-orange-500 transition-all duration-200"
+                  >
+                    <Shield className="h-3 w-3 mr-1" />
+                    Verificar
+                  </Button>
+                  <Button
+                    size="sm"
                     className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
                   >
                     <Eye className="h-3 w-3 mr-1" />
@@ -173,6 +200,23 @@ export default function ProfileList({
           </Card>
         ))}
       </div>
+
+      {/* Profile Verification Carousel */}
+      {selectedProfileForVerification && (
+        <ProfileVerificationCarousel
+          isOpen={verificationCarouselOpen}
+          onOpenChange={setVerificationCarouselOpen}
+          profileName={selectedProfileForVerification.name}
+          images={selectedProfileForVerification.verificationImages || []}
+          onVerifyProfile={() => {
+            console.log(
+              `Verificando perfil de ${selectedProfileForVerification.name}`,
+            );
+            setVerificationCarouselOpen(false);
+            setSelectedProfileForVerification(null);
+          }}
+        />
+      )}
     </div>
   );
 }
