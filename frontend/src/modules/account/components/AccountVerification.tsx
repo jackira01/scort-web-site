@@ -1,18 +1,23 @@
 
-import React, { useState } from "react"
+import React, { use, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Camera, CheckCircle, Shield, AlertTriangle, Info, Clock } from "lucide-react"
 import { uploadMultipleImages } from "@/utils/tools"
 import { updateUser } from "@/services/user.service"
+import { useUpdateUser } from "@/hooks/use-user"
+import toast from "react-hot-toast"
+import { User } from "@/types/user.types"
 
-export default function AccountVerification({ verificationStatus, setVerificationStatus, userId }: any) {
+export default function AccountVerification({ verification_in_progress, userId }: { verification_in_progress: boolean, userId: string }) {
+    const [loading, setLoading] = useState(false)
     const [showUploadForm, setShowUploadForm] = useState(false)
     const [uploadedFiles, setUploadedFiles] = useState({
         image1: null as File | null,
         image2: null as File | null,
     })
+    const { mutate: updateUserMutation } = useUpdateUser();
 
     const handleFileUpload = (fileType: "image1" | "image2", file: File) => {
         setUploadedFiles((prev) => ({
@@ -22,28 +27,39 @@ export default function AccountVerification({ verificationStatus, setVerificatio
     }
 
     const handleSubmitVerification = () => {
-        console.log('Subiendo imagenes');
-
+        toast.loading('Subiendo imagenes...');
         if (uploadedFiles.image1 && uploadedFiles.image2) {
+            setLoading(true)
             // console.log([uploadedFiles.image1, uploadedFiles.image2])
             uploadMultipleImages([uploadedFiles.image1, uploadedFiles.image2]).then((urls) => {
-                const data = {
-                    verificationDocument: urls
+                // Filtrar los nulls para obtener un string[]
+                const filteredUrls = urls.filter((url): url is string => url !== null);
+                const data: Partial<User> = {
+                    verificationDocument: filteredUrls,
+                    verification_in_progress: true,
                 }
-                updateUser(userId, data)
+                //update user
+                updateUserMutation({
+                    userId,
+                    data,
+                });
+                /* Enviar correo de notificacion */
+                setLoading(false)
                 setShowUploadForm(false)
-                console.log('Imagenes subidas con exito')
+                toast.dismiss();
+                toast.success('Imagenes subidas con exito')
             }).catch((error) => {
                 console.error('Error al subir las imagenes:', error)
+                setLoading(false)
+                toast.dismiss();
+                toast.error('Error al subir las imagenes')
             })
-
-            setShowUploadForm(false)
         }
     }
 
     const canSubmit = uploadedFiles.image1 && uploadedFiles.image2
 
-    if (verificationStatus.verification_in_progress) {
+    if (verification_in_progress) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
                 <Card className="w-full max-w-md bg-card border-border shadow-xl">
@@ -173,7 +189,7 @@ export default function AccountVerification({ verificationStatus, setVerificatio
                             </Button>
                             <Button
                                 onClick={handleSubmitVerification}
-                                disabled={!canSubmit}
+                                disabled={!canSubmit || loading}
                                 className={`flex-1 transition-all duration-200 ${canSubmit
                                     ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105"
                                     : "bg-muted text-muted-foreground cursor-not-allowed"

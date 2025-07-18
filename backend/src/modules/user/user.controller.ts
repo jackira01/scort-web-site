@@ -7,11 +7,7 @@ export const CreateUserController = async (req: Request, res: Response) => {
 };
 
 export const getUserById = async (req: Request, res: Response) => {
-  console.log(req.params.id);
-
   const user = await userService.getUserById(req.params.id);
-
-  console.log(user);
 
   if (!user) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
   res.json({

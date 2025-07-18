@@ -1,7 +1,7 @@
 'use client';
 
 import FooterBadge from '@/components/footerBadge/FooterBadge';
-import { useUser } from '@/hooks/userUser';
+import { useUser } from '@/hooks/use-user';
 import HomeProfiles from '@/modules/catalogs/components/HomeProfiles';
 import CategoriesFilter from '@/modules/filters/components/CategoriesFilter';
 import FilterBar from '@/modules/filters/components/FilterBar';
@@ -10,9 +10,8 @@ import { useSession } from 'next-auth/react';
 
 export default function HomePage() {
   const { data: session } = useSession();
-  const userId = session?.user?._id;
 
-  const { data: user } = useUser(userId);
+  const { data: user } = useUser();
 
   return (
     <div className="min-h-screen dark:bg-background transition-all duration-500">

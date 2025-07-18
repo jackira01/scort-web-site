@@ -7,22 +7,17 @@ import { useAccountSection } from '@/modules/account/hooks/useAccountSection';
 import { useEffect, useState } from 'react';
 import AccountVerification from './AccountVerification';
 import { useSession } from "next-auth/react"
-import { useUser } from '@/hooks/userUser';
+import { useUser } from '@/hooks/use-user';
 
 
 export default function AccountLayout() {
-    const { data: session } = useSession()
     const { activeSection, setActiveSection } = useAccountSection();
-    const { data: user } = useUser(session?.user?._id);
+    const { data: user } = useUser();
 
     const accountCompleteness = 65;
-    const [verificationStatus, setVerificationStatus] = useState({
-        verified: user?.isVerified,
-        verification_in_progress: user?.verification_in_progress, // Cambiar a true para simular verificación en progreso
-    })
 
-    if (!verificationStatus.verified) {
-        return <AccountVerification verificationStatus={verificationStatus} setVerificationStatus={setVerificationStatus} userId={session?.user?._id} />
+    if (!user?.isVerified) {
+        return <AccountVerification verification_in_progress={user?.verification_in_progress || false} userId={user?._id || ''} />
     }
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">

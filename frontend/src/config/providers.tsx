@@ -6,6 +6,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { PropsWithChildren, useState } from 'react';
 import { ThemeProvider } from '@/components/theme-provider';
 import HeaderComponent from '@/components/header/Header';
+import { Toaster } from 'react-hot-toast';
 
 const enviroment = process.env.NODE_ENV;
 
@@ -44,6 +45,8 @@ export function Providers({ children }: PropsWithChildren) {
       enableSystem
       disableTransitionOnChange
     ><SessionProvider>
+        <Toaster position="top-right" />
+
         <HeaderComponent />
         {children}
       </SessionProvider></ThemeProvider>
