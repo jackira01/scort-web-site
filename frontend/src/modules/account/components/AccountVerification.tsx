@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Camera, CheckCircle, Shield, AlertTriangle, Info, Clock } from "lucide-react"
 import { uploadMultipleImages } from "@/utils/tools"
+import { updateUser } from "@/services/user.service"
 
-export default function AccountVerification({ verificationStatus, setVerificationStatus }: any) {
-
+export default function AccountVerification({ verificationStatus, setVerificationStatus, userId }: any) {
     const [showUploadForm, setShowUploadForm] = useState(false)
     const [uploadedFiles, setUploadedFiles] = useState({
         image1: null as File | null,
@@ -22,13 +22,15 @@ export default function AccountVerification({ verificationStatus, setVerificatio
     }
 
     const handleSubmitVerification = () => {
+        console.log('Subiendo imagenes');
+
         if (uploadedFiles.image1 && uploadedFiles.image2) {
+            // console.log([uploadedFiles.image1, uploadedFiles.image2])
             uploadMultipleImages([uploadedFiles.image1, uploadedFiles.image2]).then((urls) => {
-                console.log(urls)
-                setVerificationStatus({
-                    verified: false,
-                    verification_in_progress: true,
-                })
+                const data = {
+                    verificationDocument: urls
+                }
+                updateUser(userId, data)
                 setShowUploadForm(false)
                 console.log('Imagenes subidas con exito')
             }).catch((error) => {

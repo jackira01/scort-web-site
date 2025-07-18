@@ -5,6 +5,7 @@ import '@/styles/globals.css';
 import HeaderComponent from '@/components/header/Header';
 import { ThemeProvider } from '@/components/theme-provider';
 import { SessionProvider } from 'next-auth/react';
+import { Providers } from '@/config/providers';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -23,16 +24,9 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <SessionProvider><HeaderComponent />
-            {children}</SessionProvider>
-
-        </ThemeProvider>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

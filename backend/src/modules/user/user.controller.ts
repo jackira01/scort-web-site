@@ -5,27 +5,27 @@ export const CreateUserController = async (req: Request, res: Response) => {
   const user = await userService.createUser(req.body);
   res.status(201).json(user);
 };
-/* 
-export const obtenerPerfiles = async (_: Request, res: Response) => {
-  const perfiles = await userService.obtenerPerfiles();
-  res.json(perfiles);
+
+export const getUserById = async (req: Request, res: Response) => {
+  console.log(req.params.id);
+
+  const user = await userService.getUserById(req.params.id);
+
+  console.log(user);
+
+  if (!user) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+  res.json({
+    _id: user._id,
+    email: user.email,
+    name: user.name,
+    verificationDocument: user.verificationDocument,
+    isVerified: user.isVerified,
+    verification_in_progress: user.verification_in_progress,
+  });
 };
 
-export const obtenerPerfilPorId = async (req: Request, res: Response) => {
-  const perfil = await userService.obtenerPerfilPorId(req.params.id);
-  if (!perfil) return res.status(404).json({ mensaje: 'Perfil no encontrado' });
-  res.json(perfil);
-};
 
-export const actualizarPerfil = async (req: Request, res: Response) => {
-  const perfil = await userService.actualizarPerfil(req.params.id, req.body);
-  res.json(perfil);
-};
-
-export const eliminarPerfil = async (req: Request, res: Response) => {
-  await userService.eliminarPerfil(req.params.id);
-  res.status(204).send();
-}; */
+export const verifyUserController = async (req: Request, res: Response) => { };
 
 export const authGoogleUserController = async (req: Request, res: Response) => {
   const { email, name } = req.body;
@@ -36,10 +36,12 @@ export const authGoogleUserController = async (req: Request, res: Response) => {
   if (!user) {
     user = await userService.createUser({ email, name });
   }
-  return res.json(user);
+  return res.json({
+    _id: user._id,
+    isVerified: user.isVerified,
+    verification_in_progress: user.verification_in_progress,
+  });
 };
-
-export const verifyUserController = async (req: Request, res: Response) => { };
 
 export const uploadUserDocumentController = async (req: Request, res: Response) => {
   const { userId, documentsUrl } = req.body;
@@ -54,3 +56,22 @@ export const uploadUserDocumentController = async (req: Request, res: Response) 
     return res.status(500).json({ message: 'Error al subir el documento', error });
   }
 };
+
+export const updateUser = async (req: Request, res: Response) => {
+  const user = await userService.updateUser(req.params.id, req.body);
+  res.json(user);
+};
+
+/* 
+export const obtenerPerfiles = async (_: Request, res: Response) => {
+  const perfiles = await userService.obtenerPerfiles();
+  res.json(perfiles);
+};
+
+
+
+
+export const eliminarPerfil = async (req: Request, res: Response) => {
+  await userService.eliminarPerfil(req.params.id);
+  res.status(204).send();
+}; */

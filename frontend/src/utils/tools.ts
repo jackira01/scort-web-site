@@ -1,14 +1,14 @@
 import imageCompression from 'browser-image-compression';
 import axios from 'axios';
 
-const upload_preset = process.env.UPLOAD_PRESET || "";
-const cloud_name = process.env.CLOUD_NAME || "";
+const upload_preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "";
+const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_NAME || "";
 
 
 export const compressImage = async (file: File): Promise<File> => {
   const options = {
-    maxSizeMB: 0.5, // máximo 300KB
-    maxWidthOrHeight: 1024, // redimensiona si es más grande
+    maxSizeMB: 0.3, // máximo 300KB
+    maxWidthOrHeight: 800, // redimensiona si es más grande
     useWebWorker: true,
   };
   try {
@@ -23,7 +23,6 @@ export const uploadMultipleImages = async (
   filesArray: File[],
 ): Promise<(string | null)[]> => {
   const uploadedUrls: (string | null)[] = [];
-
   for (const file of filesArray) {
     try {
       const compressed = await compressImage(file);

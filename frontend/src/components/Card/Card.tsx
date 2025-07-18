@@ -53,7 +53,7 @@ const CardComponent = () => {
                   {profile.location}
                 </span>
               </div>
-              <Link href={`/profile/${profile.id}`}>
+              <Link href={`/perfil/${profile.id}`}>
                 <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 mt-3">
                   Ver perfil
                 </Button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu, Search } from 'lucide-react';
+import { Menu, Search, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -14,9 +14,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import SignIn, { SignOut } from '../authentication/sign-in';
+import { useSession } from 'next-auth/react';
 
 const HeaderComponent = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { status } = useSession();
 
   return (
     <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-b sticky top-0 z-50 transition-all duration-300">
@@ -52,19 +54,23 @@ const HeaderComponent = () => {
               <Menu className="h-4 w-4 mr-2" />
               Explorar
             </Button>
-            <Link href="/cuenta">
-              <Button
-                variant="ghost"
-                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
-              >
-                Mi cuenta
-              </Button>
-            </Link>
-            {/* <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25">
-              Iniciar sesión
-            </Button> */}
-            <SignIn />
-            <SignOut/>
+            {
+              status === 'authenticated' ? (
+                <>
+                  <Link href="/cuenta">
+                    <Button
+                      variant="ghost"
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+                    >
+                      <UserRound className="h-4 w-4 mr-2" />
+                      Mi cuenta
+                    </Button>
+                  </Link>
+                  <SignOut /></>
+              ) : (
+                <SignIn />
+              )
+            }
           </div>
 
           {/* Mobile Menu Button */}

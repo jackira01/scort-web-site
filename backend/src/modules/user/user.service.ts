@@ -17,9 +17,13 @@ export const uploadUserDocument = async (userId: string, documentUrl: string) =>
     options);
   return user;
 };
-/* export const obtenerPerfiles = () => UserModel.find();
-export const obtenerPerfilPorId = (id: string) => UserModel.findById(id);
-export const actualizarPerfil = (id: string, data: any) =>
+
+export const getUserById = (id: string) => UserModel.findById(id);
+
+export const updateUser = (id: string, data: any) =>
   UserModel.findByIdAndUpdate(id, data, { new: true });
+
+/* export const obtenerPerfiles = () => UserModel.find();
+
 export const eliminarPerfil = (id: string) =>
   UserModel.findByIdAndDelete(id); */
