@@ -1,12 +1,11 @@
 'use client';
 
-import { SessionProvider } from 'next-auth/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { PropsWithChildren, useState } from 'react';
-import { ThemeProvider } from '@/components/theme-provider';
-import HeaderComponent from '@/components/header/Header';
+import { SessionProvider } from 'next-auth/react';
+import { type PropsWithChildren, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const enviroment = process.env.NODE_ENV;
 
@@ -22,11 +21,10 @@ export default function QueryProvider({ children }: PropsWithChildren) {
             refetchOnWindowFocus: false,
           },
         },
-      })
+      }),
   );
 
   return (
-
     <QueryClientProvider client={queryClient}>
       {children}
       {/* Solo en desarrollo */}
@@ -38,18 +36,19 @@ export default function QueryProvider({ children }: PropsWithChildren) {
 }
 
 export function Providers({ children }: PropsWithChildren) {
-  return (<QueryProvider>
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    ><SessionProvider>
-        <Toaster position="top-right" />
-
-        <HeaderComponent />
-        {children}
-      </SessionProvider></ThemeProvider>
-
-  </QueryProvider>)
+  return (
+    <QueryProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <SessionProvider>
+          <Toaster position="top-right" />
+          {children}
+        </SessionProvider>
+      </ThemeProvider>
+    </QueryProvider>
+  );
 }

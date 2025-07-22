@@ -14,7 +14,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import ProfileVerificationCarousel from "@/components/ProfileVerificationCarousel";
+import ProfileVerificationCarousel from "@/modules/dashboard/components/ProfileVerificationCarousel";
 
 interface VerificationImage {
   id: number;

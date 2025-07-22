@@ -1,20 +1,14 @@
-'use client';
-
 import FooterBadge from '@/components/footerBadge/FooterBadge';
-import { useUser } from '@/hooks/use-user';
+import { SeedUserCache } from '@/components/SeedUserCache';
 import HomeProfiles from '@/modules/catalogs/components/HomeProfiles';
 import CategoriesFilter from '@/modules/filters/components/CategoriesFilter';
 import FilterBar from '@/modules/filters/components/FilterBar';
 import StoriesCards from '@/modules/stories/components/storiesCards';
-import { useSession } from 'next-auth/react';
 
-export default function HomePage() {
-  const { data: session } = useSession();
-
-  const { data: user } = useUser();
-
+export default async function HomePage() {
   return (
     <div className="min-h-screen dark:bg-background transition-all duration-500">
+      <SeedUserCache />
       <CategoriesFilter />
       <FilterBar />
 

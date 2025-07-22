@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import UserModel from './User.model';
 import * as userService from './user.service';
 
 export const CreateUserController = async (req: Request, res: Response) => {
@@ -20,7 +21,6 @@ export const getUserById = async (req: Request, res: Response) => {
   });
 };
 
-
 export const verifyUserController = async (req: Request, res: Response) => { };
 
 export const authGoogleUserController = async (req: Request, res: Response) => {
@@ -39,23 +39,56 @@ export const authGoogleUserController = async (req: Request, res: Response) => {
   });
 };
 
-export const uploadUserDocumentController = async (req: Request, res: Response) => {
+export const uploadUserDocumentController = async (
+  req: Request,
+  res: Response,
+) => {
   const { userId, documentsUrl } = req.body;
   if (!userId || documentsUrl) {
     return res.status(400).json({ message: 'Faltan datos requeridos' });
   }
 
   try {
-    const documentUrl = await userService.uploadUserDocument(userId, documentsUrl);
+    const documentUrl = await userService.uploadUserDocument(
+      userId,
+      documentsUrl,
+    );
     return res.json({ documentUrl });
   } catch (error) {
-    return res.status(500).json({ message: 'Error al subir el documento', error });
+    return res
+      .status(500)
+      .json({ message: 'Error al subir el documento', error });
   }
 };
 
 export const updateUser = async (req: Request, res: Response) => {
   const user = await userService.updateUser(req.params.id, req.body);
   res.json(user);
+};
+
+export const getUsers = async (req: Request, res: Response) => {
+  const { page, limit } = req.query;
+  const filters = req.body;
+
+  if (!page || !limit) {
+    return res.status(400).json({ message: 'Faltan datos' });
+  }
+
+  const options = {
+    page: Number(page),
+    limit: Number(limit),
+    sort: { createdAt: -1 },
+  };
+
+  try {
+    const getUsers = await userService.getUsers(filters, options);
+    console.log(getUsers);
+
+    return res.status(200).json(getUsers);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error });
+  }
 };
 
 /* 

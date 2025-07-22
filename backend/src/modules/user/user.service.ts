@@ -1,3 +1,4 @@
+import { Request, Response } from 'express';
 import UserModel from './User.model';
 
 export const createUser = (data: any) => UserModel.create(data);
@@ -22,6 +23,12 @@ export const getUserById = (id: string) => UserModel.findById(id);
 
 export const updateUser = (id: string, data: any) =>
   UserModel.findByIdAndUpdate(id, data, { new: true });
+
+export const getUsers = async (filters: any, options: any) => {
+  return await UserModel.paginate(filters, options);
+
+};
+
 
 /* export const obtenerPerfiles = () => UserModel.find();
 

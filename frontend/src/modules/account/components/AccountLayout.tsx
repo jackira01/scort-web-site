@@ -1,23 +1,32 @@
 'use client';
 
+import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
+import Loader from '@/components/Loader';
+import { useUser } from '@/hooks/use-user';
 import AccountContent from '@/modules/account/components/AccountContent';
 import AccountProgressBar from '@/modules/account/components/AccountProgressBar';
 import AccountSidebar from '@/modules/account/components/AccountSidebar'; // si es exclusivo de account
 import { useAccountSection } from '@/modules/account/hooks/useAccountSection';
-import { useEffect, useState } from 'react';
 import AccountVerification from './AccountVerification';
-import { useSession } from "next-auth/react"
-import { useUser } from '@/hooks/use-user';
-
 
 export default function AccountLayout() {
     const { activeSection, setActiveSection } = useAccountSection();
-    const { data: user } = useUser();
+    const { data: user, isLoading } = useUser();
 
     const accountCompleteness = 65;
 
+    if (isLoading || !user) {
+        return <Loader />;
+    }
+
     if (!user?.isVerified) {
-        return <AccountVerification verification_in_progress={user?.verification_in_progress || false} userId={user?._id || ''} />
+        return (
+            <AccountVerification
+                verification_in_progress={user?.verification_in_progress || false}
+                userId={user?._id || ''}
+            />
+        );
     }
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">

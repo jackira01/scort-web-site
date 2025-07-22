@@ -1,6 +1,7 @@
+import type { PaginateModel } from 'mongoose'; // importante
 import mongoose, { type Document, Schema } from 'mongoose';
-
-export interface IUser extends Document {
+import mongoosePaginate from 'mongoose-paginate-v2';
+export interface IUser {
   email: string;
   name: string;
   verificationDocument?: string[];
@@ -9,8 +10,9 @@ export interface IUser extends Document {
   verification_in_progress?: boolean;
   profiles: mongoose.Types.ObjectId[];
 }
+export interface IUserDocument extends IUser, Document { }
 
-const userSchema = new Schema<IUser>({
+const userSchema = new Schema<IUserDocument>({
   email: { type: String, required: true, unique: true },
   name: String,
   verificationDocument: [String],
@@ -19,4 +21,8 @@ const userSchema = new Schema<IUser>({
   profiles: [{ type: Schema.Types.ObjectId, ref: 'Profile' }],
 });
 
-export default mongoose.model<IUser>('User', userSchema);
+userSchema.plugin(mongoosePaginate);
+
+const UserModel = mongoose.model<IUserDocument, PaginateModel<IUserDocument>>('User', userSchema);
+
+export default UserModel;

@@ -1,42 +1,32 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, CheckCircle, X } from "lucide-react";
-import Image from "next/image";
+import { CheckCircle, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import Image from 'next/image';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-
-interface VerificationImage {
-  id: number;
-  url: string;
-  alt: string;
-  verified?: boolean;
-}
-
-interface ProfileVerificationCarouselProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  profileName: string;
-  images: VerificationImage[];
-  onVerifyProfile: () => void;
-}
+} from '@/components/ui/dialog';
+import { useUpdateUser } from '@/hooks/use-user';
+import type { ProfileVerificationCarouselProps } from '@/modules/dashboard/types';
 
 export default function ProfileVerificationCarousel({
+  userId,
   isOpen,
   onOpenChange,
   profileName,
   images,
-  onVerifyProfile,
 }: ProfileVerificationCarouselProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [verifiedImages, setVerifiedImages] = useState<Set<number>>(new Set());
+  const { mutate: updateUserMutation } = useUpdateUser();
+  const [isLoading, setIsLoading] = useState(false);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -56,6 +46,23 @@ export default function ProfileVerificationCarousel({
       }
       return newSet;
     });
+  };
+
+  const onVerifyProfile = () => {
+    setIsLoading(true);
+    toast.loading('Verificando usuario...');
+    updateUserMutation({
+      userId,
+      data: {
+        verification_in_progress: false,
+        isVerified: true,
+      },
+    });
+
+    toast.dismiss();
+    toast.success('Perfil verificado con exito');
+    setIsLoading(false);
+    onOpenChange(false);
   };
 
   const allImagesVerified =
@@ -103,11 +110,11 @@ export default function ProfileVerificationCarousel({
               Imagen {currentImageIndex + 1} de {images.length}
             </span>
             <Badge
-              variant={allImagesVerified ? "default" : "secondary"}
+              variant={allImagesVerified ? 'default' : 'secondary'}
               className={
                 allImagesVerified
-                  ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100"
-                  : ""
+                  ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
+                  : ''
               }
             >
               {verifiedImages.size}/{images.length} verificadas
@@ -143,9 +150,9 @@ export default function ProfileVerificationCarousel({
                 {/* Current image */}
                 <div className="relative w-full h-full">
                   <Image
-                    src={images[currentImageIndex]?.url || "/placeholder.svg"}
+                    src={images[currentImageIndex]?.url || '/placeholder.svg'}
                     alt={
-                      images[currentImageIndex]?.alt || "Imagen de verificación"
+                      images[currentImageIndex]?.alt || 'Imagen de verificación'
                     }
                     fill
                     className="object-contain"
@@ -157,13 +164,13 @@ export default function ProfileVerificationCarousel({
                     <Badge
                       variant={
                         verifiedImages.has(images[currentImageIndex]?.id)
-                          ? "default"
-                          : "secondary"
+                          ? 'default'
+                          : 'secondary'
                       }
                       className={
                         verifiedImages.has(images[currentImageIndex]?.id)
-                          ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100"
-                          : ""
+                          ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
+                          : ''
                       }
                     >
                       {verifiedImages.has(images[currentImageIndex]?.id) ? (
@@ -172,8 +179,8 @@ export default function ProfileVerificationCarousel({
                         <X className="h-3 w-3 mr-1" />
                       )}
                       {verifiedImages.has(images[currentImageIndex]?.id)
-                        ? "Verificada"
-                        : "No verificada"}
+                        ? 'Verificada'
+                        : 'No verificada'}
                     </Badge>
                   </div>
                 </div>
@@ -186,8 +193,8 @@ export default function ProfileVerificationCarousel({
                     <Button
                       variant={
                         verifiedImages.has(images[currentImageIndex]?.id)
-                          ? "default"
-                          : "outline"
+                          ? 'default'
+                          : 'outline'
                       }
                       size="sm"
                       onClick={() =>
@@ -195,19 +202,19 @@ export default function ProfileVerificationCarousel({
                       }
                       className={
                         verifiedImages.has(images[currentImageIndex]?.id)
-                          ? "bg-green-600 hover:bg-green-700 text-white"
-                          : "hover:bg-green-50 dark:hover:bg-green-950/20 hover:border-green-500"
+                          ? 'bg-green-600 hover:bg-green-700 text-white'
+                          : 'hover:bg-green-50 dark:hover:bg-green-950/20 hover:border-green-500'
                       }
                     >
                       <CheckCircle className="h-3 w-3 mr-1" />
                       {verifiedImages.has(images[currentImageIndex]?.id)
-                        ? "Verificada"
-                        : "Verificar Imagen"}
+                        ? 'Verificada'
+                        : 'Verificar Imagen'}
                     </Button>
                   </div>
 
                   <div className="text-sm text-muted-foreground">
-                    {images[currentImageIndex]?.alt || "Imagen de verificación"}
+                    {images[currentImageIndex]?.alt || 'Imagen de verificación'}
                   </div>
                 </div>
               </div>
@@ -219,13 +226,13 @@ export default function ProfileVerificationCarousel({
             <div className="flex justify-center space-x-2 max-w-full overflow-x-auto pb-2">
               {images.map((image, index) => (
                 <button
+                  type="button"
                   key={image.id}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-                    index === currentImageIndex
-                      ? "border-purple-500 ring-2 ring-purple-500/30"
-                      : "border-gray-200 dark:border-gray-700 hover:border-purple-300"
-                  }`}
+                  className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${index === currentImageIndex
+                    ? 'border-purple-500 ring-2 ring-purple-500/30'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
+                    }`}
                 >
                   <Image
                     src={image.url}
@@ -256,12 +263,11 @@ export default function ProfileVerificationCarousel({
 
             <Button
               onClick={onVerifyProfile}
-              disabled={!allImagesVerified}
-              className={`${
-                allImagesVerified
-                  ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
-                  : "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-              } transition-all duration-200`}
+              disabled={!allImagesVerified || isLoading}
+              className={`${allImagesVerified
+                ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
+                : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                } transition-all duration-200`}
             >
               <CheckCircle className="h-4 w-4 mr-2" />
               Verificar Perfil

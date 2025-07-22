@@ -6,6 +6,15 @@
     "useIgnoreFile": false
   },
   "files": {
+    "includes": [
+      "!**/node_modules/**",
+      "!**/package-lock.json",
+      "!**/package.json",
+      "!**/README.md",
+      "!**/yarn.lock",
+      "**/*.{js,jsx,ts,tsx}",
+      "src/**/*.{js,jsx,ts,tsx}"
+    ],
     "ignoreUnknown": true
   },
   "formatter": {

@@ -1,3 +1,13 @@
+/* export interface UserProfile {
+    id: string;
+    name: string;
+    avatar: string;
+    isVerified: boolean;
+    verificationInProgress: boolean;
+    plan: 'Gratis' | 'Premium' | 'VIP';
+    lastConnection: string;
+    verificationImages?: string[];
+} */
 export interface BaseUser {
     _id?: string;
     isVerified?: boolean;
@@ -5,9 +15,13 @@ export interface BaseUser {
 }
 export interface User extends BaseUser {
     email?: string;
-    name?: string;
-    verificationDocument?: string[];
+    name: string;
+    verificationDocument: string[];
+    profiles?: Profile[];
+    password?: string;
+
 }
+
 
 export type Profile = {
     _id: string;
@@ -35,3 +49,14 @@ export type Profile = {
     };
 }
 
+export interface UserPaginatedResponse {
+    docs: User[];
+    totalDocs: number;
+    limit: number;
+    totalPages: number;
+    page: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+    nextPage: number | null;
+    prevPage: number | null;
+}
