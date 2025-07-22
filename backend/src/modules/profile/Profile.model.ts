@@ -30,6 +30,7 @@ export interface IProfile extends Document {
   plan: mongoose.Types.ObjectId;
   upgrades: mongoose.Types.ObjectId[];
   paymentHistory: mongoose.Types.ObjectId[];
+  categories: mongoose.Types.ObjectId[];
 }
 
 const profileSchema = new Schema<IProfile>(
@@ -62,7 +63,8 @@ const profileSchema = new Schema<IProfile>(
     services: [{ type: Schema.Types.ObjectId, ref: 'Service' }],
     paymentHistory: [{ type: Schema.Types.ObjectId, ref: 'PaymentHistory' }],
     plan: { type: Schema.Types.ObjectId, ref: 'Plan' },
-    upgrades: [{ type: Schema.Types.ObjectId, ref: 'Upgrade' }]
+    upgrades: [{ type: Schema.Types.ObjectId, ref: 'Upgrade' }],
+    categories: [{ type: Schema.Types.ObjectId, ref: 'Category' }]
 
   },
   { timestamps: true },

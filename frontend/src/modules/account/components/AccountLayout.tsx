@@ -1,7 +1,5 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
 import Loader from '@/components/Loader';
 import { useUser } from '@/hooks/use-user';
 import AccountContent from '@/modules/account/components/AccountContent';
