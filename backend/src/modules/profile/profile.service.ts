@@ -1,9 +1,39 @@
-import ProfileModel from './Profile.model';
+import { validateProfileFeatures } from '../attribute-group/validateProfileFeatures';
+import { ProfileModel } from './profile.model';
+import type { CreateProfileDTO } from './profile.types';
 
-export const crearPerfil = (data: any) => ProfileModel.create(data);
-export const obtenerPerfiles = () => ProfileModel.find();
-export const obtenerPerfilPorId = (id: string) => ProfileModel.findById(id);
-export const actualizarPerfil = (id: string, data: any) =>
-  ProfileModel.findByIdAndUpdate(id, data, { new: true });
-export const eliminarPerfil = (id: string) =>
-  ProfileModel.findByIdAndDelete(id);
+export const checkProfileNameExists = async (name: string) => {
+  const profile = await ProfileModel.findOne({ name });
+  if (profile) {
+    return { user: profile.user, exists: true, message: 'El nombre del perfil ya está en uso' };
+  }
+  return {
+    user: null,
+    exists: false,
+    message: 'El nombre del perfil no está en uso',
+  };
+};
+
+
+export const createProfile = async (data: CreateProfileDTO) => {
+  await validateProfileFeatures(data.features);
+
+  const profile = await ProfileModel.create(data);
+  return profile;
+};
+
+export const getProfiles = async () => {
+  return ProfileModel.find().populate('user');
+};
+
+export const getProfileById = async (id: string) => {
+  return ProfileModel.findById(id).populate('user');
+};
+
+export const updateProfile = async (id: string, data: Partial<CreateProfileDTO>) => {
+  return ProfileModel.findByIdAndUpdate(id, data, { new: true });
+};
+
+export const deleteProfile = async (id: string) => {
+  return ProfileModel.findByIdAndDelete(id);
+};

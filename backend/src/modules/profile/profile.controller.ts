@@ -1,28 +1,33 @@
 import type { Request, Response } from 'express';
-import * as profileService from './profile.service';
+import * as service from './profile.service';
 
-export const crearPerfil = async (req: Request, res: Response) => {
-  const perfil = await profileService.crearPerfil(req.body);
-  res.status(201).json(perfil);
+export const createProfile = async (req: Request, res: Response) => {
+  try {
+    const newProfile = await service.createProfile(req.body);
+    res.status(201).json(newProfile);
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
 };
 
-export const obtenerPerfiles = async (_: Request, res: Response) => {
-  const perfiles = await profileService.obtenerPerfiles();
-  res.json(perfiles);
+export const getProfiles = async (_req: Request, res: Response) => {
+  const profiles = await service.getProfiles();
+  res.json(profiles);
 };
 
-export const obtenerPerfilPorId = async (req: Request, res: Response) => {
-  const perfil = await profileService.obtenerPerfilPorId(req.params.id);
-  if (!perfil) return res.status(404).json({ mensaje: 'Perfil no encontrado' });
-  res.json(perfil);
+export const getProfileById = async (req: Request, res: Response) => {
+  const profile = await service.getProfileById(req.params.id);
+  if (!profile)
+    return res.status(404).json({ message: 'Perfil no encontrado' });
+  res.json(profile);
 };
 
-export const actualizarPerfil = async (req: Request, res: Response) => {
-  const perfil = await profileService.actualizarPerfil(req.params.id, req.body);
-  res.json(perfil);
+export const updateProfile = async (req: Request, res: Response) => {
+  const updated = await service.updateProfile(req.params.id, req.body);
+  res.json(updated);
 };
 
-export const eliminarPerfil = async (req: Request, res: Response) => {
-  await profileService.eliminarPerfil(req.params.id);
+export const deleteProfile = async (req: Request, res: Response) => {
+  await service.deleteProfile(req.params.id);
   res.status(204).send();
 };

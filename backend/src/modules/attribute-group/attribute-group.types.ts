@@ -1,3 +1,5 @@
+import type { Document } from 'mongoose';
+
 export interface CreateAttributeGroupInput {
     name: string;
     key: string;
@@ -9,4 +11,15 @@ export interface UpdateVariantInput {
     variantIndex: number;
     newValue?: string;
     active?: boolean;
+}
+
+export interface Variant {
+    value: string;
+    active?: boolean;
+}
+
+export interface IAttributeGroup extends Document {
+    name: string;
+    key: string;
+    variants: Variant[];
 }

@@ -1,15 +1,5 @@
-import mongoose, { type Document, Schema } from 'mongoose';
-
-export interface Variant {
-    value: string;
-    active?: boolean;
-}
-
-export interface IAttributeGroup extends Document {
-    name: string;
-    key: string;
-    variants: Variant[];
-}
+import mongoose, { Schema } from 'mongoose';
+import type { IAttributeGroup, Variant } from './attribute-group.types';
 
 const VariantSchema = new Schema<Variant>({
     value: { type: String, required: true },

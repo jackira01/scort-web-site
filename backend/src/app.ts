@@ -4,7 +4,7 @@ import express from 'express';
 import morgan from 'morgan';
 import { connectDB } from '../config/db';
 import attributeGroupRoutes from './modules/attribute-group/attribute-group.routes';
-import profileRoutes from './modules/user/profile/profile.routes';
+import profileRoutes from './modules/profile/profile.routes';
 import userRoutes from './modules/user/user.routes';
 
 dotenv.config();
