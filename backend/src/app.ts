@@ -3,8 +3,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import morgan from 'morgan';
 import { connectDB } from '../config/db';
-import genderRoutes from './modules/gender/gender.routes';
-import servicesRoutes from './modules/services/services.routes';
+import attributeGroupRoutes from './modules/attribute-group/attribute-group.routes';
 import profileRoutes from './modules/user/profile/profile.routes';
 import userRoutes from './modules/user/user.routes';
 
@@ -40,7 +39,6 @@ app.use(morgan('dev')); // esto sí muestra logs en consola
 
 app.use('/api/profiles', profileRoutes);
 app.use('/api/user', userRoutes);
-app.use('/api/gender', genderRoutes);
-app.use('/api/service', servicesRoutes);
+app.use('/api/attribute-groups', attributeGroupRoutes);
 
 export default app;
