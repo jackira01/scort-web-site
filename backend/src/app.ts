@@ -3,8 +3,8 @@ import dotenv from 'dotenv';
 import express from 'express';
 import morgan from 'morgan';
 import { connectDB } from '../config/db';
-import categoryRoutes from './modules/profile/category/category.routes';
-import profileRoutes from './modules/profile/profile.routes';
+import attributeGroupRoutes from './modules/attribute-group/attribute-group.routes';
+import profileRoutes from './modules/user/profile/profile.routes';
 import userRoutes from './modules/user/user.routes';
 
 dotenv.config();
@@ -39,6 +39,6 @@ app.use(morgan('dev')); // esto sí muestra logs en consola
 
 app.use('/api/profiles', profileRoutes);
 app.use('/api/user', userRoutes);
-app.use('/api/category', categoryRoutes);
+app.use('/api/attribute-groups', attributeGroupRoutes);
 
 export default app;
