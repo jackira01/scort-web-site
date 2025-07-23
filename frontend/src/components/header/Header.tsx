@@ -2,6 +2,7 @@
 
 import { Menu, Search, UserRound } from 'lucide-react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { useState } from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import SignIn, { SignOut } from '../authentication/sign-in';
-import { useSession } from 'next-auth/react';
 
 const HeaderComponent = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -54,23 +54,22 @@ const HeaderComponent = () => {
               <Menu className="h-4 w-4 mr-2" />
               Explorar
             </Button>
-            {
-              status === 'authenticated' ? (
-                <>
-                  <Link href="/cuenta">
-                    <Button
-                      variant="ghost"
-                      className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
-                    >
-                      <UserRound className="h-4 w-4 mr-2" />
-                      Mi cuenta
-                    </Button>
-                  </Link>
-                  <SignOut /></>
-              ) : (
-                <SignIn />
-              )
-            }
+            {status === 'authenticated' ? (
+              <>
+                <Link href="/cuenta">
+                  <Button
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+                  >
+                    <UserRound className="h-4 w-4 mr-2" />
+                    Mi cuenta
+                  </Button>
+                </Link>
+                <SignOut />
+              </>
+            ) : (
+              <SignIn />
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -108,15 +107,22 @@ const HeaderComponent = () => {
               <Menu className="h-4 w-4 mr-2" />
               Explorar
             </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
-            >
-              Mi cuenta
-            </Button>
-            {/*  <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all duration-200">
-              Cerrar sesión
-            </Button> */}
+            {status === 'authenticated' ? (
+              <>
+                <Link href="/cuenta">
+                  <Button
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+                  >
+                    <UserRound className="h-4 w-4 mr-2" />
+                    Mi cuenta
+                  </Button>
+                </Link>
+                <SignOut />
+              </>
+            ) : (
+              <SignIn />
+            )}
             <div className="flex items-center justify-center pt-2">
               <Select defaultValue="español">
                 <SelectTrigger className="w-32">
