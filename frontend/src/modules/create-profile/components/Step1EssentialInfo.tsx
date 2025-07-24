@@ -105,9 +105,58 @@ export function Step1EssentialInfo({ formData, onChange }: Step1EssentialInfoPro
           <Label className="text-foreground">
             ¿Dónde te encuentras? <span className="text-red-500">*</span>
           </Label>
-          <div className="mt-2 border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center">
-            <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">Cambio</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            <div>
+              <Label className="text-sm text-muted-foreground">Departamento</Label>
+              <Select
+                value={formData.location.state}
+                onValueChange={(value) => onChange({
+                  location: {
+                    ...formData.location,
+                    state: value,
+                    city: '' // Reset city when department changes
+                  }
+                })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona departamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(colombiaDepartments).map((department) => (
+                    <SelectItem key={department} value={department}>
+                      {department}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-sm text-muted-foreground">Ciudad</Label>
+              <Select
+                value={formData.location.city}
+                onValueChange={(value) => onChange({
+                  location: {
+                    ...formData.location,
+                    city: value
+                  }
+                })}
+                disabled={!formData.location.state}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona ciudad" />
+                </SelectTrigger>
+                <SelectContent>
+                  {formData.location.state &&
+                    colombiaDepartments[formData.location.state as keyof typeof colombiaDepartments]?.map((city) => (
+                      <SelectItem key={city} value={city}>
+                        {city}
+                      </SelectItem>
+                    ))
+                  }
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </div>
