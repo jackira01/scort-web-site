@@ -100,12 +100,14 @@ const upgradeOptions = [
     price: 450000,
     emoji: '🤩',
     description:
-      'Haga que su anuncio aparezca en nuestra p��gina de inicio y sea visto por miles de personas.',
+      'Haga que su anuncio aparezca en nuestra página de inicio y sea visto por miles de personas.',
   },
 ];
 
 export default function CreateProfilePage() {
   const [currentStep, setCurrentStep] = useState(1);
+  const [attributeGroups, setAttributeGroups] = useState<AttributeGroup[]>([]);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     // Step 1 - Lo esencial
     profileName: '',
