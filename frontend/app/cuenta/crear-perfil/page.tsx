@@ -715,8 +715,7 @@ export default function CreateProfilePage() {
                   <div>
                     <Label className="text-foreground">Ojos</Label>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {['Negros', 'Café', 'Avellana', 'Verdes', 'Azul'].map(
-                        (color) => (
+                      {getEyeColorOptions().map((color) => (
                           <Button
                             key={color}
                             variant={
