@@ -150,6 +150,54 @@ export default function CreateProfilePage() {
     acceptTerms: false,
   });
 
+  // Load attribute groups on component mount
+  useEffect(() => {
+    const loadAttributeGroups = async () => {
+      setLoading(true);
+      const groups = await AttributeGroupsService.getAttributeGroups();
+      setAttributeGroups(groups);
+      setLoading(false);
+    };
+
+    loadAttributeGroups();
+  }, []);
+
+  // Helper functions to get attribute options
+  const getGenderOptions = () => {
+    const genderGroup = AttributeGroupsService.getAttributeGroupByKey(attributeGroups, 'gender');
+    return AttributeGroupsService.getActiveVariants(genderGroup);
+  };
+
+  const getCategoryOptions = () => {
+    const categoryGroup = AttributeGroupsService.getAttributeGroupByKey(attributeGroups, 'category');
+    return AttributeGroupsService.getActiveVariants(categoryGroup);
+  };
+
+  const getServiceOptions = () => {
+    const servicesGroup = AttributeGroupsService.getAttributeGroupByKey(attributeGroups, 'services');
+    return AttributeGroupsService.getActiveVariants(servicesGroup);
+  };
+
+  const getSkinColorOptions = () => {
+    const skinGroup = AttributeGroupsService.getAttributeGroupByKey(attributeGroups, 'skin');
+    return AttributeGroupsService.getActiveVariants(skinGroup);
+  };
+
+  const getEyeColorOptions = () => {
+    const eyesGroup = AttributeGroupsService.getAttributeGroupByKey(attributeGroups, 'eyes');
+    return AttributeGroupsService.getActiveVariants(eyesGroup);
+  };
+
+  const getHairColorOptions = () => {
+    const hairGroup = AttributeGroupsService.getAttributeGroupByKey(attributeGroups, 'hair');
+    return AttributeGroupsService.getActiveVariants(hairGroup);
+  };
+
+  const getSexualityOptions = () => {
+    const sexGroup = AttributeGroupsService.getAttributeGroupByKey(attributeGroups, 'sex');
+    return AttributeGroupsService.getActiveVariants(sexGroup);
+  };
+
   const handleNext = () => {
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
