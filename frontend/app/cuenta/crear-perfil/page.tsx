@@ -41,41 +41,7 @@ const steps = [
   { id: 5, title: 'Finalizar', description: 'Revisión y publicación' },
 ];
 
-const services = [
-  'Atención Hombres',
-  'Atención Mujeres',
-  'Atención Parejas',
-  'Atención Discapacitados',
-  'Trato de novios',
-  'Besos en la boca',
-  'Beso francés',
-  'Hablar sucio',
-  'Fetiches',
-  'Juguetes',
-  'Juegos de Rol',
-  'Disfraces',
-  'Squirt',
-  'Dejarte Lamer mis pies',
-  'Besar tus pies',
-  'Masajes',
-  'Masajes relajantes',
-  'Masaje Terapeutico',
-  'Masaje cuerpo a cuerpo',
-  'Masaje Tailandés',
-  'Masaje Tántrico',
-  'Masaje Prostático',
-  'Masaje Final Feliz',
-  'Videollamada erotica',
-  'Videollamada con rostro',
-  'Strip tease',
-  'Sexting',
-  'Venta audios',
-  'Venta videos',
-  'Venta Lencería',
-  'Pack Fotos',
-  'Videos Personalizados',
-  'Valorar tu pene',
-];
+// Services will be loaded dynamically from API
 
 const upgradeOptions = [
   {
