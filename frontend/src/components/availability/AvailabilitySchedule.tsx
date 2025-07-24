@@ -55,15 +55,27 @@ export function AvailabilitySchedule({ availability, onChange }: AvailabilitySch
       const existingDay = availability.find(a => a.dayOfWeek === day);
       const hasSlots = existingDay && existingDay.slots.length > 0;
       
+      let timeRange: DateRange<Dayjs> = [
+        dayjs().hour(9).minute(0),
+        dayjs().hour(17).minute(0)
+      ];
+
+      if (hasSlots && existingDay!.slots[0]) {
+        const slot = existingDay!.slots[0];
+        const startParts = slot.start.split(':');
+        const endParts = slot.end.split(':');
+
+        if (startParts.length === 2 && endParts.length === 2) {
+          timeRange = [
+            dayjs().hour(parseInt(startParts[0])).minute(parseInt(startParts[1])),
+            dayjs().hour(parseInt(endParts[0])).minute(parseInt(endParts[1]))
+          ];
+        }
+      }
+
       acc[day] = {
         isAvailable: hasSlots,
-        timeRange: hasSlots ? [
-          dayjs().hour(parseInt(existingDay.slots[0].start.split(':')[0])).minute(parseInt(existingDay.slots[0].start.split(':')[1])),
-          dayjs().hour(parseInt(existingDay.slots[0].end.split(':')[0])).minute(parseInt(existingDay.slots[0].end.split(':')[1]))
-        ] : [
-          dayjs().hour(9).minute(0),
-          dayjs().hour(17).minute(0)
-        ]
+        timeRange
       };
       return acc;
     }, {} as Record<string, { isAvailable: boolean; timeRange: DateRange<Dayjs> }>)
