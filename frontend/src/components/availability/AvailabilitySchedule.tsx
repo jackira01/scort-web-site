@@ -45,36 +45,20 @@ const dayLabels = {
 export function AvailabilitySchedule({ availability, onChange }: AvailabilityScheduleProps) {
   const [dayStates, setDayStates] = useState<Record<string, {
     isAvailable: boolean;
-    timeRange: DateRange<Dayjs>;
+    startTime: string;
+    endTime: string;
   }>>(
     daysOfWeek.reduce((acc, day) => {
       const existingDay = availability.find(a => a.dayOfWeek === day);
       const hasSlots = existingDay && existingDay.slots.length > 0;
-      
-      let timeRange: DateRange<Dayjs> = [
-        dayjs().hour(9).minute(0),
-        dayjs().hour(17).minute(0)
-      ];
-
-      if (hasSlots && existingDay!.slots[0]) {
-        const slot = existingDay!.slots[0];
-        const startParts = slot.start.split(':');
-        const endParts = slot.end.split(':');
-
-        if (startParts.length === 2 && endParts.length === 2) {
-          timeRange = [
-            dayjs().hour(parseInt(startParts[0])).minute(parseInt(startParts[1])),
-            dayjs().hour(parseInt(endParts[0])).minute(parseInt(endParts[1]))
-          ];
-        }
-      }
 
       acc[day] = {
         isAvailable: hasSlots,
-        timeRange
+        startTime: hasSlots && existingDay!.slots[0] ? existingDay!.slots[0].start : '09:00',
+        endTime: hasSlots && existingDay!.slots[0] ? existingDay!.slots[0].end : '17:00'
       };
       return acc;
-    }, {} as Record<string, { isAvailable: boolean; timeRange: DateRange<Dayjs> }>)
+    }, {} as Record<string, { isAvailable: boolean; startTime: string; endTime: string }>)
   );
 
   const updateAvailability = () => {
