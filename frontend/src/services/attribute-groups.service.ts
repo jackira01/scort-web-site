@@ -15,7 +15,7 @@ export interface AttributeGroup {
 }
 
 export class AttributeGroupsService {
-  private static readonly BASE_URL = 'http://localhost:5000/api';
+  private static readonly BASE_URL = 'http://localhost:4000/api';
 
   static async getAttributeGroups(): Promise<AttributeGroup[]> {
     try {
