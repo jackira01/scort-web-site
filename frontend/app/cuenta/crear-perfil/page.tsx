@@ -562,7 +562,7 @@ export default function CreateProfilePage() {
                   Servicios
                 </Label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {services.map((service) => (
+                  {getServiceOptions().map((service) => (
                     <div key={service} className="flex items-center space-x-2">
                       <Checkbox
                         id={service}
