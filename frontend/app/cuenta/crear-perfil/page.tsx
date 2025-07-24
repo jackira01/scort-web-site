@@ -26,6 +26,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { AvailabilitySchedule } from '@/components/availability/AvailabilitySchedule';
 
 const steps = [
   { id: 1, title: 'Lo esencial', description: 'Información básica del perfil' },
@@ -127,7 +128,14 @@ export default function CreateProfilePage() {
     height: '',
     bustSize: '',
     rates: [] as any[],
-    availability: {},
+    availability: [] as Array<{
+      dayOfWeek: string;
+      slots: Array<{
+        start: string;
+        end: string;
+        timezone: string;
+      }>;
+    }>,
 
     // Step 4 - Multimedia
     photos: [] as File[],
@@ -543,15 +551,15 @@ export default function CreateProfilePage() {
               </Card>
 
               {/* Availability Section */}
-              <div>
-                <Label className="text-foreground text-lg font-semibold">
-                  ¿Cuándo podemos encontrarnos?
-                </Label>
-                <Button variant="outline" className="mt-2 w-full justify-start">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Administrar horario
-                </Button>
-              </div>
+              <AvailabilitySchedule
+                availability={formData.availability}
+                onChange={(newAvailability) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    availability: newAvailability,
+                  }))
+                }
+              />
 
               {/* Contact Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
