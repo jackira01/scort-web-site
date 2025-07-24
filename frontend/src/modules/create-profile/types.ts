@@ -10,7 +10,11 @@ export interface FormData {
   gender: string;
   workType: string;
   category: string;
-  location: string;
+  location: {
+    country: string;
+    state: string;
+    city: string;
+  };
 
   // Step 2 - Descripción
   description: string;
