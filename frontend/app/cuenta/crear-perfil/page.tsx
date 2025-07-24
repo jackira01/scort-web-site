@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { AvailabilitySchedule } from '@/components/availability/AvailabilitySchedule';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -127,7 +128,14 @@ export default function CreateProfilePage() {
     height: '',
     bustSize: '',
     rates: [] as any[],
-    availability: {},
+    availability: [] as Array<{
+      dayOfWeek: string;
+      slots: Array<{
+        start: string;
+        end: string;
+        timezone: string;
+      }>;
+    }>,
 
     // Step 4 - Multimedia
     photos: [] as File[],
@@ -543,15 +551,15 @@ export default function CreateProfilePage() {
               </Card>
 
               {/* Availability Section */}
-              <div>
-                <Label className="text-foreground text-lg font-semibold">
-                  ¿Cuándo podemos encontrarnos?
-                </Label>
-                <Button variant="outline" className="mt-2 w-full justify-start">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Administrar horario
-                </Button>
-              </div>
+              <AvailabilitySchedule
+                availability={formData.availability}
+                onChange={(newAvailability) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    availability: newAvailability,
+                  }))
+                }
+              />
 
               {/* Contact Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -873,11 +881,10 @@ export default function CreateProfilePage() {
                   {upgradeOptions.map((option) => (
                     <Card
                       key={option.id}
-                      className={`cursor-pointer transition-all duration-200 ${
-                        formData.selectedUpgrades.includes(option.id)
+                      className={`cursor-pointer transition-all duration-200 ${formData.selectedUpgrades.includes(option.id)
                           ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
                           : 'hover:border-purple-300'
-                      }`}
+                        }`}
                       onClick={() => handleUpgradeToggle(option.id)}
                     >
                       <CardContent className="p-4">
@@ -1092,13 +1099,12 @@ export default function CreateProfilePage() {
             {steps.map((step) => (
               <div
                 key={step.id}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 ${
-                  currentStep === step.id
+                className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 ${currentStep === step.id
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
                     : currentStep > step.id
                       ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
                       : 'bg-muted text-muted-foreground'
-                }`}
+                  }`}
               >
                 <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
                   {currentStep > step.id ? (
