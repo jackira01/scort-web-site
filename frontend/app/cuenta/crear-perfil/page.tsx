@@ -495,10 +495,16 @@ export default function CreateProfilePage() {
                   ¿Dónde quieres que se muestre tu anuncio?{' '}
                   <span className="text-red-500">*</span>
                 </Label>
-                <Button variant="outline" className="mt-2 w-full justify-start">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Categoría
-                </Button>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                  className="mt-2 w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
+                >
+                  <option value="">Seleccionar categoría</option>
+                  {getCategoryOptions().map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
