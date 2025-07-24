@@ -277,9 +277,7 @@ export function CreateProfileLayout() {
                   <Button
                     className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold px-8"
                     disabled={!formData.acceptTerms}
-                    onClick={() => {
-                      console.log('Guardando perfil completo...', formData);
-                    }}
+                    onClick={handleFinalSave}
                   >
                     Guardar
                   </Button>
