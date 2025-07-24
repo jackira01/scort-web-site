@@ -1,0 +1,79 @@
+'use client';
+
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { FormData } from '../types';
+import { services } from '../data';
+
+interface Step2DescriptionProps {
+  formData: FormData;
+  onChange: (data: Partial<FormData>) => void;
+}
+
+export function Step2Description({ formData, onChange }: Step2DescriptionProps) {
+  const handleServiceToggle = (service: string) => {
+    const selectedServices = formData.selectedServices.includes(service)
+      ? formData.selectedServices.filter((s) => s !== service)
+      : [...formData.selectedServices, service];
+    
+    onChange({ selectedServices });
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+      <div className="flex items-center space-x-3 mb-6">
+        <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+          02
+        </div>
+        <h2 className="text-2xl font-bold text-foreground">
+          Descripción
+        </h2>
+      </div>
+
+      <div className="space-y-6">
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <Label htmlFor="description" className="text-foreground">
+              Acerca de mí <span className="text-red-500">*</span>
+            </Label>
+            <span className="text-sm text-muted-foreground">
+              {formData.description.length} / 1000 caracteres restantes
+            </span>
+          </div>
+          <Textarea
+            id="description"
+            placeholder="Cuéntanos sobre ti, tus intereses, personalidad y lo que te hace especial..."
+            value={formData.description}
+            onChange={(e) => onChange({ description: e.target.value })}
+            className="min-h-32"
+            maxLength={1000}
+          />
+        </div>
+
+        <div>
+          <Label className="text-foreground text-lg font-semibold mb-4 block">
+            Servicios
+          </Label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {services.map((service) => (
+              <div key={service} className="flex items-center space-x-2">
+                <Checkbox
+                  id={service}
+                  checked={formData.selectedServices.includes(service)}
+                  onCheckedChange={() => handleServiceToggle(service)}
+                />
+                <Label
+                  htmlFor={service}
+                  className="text-sm text-foreground cursor-pointer"
+                >
+                  {service}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
