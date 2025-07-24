@@ -76,17 +76,17 @@ export function AvailabilitySchedule({ availability, onChange }: AvailabilitySch
         const timeRange = dayStates[day].timeRange;
         const start = timeRange[0];
         const end = timeRange[1];
-        
+
         return {
           dayOfWeek: day,
           slots: [{
-            start: start ? start.format('HH:mm') : '09:00',
-            end: end ? end.format('HH:mm') : '17:00',
+            start: start && start.isValid() ? start.format('HH:mm') : '09:00',
+            end: end && end.isValid() ? end.format('HH:mm') : '17:00',
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
           }]
         };
       });
-    
+
     onChange(newAvailability);
   };
 
