@@ -741,14 +741,7 @@ export default function CreateProfilePage() {
                   <div>
                     <Label className="text-foreground">Pelo</Label>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {[
-                        'Negro',
-                        'Castaño Claro',
-                        'Castaño Oscuro',
-                        'Rubio',
-                        'Pelirrojo',
-                        'Canoso',
-                      ].map((color) => (
+                      {getHairColorOptions().map((color) => (
                         <Button
                           key={color}
                           variant={
