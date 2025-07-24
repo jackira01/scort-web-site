@@ -665,7 +665,7 @@ export default function CreateProfilePage() {
                 <div>
                   <Label className="text-foreground">Piel</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {['Blanca', 'Trigueña', 'Morena', 'Negra'].map((color) => (
+                    {getSkinColorOptions().map((color) => (
                       <Button
                         key={color}
                         variant={
