@@ -685,8 +685,7 @@ export default function CreateProfilePage() {
                 <div>
                   <Label className="text-foreground">Sexo</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {['Straight', 'Gay', 'Lesbian', 'Bisexual', 'Other'].map(
-                      (sexuality) => (
+                    {getSexualityOptions().map((sexuality) => (
                         <Button
                           key={sexuality}
                           variant={
