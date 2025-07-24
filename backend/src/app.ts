@@ -37,7 +37,7 @@ if (ENVIROMENT === 'development') {
 app.use(express.json());
 app.use(morgan('dev')); // esto sí muestra logs en consola
 
-app.use('/api/profiles', profileRoutes);
+app.use('/api/profile', profileRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/attribute-groups', attributeGroupRoutes);
 

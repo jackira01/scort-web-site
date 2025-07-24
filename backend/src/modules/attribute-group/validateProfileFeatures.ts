@@ -3,14 +3,16 @@ import { AttributeGroupModel } from './attribute-group.model';
 
 type FeatureInput = {
   group: Types.ObjectId | string;
-  value: string;
+  value: string[]; // ← ahora acepta múltiples valores
 };
 
 /**
  * Valida una lista de features antes de guardar el perfil.
- * Verifica que el grupo exista y que el value esté entre sus variantes activas.
+ * Verifica que el grupo exista y que cada valor esté entre sus variantes activas.
  */
 export const validateProfileFeatures = async (features: FeatureInput[]) => {
+  console.log("features", features);
+
   for (const feature of features) {
     const group = await AttributeGroupModel.findById(feature.group);
 
@@ -20,14 +22,16 @@ export const validateProfileFeatures = async (features: FeatureInput[]) => {
       );
     }
 
-    const isValidVariant = group.variants.some(
-      (variant) => variant.value === feature.value && variant.active,
-    );
-
-    if (!isValidVariant) {
-      throw new Error(
-        `El valor "${feature.value}" no es válido o está inactivo para el grupo "${group.name}".`,
+    for (const val of feature.value) {
+      const isValidVariant = group.variants.some(
+        (variant) => variant.value === val && variant.active,
       );
+
+      if (!isValidVariant) {
+        throw new Error(
+          `El valor "${val}" no es válido o está inactivo para el grupo "${group.name}".`,
+        );
+      }
     }
   }
 

@@ -40,7 +40,7 @@ export interface CreateProfileDTO {
     };
     features: {
         group: string;
-        value: string;
+        value: string[];
     }[];
     media?: {
         gallery?: string[];

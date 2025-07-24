@@ -14,7 +14,7 @@ const profileSchema = new Schema<IProfile>(
     features: [
       {
         group: { type: mongoose.Schema.Types.ObjectId, ref: 'AttributeGroup', required: true }, // nombre del grupo (ej: 'gender', 'hairColor', etc.)
-        value: { type: Schema.Types.Mixed, required: true }, // string o string[] // valor seleccionado (ej: 'Hombre', 'Rubio', etc.)
+        value: [{ type: String, required: true }], // string o string[] // valor seleccionado (ej: 'Hombre', 'Rubio', etc.)
       },
     ],
     media: {
