@@ -14,7 +14,7 @@ const profileSchema = new Schema<IProfile>(
     features: [
       {
         group: { type: mongoose.Schema.Types.ObjectId, ref: 'AttributeGroup', required: true }, // nombre del grupo (ej: 'gender', 'hairColor', etc.)
-        value: { type: String, required: true }, // valor seleccionado (ej: 'Hombre', 'Rubio', etc.)
+        value: { type: Schema.Types.Mixed, required: true }, // string o string[] // valor seleccionado (ej: 'Hombre', 'Rubio', etc.)
       },
     ],
     media: {
@@ -23,8 +23,28 @@ const profileSchema = new Schema<IProfile>(
       stories: [String],
     },
     verification: { type: Schema.Types.ObjectId, ref: 'ProfileVerification' },
-    availability: [{ type: Schema.Types.ObjectId, ref: 'Availability' }],
-    rates: [{ type: Schema.Types.ObjectId, ref: 'Rate' }],
+    availability: [
+      {
+        dayOfWeek: {
+          type: String,
+          enum: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sábado', 'domingo'],
+          required: true,
+        },
+        slots: [
+          {
+            start: { type: String, required: true },
+            end: { type: String, required: true },
+            timezone: { type: String, required: true },
+          },
+        ],
+      },
+    ],
+    rates: [
+      {
+        hour: { type: String, required: true }, // Ej: "01:00", "00:30"
+        price: { type: Number, required: true },
+      },
+    ],
     paymentHistory: [{ type: Schema.Types.ObjectId, ref: 'PaymentHistory' }],
     plan: { type: Schema.Types.ObjectId, ref: 'Plan' },
     upgrades: [{ type: Schema.Types.ObjectId, ref: 'Upgrade' }],

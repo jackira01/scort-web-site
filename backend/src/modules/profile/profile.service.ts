@@ -17,7 +17,10 @@ export const checkProfileNameExists = async (name: string) => {
 
 export const createProfile = async (data: CreateProfileDTO) => {
   await validateProfileFeatures(data.features);
-
+  const { exists, message } = await checkProfileNameExists(data.name);
+  if (exists) {
+    throw new Error(message);
+  }
   const profile = await ProfileModel.create(data);
   return profile;
 };

@@ -5,8 +5,9 @@ export const createProfile = async (req: Request, res: Response) => {
   try {
     const newProfile = await service.createProfile(req.body);
     res.status(201).json(newProfile);
-  } catch (err: any) {
-    res.status(400).json({ message: err.message });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An error occurred';
+    res.status(400).json({ message });
   }
 };
 

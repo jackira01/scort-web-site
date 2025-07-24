@@ -1,5 +1,34 @@
 import type { Document, Types } from 'mongoose';
 
+export interface IProfile extends Document {
+    user: Types.ObjectId;
+    name: string;
+    description: string;
+    location: {
+        country: string;
+        state: string;
+        city: string;
+    };
+    features: {
+        group: string;
+        value: string | string[];
+    }[];
+    media: {
+        gallery: string[];
+        videos: string[];
+        stories: string[];
+    };
+    availability: Types.ObjectId[];
+    verification: Types.ObjectId | boolean;
+    rates: {
+        hour: string; // formato HH:mm
+        price: number;
+    }[];
+    paymentHistory: Types.ObjectId[];
+    plan: Types.ObjectId;
+    upgrades: Types.ObjectId[];
+}
+
 export interface CreateProfileDTO {
     user: Types.ObjectId;
     name: string;
@@ -26,31 +55,6 @@ export interface CreateProfileDTO {
     verification?: string;
 }
 
-export interface IProfile extends Document {
-    user: Types.ObjectId;
-    name: string;
-    description: string;
-    location: {
-        country: string;
-        state: string;
-        city: string;
-    };
-    features: {
-        group: string;
-        value: string;
-    }[];
-    media: {
-        gallery: string[];
-        videos: string[];
-        stories: string[];
-    };
-    availability: Types.ObjectId[];
-    verification: Types.ObjectId;
-    rates: Types.ObjectId[];
-    paymentHistory: Types.ObjectId[];
-    plan: Types.ObjectId;
-    upgrades: Types.ObjectId[];
-}
 
 export interface IProfileInput {
     user: Types.ObjectId | string;
