@@ -1,13 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import dayjs, { Dayjs } from 'dayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { TimeRangePicker } from '@mui/x-date-pickers-pro/TimeRangePicker';
-import { DateRange } from '@mui/x-date-pickers-pro/models';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface AvailabilitySlot {
