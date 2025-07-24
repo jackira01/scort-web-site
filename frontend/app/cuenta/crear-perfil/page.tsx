@@ -27,6 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AvailabilitySchedule } from '@/components/availability/AvailabilitySchedule';
+import { AttributeGroupsService, type AttributeGroup } from '@/services/attribute-groups.service';
 
 const steps = [
   { id: 1, title: 'Lo esencial', description: 'Información básica del perfil' },
@@ -99,7 +100,7 @@ const upgradeOptions = [
     price: 450000,
     emoji: '🤩',
     description:
-      'Haga que su anuncio aparezca en nuestra página de inicio y sea visto por miles de personas.',
+      'Haga que su anuncio aparezca en nuestra p��gina de inicio y sea visto por miles de personas.',
   },
 ];
 
