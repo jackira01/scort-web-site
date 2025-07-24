@@ -84,19 +84,19 @@ export function AvailabilitySchedule({ availability, onChange }: AvailabilitySch
         isAvailable: checked
       }
     }));
-    
+
     setTimeout(updateAvailability, 0);
   };
 
-  const handleTimeRangeChange = (day: string, newValue: DateRange<Dayjs>) => {
+  const handleTimeChange = (day: string, field: 'startTime' | 'endTime', value: string) => {
     setDayStates(prev => ({
       ...prev,
       [day]: {
         ...prev[day],
-        timeRange: newValue
+        [field]: value
       }
     }));
-    
+
     setTimeout(updateAvailability, 0);
   };
 
