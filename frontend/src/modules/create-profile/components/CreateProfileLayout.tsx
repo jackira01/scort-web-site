@@ -246,10 +246,7 @@ export function CreateProfileLayout() {
 
               <Button
                 className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold py-3"
-                onClick={() => {
-                  // Save draft functionality
-                  console.log('Guardando borrador...', formData);
-                }}
+                onClick={handleFinalSave}
               >
                 Guardar
               </Button>
