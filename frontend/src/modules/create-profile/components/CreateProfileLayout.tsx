@@ -23,7 +23,11 @@ export function CreateProfileLayout() {
     gender: '',
     workType: '',
     category: '',
-    location: '',
+    location: {
+      country: 'Colombia',
+      state: '',
+      city: '',
+    },
 
     // Step 2 - Descripción
     description: '',
