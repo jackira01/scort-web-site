@@ -4,8 +4,10 @@ import { CheckCircle, Plus, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormData } from '../types';
 import { genderOptions, workTypeOptions } from '../data';
+import { colombiaDepartments } from '../colombiaData';
 
 interface Step1EssentialInfoProps {
   formData: FormData;
