@@ -441,7 +441,7 @@ export default function CreateProfilePage() {
                     Mi género es <span className="text-red-500">*</span>
                   </Label>
                   <div className="flex space-x-2 mt-2">
-                    {['Mujer', 'Hombre', 'Trans'].map((gender) => (
+                    {getGenderOptions().map((gender) => (
                       <Button
                         key={gender}
                         variant={
