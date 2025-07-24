@@ -64,20 +64,14 @@ export function AvailabilitySchedule({ availability, onChange }: AvailabilitySch
   const updateAvailability = () => {
     const newAvailability = daysOfWeek
       .filter(day => dayStates[day].isAvailable)
-      .map(day => {
-        const timeRange = dayStates[day].timeRange;
-        const start = timeRange[0];
-        const end = timeRange[1];
-
-        return {
-          dayOfWeek: day,
-          slots: [{
-            start: start && start.isValid() ? start.format('HH:mm') : '09:00',
-            end: end && end.isValid() ? end.format('HH:mm') : '17:00',
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-          }]
-        };
-      });
+      .map(day => ({
+        dayOfWeek: day,
+        slots: [{
+          start: dayStates[day].startTime,
+          end: dayStates[day].endTime,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        }]
+      }));
 
     onChange(newAvailability);
   };
