@@ -14,20 +14,9 @@ import {
 } from '@/components/ui/select';
 import { useVerifyProfileName } from '@/hooks/use-check-profile-name';
 import { colombiaDepartments } from '../colombiaData';
-import type { FormData } from '../types';
+import type { AttributeGroup, FormData } from '../types';
 
-interface Variant {
-  _id: string;
-  value: string;
-  active: boolean;
-}
 
-interface AttributeGroup {
-  _id: string;
-  name: string;
-  key: string;
-  variants: Variant[];
-}
 
 interface Step1EssentialInfoProps {
   formData: FormData;
@@ -93,6 +82,7 @@ export function Step1EssentialInfo({
               </p>
             )}
           </div>
+
           <div className="flex items-center mt-2">
             <Button
               onClick={() => refetch()}
@@ -139,6 +129,31 @@ export function Step1EssentialInfo({
             </div>
           </div>
 
+          <div>
+            <Label className="text-foreground">
+              ¿Dónde quieres que se muestre tu anuncio?{' '}
+              <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={formData.category}
+              onValueChange={(value) => onChange({ category: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona una categoría" />
+              </SelectTrigger>
+              <SelectContent>
+                {categoryGroup.variants
+                  .filter((variant) => variant.active)
+                  .map((variant) => (
+                    <SelectItem key={variant._id} value={variant.value}>
+                      {variant.value}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+
           {/* <div>
             <Label className="text-foreground">Trabajo para</Label>
             <div className="flex space-x-2 mt-2">
@@ -160,29 +175,7 @@ export function Step1EssentialInfo({
           </div> */}
         </div>
 
-        <div>
-          <Label className="text-foreground">
-            ¿Dónde quieres que se muestre tu anuncio?{' '}
-            <span className="text-red-500">*</span>
-          </Label>
-          <Select
-            value={formData.category}
-            onValueChange={(value) => onChange({ category: value })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecciona una categoría" />
-            </SelectTrigger>
-            <SelectContent>
-              {categoryGroup.variants
-                .filter((variant) => variant.active)
-                .map((variant) => (
-                  <SelectItem key={variant._id} value={variant.value}>
-                    {variant.value}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-        </div>
+
 
         <div>
           <Label className="text-foreground">

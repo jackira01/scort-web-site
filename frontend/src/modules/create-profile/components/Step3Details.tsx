@@ -4,16 +4,35 @@ import { AvailabilitySchedule } from '@/components/availability/AvailabilitySche
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FormData, Rate } from '../types';
-import { skinColorOptions, sexualityOptions, eyeColorOptions, hairColorOptions, bodyTypeOptions } from '../data';
+import {
+  bodyTypeOptions,
+  eyeColorOptions,
+  hairColorOptions,
+  sexualityOptions,
+  skinColorOptions,
+} from '../data';
+import type { AttributeGroup, FormData, Rate } from '../types';
 import { RatesManager } from './RatesManager';
 
 interface Step3DetailsProps {
   formData: FormData;
   onChange: (data: Partial<FormData>) => void;
+  skinGroup: AttributeGroup;
+  sexualityGroup: AttributeGroup;
+  eyeGroup: AttributeGroup;
+  hairGroup: AttributeGroup;
+  bodyGroup: AttributeGroup;
 }
 
-export function Step3Details({ formData, onChange }: Step3DetailsProps) {
+export function Step3Details({
+  formData,
+  onChange,
+  skinGroup,
+  sexualityGroup,
+  eyeGroup,
+  hairGroup,
+  bodyGroup,
+}: Step3DetailsProps) {
   const handleRatesChange = (rates: Rate[]) => {
     onChange({ rates });
   };
@@ -34,7 +53,9 @@ export function Step3Details({ formData, onChange }: Step3DetailsProps) {
         {/* Availability Section */}
         <AvailabilitySchedule
           availability={formData.availability}
-          onChange={(newAvailability) => onChange({ availability: newAvailability })}
+          onChange={(newAvailability) =>
+            onChange({ availability: newAvailability })
+          }
         />
 
         {/* Contact Details */}
@@ -77,36 +98,38 @@ export function Step3Details({ formData, onChange }: Step3DetailsProps) {
           <div>
             <Label className="text-foreground">Piel</Label>
             <div className="flex flex-wrap gap-2 mt-2">
-              {skinColorOptions.map((color) => (
-                <Button
-                  key={color}
-                  variant={
-                    formData.skinColor === color ? 'default' : 'outline'
-                  }
-                  size="sm"
-                  onClick={() => onChange({ skinColor: color })}
-                >
-                  {color}
-                </Button>
-              ))}
+              {skinGroup.variants
+                .filter((v) => v.active)
+                .map((variant) => (
+                  <Button
+                    key={variant._id}
+                    variant={formData.skinColor === variant.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => onChange({ skinColor: variant.value })}
+                  >
+                    {variant.value}
+                  </Button>
+                ))}
             </div>
           </div>
 
           <div>
             <Label className="text-foreground">Sexo</Label>
             <div className="flex flex-wrap gap-2 mt-2">
-              {sexualityOptions.map((sexuality) => (
-                <Button
-                  key={sexuality}
-                  variant={
-                    formData.sexuality === sexuality ? 'default' : 'outline'
-                  }
-                  size="sm"
-                  onClick={() => onChange({ sexuality })}
-                >
-                  {sexuality}
-                </Button>
-              ))}
+              {sexualityGroup.variants
+                .filter((v) => v.active)
+                .map((variant) => (
+                  <Button
+                    key={variant._id}
+                    variant={
+                      formData.sexuality === variant.value ? 'default' : 'outline'
+                    }
+                    size="sm"
+                    onClick={() => onChange({ sexuality: variant.value })}
+                  >
+                    {variant.value}
+                  </Button>
+                ))}
             </div>
           </div>
         </div>
@@ -120,54 +143,58 @@ export function Step3Details({ formData, onChange }: Step3DetailsProps) {
             <div>
               <Label className="text-foreground">Ojos</Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {eyeColorOptions.map((color) => (
-                  <Button
-                    key={color}
-                    variant={
-                      formData.eyeColor === color ? 'default' : 'outline'
-                    }
-                    size="sm"
-                    onClick={() => onChange({ eyeColor: color })}
-                  >
-                    {color}
-                  </Button>
-                ))}
+                {eyeGroup.variants
+                  .filter((v) => v.active)
+                  .map((variant) => (
+                    <Button
+                      key={variant._id}
+                      variant={
+                        formData.eyeColor === variant.value ? 'default' : 'outline'
+                      }
+                      size="sm"
+                      onClick={() => onChange({ eyeColor: variant.value })}
+                    >
+                      {variant.value}
+                    </Button>
+                  ))}
               </div>
             </div>
 
             <div>
               <Label className="text-foreground">Pelo</Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {hairColorOptions.map((color) => (
-                  <Button
-                    key={color}
-                    variant={
-                      formData.hairColor === color ? 'default' : 'outline'
-                    }
-                    size="sm"
-                    onClick={() => onChange({ hairColor: color })}
-                  >
-                    {color}
-                  </Button>
-                ))}
+                {hairGroup.variants
+                  .filter((v) => v.active)
+                  .map((variant) => (
+                    <Button
+                      key={variant._id}
+                      variant={
+                        formData.hairColor === variant.value ? 'default' : 'outline'
+                      }
+                      size="sm"
+                      onClick={() => onChange({ hairColor: variant.value })}
+                    >
+                      {variant.value}
+                    </Button>
+                  ))}
               </div>
             </div>
 
             <div>
               <Label className="text-foreground">Cuerpo</Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {bodyTypeOptions.map((type) => (
-                  <Button
-                    key={type}
-                    variant={
-                      formData.bodyType === type ? 'default' : 'outline'
-                    }
-                    size="sm"
-                    onClick={() => onChange({ bodyType: type })}
-                  >
-                    {type}
-                  </Button>
-                ))}
+                {bodyGroup.variants
+                  .filter((v) => v.active)
+                  .map((variant) => (
+                    <Button
+                      key={variant._id}
+                      variant={formData.bodyType === variant.value ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => onChange({ bodyType: variant.value })}
+                    >
+                      {variant.value}
+                    </Button>
+                  ))}
               </div>
             </div>
 
@@ -185,7 +212,7 @@ export function Step3Details({ formData, onChange }: Step3DetailsProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             <div>
               <Label htmlFor="cuerpo" className="text-foreground">
                 Cuerpo
@@ -209,7 +236,7 @@ export function Step3Details({ formData, onChange }: Step3DetailsProps) {
                 className="mt-2"
               />
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

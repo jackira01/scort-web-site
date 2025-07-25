@@ -3,20 +3,27 @@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { FormData } from '../types';
-import { services } from '../data';
+import type { AttributeGroup, FormData, Variant } from '../types';
+
+
 
 interface Step2DescriptionProps {
   formData: FormData;
   onChange: (data: Partial<FormData>) => void;
+  serviceGroup: AttributeGroup;
 }
 
-export function Step2Description({ formData, onChange }: Step2DescriptionProps) {
+
+export function Step2Description({
+  formData,
+  onChange,
+  serviceGroup,
+}: Step2DescriptionProps) {
   const handleServiceToggle = (service: string) => {
     const selectedServices = formData.selectedServices.includes(service)
       ? formData.selectedServices.filter((s) => s !== service)
       : [...formData.selectedServices, service];
-    
+
     onChange({ selectedServices });
   };
 
@@ -26,9 +33,7 @@ export function Step2Description({ formData, onChange }: Step2DescriptionProps) 
         <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
           02
         </div>
-        <h2 className="text-2xl font-bold text-foreground">
-          Descripción
-        </h2>
+        <h2 className="text-2xl font-bold text-foreground">Descripción</h2>
       </div>
 
       <div className="space-y-6">
@@ -56,21 +61,23 @@ export function Step2Description({ formData, onChange }: Step2DescriptionProps) 
             Servicios
           </Label>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {services.map((service) => (
-              <div key={service} className="flex items-center space-x-2">
-                <Checkbox
-                  id={service}
-                  checked={formData.selectedServices.includes(service)}
-                  onCheckedChange={() => handleServiceToggle(service)}
-                />
-                <Label
-                  htmlFor={service}
-                  className="text-sm text-foreground cursor-pointer"
-                >
-                  {service}
-                </Label>
-              </div>
-            ))}
+            {serviceGroup.variants
+              .filter((variant: Variant) => variant.active)
+              .map((service: Variant) => (
+                <div key={service.value} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={service.value}
+                    checked={formData.selectedServices.includes(service.value)}
+                    onCheckedChange={() => handleServiceToggle(service.value)}
+                  />
+                  <Label
+                    htmlFor={service.value}
+                    className="text-sm text-foreground cursor-pointer"
+                  >
+                    {service.value}
+                  </Label>
+                </div>
+              ))}
           </div>
         </div>
       </div>

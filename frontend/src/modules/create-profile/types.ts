@@ -63,3 +63,16 @@ export interface UpgradeOption {
   emoji: string;
   description: string;
 }
+
+export interface Variant {
+  _id: string;
+  value: string;
+  active: boolean;
+}
+
+export interface AttributeGroup {
+  _id: string;
+  name: string;
+  key: string;
+  variants: Variant[];
+}

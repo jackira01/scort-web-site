@@ -75,7 +75,6 @@ export function CreateProfileLayout() {
   }, [attributeGroups]);
 
   const handleNext = () => {
-    if (currentStep === 1 && !existsName) return; // bloquea hasta validar
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     }
@@ -193,11 +192,18 @@ export function CreateProfileLayout() {
           <Step2Description
             formData={formData}
             onChange={handleFormDataChange}
+            serviceGroup={groupMap.services}
           />
         );
       case 3:
         return (
-          <Step3Details formData={formData} onChange={handleFormDataChange} />
+          <Step3Details formData={formData}
+            onChange={handleFormDataChange}
+            skinGroup={groupMap.skin}
+            sexualityGroup={groupMap.sex}
+            eyeGroup={groupMap.eyes}
+            hairGroup={groupMap.hair}
+            bodyGroup={groupMap.body} />
         );
       case 4:
         return (
@@ -298,7 +304,7 @@ export function CreateProfileLayout() {
                 ) : (
                   <Button
                     onClick={handleNext}
-                    disabled={currentStep === 1 ? existsName : false}
+                    disabled={existsName}
                     className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
                   >
                     próximo
