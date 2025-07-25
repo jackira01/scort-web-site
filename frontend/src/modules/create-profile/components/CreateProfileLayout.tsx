@@ -1,22 +1,25 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, CheckCircle, User } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, ArrowRight, CheckCircle, Loader, User } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { FormData, Rate } from '../types';
+import { getAttributeGroups } from '@/services/attribute-group.service';
 import { steps } from '../data';
+import type { FormData, Rate } from '../types';
+import { SidebarContent } from './SidebarContent';
 import { Step1EssentialInfo } from './Step1EssentialInfo';
 import { Step2Description } from './Step2Description';
 import { Step3Details } from './Step3Details';
 import { Step4Multimedia } from './Step4Multimedia';
 import { Step5Finalize } from './Step5Finalize';
-import { SidebarContent } from './SidebarContent';
 
 export function CreateProfileLayout() {
   const [currentStep, setCurrentStep] = useState(1);
+  const [existsName, setExistsName] = useState(true);             // ← Nuevo estado
   const [formData, setFormData] = useState<FormData>({
     // Step 1 - Lo esencial
     profileName: '',
@@ -56,7 +59,23 @@ export function CreateProfileLayout() {
     acceptTerms: false,
   });
 
+  const {
+    data: attributeGroups,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['attributeGroups'],
+    queryFn: getAttributeGroups,
+    staleTime: 1000 * 60 * 5, // 5 min
+  });
+
+  // 1️⃣ Crea un map para lookup O(1)
+  const groupMap = useMemo(() => {
+    return Object.fromEntries((attributeGroups ?? []).map((g: any) => [g.key, g]));
+  }, [attributeGroups]);
+
   const handleNext = () => {
+    if (currentStep === 1 && !existsName) return; // bloquea hasta validar
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     }
@@ -70,15 +89,9 @@ export function CreateProfileLayout() {
 
   const handleFormDataChange = (data: Partial<FormData>) => {
     setFormData((prev) => ({ ...prev, ...data }));
-  };
-
-  // Mock attribute group IDs based on the example
-  const ATTRIBUTE_GROUPS = {
-    sex: "688072a73979c0ae141519e1",
-    hairColor: "688072a73979c0ae141519ec",
-    eyes: "688072a73979c0ae141519e5",
-    bodyType: "688072a73979c0ae141519f3",
-    gender: "688072a73979c0ae14151a15"
+    if (data.profileName !== undefined) {
+      setExistsName(true);  // invalidar si el usuario cambia el nombre
+    }
   };
 
   const transformDataToBackendFormat = () => {
@@ -87,77 +100,80 @@ export function CreateProfileLayout() {
     // Gender feature
     if (formData.gender) {
       features.push({
-        group: ATTRIBUTE_GROUPS.sex,
-        value: [formData.gender]
+        group: groupMap.gender,
+        value: [formData.gender],
       });
     }
 
     // Hair color feature
     if (formData.hairColor) {
       features.push({
-        group: ATTRIBUTE_GROUPS.hairColor,
-        value: [formData.hairColor]
+        group: groupMap.hairColor,
+        value: [formData.hairColor],
       });
     }
 
     // Eye color feature
     if (formData.eyeColor) {
       features.push({
-        group: ATTRIBUTE_GROUPS.eyes,
-        value: [formData.eyeColor]
+        group: groupMap.eyes,
+        value: [formData.eyeColor],
       });
     }
 
     // Services as body type feature
     if (formData.selectedServices.length > 0) {
       features.push({
-        group: ATTRIBUTE_GROUPS.bodyType,
-        value: formData.selectedServices
+        group: groupMap.bodyType,
+        value: formData.selectedServices,
       });
     }
 
     // Work type as gender feature
     if (formData.workType) {
       const workTypeMap: Record<string, string> = {
-        "Yo mismo (independiente)": "Escort",
-        "Agencia": "Agencia"
+        'Yo mismo (independiente)': 'Escort',
+        Agencia: 'Agencia',
       };
       features.push({
-        group: ATTRIBUTE_GROUPS.gender,
-        value: [workTypeMap[formData.workType] || "Escort"]
+        group: groupMap.gender,
+        value: [workTypeMap[formData.workType] || 'Escort'],
       });
     }
 
     // Transform rates to backend format
-    const rates = formData.rates.map(rate => ({
+    const rates = formData.rates.map((rate) => ({
       hour: rate.time,
-      price: rate.price
+      price: rate.price,
     }));
 
     return {
-      user: "687752518563ef690799a4ba", // Mock user ID
+      user: '687752518563ef690799a4ba', // Mock user ID
       name: formData.profileName,
       description: formData.description,
       location: {
         country: formData.location.country,
         state: formData.location.state,
-        city: formData.location.city
+        city: formData.location.city,
       },
       features,
       media: {
         gallery: [], // Mock empty arrays for now
         videos: [],
-        stories: []
+        stories: [],
       },
       verification: null,
       availability: formData.availability,
-      rates
+      rates,
     };
   };
 
   const handleFinalSave = () => {
     const backendData = transformDataToBackendFormat();
-    console.log('Profile data ready for backend:', JSON.stringify(backendData, null, 2));
+    console.log(
+      'Profile data ready for backend:',
+      JSON.stringify(backendData, null, 2),
+    );
   };
 
   const renderStepContent = () => {
@@ -167,6 +183,9 @@ export function CreateProfileLayout() {
           <Step1EssentialInfo
             formData={formData}
             onChange={handleFormDataChange}
+            genderGroup={groupMap.gender}
+            categoryGroup={groupMap.category}
+            onValidName={setExistsName}
           />
         );
       case 2:
@@ -178,10 +197,7 @@ export function CreateProfileLayout() {
         );
       case 3:
         return (
-          <Step3Details
-            formData={formData}
-            onChange={handleFormDataChange}
-          />
+          <Step3Details formData={formData} onChange={handleFormDataChange} />
         );
       case 4:
         return (
@@ -192,15 +208,16 @@ export function CreateProfileLayout() {
         );
       case 5:
         return (
-          <Step5Finalize
-            formData={formData}
-            onChange={handleFormDataChange}
-          />
+          <Step5Finalize formData={formData} onChange={handleFormDataChange} />
         );
       default:
         return null;
     }
   };
+
+  if (isLoading) return <Loader />;
+
+  if (error) return <p>Error al cargar atributos</p>;
 
   return (
     <div className="min-h-screen mb-20 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
@@ -281,6 +298,7 @@ export function CreateProfileLayout() {
                 ) : (
                   <Button
                     onClick={handleNext}
+                    disabled={currentStep === 1 ? existsName : false}
                     className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
                   >
                     próximo
@@ -301,10 +319,10 @@ export function CreateProfileLayout() {
               <div
                 key={step.id}
                 className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 ${currentStep === step.id
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                    : currentStep > step.id
-                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
-                      : 'bg-muted text-muted-foreground'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                  : currentStep > step.id
+                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
+                    : 'bg-muted text-muted-foreground'
                   }`}
               >
                 <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">

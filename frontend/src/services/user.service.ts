@@ -36,3 +36,8 @@ export const getUsers = async (page: number, limit: number, filters: any) => {
 
     return response.data;
 };
+
+export const verifyProfileName = async (profileName: string) => {
+    const response = await axios.get(`${API_URL}/api/profile/verify-profile-name/?profileName=${profileName}`);
+    return response.data;
+};

@@ -32,3 +32,15 @@ export const deleteProfile = async (req: Request, res: Response) => {
   await service.deleteProfile(req.params.id);
   res.status(204).send();
 };
+
+export const verifyProfileName = async (req: Request, res: Response) => {
+  try {
+    console.log(req.query);
+    const { profileName } = req.query;
+    const profile = await service.checkProfileNameExists(profileName as string);
+    res.status(200).send(profile);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An error occurred';
+    res.status(400).json({ message });
+  }
+};
