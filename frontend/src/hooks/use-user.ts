@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
-import toast from 'react-hot-toast';
 import { getUserById, getUsers, updateUser } from '@/services/user.service';
 import type { User, UserPaginatedResponse } from '@/types/user.types';
 
@@ -14,7 +13,6 @@ export const useUser = () => {
     queryKey: ['user', userId],
     queryFn: () => getUserById(userId || ''),
     enabled: !!userId,
-    staleTime: 1000 * 60 * 5,
   });
 };
 

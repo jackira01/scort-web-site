@@ -23,7 +23,6 @@ interface Step1EssentialInfoProps {
   onChange: (data: Partial<FormData>) => void;
   genderGroup: AttributeGroup;
   categoryGroup: AttributeGroup;
-  onValidName: (isValid: boolean) => void;
 }
 
 export function Step1EssentialInfo({
@@ -31,17 +30,11 @@ export function Step1EssentialInfo({
   onChange,
   genderGroup,
   categoryGroup,
-  onValidName,
 }: Step1EssentialInfoProps) {
   const {
     data: isAvailable,
     isFetching,
-    refetch,
   } = useVerifyProfileName(formData.profileName);
-
-  useEffect(() => {
-    if (isAvailable) onValidName(isAvailable.exists);
-  }, [isAvailable, onValidName]);
 
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
@@ -68,36 +61,6 @@ export function Step1EssentialInfo({
               onChange={(e) => onChange({ profileName: e.target.value })}
               className="mt-2"
             />
-            {isAvailable !== undefined && isAvailable.exists === true ? (
-              <p className="text-xs text-red-500 mt-2">
-                El nombre debe ser único y no puede contener caracteres especiales.
-              </p>
-            ) : isAvailable !== undefined && isAvailable.exists === false ? (
-              <p className="text-xs text-green-500 mt-2">
-                El nombre es válido.
-              </p>
-            ) : (
-              <p className="text-xs text-red-500 mt-2">
-                El nombre debe ser único y no puede contener caracteres especiales.
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center mt-2">
-            <Button
-              onClick={() => refetch()}
-              disabled={!formData.profileName || isFetching}
-            >
-              {isFetching ? <Loader size={16} /> : 'Verificar nombre'}
-            </Button>
-
-            {isAvailable && isAvailable.exists === false && (
-              <span className="text-green-500 ml-2">✓ Disponible</span>
-            )}
-            {isAvailable && isAvailable.exists === true && (
-              <span className="text-red-500 ml-2">✕ Ya existe</span>
-            )}
-
           </div>
 
           <div>

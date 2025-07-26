@@ -18,11 +18,11 @@ export default function AccountLayout() {
         return <Loader />;
     }
 
-    if (!user?.isVerified) {
+    if (!user.isVerified) {
         return (
             <AccountVerification
-                verification_in_progress={user?.verification_in_progress || false}
-                userId={user?._id || ''}
+                verification_in_progress={user.verification_in_progress || false}
+                userId={user._id || ''}
             />
         );
     }

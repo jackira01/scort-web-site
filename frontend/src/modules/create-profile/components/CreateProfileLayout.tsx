@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getAttributeGroups } from '@/services/attribute-group.service';
 import { steps } from '../data';
-import type { FormData, Rate } from '../types';
+import type { AttributeGroup, FormData, Rate } from '../types';
 import { SidebarContent } from './SidebarContent';
 import { Step1EssentialInfo } from './Step1EssentialInfo';
 import { Step2Description } from './Step2Description';
@@ -19,7 +19,6 @@ import { Step5Finalize } from './Step5Finalize';
 
 export function CreateProfileLayout() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [existsName, setExistsName] = useState(true);             // ← Nuevo estado
   const [formData, setFormData] = useState<FormData>({
     // Step 1 - Lo esencial
     profileName: '',
@@ -71,7 +70,7 @@ export function CreateProfileLayout() {
 
   // 1️⃣ Crea un map para lookup O(1)
   const groupMap = useMemo(() => {
-    return Object.fromEntries((attributeGroups ?? []).map((g: any) => [g.key, g]));
+    return Object.fromEntries((attributeGroups as AttributeGroup[]).map((g: AttributeGroup) => [g.key, g]));
   }, [attributeGroups]);
 
   const handleNext = () => {
@@ -88,9 +87,6 @@ export function CreateProfileLayout() {
 
   const handleFormDataChange = (data: Partial<FormData>) => {
     setFormData((prev) => ({ ...prev, ...data }));
-    if (data.profileName !== undefined) {
-      setExistsName(true);  // invalidar si el usuario cambia el nombre
-    }
   };
 
   const transformDataToBackendFormat = () => {
@@ -184,7 +180,6 @@ export function CreateProfileLayout() {
             onChange={handleFormDataChange}
             genderGroup={groupMap.gender}
             categoryGroup={groupMap.category}
-            onValidName={setExistsName}
           />
         );
       case 2:
@@ -228,37 +223,7 @@ export function CreateProfileLayout() {
   return (
     <div className="min-h-screen mb-20 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
       {/* Header */}
-      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-b sticky top-0 z-50 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/dashboard">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="hover:bg-muted/50 transition-colors duration-200"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Volver al Dashboard
-                </Button>
-              </Link>
-              <div className="flex items-center space-x-2">
-                <User className="h-5 w-5 text-muted-foreground" />
-                <span className="font-semibold text-foreground">
-                  Crear Nuevo Perfil
-                </span>
-              </div>
-            </div>
 
-            <div className="flex items-center space-x-2">
-              <ThemeToggle />
-              <Badge className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-700 dark:to-slate-800 text-white">
-                🟢 NICOLAS ALVAREZ
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -283,15 +248,28 @@ export function CreateProfileLayout() {
 
               {/* Navigation Buttons */}
               <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
-                <Button
-                  variant="outline"
-                  onClick={handlePrevious}
-                  disabled={currentStep === 1}
-                  className="hover:bg-muted/50 transition-colors duration-200"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Atrás
-                </Button>
+                {currentStep === 1 ? (
+                  <Link href="/cuenta">
+                    <Button
+                      variant="outline"
+                      onClick={handlePrevious}
+                      className="hover:bg-muted/50 transition-colors duration-200"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Volver
+                    </Button></Link>
+                )
+                  : (
+                    <Button
+                      variant="outline"
+                      onClick={handlePrevious}
+                      disabled={currentStep === 1}
+                      className="hover:bg-muted/50 transition-colors duration-200"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Atrás
+                    </Button>)
+                }
 
                 {currentStep === 5 ? (
                   <Button
@@ -304,7 +282,6 @@ export function CreateProfileLayout() {
                 ) : (
                   <Button
                     onClick={handleNext}
-                    disabled={existsName}
                     className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
                   >
                     próximo

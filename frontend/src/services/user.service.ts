@@ -1,5 +1,4 @@
 import axios from 'axios';
-import toast from 'react-hot-toast';
 import type { BaseUser, User } from '@/types/user.types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -21,7 +20,7 @@ export const authUser = async (data: User): Promise<BaseUser> => {
     }
 } */
 
-export const getUserById = async (userId: string): Promise<User> => {
+export const getUserById = async (userId: string | undefined): Promise<User> => {
     const response = await axios.get(`${API_URL}/api/user/${userId}`);
     return response.data;
 };
