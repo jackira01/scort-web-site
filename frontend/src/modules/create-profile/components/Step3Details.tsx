@@ -2,15 +2,9 @@
 
 import { AvailabilitySchedule } from '@/components/availability/AvailabilitySchedule';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  bodyTypeOptions,
-  eyeColorOptions,
-  hairColorOptions,
-  sexualityOptions,
-  skinColorOptions,
-} from '../data';
 import type { AttributeGroup, FormData, Rate } from '../types';
 import { RatesManager } from './RatesManager';
 
@@ -64,17 +58,58 @@ export function Step3Details({
             <Label htmlFor="phone" className="text-foreground">
               Número de contacto
             </Label>
-            <div className="flex mt-2">
-              <div className="flex items-center px-3 bg-muted border border-r-0 rounded-l-md">
-                <span className="text-sm">🇨🇴</span>
+            <div className="flex items-center gap-4 mt-2">
+              <div className="flex flex-1">
+                <div className="flex items-center px-3 bg-muted border border-r-0 rounded-l-md">
+                  <span className="text-sm">🇨🇴</span>
+                </div>
+                <Input
+                  id="phone"
+                  placeholder="+57 300 123 4567"
+                  value={formData.phoneNumber.phone}
+                  onChange={(e) => onChange({ phoneNumber: { ...formData.phoneNumber, phone: e.target.value } })}
+                  className="rounded-l-none"
+                />
               </div>
-              <Input
-                id="phone"
-                placeholder="+57 300 123 4567"
-                value={formData.phoneNumber}
-                onChange={(e) => onChange({ phoneNumber: e.target.value })}
-                className="rounded-l-none"
-              />
+              
+              {/* WhatsApp and Telegram checkboxes */}
+              <div className="flex gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="whatsapp"
+                    checked={formData.phoneNumber.whatsapp}
+                    onCheckedChange={(checked) =>
+                      onChange({
+                        phoneNumber: {
+                          ...formData.phoneNumber,
+                          whatsapp: checked === true
+                        }
+                      })
+                    }
+                  />
+                  <Label htmlFor="whatsapp" className="text-sm text-foreground cursor-pointer">
+                    WhatsApp
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="telegram"
+                    checked={formData.phoneNumber.telegram}
+                    onCheckedChange={(checked) =>
+                      onChange({
+                        phoneNumber: {
+                          ...formData.phoneNumber,
+                          telegram: checked === true
+                        }
+                      })
+                    }
+                  />
+                  <Label htmlFor="telegram" className="text-sm text-foreground cursor-pointer">
+                    Telegram
+                  </Label>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -105,7 +140,9 @@ export function Step3Details({
                     key={variant._id}
                     variant={formData.skinColor === variant.value ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => onChange({ skinColor: variant.value })}
+                    onClick={() => onChange({
+                      skinColor: variant.value,
+                    })}
                   >
                     {variant.value}
                   </Button>
@@ -125,7 +162,9 @@ export function Step3Details({
                       formData.sexuality === variant.value ? 'default' : 'outline'
                     }
                     size="sm"
-                    onClick={() => onChange({ sexuality: variant.value })}
+                    onClick={() => onChange({
+                      sexuality: variant.value,
+                    })}
                   >
                     {variant.value}
                   </Button>
@@ -152,7 +191,9 @@ export function Step3Details({
                         formData.eyeColor === variant.value ? 'default' : 'outline'
                       }
                       size="sm"
-                      onClick={() => onChange({ eyeColor: variant.value })}
+                      onClick={() => onChange({
+                        eyeColor: variant.value,
+                      })}
                     >
                       {variant.value}
                     </Button>
@@ -172,7 +213,9 @@ export function Step3Details({
                         formData.hairColor === variant.value ? 'default' : 'outline'
                       }
                       size="sm"
-                      onClick={() => onChange({ hairColor: variant.value })}
+                      onClick={() => onChange({
+                        hairColor: variant.value,
+                      })}
                     >
                       {variant.value}
                     </Button>
@@ -190,7 +233,9 @@ export function Step3Details({
                       key={variant._id}
                       variant={formData.bodyType === variant.value ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => onChange({ bodyType: variant.value })}
+                      onClick={() => onChange({
+                        bodyType: variant.value,
+                      })}
                     >
                       {variant.value}
                     </Button>

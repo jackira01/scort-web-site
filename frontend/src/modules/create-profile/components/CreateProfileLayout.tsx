@@ -1,10 +1,10 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, CheckCircle, Loader, User } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, Loader } from 'lucide-react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { useMemo, useState } from 'react';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getAttributeGroups } from '@/services/attribute-group.service';
@@ -36,7 +36,11 @@ export function CreateProfileLayout() {
     selectedServices: [],
 
     // Step 3 - Detalles
-    phoneNumber: '',
+    phoneNumber: {
+      phone: '',
+      whatsapp: false,
+      telegram: false,
+    },
     age: '',
     skinColor: '',
     sexuality: '',
@@ -58,6 +62,8 @@ export function CreateProfileLayout() {
     acceptTerms: false,
   });
 
+  const { data: session } = useSession();
+
   const {
     data: attributeGroups,
     isLoading,
@@ -70,7 +76,12 @@ export function CreateProfileLayout() {
 
   // 1️⃣ Crea un map para lookup O(1)
   const groupMap = useMemo(() => {
-    return Object.fromEntries((attributeGroups as AttributeGroup[]).map((g: AttributeGroup) => [g.key, g]));
+    return Object.fromEntries(
+      ((attributeGroups as AttributeGroup[]) || []).map((g: AttributeGroup) => [
+        g.key,
+        g,
+      ]),
+    );
   }, [attributeGroups]);
 
   const handleNext = () => {
@@ -93,57 +104,73 @@ export function CreateProfileLayout() {
     const features = [];
 
     // Gender feature
-    if (formData.gender) {
+    if (formData.gender && groupMap.gender?._id) {
       features.push({
-        group: groupMap.gender,
+        group: groupMap.gender._id,
         value: [formData.gender],
       });
     }
 
     // Hair color feature
-    if (formData.hairColor) {
+    if (formData.hairColor && groupMap.hair?._id) {
       features.push({
-        group: groupMap.hairColor,
+        group: groupMap.hair._id,
         value: [formData.hairColor],
       });
     }
 
     // Eye color feature
-    if (formData.eyeColor) {
+    if (formData.eyeColor && groupMap.eyes?._id) {
       features.push({
-        group: groupMap.eyes,
+        group: groupMap.eyes._id,
         value: [formData.eyeColor],
       });
     }
 
-    // Services as body type feature
-    if (formData.selectedServices.length > 0) {
+    // Skin color
+    if (formData.skinColor && groupMap.skin?._id) {
       features.push({
-        group: groupMap.bodyType,
+        group: groupMap.skin._id,
+        value: [formData.skinColor],
+      });
+    }
+
+    // Sexuality
+    if (formData.sexuality && groupMap.sex?._id) {
+      features.push({
+        group: groupMap.sex._id,
+        value: [formData.sexuality],
+      });
+    }
+
+    // Services → bodyType
+    if (formData.selectedServices && groupMap.services?._id) {
+      features.push({
+        group: groupMap.services._id,
         value: formData.selectedServices,
       });
     }
 
-    // Work type as gender feature
-    if (formData.workType) {
+    /* // WorkType → gender
+    if (formData.workType && groupMap.gender?._id) {
       const workTypeMap: Record<string, string> = {
         'Yo mismo (independiente)': 'Escort',
         Agencia: 'Agencia',
       };
       features.push({
-        group: groupMap.gender,
+        group: groupMap.gender._id,
         value: [workTypeMap[formData.workType] || 'Escort'],
       });
-    }
+    } */
 
-    // Transform rates to backend format
     const rates = formData.rates.map((rate) => ({
       hour: rate.time,
       price: rate.price,
+      delivery: rate.delivery,
     }));
 
     return {
-      user: '687752518563ef690799a4ba', // Mock user ID
+      user: session?.user?._id,
       name: formData.profileName,
       description: formData.description,
       location: {
@@ -152,8 +179,11 @@ export function CreateProfileLayout() {
         city: formData.location.city,
       },
       features,
+      age: formData.age,
+      phoneNumber: formData.phoneNumber,
+      height: formData.height,
       media: {
-        gallery: [], // Mock empty arrays for now
+        gallery: [], // Mock por ahora
         videos: [],
         stories: [],
       },
@@ -192,13 +222,15 @@ export function CreateProfileLayout() {
         );
       case 3:
         return (
-          <Step3Details formData={formData}
+          <Step3Details
+            formData={formData}
             onChange={handleFormDataChange}
             skinGroup={groupMap.skin}
             sexualityGroup={groupMap.sex}
             eyeGroup={groupMap.eyes}
             hairGroup={groupMap.hair}
-            bodyGroup={groupMap.body} />
+            bodyGroup={groupMap.body}
+          />
         );
       case 4:
         return (
@@ -223,7 +255,6 @@ export function CreateProfileLayout() {
   return (
     <div className="min-h-screen mb-20 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
       {/* Header */}
-
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -257,19 +288,19 @@ export function CreateProfileLayout() {
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" />
                       Volver
-                    </Button></Link>
-                )
-                  : (
-                    <Button
-                      variant="outline"
-                      onClick={handlePrevious}
-                      disabled={currentStep === 1}
-                      className="hover:bg-muted/50 transition-colors duration-200"
-                    >
-                      <ArrowLeft className="h-4 w-4 mr-2" />
-                      Atrás
-                    </Button>)
-                }
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={handlePrevious}
+                    disabled={currentStep === 1}
+                    className="hover:bg-muted/50 transition-colors duration-200"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Atrás
+                  </Button>
+                )}
 
                 {currentStep === 5 ? (
                   <Button

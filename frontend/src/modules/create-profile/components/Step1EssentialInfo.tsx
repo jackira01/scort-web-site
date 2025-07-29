@@ -1,7 +1,6 @@
 'use client';
 
-import { CheckCircle, Loader } from 'lucide-react';
-import { useEffect } from 'react';
+import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useVerifyProfileName } from '@/hooks/use-check-profile-name';
 import { colombiaDepartments } from '../colombiaData';
 import type { AttributeGroup, FormData } from '../types';
 
@@ -31,10 +29,7 @@ export function Step1EssentialInfo({
   genderGroup,
   categoryGroup,
 }: Step1EssentialInfoProps) {
-  const {
-    data: isAvailable,
-    isFetching,
-  } = useVerifyProfileName(formData.profileName);
+
 
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">

@@ -17,6 +17,13 @@ const profileSchema = new Schema<IProfile>(
         value: [{ type: String, required: true }], // string o string[] // valor seleccionado (ej: 'Hombre', 'Rubio', etc.)
       },
     ],
+    age: { type: String, required: true, },
+    phoneNumber: {
+      phoneNumber: { type: String, required: true, },
+      whatsapp: { type: Boolean, required: true, default: false },
+      telegram: { type: Boolean, required: true, default: false },
+    },
+    height: { type: String, required: true, },
     media: {
       gallery: [String],
       videos: [String],
@@ -43,6 +50,8 @@ const profileSchema = new Schema<IProfile>(
       {
         hour: { type: String, required: true }, // Ej: "01:00", "00:30"
         price: { type: Number, required: true },
+        delivery: { type: Boolean, required: true, default: false },
+
       },
     ],
     paymentHistory: [{ type: Schema.Types.ObjectId, ref: 'PaymentHistory' }],

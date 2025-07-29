@@ -2,6 +2,7 @@ export interface Rate {
   id: string;
   time: string; // formato "30:00" para backend (horas:minutos)
   price: number;
+  delivery: boolean;
 }
 
 export interface FormData {
@@ -21,7 +22,11 @@ export interface FormData {
   selectedServices: string[];
 
   // Step 3 - Detalles
-  phoneNumber: string;
+  phoneNumber: {
+    phone: string;
+    whatsapp: boolean;
+    telegram: boolean;
+  };
   age: string;
   skinColor: string;
   sexuality: string;

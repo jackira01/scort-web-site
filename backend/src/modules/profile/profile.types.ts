@@ -13,6 +13,13 @@ export interface IProfile extends Document {
         group: string;
         value: string | string[];
     }[];
+    age: string;
+    phoneNumber: {
+        phone: string;
+        whatsapp: boolean;
+        telegram: boolean;
+    };
+    height: string;
     media: {
         gallery: string[];
         videos: string[];

@@ -134,9 +134,9 @@ export function AvailabilitySchedule({
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {daysOfWeek.map((day) => (
-                        <div key={day} className="space-y-2">
+                        <div key={day} className="space-y-3 p-4 border border-border rounded-lg bg-background/50">
                             <div className="flex items-center space-x-2">
                                 <Checkbox
                                     id={`available-${day}`}
@@ -153,9 +153,9 @@ export function AvailabilitySchedule({
                                 </Label>
                             </div>
 
-                            <div className="ml-6 flex items-center space-x-2">
+                            <div className="space-y-3">
                                 <div className="flex items-center space-x-2">
-                                    <Label className="text-sm text-muted-foreground">
+                                    <Label className="text-sm text-muted-foreground min-w-[50px]">
                                         Desde:
                                     </Label>
                                     <Input
@@ -165,11 +165,11 @@ export function AvailabilitySchedule({
                                             handleTimeChange(day, 'startTime', e.target.value)
                                         }
                                         disabled={!dayStates[day].isAvailable}
-                                        className="w-32"
+                                        className="flex-1"
                                     />
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                    <Label className="text-sm text-muted-foreground">
+                                    <Label className="text-sm text-muted-foreground min-w-[50px]">
                                         Hasta:
                                     </Label>
                                     <Input
@@ -179,7 +179,7 @@ export function AvailabilitySchedule({
                                             handleTimeChange(day, 'endTime', e.target.value)
                                         }
                                         disabled={!dayStates[day].isAvailable}
-                                        className="w-32"
+                                        className="flex-1"
                                     />
                                 </div>
                             </div>
