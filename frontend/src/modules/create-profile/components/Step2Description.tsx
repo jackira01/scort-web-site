@@ -3,28 +3,25 @@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { AttributeGroup, FormData, Variant } from '../types';
-
-
+import { Controller } from 'react-hook-form';
+import { useFormContext } from '../context/FormContext';
+import type { AttributeGroup, Variant } from '../types';
 
 interface Step2DescriptionProps {
-  formData: FormData;
-  onChange: (data: Partial<FormData>) => void;
   serviceGroup: AttributeGroup;
 }
 
-
 export function Step2Description({
-  formData,
-  onChange,
   serviceGroup,
 }: Step2DescriptionProps) {
+  const { control, watch, setValue } = useFormContext();
+  const formData = watch();
   const handleServiceToggle = (service: string) => {
     const selectedServices = formData.selectedServices.includes(service)
       ? formData.selectedServices.filter((s) => s !== service)
       : [...formData.selectedServices, service];
 
-    onChange({ selectedServices });
+    setValue('selectedServices', selectedServices);
   };
 
   return (
@@ -46,13 +43,19 @@ export function Step2Description({
               {formData.description.length} / 1000 caracteres restantes
             </span>
           </div>
-          <Textarea
-            id="description"
-            placeholder="Cuéntanos sobre ti, tus intereses, personalidad y lo que te hace especial..."
-            value={formData.description}
-            onChange={(e) => onChange({ description: e.target.value })}
-            className="min-h-32"
-            maxLength={1000}
+          <Controller
+            name="description"
+            control={control}
+            render={({ field }) => (
+              <Textarea
+                id="description"
+                placeholder="Cuéntanos sobre ti, tus intereses, personalidad y lo que te hace especial..."
+                value={field.value}
+                onChange={field.onChange}
+                className="min-h-32"
+                maxLength={1000}
+              />
+            )}
           />
         </div>
 

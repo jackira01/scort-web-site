@@ -5,9 +5,11 @@ import { ArrowLeft, ArrowRight, CheckCircle, Loader } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getAttributeGroups } from '@/services/attribute-group.service';
+import { FormProvider } from '../context/FormContext';
 import { steps } from '../data';
 import type { AttributeGroup, FormData, Rate } from '../types';
 import { SidebarContent } from './SidebarContent';
@@ -19,48 +21,53 @@ import { Step5Finalize } from './Step5Finalize';
 
 export function CreateProfileLayout() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>({
-    // Step 1 - Lo esencial
-    profileName: '',
-    gender: '',
-    workType: '',
-    category: '',
-    location: {
-      country: 'Colombia',
-      state: '',
-      city: '',
+  
+  const form = useForm<FormData>({
+    defaultValues: {
+      // Step 1 - Lo esencial
+      profileName: '',
+      gender: '',
+      workType: '',
+      category: '',
+      location: {
+        country: 'Colombia',
+        state: '',
+        city: '',
+      },
+
+      // Step 2 - Descripción
+      description: '',
+      selectedServices: [],
+
+      // Step 3 - Detalles
+      phoneNumber: {
+        phone: '',
+        whatsapp: false,
+        telegram: false,
+      },
+      age: '',
+      skinColor: '',
+      sexuality: '',
+      eyeColor: '',
+      hairColor: '',
+      bodyType: '',
+      height: '',
+      bustSize: '',
+      rates: [] as Rate[],
+      availability: [],
+
+      // Step 4 - Multimedia
+      photos: [],
+      videos: [],
+      audios: [],
+
+      // Step 5 - Finalizar
+      selectedUpgrades: [],
+      acceptTerms: false,
     },
-
-    // Step 2 - Descripción
-    description: '',
-    selectedServices: [],
-
-    // Step 3 - Detalles
-    phoneNumber: {
-      phone: '',
-      whatsapp: false,
-      telegram: false,
-    },
-    age: '',
-    skinColor: '',
-    sexuality: '',
-    eyeColor: '',
-    hairColor: '',
-    bodyType: '',
-    height: '',
-    bustSize: '',
-    rates: [] as Rate[],
-    availability: [],
-
-    // Step 4 - Multimedia
-    photos: [],
-    videos: [],
-    audios: [],
-
-    // Step 5 - Finalizar
-    selectedUpgrades: [],
-    acceptTerms: false,
   });
+  
+  const acceptTerms = form.watch('acceptTerms');
 
   const { data: session } = useSession();
 
@@ -96,11 +103,9 @@ export function CreateProfileLayout() {
     }
   };
 
-  const handleFormDataChange = (data: Partial<FormData>) => {
-    setFormData((prev) => ({ ...prev, ...data }));
-  };
+  // handleFormDataChange ya no es necesario con react-hook-form
 
-  const transformDataToBackendFormat = () => {
+  const transformDataToBackendFormat = (formData: FormData) => {
     const features = [];
 
     // Gender feature
@@ -193,11 +198,15 @@ export function CreateProfileLayout() {
     };
   };
 
-  const handleFinalSave = () => {
-    const backendData = transformDataToBackendFormat();
+  const handleFinalSave = (data: FormData) => {
+    const backendData = transformDataToBackendFormat(data);
     console.log(
       'Profile data ready for backend:',
       JSON.stringify(backendData, null, 2),
+    );
+    console.log(
+      'Form data from react-hook-form:',
+      JSON.stringify(data, null, 2),
     );
   };
 
@@ -206,43 +215,33 @@ export function CreateProfileLayout() {
       case 1:
         return (
           <Step1EssentialInfo
-            formData={formData}
-            onChange={handleFormDataChange}
+            /* formData={formData} */
+            /* onChange={handleFormDataChange} */
             genderGroup={groupMap.gender}
             categoryGroup={groupMap.category}
+            
           />
         );
       case 2:
         return (
           <Step2Description
-            formData={formData}
-            onChange={handleFormDataChange}
             serviceGroup={groupMap.services}
           />
         );
       case 3:
-        return (
-          <Step3Details
-            formData={formData}
-            onChange={handleFormDataChange}
-            skinGroup={groupMap.skin}
+          return (
+            <Step3Details
+              skinGroup={groupMap.skin}
             sexualityGroup={groupMap.sex}
             eyeGroup={groupMap.eyes}
-            hairGroup={groupMap.hair}
-            bodyGroup={groupMap.body}
-          />
-        );
+              hairGroup={groupMap.hair}
+              bodyGroup={groupMap.body}
+            />
+          );
       case 4:
-        return (
-          <Step4Multimedia
-            formData={formData}
-            onChange={handleFormDataChange}
-          />
-        );
+          return <Step4Multimedia />;
       case 5:
-        return (
-          <Step5Finalize formData={formData} onChange={handleFormDataChange} />
-        );
+        return <Step5Finalize />;
       default:
         return null;
     }
@@ -253,29 +252,30 @@ export function CreateProfileLayout() {
   if (error) return <p>Error al cargar atributos</p>;
 
   return (
-    <div className="min-h-screen mb-20 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
-      {/* Header */}
+    <FormProvider form={form} currentStep={currentStep}>
+      <div className="min-h-screen mb-20 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
+        {/* Header */}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar - Guidelines */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-4">
-              <SidebarContent currentStep={currentStep} />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Sidebar - Guidelines */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-24 space-y-4">
+                <SidebarContent currentStep={currentStep} />
 
-              <Button
-                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold py-3"
-                onClick={handleFinalSave}
-              >
-                Guardar
-              </Button>
+                <Button
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold py-3"
+                  onClick={form.handleSubmit(handleFinalSave)}
+                >
+                  Guardar
+                </Button>
+              </div>
             </div>
-          </div>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            <div className="bg-background rounded-xl shadow-sm border border-border p-8">
-              {renderStepContent()}
+            {/* Main Content */}
+            <div className="lg:col-span-3">
+              <div className="bg-background rounded-xl shadow-sm border border-border p-8">
+                {renderStepContent()}
 
               {/* Navigation Buttons */}
               <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
@@ -305,8 +305,8 @@ export function CreateProfileLayout() {
                 {currentStep === 5 ? (
                   <Button
                     className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold px-8"
-                    disabled={!formData.acceptTerms}
-                    onClick={handleFinalSave}
+                    disabled={!acceptTerms}
+                    onClick={form.handleSubmit(handleFinalSave)}
                   >
                     Guardar
                   </Button>
@@ -322,45 +322,46 @@ export function CreateProfileLayout() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Progress Steps */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-center space-x-4">
-            {steps.map((step) => (
-              <div
-                key={step.id}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 ${currentStep === step.id
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                  : currentStep > step.id
-                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
-                    : 'bg-muted text-muted-foreground'
-                  }`}
-              >
-                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
-                  {currentStep > step.id ? (
-                    <CheckCircle className="h-3 w-3" />
-                  ) : (
-                    step.id
-                  )}
-                </div>
-                <span className="hidden sm:block font-medium">
-                  {step.title}
-                </span>
-              </div>
-            ))}
           </div>
         </div>
-      </div>
 
-      {/* Footer Badge */}
-      <div className="fixed bottom-20 right-4 z-50">
-        <Badge className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-700 dark:to-slate-800 text-white px-3 py-1 shadow-lg">
-          🟢 NICOLAS ALVAREZ
-        </Badge>
+        {/* Progress Steps */}
+        <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex justify-center space-x-4">
+              {steps.map((step) => (
+                <div
+                  key={step.id}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 ${currentStep === step.id
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                    : currentStep > step.id
+                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
+                      : 'bg-muted text-muted-foreground'
+                    }`}
+                >
+                  <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+                    {currentStep > step.id ? (
+                      <CheckCircle className="h-3 w-3" />
+                    ) : (
+                      step.id
+                    )}
+                  </div>
+                  <span className="hidden sm:block font-medium">
+                    {step.title}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Badge */}
+        <div className="fixed bottom-20 right-4 z-50">
+          <Badge className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-700 dark:to-slate-800 text-white px-3 py-1 shadow-lg">
+            🟢 NICOLAS ALVAREZ
+          </Badge>
+        </div>
       </div>
-    </div>
+    </FormProvider>
   );
 }

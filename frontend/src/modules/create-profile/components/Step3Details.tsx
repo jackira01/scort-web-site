@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { AttributeGroup, FormData, Rate } from '../types';
+import { Controller } from 'react-hook-form';
+import { useFormContext } from '../context/FormContext';
+import type { AttributeGroup, Rate } from '../types';
 import { RatesManager } from './RatesManager';
 
 interface Step3DetailsProps {
-  formData: FormData;
-  onChange: (data: Partial<FormData>) => void;
   skinGroup: AttributeGroup;
   sexualityGroup: AttributeGroup;
   eyeGroup: AttributeGroup;
@@ -19,16 +19,17 @@ interface Step3DetailsProps {
 }
 
 export function Step3Details({
-  formData,
-  onChange,
   skinGroup,
   sexualityGroup,
   eyeGroup,
   hairGroup,
   bodyGroup,
 }: Step3DetailsProps) {
+  const { control, watch, setValue } = useFormContext();
+  const formData = watch();
+  
   const handleRatesChange = (rates: Rate[]) => {
-    onChange({ rates });
+    setValue('rates', rates);
   };
 
   return (
@@ -48,7 +49,7 @@ export function Step3Details({
         <AvailabilitySchedule
           availability={formData.availability}
           onChange={(newAvailability) =>
-            onChange({ availability: newAvailability })
+            setValue('availability', newAvailability)
           }
         />
 
@@ -63,12 +64,18 @@ export function Step3Details({
                 <div className="flex items-center px-3 bg-muted border border-r-0 rounded-l-md">
                   <span className="text-sm">🇨🇴</span>
                 </div>
-                <Input
-                  id="phone"
-                  placeholder="+57 300 123 4567"
-                  value={formData.phoneNumber.phone}
-                  onChange={(e) => onChange({ phoneNumber: { ...formData.phoneNumber, phone: e.target.value } })}
-                  className="rounded-l-none"
+                <Controller
+                  name="phoneNumber.phone"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="phone"
+                      placeholder="+57 300 123 4567"
+                      value={field.value}
+                      onChange={field.onChange}
+                      className="rounded-l-none"
+                    />
+                  )}
                 />
               </div>
               
@@ -79,12 +86,7 @@ export function Step3Details({
                     id="whatsapp"
                     checked={formData.phoneNumber.whatsapp}
                     onCheckedChange={(checked) =>
-                      onChange({
-                        phoneNumber: {
-                          ...formData.phoneNumber,
-                          whatsapp: checked === true
-                        }
-                      })
+                      setValue('phoneNumber.whatsapp', checked === true)
                     }
                   />
                   <Label htmlFor="whatsapp" className="text-sm text-foreground cursor-pointer">
@@ -97,12 +99,7 @@ export function Step3Details({
                     id="telegram"
                     checked={formData.phoneNumber.telegram}
                     onCheckedChange={(checked) =>
-                      onChange({
-                        phoneNumber: {
-                          ...formData.phoneNumber,
-                          telegram: checked === true
-                        }
-                      })
+                      setValue('phoneNumber.telegram', checked === true)
                     }
                   />
                   <Label htmlFor="telegram" className="text-sm text-foreground cursor-pointer">
@@ -117,13 +114,19 @@ export function Step3Details({
             <Label htmlFor="age" className="text-foreground">
               Edad <span className="text-red-500">*</span>
             </Label>
-            <Input
-              id="age"
-              type="number"
-              placeholder="23"
-              value={formData.age}
-              onChange={(e) => onChange({ age: e.target.value })}
-              className="mt-2"
+            <Controller
+              name="age"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id="age"
+                  type="number"
+                  placeholder="23"
+                  value={field.value}
+                  onChange={field.onChange}
+                  className="mt-2"
+                />
+              )}
             />
           </div>
         </div>
@@ -140,9 +143,7 @@ export function Step3Details({
                     key={variant._id}
                     variant={formData.skinColor === variant.value ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => onChange({
-                      skinColor: variant.value,
-                    })}
+                    onClick={() => setValue('skinColor', variant.value)}
                   >
                     {variant.value}
                   </Button>
@@ -162,9 +163,7 @@ export function Step3Details({
                       formData.sexuality === variant.value ? 'default' : 'outline'
                     }
                     size="sm"
-                    onClick={() => onChange({
-                      sexuality: variant.value,
-                    })}
+                    onClick={() => setValue('sexuality', variant.value)}
                   >
                     {variant.value}
                   </Button>
@@ -191,9 +190,7 @@ export function Step3Details({
                         formData.eyeColor === variant.value ? 'default' : 'outline'
                       }
                       size="sm"
-                      onClick={() => onChange({
-                        eyeColor: variant.value,
-                      })}
+                      onClick={() => setValue('eyeColor', variant.value)}
                     >
                       {variant.value}
                     </Button>
@@ -213,9 +210,7 @@ export function Step3Details({
                         formData.hairColor === variant.value ? 'default' : 'outline'
                       }
                       size="sm"
-                      onClick={() => onChange({
-                        hairColor: variant.value,
-                      })}
+                      onClick={() => setValue('hairColor', variant.value)}
                     >
                       {variant.value}
                     </Button>
@@ -233,9 +228,7 @@ export function Step3Details({
                       key={variant._id}
                       variant={formData.bodyType === variant.value ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => onChange({
-                        bodyType: variant.value,
-                      })}
+                      onClick={() => setValue('bodyType', variant.value)}
                     >
                       {variant.value}
                     </Button>
@@ -251,7 +244,7 @@ export function Step3Details({
                 id="height"
                 placeholder="173 cm"
                 value={formData.height}
-                onChange={(e) => onChange({ height: e.target.value })}
+                onChange={(e) => setValue('height', e.target.value)}
                 className="mt-2"
               />
             </div>

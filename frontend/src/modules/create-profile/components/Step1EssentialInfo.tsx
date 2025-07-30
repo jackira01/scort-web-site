@@ -11,25 +11,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Controller } from 'react-hook-form';
 import { colombiaDepartments } from '../colombiaData';
-import type { AttributeGroup, FormData } from '../types';
-
-
+import type { AttributeGroup } from '../types';
+import { useFormContext } from '../context/FormContext';
 
 interface Step1EssentialInfoProps {
-  formData: FormData;
-  onChange: (data: Partial<FormData>) => void;
   genderGroup: AttributeGroup;
   categoryGroup: AttributeGroup;
 }
 
 export function Step1EssentialInfo({
-  formData,
-  onChange,
   genderGroup,
   categoryGroup,
 }: Step1EssentialInfoProps) {
-
+  const { register, control, watch, setValue } = useFormContext();
+  const gender = watch('gender');
+  const locationState = watch('location.state');
 
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
@@ -42,7 +40,7 @@ export function Step1EssentialInfo({
         </h2>
       </div>
 
-      <div className="space-y-6">
+      <form className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <Label htmlFor="profileName" className="text-foreground">
@@ -52,9 +50,10 @@ export function Step1EssentialInfo({
             <Input
               id="profileName"
               placeholder="Sexy Jane"
-              value={formData.profileName}
-              onChange={(e) => onChange({ profileName: e.target.value })}
-              className="mt-2"
+               className="mt-2"
+              {...register('profileName')}
+              /* value={formData.profileName}
+              onChange={(e) => onChange({ profileName: e.target.value })} */
             />
           </div>
 
@@ -62,75 +61,84 @@ export function Step1EssentialInfo({
             <Label className="text-foreground">
               Mi género es <span className="text-red-500">*</span>
             </Label>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {genderGroup.variants
-                .filter((v) => v.active)
-                .map((variant) => (
-                  <Button
-                    key={variant._id}
-                    variant={
-                      formData.gender === variant.value ? 'default' : 'outline'
-                    }
-                    onClick={() => onChange({ gender: variant.value })}
-                    className={
-                      formData.gender === variant.value
-                        ? 'bg-green-600 hover:bg-green-700'
-                        : ''
-                    }
-                  >
-                    {formData.gender === variant.value && (
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                    )}
-                    {variant.value}
-                  </Button>
-                ))}
-            </div>
-          </div>
-
-          <div>
-            <Label className="text-foreground">
-              ¿Dónde quieres que se muestre tu anuncio?{' '}
-              <span className="text-red-500">*</span>
-            </Label>
+            <Controller
+              name="gender"
+              control={control}
+              render={({ field }) => (
             <Select
-              value={formData.category}
-              onValueChange={(value) => onChange({ category: value })}
-            >
+             onValueChange={field.onChange}
+             value={field.value}
+             >
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona una categoría" />
+                <SelectValue placeholder="Selecciona tu género" />
               </SelectTrigger>
               <SelectContent>
-                {categoryGroup.variants
-                  .filter((variant) => variant.active)
+                {genderGroup.variants
+                  .filter((v) => v.active)
                   .map((variant) => (
                     <SelectItem key={variant._id} value={variant.value}>
                       {variant.value}
                     </SelectItem>
                   ))}
               </SelectContent>
-            </Select>
+
+             </Select>
+              )}
+              />
           </div>
 
-
-          {/* <div>
-            <Label className="text-foreground">Trabajo para</Label>
-            <div className="flex space-x-2 mt-2">
-              {workTypeOptions.map((type) => (
-                <Button
-                  key={type}
-                  variant={formData.workType === type ? 'default' : 'outline'}
-                  onClick={() => onChange({ workType: type })}
-                  className={
-                    formData.workType === type
-                      ? 'bg-blue-600 hover:bg-blue-700'
-                      : ''
-                  }
+          {/* <div className="flex flex-wrap gap-2 mt-2">
+              {genderGroup.variants
+                .filter((v) => v.active)
+                .map((variant) => (
+                  <Button
+                    key={variant._id}
+                    variant={
+                      gender === variant.value ? 'default' : 'outline'
+                    }
+                    onClick={() => setValue('gender', variant.value)}
+                    className={
+                      gender === variant.value
+                        ? 'bg-green-600 hover:bg-green-700'
+                        : ''
+                    }
+                  >
+                    {gender === variant.value && (
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                    )}
+                    {variant.value}
+                  </Button>
+                ))}
+            </div>  */}
+          <div>
+            <Label className="text-foreground">
+              ¿Dónde quieres que se muestre tu anuncio?{' '}
+              <span className="text-red-500">*</span>
+            </Label>
+            <Controller
+              name="category"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
                 >
-                  {type}
-                </Button>
-              ))}
-            </div>
-          </div> */}
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryGroup.variants
+                      .filter((variant) => variant.active)
+                      .map((variant) => (
+                        <SelectItem key={variant._id} value={variant.value}>
+                          {variant.value}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
         </div>
 
 
@@ -144,64 +152,63 @@ export function Step1EssentialInfo({
               <Label className="text-sm text-muted-foreground">
                 Departamento
               </Label>
-              <Select
-                value={formData.location.state}
-                onValueChange={(value) =>
-                  onChange({
-                    location: {
-                      ...formData.location,
-                      state: value,
-                      city: '', // Reset city when department changes
-                    },
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona departamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(colombiaDepartments).map((department) => (
-                    <SelectItem key={department} value={department}>
-                      {department}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Controller
+              name="location.state"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    setValue('location.city', ''); // Reset city when department changes
+                  }}
+                  value={field.value}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona departamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(colombiaDepartments).map((department) => (
+                      <SelectItem key={department} value={department}>
+                        {department}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
             </div>
 
             <div>
               <Label className="text-sm text-muted-foreground">Ciudad</Label>
-              <Select
-                value={formData.location.city}
-                onValueChange={(value) =>
-                  onChange({
-                    location: {
-                      ...formData.location,
-                      city: value,
-                    },
-                  })
-                }
-                disabled={!formData.location.state}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona ciudad" />
-                </SelectTrigger>
-                <SelectContent>
-                  {formData.location.state &&
-                    colombiaDepartments[
-                      formData.location
-                        .state as keyof typeof colombiaDepartments
-                    ]?.map((city) => (
-                      <SelectItem key={city} value={city}>
-                        {city}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <Controller
+              name="location.city"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  disabled={!locationState}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona ciudad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locationState &&
+                      colombiaDepartments[
+                        locationState as keyof typeof colombiaDepartments
+                      ]?.map((city) => (
+                        <SelectItem key={city} value={city}>
+                          {city}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
             </div>
           </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

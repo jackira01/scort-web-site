@@ -5,21 +5,21 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { FormData } from '../types';
+import { useFormContext } from '../context/FormContext';
 import { upgradeOptions } from '../data';
 
-interface Step5FinalizeProps {
-  formData: FormData;
-  onChange: (data: Partial<FormData>) => void;
-}
+interface Step5FinalizeProps {}
 
-export function Step5Finalize({ formData, onChange }: Step5FinalizeProps) {
+export function Step5Finalize({}: Step5FinalizeProps) {
+  const { watch, setValue } = useFormContext();
+  const formData = watch();
+  
   const handleUpgradeToggle = (upgradeId: string) => {
     const selectedUpgrades = formData.selectedUpgrades.includes(upgradeId)
       ? formData.selectedUpgrades.filter((u) => u !== upgradeId)
       : [...formData.selectedUpgrades, upgradeId];
     
-    onChange({ selectedUpgrades });
+    setValue('selectedUpgrades', selectedUpgrades);
   };
 
   return (
@@ -120,7 +120,7 @@ export function Step5Finalize({ formData, onChange }: Step5FinalizeProps) {
             <Checkbox
               id="terms"
               checked={formData.acceptTerms}
-              onCheckedChange={(checked) => onChange({ acceptTerms: !!checked })}
+              onCheckedChange={(checked) => setValue('acceptTerms', !!checked)}
             />
             <Label
               htmlFor="terms"

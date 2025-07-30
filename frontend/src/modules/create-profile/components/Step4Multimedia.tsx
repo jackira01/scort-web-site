@@ -3,14 +3,13 @@
 import { Camera, Video, Mic } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FormData } from '../types';
+import { useFormContext } from '../context/FormContext';
 
-interface Step4MultimediaProps {
-  formData: FormData;
-  onChange: (data: Partial<FormData>) => void;
-}
+interface Step4MultimediaProps {}
 
-export function Step4Multimedia({ formData, onChange }: Step4MultimediaProps) {
+export function Step4Multimedia({}: Step4MultimediaProps) {
+  const { watch } = useFormContext();
+  const formData = watch();
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <div className="flex items-center space-x-3 mb-6">
