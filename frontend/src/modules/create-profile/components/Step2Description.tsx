@@ -14,7 +14,7 @@ interface Step2DescriptionProps {
 export function Step2Description({
   serviceGroup,
 }: Step2DescriptionProps) {
-  const { control, watch, setValue } = useFormContext();
+  const { control, watch, setValue, formState: { errors } } = useFormContext();
   const formData = watch();
   const handleServiceToggle = (service: string) => {
     const selectedServices = formData.selectedServices.includes(service)
@@ -52,16 +52,23 @@ export function Step2Description({
                 placeholder="Cuéntanos sobre ti, tus intereses, personalidad y lo que te hace especial..."
                 value={field.value}
                 onChange={field.onChange}
-                className="min-h-32"
+                className={`min-h-32 ${
+                  errors.description ? 'border-red-500 focus:border-red-500' : ''
+                }`}
                 maxLength={1000}
               />
             )}
           />
+          {errors.description && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.description.message}
+            </p>
+          )}
         </div>
 
         <div>
           <Label className="text-foreground text-lg font-semibold mb-4 block">
-            Servicios
+            Servicios <span className="text-red-500">*</span>
           </Label>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {serviceGroup.variants
@@ -82,6 +89,11 @@ export function Step2Description({
                 </div>
               ))}
           </div>
+          {errors.selectedServices && (
+            <p className="text-red-500 text-sm mt-2">
+              {errors.selectedServices.message}
+            </p>
+          )}
         </div>
       </div>
     </div>

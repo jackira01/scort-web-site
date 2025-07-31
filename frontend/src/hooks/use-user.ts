@@ -13,6 +13,9 @@ export const useUser = () => {
     queryKey: ['user', userId],
     queryFn: () => getUserById(userId || ''),
     enabled: !!userId,
+    staleTime: 0, // Siempre considerar los datos como obsoletos
+    refetchOnMount: true, // Refrescar cuando el componente se monta
+    refetchOnWindowFocus: true, // Refrescar cuando la ventana recibe foco
   });
 };
 

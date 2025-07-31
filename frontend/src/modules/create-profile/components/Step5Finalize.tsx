@@ -11,7 +11,7 @@ import { upgradeOptions } from '../data';
 interface Step5FinalizeProps {}
 
 export function Step5Finalize({}: Step5FinalizeProps) {
-  const { watch, setValue } = useFormContext();
+  const { watch, setValue, formState: { errors } } = useFormContext();
   const formData = watch();
   
   const handleUpgradeToggle = (upgradeId: string) => {
@@ -114,13 +114,14 @@ export function Step5Finalize({}: Step5FinalizeProps) {
         {/* Terms and Conditions */}
         <div className="space-y-4">
           <Label className="text-foreground text-lg font-semibold">
-            Términos & Condiciones
+            Términos & Condiciones <span className="text-red-500">*</span>
           </Label>
           <div className="flex items-start space-x-2">
             <Checkbox
               id="terms"
               checked={formData.acceptTerms}
               onCheckedChange={(checked) => setValue('acceptTerms', !!checked)}
+              className={errors.acceptTerms ? 'border-red-500' : ''}
             />
             <Label
               htmlFor="terms"
@@ -142,6 +143,11 @@ export function Step5Finalize({}: Step5FinalizeProps) {
               </Link>
             </Label>
           </div>
+          {errors.acceptTerms && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.acceptTerms.message}
+            </p>
+          )}
         </div>
       </div>
     </div>

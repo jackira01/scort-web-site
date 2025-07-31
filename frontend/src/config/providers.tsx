@@ -16,9 +16,10 @@ export default function QueryProvider({ children }: PropsWithChildren) {
         defaultOptions: {
           queries: {
             // Configuración global para todas las queries
-            staleTime: 5 * 60 * 1000, // 5 minutos
+            staleTime: 1 * 60 * 1000, // 1 minuto
             retry: 1,
-            refetchOnWindowFocus: false,
+            refetchOnWindowFocus: true, // Refrescar cuando la ventana recibe foco
+            refetchOnMount: true, // Refrescar cuando el componente se monta
           },
         },
       }),

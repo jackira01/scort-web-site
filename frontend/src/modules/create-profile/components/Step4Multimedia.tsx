@@ -8,7 +8,7 @@ import { useFormContext } from '../context/FormContext';
 interface Step4MultimediaProps {}
 
 export function Step4Multimedia({}: Step4MultimediaProps) {
-  const { watch } = useFormContext();
+  const { watch, formState: { errors } } = useFormContext();
   const formData = watch();
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
@@ -24,15 +24,24 @@ export function Step4Multimedia({}: Step4MultimediaProps) {
         <Card className="bg-card border-border">
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle className="text-foreground">Mis fotos</CardTitle>
+              <CardTitle className="text-foreground">
+                Mis fotos <span className="text-red-500">*</span>
+              </CardTitle>
               <Badge variant="outline">{formData.photos.length} / 20</Badge>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer">
+            <div className={`border-2 border-dashed rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer ${
+              errors.photos ? 'border-red-500' : 'border-muted-foreground/30'
+            }`}>
               <Camera className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
               <p className="text-muted-foreground">añadir nuevo</p>
             </div>
+            {errors.photos && (
+              <p className="text-red-500 text-sm mt-2">
+                {errors.photos.message}
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -51,6 +60,11 @@ export function Step4Multimedia({}: Step4MultimediaProps) {
               <Video className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
               <p className="text-muted-foreground">añadir nuevo</p>
             </div>
+            {errors.videos && (
+              <p className="text-red-500 text-sm mt-2">
+                {errors.videos.message}
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -69,6 +83,11 @@ export function Step4Multimedia({}: Step4MultimediaProps) {
               <Mic className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
               <p className="text-muted-foreground">añadir nuevo</p>
             </div>
+            {errors.audios && (
+              <p className="text-red-500 text-sm mt-2">
+                {errors.audios.message}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -25,7 +25,7 @@ export function Step1EssentialInfo({
   genderGroup,
   categoryGroup,
 }: Step1EssentialInfoProps) {
-  const { register, control, watch, setValue } = useFormContext();
+  const { register, control, watch, setValue, formState: { errors } } = useFormContext();
   const gender = watch('gender');
   const locationState = watch('location.state');
 
@@ -50,11 +50,12 @@ export function Step1EssentialInfo({
             <Input
               id="profileName"
               placeholder="Sexy Jane"
-               className="mt-2"
+              className={`mt-2 ${errors.profileName ? 'border-red-500' : ''}`}
               {...register('profileName')}
-              /* value={formData.profileName}
-              onChange={(e) => onChange({ profileName: e.target.value })} */
             />
+            {errors.profileName && (
+              <p className="text-red-500 text-sm mt-1">{errors.profileName.message}</p>
+            )}
           </div>
 
           <div>
@@ -85,6 +86,9 @@ export function Step1EssentialInfo({
              </Select>
               )}
               />
+            {errors.gender && (
+              <p className="text-red-500 text-sm mt-1">{errors.gender.message}</p>
+            )}
           </div>
 
           {/* <div className="flex flex-wrap gap-2 mt-2">
@@ -123,7 +127,7 @@ export function Step1EssentialInfo({
                   onValueChange={field.onChange}
                   value={field.value}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Selecciona una categoría" />
                   </SelectTrigger>
                   <SelectContent>
@@ -138,6 +142,9 @@ export function Step1EssentialInfo({
                 </Select>
               )}
             />
+            {errors.category && (
+              <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>
+            )}
           </div>
         </div>
 
@@ -163,7 +170,7 @@ export function Step1EssentialInfo({
                   }}
                   value={field.value}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={errors.location?.state ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Selecciona departamento" />
                   </SelectTrigger>
                   <SelectContent>
@@ -176,6 +183,9 @@ export function Step1EssentialInfo({
                 </Select>
               )}
             />
+            {errors.location?.state && (
+              <p className="text-red-500 text-sm mt-1">{errors.location.state.message}</p>
+            )}
             </div>
 
             <div>
@@ -189,7 +199,7 @@ export function Step1EssentialInfo({
                   value={field.value}
                   disabled={!locationState}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={errors.location?.city ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Selecciona ciudad" />
                   </SelectTrigger>
                   <SelectContent>
@@ -205,6 +215,9 @@ export function Step1EssentialInfo({
                 </Select>
               )}
             />
+            {errors.location?.city && (
+              <p className="text-red-500 text-sm mt-1">{errors.location.city.message}</p>
+            )}
             </div>
           </div>
         </div>

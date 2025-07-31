@@ -25,7 +25,7 @@ export function Step3Details({
   hairGroup,
   bodyGroup,
 }: Step3DetailsProps) {
-  const { control, watch, setValue } = useFormContext();
+  const { control, watch, setValue, formState: { errors } } = useFormContext();
   const formData = watch();
   
   const handleRatesChange = (rates: Rate[]) => {
@@ -43,7 +43,14 @@ export function Step3Details({
 
       <div className="space-y-6">
         {/* Rates Section */}
-        <RatesManager rates={formData.rates} onChange={handleRatesChange} />
+        <div>
+          <RatesManager rates={formData.rates} onChange={handleRatesChange} />
+          {errors.rates && (
+            <p className="text-red-500 text-sm mt-2">
+              {errors.rates.message}
+            </p>
+          )}
+        </div>
 
         {/* Availability Section */}
         <AvailabilitySchedule
@@ -52,12 +59,17 @@ export function Step3Details({
             setValue('availability', newAvailability)
           }
         />
+        {errors.availability && (
+          <p className="text-red-500 text-sm mt-1">
+            {errors.availability.message}
+          </p>
+        )}
 
         {/* Contact Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <Label htmlFor="phone" className="text-foreground">
-              Número de contacto
+              Número de contacto <span className="text-red-500">*</span>
             </Label>
             <div className="flex items-center gap-4 mt-2">
               <div className="flex flex-1">
@@ -73,7 +85,9 @@ export function Step3Details({
                       placeholder="+57 300 123 4567"
                       value={field.value}
                       onChange={field.onChange}
-                      className="rounded-l-none"
+                      className={`rounded-l-none ${
+                        errors.phoneNumber?.phone ? 'border-red-500 focus:border-red-500' : ''
+                      }`}
                     />
                   )}
                 />
@@ -108,6 +122,11 @@ export function Step3Details({
                 </div>
               </div>
             </div>
+            {errors.phoneNumber?.phone && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.phoneNumber.phone.message}
+              </p>
+            )}
           </div>
 
           <div>
@@ -124,17 +143,24 @@ export function Step3Details({
                   placeholder="23"
                   value={field.value}
                   onChange={field.onChange}
-                  className="mt-2"
+                  className={`mt-2 ${
+                    errors.age ? 'border-red-500 focus:border-red-500' : ''
+                  }`}
                 />
               )}
             />
+            {errors.age && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.age.message}
+              </p>
+            )}
           </div>
         </div>
 
         {/* Physical Characteristics */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <Label className="text-foreground">Piel</Label>
+            <Label className="text-foreground">Piel <span className="text-red-500">*</span></Label>
             <div className="flex flex-wrap gap-2 mt-2">
               {skinGroup.variants
                 .filter((v) => v.active)
@@ -149,10 +175,15 @@ export function Step3Details({
                   </Button>
                 ))}
             </div>
+            {errors.skinColor && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.skinColor.message}
+              </p>
+            )}
           </div>
 
           <div>
-            <Label className="text-foreground">Sexo</Label>
+            <Label className="text-foreground">Sexo <span className="text-red-500">*</span></Label>
             <div className="flex flex-wrap gap-2 mt-2">
               {sexualityGroup.variants
                 .filter((v) => v.active)
@@ -169,6 +200,11 @@ export function Step3Details({
                   </Button>
                 ))}
             </div>
+            {errors.sexuality && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.sexuality.message}
+              </p>
+            )}
           </div>
         </div>
 
@@ -179,7 +215,7 @@ export function Step3Details({
           </Label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label className="text-foreground">Ojos</Label>
+              <Label className="text-foreground">Ojos <span className="text-red-500">*</span></Label>
               <div className="flex flex-wrap gap-2 mt-2">
                 {eyeGroup.variants
                   .filter((v) => v.active)
@@ -196,10 +232,15 @@ export function Step3Details({
                     </Button>
                   ))}
               </div>
+              {errors.eyeColor && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.eyeColor.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <Label className="text-foreground">Pelo</Label>
+              <Label className="text-foreground">Pelo <span className="text-red-500">*</span></Label>
               <div className="flex flex-wrap gap-2 mt-2">
                 {hairGroup.variants
                   .filter((v) => v.active)
@@ -216,10 +257,15 @@ export function Step3Details({
                     </Button>
                   ))}
               </div>
+              {errors.hairColor && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.hairColor.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <Label className="text-foreground">Cuerpo</Label>
+              <Label className="text-foreground">Cuerpo <span className="text-red-500">*</span></Label>
               <div className="flex flex-wrap gap-2 mt-2">
                 {bodyGroup.variants
                   .filter((v) => v.active)
@@ -234,45 +280,53 @@ export function Step3Details({
                     </Button>
                   ))}
               </div>
+              {errors.bodyType && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.bodyType.message}
+                </p>
+              )}
             </div>
 
             <div>
               <Label htmlFor="height" className="text-foreground">
-                Altura
+                Altura <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="height"
                 placeholder="173 cm"
                 value={formData.height}
                 onChange={(e) => setValue('height', e.target.value)}
-                className="mt-2"
+                className={`mt-2 ${
+                  errors.height ? 'border-red-500 focus:border-red-500' : ''
+                }`}
               />
+              {errors.height && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.height.message}
+                </p>
+              )}
             </div>
           </div>
 
           {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             <div>
-              <Label htmlFor="cuerpo" className="text-foreground">
-                Cuerpo
-              </Label>
-              <Input
-                id="cuerpo"
-                placeholder="Descripción del cuerpo"
-                className="mt-2"
-              />
-            </div>
-
-            <div>
               <Label htmlFor="bustSize" className="text-foreground">
-                Talla del busto
+                Talla del busto <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="bustSize"
                 placeholder="COPA_D"
                 value={formData.bustSize}
-                onChange={(e) => onChange({ bustSize: e.target.value })}
-                className="mt-2"
+                onChange={(e) => setValue('bustSize', e.target.value)}
+                className={`mt-2 ${
+                  errors.bustSize ? 'border-red-500 focus:border-red-500' : ''
+                }`}
               />
+              {errors.bustSize && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.bustSize.message}
+                </p>
+              )}
             </div>
           </div> */}
         </div>

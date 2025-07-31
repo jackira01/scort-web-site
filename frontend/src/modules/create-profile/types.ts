@@ -9,7 +9,7 @@ export interface FormData {
   // Step 1 - Lo esencial
   profileName: string;
   gender: string;
-  workType: string;
+  // workType: string;
   category: string;
   location: {
     country: string;
@@ -34,7 +34,7 @@ export interface FormData {
   hairColor: string;
   bodyType: string;
   height: string;
-  bustSize: string;
+  // bustSize: string;
   rates: Rate[];
   availability: Array<{
     dayOfWeek: string;

@@ -6,12 +6,15 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getAttributeGroups } from '@/services/attribute-group.service';
 import { FormProvider } from '../context/FormContext';
 import { steps } from '../data';
-import type { AttributeGroup, FormData, Rate } from '../types';
+import { step1Schema, step2Schema, step3Schema, step4Schema, step5Schema } from '../schemas';
+import type { AttributeGroup, Rate } from '../types';
+import type { FormData } from '../schemas';
 import { SidebarContent } from './SidebarContent';
 import { Step1EssentialInfo } from './Step1EssentialInfo';
 import { Step2Description } from './Step2Description';
@@ -23,11 +26,12 @@ export function CreateProfileLayout() {
   const [currentStep, setCurrentStep] = useState(1);
   
   const form = useForm<FormData>({
+    mode: 'onChange',
     defaultValues: {
       // Step 1 - Lo esencial
       profileName: '',
       gender: '',
-      workType: '',
+      // workType: '',
       category: '',
       location: {
         country: 'Colombia',
@@ -52,7 +56,7 @@ export function CreateProfileLayout() {
       hairColor: '',
       bodyType: '',
       height: '',
-      bustSize: '',
+      // bustSize: '',
       rates: [] as Rate[],
       availability: [],
 
@@ -91,7 +95,110 @@ export function CreateProfileLayout() {
     );
   }, [attributeGroups]);
 
-  const handleNext = () => {
+  const validateStep = (step: number) => {
+    form.clearErrors();
+    
+    try {
+      switch (step) {
+        case 1: {
+          const step1Data = {
+            profileName: form.getValues('profileName') || '',
+            gender: form.getValues('gender') || '',
+            category: form.getValues('category') || '',
+            location: {
+              country: 'Colombia',
+              state: form.getValues('location.state') || '',
+              city: form.getValues('location.city') || '',
+            },
+          };
+          return step1Schema.safeParse(step1Data);
+        }
+        
+        case 2: {
+          const step2Data = {
+            description: form.getValues('description') || '',
+            selectedServices: form.getValues('selectedServices') || [],
+          };
+          return step2Schema.safeParse(step2Data);
+        }
+        
+        case 3: {
+          const step3Data = {
+            phoneNumber: {
+              phone: form.getValues('phoneNumber.phone') || '',
+              whatsapp: form.getValues('phoneNumber.whatsapp') || false,
+              telegram: form.getValues('phoneNumber.telegram') || false,
+            },
+            age: form.getValues('age') || '',
+            skinColor: form.getValues('skinColor') || '',
+            sexuality: form.getValues('sexuality') || '',
+            eyeColor: form.getValues('eyeColor') || '',
+            hairColor: form.getValues('hairColor') || '',
+            bodyType: form.getValues('bodyType') || '',
+            height: form.getValues('height') || '',
+            // bustSize: form.getValues('bustSize') || '',
+            rates: form.getValues('rates') || [],
+            availability: form.getValues('availability') || [],
+          };
+          return step3Schema.safeParse(step3Data);
+        }
+        
+        case 4: {
+          const step4Data = {
+            photos: form.getValues('photos') || [],
+            videos: form.getValues('videos') || [],
+            audios: form.getValues('audios') || [],
+          };
+          return step4Schema.safeParse(step4Data);
+        }
+        
+        case 5: {
+          const step5Data = {
+            acceptTerms: form.getValues('acceptTerms') || false,
+            selectedUpgrades: form.getValues('selectedUpgrades') || [],
+          };
+          return step5Schema.safeParse(step5Data);
+        }
+        
+        default:
+          return { success: true };
+      }
+    } catch (error) {
+      console.error('Error en validación:', error);
+      return { success: false, error: { issues: [] } };
+    }
+  };
+  
+  const setValidationErrors = (result: any) => {
+    if (result.error && result.error.issues) {
+      result.error.issues.forEach((error: any) => {
+        const path = error.path;
+        if (path.length === 1) {
+          form.setError(path[0] as any, {
+            type: 'manual',
+            message: error.message,
+          });
+        } else if (path.length === 2) {
+          form.setError(`${path[0]}.${path[1]}` as any, {
+            type: 'manual',
+            message: error.message,
+          });
+        }
+      });
+    }
+  };
+
+  const handleNext = async () => {
+    const result = validateStep(currentStep);
+
+    console.log("result", result);
+    
+    if (!result.success) {
+      setValidationErrors(result);
+      toast.error('Por favor completa todos los campos requeridos');
+      return;
+    }
+    
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     }
@@ -168,7 +275,7 @@ export function CreateProfileLayout() {
       });
     } */
 
-    const rates = formData.rates.map((rate) => ({
+    const rates = formData.rates?.map((rate) => ({
       hour: rate.time,
       price: rate.price,
       delivery: rate.delivery,
@@ -203,10 +310,6 @@ export function CreateProfileLayout() {
     console.log(
       'Profile data ready for backend:',
       JSON.stringify(backendData, null, 2),
-    );
-    console.log(
-      'Form data from react-hook-form:',
-      JSON.stringify(data, null, 2),
     );
   };
 
