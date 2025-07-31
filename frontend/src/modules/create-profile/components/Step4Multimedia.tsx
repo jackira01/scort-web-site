@@ -29,6 +29,16 @@ export function Step4Multimedia({}: Step4MultimediaProps) {
               </CardTitle>
               <Badge variant="outline">{formData.photos.length} / 20</Badge>
             </div>
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-3">
+              <div className="flex items-start space-x-2">
+                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">i</span>
+                </div>
+                <p className="text-blue-700 dark:text-blue-300 text-sm">
+                  <strong>Importante:</strong> La primera imagen que subas será tu foto principal y aparecerá como imagen de portada en tu perfil.
+                </p>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className={`border-2 border-dashed rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer ${

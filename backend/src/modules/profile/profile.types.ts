@@ -1,5 +1,10 @@
 import type { Document, Types } from 'mongoose';
 
+export interface IStories {
+    link: string;
+    type: 'image' | 'video';
+}
+
 export interface IProfile extends Document {
     user: Types.ObjectId;
     name: string;
@@ -23,7 +28,8 @@ export interface IProfile extends Document {
     media: {
         gallery: string[];
         videos: string[];
-        stories: string[];
+        stories: IStories[];
+        audios: string[];
     };
     availability: Types.ObjectId[];
     verification: Types.ObjectId | boolean;

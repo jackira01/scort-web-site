@@ -27,7 +27,14 @@ const profileSchema = new Schema<IProfile>(
     media: {
       gallery: [String],
       videos: [String],
-      stories: [String],
+      stories: [{
+        link: String,
+        type: {
+          type: String,
+          enum: ['image', 'video'],
+          required: true,
+        },
+      }],
     },
     verification: { type: Schema.Types.ObjectId, ref: 'ProfileVerification' },
     availability: [
