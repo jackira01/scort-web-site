@@ -15,12 +15,12 @@ export interface IProfile extends Document {
         city: string;
     };
     features: {
-        group: string;
+        group: Types.ObjectId;
         value: string | string[];
     }[];
     age: string;
-    phoneNumber: {
-        phone: string;
+    contact: {
+        number: string;
         whatsapp: boolean;
         telegram: boolean;
     };
@@ -43,7 +43,7 @@ export interface IProfile extends Document {
 }
 
 export interface CreateProfileDTO {
-    user: Types.ObjectId;
+    user: Types.ObjectId | string;
     name: string;
     description?: string;
     location: {
@@ -55,6 +55,13 @@ export interface CreateProfileDTO {
         group: string;
         value: string[];
     }[];
+    age: string;
+    contact: {
+        number: string;
+        whatsapp: boolean;
+        telegram: boolean;
+    };
+    height: string;
     media?: {
         gallery?: string[];
         videos?: string[];
@@ -82,6 +89,13 @@ export interface IProfileInput {
         group: Types.ObjectId | string;
         value: string;
     }[];
+    age: string;
+    contact: {
+        number: string;
+        whatsapp: boolean;
+        telegram: boolean;
+    };
+    height: string;
     media?: {
         gallery?: string[];
         videos?: string[];

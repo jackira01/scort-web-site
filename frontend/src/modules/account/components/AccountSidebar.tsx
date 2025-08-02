@@ -1,5 +1,10 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ShieldCheck } from 'lucide-react';
+import { useUser } from '@/hooks/use-user';
+import { useState } from 'react';
+import AccountVerificationModal from './AccountVerificationModal';
 import { sidebarItems } from '../data';
 
 const AccountSidebar = ({
@@ -9,6 +14,8 @@ const AccountSidebar = ({
   activeSection: string;
   setActiveSection: (id: string) => void;
 }) => {
+  const { data: user } = useUser();
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
   return (
     <div className="w-80 space-y-2 animate-in slide-in-from-left-4 duration-500">
       <Card className="bg-card border-border shadow-sm">
@@ -30,6 +37,20 @@ const AccountSidebar = ({
               </p>
             </div>
           </div>
+          
+          {/* Botón de Verificar Cuenta - Solo mostrar si no está verificado */}
+          {user?.isVerified && (
+            <div className="mb-6">
+              <Button 
+                className="w-full bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                onClick={() => setIsVerificationModalOpen(true)}
+              >
+                <ShieldCheck className="h-5 w-5 mr-2" />
+                Verificar Cuenta
+              </Button>
+            </div>
+          )}
+          
           <nav className="space-y-2">
             {sidebarItems.map((item, index) => (
               <button
@@ -63,6 +84,16 @@ const AccountSidebar = ({
           </nav>
         </CardContent>
       </Card>
+      
+      {/* Modal de verificación */}
+      {user && (
+        <AccountVerificationModal
+          isOpen={isVerificationModalOpen}
+          onClose={() => setIsVerificationModalOpen(false)}
+          verification_in_progress={user.verification_in_progress || false}
+          userId={user._id || ''}
+        />
+      )}
     </div>
   );
 };

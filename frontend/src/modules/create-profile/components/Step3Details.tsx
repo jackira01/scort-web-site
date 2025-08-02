@@ -77,7 +77,7 @@ export function Step3Details({
                   <span className="text-sm">🇨🇴</span>
                 </div>
                 <Controller
-                  name="phoneNumber.phone"
+                  name="contact.number"
                   control={control}
                   render={({ field }) => (
                     <Input
@@ -86,7 +86,7 @@ export function Step3Details({
                       value={field.value}
                       onChange={field.onChange}
                       className={`rounded-l-none ${
-                        errors.phoneNumber?.phone ? 'border-red-500 focus:border-red-500' : ''
+                        errors.contact?.number ? 'border-red-500 focus:border-red-500' : ''
                       }`}
                     />
                   )}
@@ -98,9 +98,9 @@ export function Step3Details({
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="whatsapp"
-                    checked={formData.phoneNumber.whatsapp}
+                    checked={formData.contact.whatsapp}
                     onCheckedChange={(checked) =>
-                      setValue('phoneNumber.whatsapp', checked === true)
+                      setValue('contact.whatsapp', checked === true)
                     }
                   />
                   <Label htmlFor="whatsapp" className="text-sm text-foreground cursor-pointer">
@@ -111,9 +111,9 @@ export function Step3Details({
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="telegram"
-                    checked={formData.phoneNumber.telegram}
+                    checked={formData.contact.telegram}
                     onCheckedChange={(checked) =>
-                      setValue('phoneNumber.telegram', checked === true)
+                      setValue('contact.telegram', checked === true)
                     }
                   />
                   <Label htmlFor="telegram" className="text-sm text-foreground cursor-pointer">
@@ -122,9 +122,9 @@ export function Step3Details({
                 </div>
               </div>
             </div>
-            {errors.phoneNumber?.phone && (
+            {errors.contact?.number && (
               <p className="text-red-500 text-sm mt-1">
-                {errors.phoneNumber.phone.message}
+                {errors.contact.number.message}
               </p>
             )}
           </div>

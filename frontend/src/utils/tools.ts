@@ -43,3 +43,53 @@ export const uploadMultipleImages = async (
 
   return uploadedUrls;
 };
+
+export const uploadMultipleVideos = async (
+  filesArray: File[],
+): Promise<(string | null)[]> => {
+  const uploadedUrls: (string | null)[] = [];
+  for (const file of filesArray) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', upload_preset);
+      formData.append('resource_type', 'video');
+
+      const response = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`,
+        formData,
+      );
+      uploadedUrls.push(response.data.secure_url);
+    } catch (error) {
+      console.error(`Error al subir video ${file.name}:`, error);
+      uploadedUrls.push(null);
+    }
+  }
+
+  return uploadedUrls;
+};
+
+export const uploadMultipleAudios = async (
+  filesArray: File[],
+): Promise<(string | null)[]> => {
+  const uploadedUrls: (string | null)[] = [];
+  for (const file of filesArray) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', upload_preset);
+      formData.append('resource_type', 'video'); // Cloudinary usa 'video' para audios también
+
+      const response = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`,
+        formData,
+      );
+      uploadedUrls.push(response.data.secure_url);
+    } catch (error) {
+      console.error(`Error al subir audio ${file.name}:`, error);
+      uploadedUrls.push(null);
+    }
+  }
+
+  return uploadedUrls;
+};

@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 // Schema para Step 3 - Detalles
 export const step3Schema = z.object({
-  phoneNumber: z.object({
-    phone: z
+  contact: z.object({
+    number: z
       .string()
       .min(1, 'El número de teléfono es requerido')
       .regex(/^[+]?[0-9\s\-()]+$/, 'Formato de teléfono inválido'),
@@ -12,12 +12,18 @@ export const step3Schema = z.object({
   }),
   
   age: z
-    .string()
-    .min(1, 'La edad es requerida')
-    .refine((val) => {
-      const num = parseInt(val);
-      return num >= 18 && num <= 65;
-    }, 'La edad debe estar entre 18 y 65 años'),
+    .union([
+      z.number(),
+      z.string().regex(/^\d+$/, 'debe ser un número válido')
+    ])
+    .transform((val) => {
+      const num = typeof val === 'string' ? parseInt(val, 10) : val;
+      if (isNaN(num)) {
+        throw new Error('debe ser un número válido');
+      }
+      return num;
+    })
+    .refine((val) => val >= 18 && val <= 100, 'La edad debe estar entre 18 y 100 años'),
   
   skinColor: z
     .string()
@@ -40,8 +46,18 @@ export const step3Schema = z.object({
     .min(1, 'Debes seleccionar el tipo de cuerpo'),
   
   height: z
-    .string()
-    .min(1, 'La estatura es requerida'),
+    .union([
+      z.number(),
+      z.string().regex(/^\d+(\.\d+)?$/, 'debe ser un número válido')
+    ])
+    .transform((val) => {
+      const num = typeof val === 'string' ? parseFloat(val) : val;
+      if (isNaN(num)) {
+        throw new Error('debe ser un número válido');
+      }
+      return num;
+    })
+    .refine((val) => val >= 40 && val <= 300, 'La altura debe estar entre 40 y 300 cm'),
   
   /* bustSize: z
     .string()

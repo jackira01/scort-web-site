@@ -22,8 +22,8 @@ export interface FormData {
   selectedServices: string[];
 
   // Step 3 - Detalles
-  phoneNumber: {
-    phone: string;
+  contact: {
+    number: string;
     whatsapp: boolean;
     telegram: boolean;
   };

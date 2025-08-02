@@ -12,6 +12,7 @@ router.delete('/:id', profileController.eliminarPerfil);*/
 router.post('/auth_google', userController.authGoogleUserController);
 router.post('/verify_user', userController.verifyUserController);
 router.post('/upload_user_document', userController.uploadUserDocumentController);
+router.get('/:id/profiles', userController.getUserProfiles);
 router.post('/', userController.getUsers);
 router.get('/:id', userController.getUserById);
 router.put('/:id', userController.updateUser);

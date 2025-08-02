@@ -29,6 +29,7 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
     price: '',
     delivery: false,
   });
+  const [showValidationError, setShowValidationError] = useState(false);
 
   const formatPrice = (price: number): string => {
     return new Intl.NumberFormat('es-CO', {
@@ -71,10 +72,13 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
   };
 
   const addRate = () => {
-    if (
-      !newRate.price ||
-      (!newRate.days && !newRate.hours && !newRate.minutes)
-    ) {
+    const hasValidTime = 
+      (newRate.days && parseInt(newRate.days) > 0) ||
+      (newRate.hours && parseInt(newRate.hours) > 0) ||
+      (newRate.minutes && parseInt(newRate.minutes) > 0);
+
+    if (!newRate.price || !hasValidTime) {
+      setShowValidationError(true);
       return;
     }
 
@@ -100,6 +104,7 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
       price: '',
       delivery: false,
     });
+    setShowValidationError(false);
   };
 
   const removeRate = (id: string) => {
@@ -121,6 +126,9 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
   const handlePriceChange = (value: string) => {
     const numericValue = value.replace(/[^\d]/g, '');
     setNewRate((prev) => ({ ...prev, price: numericValue }));
+    if (showValidationError && numericValue) {
+      setShowValidationError(false);
+    }
   };
 
   return (
@@ -253,7 +261,7 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
                         : ''
                     }
                     onChange={(e) => handlePriceChange(e.target.value)}
-                    className="pl-8"
+                    className={`pl-8 ${showValidationError && !newRate.price ? 'border-red-500' : ''}`}
                   />
                 </div>
 
@@ -271,17 +279,27 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
                   </Label>
                 </div>
               </div>
+              
             </div>
           </div>
 
-
+          {/* Mensaje de error para tiempo */}
+          {showValidationError && !newRate.price && (
+                <p className="text-red-500 text-sm mt-1">
+                  El precio es obligatorio para crear una tarifa
+                </p>
+              )}
+          {showValidationError && !((newRate.days && parseInt(newRate.days) > 0) ||
+            (newRate.hours && parseInt(newRate.hours) > 0) ||
+            (newRate.minutes && parseInt(newRate.minutes) > 0)) && (
+            <p className="text-red-500 text-sm">
+              Debes especificar al menos días, horas o minutos mayores a 0 para la tarifa
+            </p>
+          )}
 
           <Button
             onClick={addRate}
-            disabled={
-              !newRate.price ||
-              (!newRate.days && !newRate.hours && !newRate.minutes)
-            }
+            
             className="w-full bg-green-600 hover:bg-green-700 text-white"
           >
             <Plus className="h-4 w-4 mr-2" />

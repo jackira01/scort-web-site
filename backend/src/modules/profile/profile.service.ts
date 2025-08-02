@@ -1,6 +1,7 @@
 import { validateProfileFeatures } from '../attribute-group/validateProfileFeatures';
 import { ProfileModel } from './profile.model';
 import type { CreateProfileDTO } from './profile.types';
+import UserModel from '../user/User.model';
 
 export const checkProfileNameExists = async (name: string) => {
   const profile = await ProfileModel.findOne({ name });
@@ -21,7 +22,16 @@ export const createProfile = async (data: CreateProfileDTO) => {
   if (exists) {
     throw new Error(message);
   }
+  
   const profile = await ProfileModel.create(data);
+  
+  // Agregar el perfil al array de profiles del usuario
+  await UserModel.findByIdAndUpdate(
+    data.user,
+    { $push: { profiles: profile._id } },
+    { new: true }
+  );
+  
   return profile;
 };
 

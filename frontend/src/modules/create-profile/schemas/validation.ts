@@ -21,8 +21,8 @@ export const formSchema = z.object({
   selectedServices: z.array(z.string()).optional(),
 
   // Step 3 - Detalles
-  phoneNumber: z.object({
-    phone: z.string().optional(),
+  contact: z.object({
+    number: z.string().optional(),
     whatsapp: z.boolean().optional(),
     telegram: z.boolean().optional(),
   }).optional(),

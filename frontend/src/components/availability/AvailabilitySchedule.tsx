@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -81,7 +81,17 @@ export function AvailabilitySchedule({
         ),
     );
 
-    const updateAvailability = () => {
+    // Use ref to track if this is the initial render
+    const isInitialRender = useRef(true);
+
+    // Use useEffect to handle availability updates
+    useEffect(() => {
+        // Skip the initial render to avoid calling onChange on mount
+        if (isInitialRender.current) {
+            isInitialRender.current = false;
+            return;
+        }
+
         const newAvailability = daysOfWeek
             .filter((day) => dayStates[day].isAvailable)
             .map((day) => ({
@@ -96,7 +106,7 @@ export function AvailabilitySchedule({
             }));
 
         onChange(newAvailability);
-    };
+    }, [dayStates]);
 
     const handleCheckboxChange = (day: string, checked: boolean) => {
         setDayStates((prev) => ({
@@ -106,8 +116,6 @@ export function AvailabilitySchedule({
                 isAvailable: checked,
             },
         }));
-
-        setTimeout(updateAvailability, 0);
     };
 
     const handleTimeChange = (
@@ -122,8 +130,6 @@ export function AvailabilitySchedule({
                 [field]: value,
             },
         }));
-
-        setTimeout(updateAvailability, 0);
     };
 
     return (

@@ -40,3 +40,18 @@ export const verifyProfileName = async (profileName: string) => {
     const response = await axios.get(`${API_URL}/api/profile/verify-profile-name/?profileName=${profileName}`);
     return response.data;
 };
+
+export const getUserProfiles = async (userId: string) => {
+    const response = await axios.get(`${API_URL}/api/user/${userId}/profiles`);
+    return response.data;
+}
+
+export const createProfile = async (data: any) => {
+    const response = await axios.post(`${API_URL}/api/profile/`, data);
+    return response.data;
+}
+
+export const getProfileById = async (profileId: string) => {
+    const response = await axios.get(`${API_URL}/api/profile/${profileId}`);
+    return response.data;
+}

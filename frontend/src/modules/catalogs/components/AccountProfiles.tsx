@@ -14,18 +14,67 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface Profile {
-  id: number;
+  _id: string;
+  user: string;
   name: string;
-  age: number;
-  category: string;
-  location: string;
-  image: string;
-  views: string;
-  rating: number;
-  status: string;
-  verified: boolean;
-  featured: boolean;
-  completeness: number;
+  description: string;
+  age: string;
+  height: string;
+  location: {
+    country: string;
+    state: string;
+    city: string;
+  };
+  contact: {
+    number: string;
+    whatsapp: boolean;
+    telegram: boolean;
+  };
+  media: {
+    gallery: string[];
+    videos: string[];
+    stories: {
+      link: string;
+      type: string;
+      _id: string;
+    }[];
+  };
+  features: {
+    group: string;
+    value: string[];
+    _id: string;
+  }[];
+  verification: any;
+  availability: {
+    dayOfWeek: string;
+    slots: {
+      start: string;
+      end: string;
+      timezone: string;
+      _id: string;
+    }[];
+    _id: string;
+  }[];
+  rates: {
+    hour: string;
+    price: number;
+    delivery: boolean;
+    _id: string;
+  }[];
+  paymentHistory: any[];
+  upgrades: any[];
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+  // Campos calculados para compatibilidad con el componente
+  category?: string;
+  image?: string;
+  views?: string;
+  rating?: number;
+  status?: string;
+  verified?: boolean;
+  featured?: boolean;
+  completeness?: number;
 }
 
 interface ProfileListProps {
@@ -52,18 +101,37 @@ const AccountProfiles = ({
           </Button>
         </Link>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {profiles.map((profile, index) => (
-          <Card
-            key={profile.id}
-            className="group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card border-border hover:border-purple-500/50 animate-in zoom-in-50"
-            style={{ animationDelay: `${index * 100}ms` }}
-          >
+      {profiles.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 px-4 text-center animate-in fade-in-50 slide-in-from-bottom-4 duration-500">
+          <div className="w-24 h-24 mb-6 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 flex items-center justify-center">
+            <Plus className="h-12 w-12 text-purple-600 dark:text-purple-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-foreground mb-2">
+            Aún no has creado perfiles
+          </h3>
+          <p className="text-muted-foreground mb-6 max-w-md">
+            Crea tu primer perfil para comenzar a conectar con personas increíbles
+          </p>
+          <Link href="/cuenta/crear-perfil">
+            <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25">
+              <Plus className="h-4 w-4 mr-2" />
+              Crear mi primer perfil
+            </Button>
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {profiles.map((profile, index) => (
+            <Card
+              key={profile._id}
+              className="group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card border-border hover:border-purple-500/50 animate-in zoom-in-50"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
             <div className="relative">
               <Image
                 width={400}
                 height={200}
-                src={profile.image || '/placeholder.svg'}
+                src={profile.media?.gallery?.[0] || profile.image || '/placeholder.svg'}
                 alt={profile.name}
                 className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
               />
@@ -109,7 +177,7 @@ const AccountProfiles = ({
                     </span>
                     <span className="flex items-center">
                       <MapPin className="h-3 w-3 mr-1" />
-                      {profile.location}
+                      {profile.location?.city || 'No especificada'}
                     </span>
                   </div>
                 </div>
@@ -117,16 +185,7 @@ const AccountProfiles = ({
                   <Badge variant="outline" className="text-xs">
                     {profile.category}
                   </Badge>
-                  <div className="flex items-center space-x-2">
-                    <span className="flex items-center text-muted-foreground">
-                      <Eye className="h-3 w-3 mr-1" />
-                      {profile.views}
-                    </span>
-                    <span className="flex items-center text-muted-foreground">
-                      <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
-                      {profile.rating}
-                    </span>
-                  </div>
+                
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
@@ -147,7 +206,7 @@ const AccountProfiles = ({
                   </div>
                 </div>
                 <div className="flex space-x-2 pt-2">
-                  <Link href={`/create-profile/${profile.id}`}>
+                  <Link href={`/create-profile/${profile._id}`}>
                     <Button
                       size="sm"
                       variant="outline"
@@ -157,19 +216,22 @@ const AccountProfiles = ({
                       Editar
                     </Button>
                   </Link>
-                  <Button
-                    size="sm"
-                    className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                  >
-                    <Eye className="h-3 w-3 mr-1" />
-                    Ver
-                  </Button>
+                  <Link href={`/perfil/${profile._id}`}>
+                    <Button
+                      size="sm"
+                      className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      Ver
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

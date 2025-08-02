@@ -1,8 +1,9 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, CheckCircle, Loader } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -10,6 +11,8 @@ import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getAttributeGroups } from '@/services/attribute-group.service';
+import { createProfile } from '@/services/user.service';
+import { uploadMultipleImages, uploadMultipleVideos, uploadMultipleAudios } from '@/utils/tools';
 import { FormProvider } from '../context/FormContext';
 import { steps } from '../data';
 import { step1Schema, step2Schema, step3Schema, step4Schema, step5Schema } from '../schemas';
@@ -24,6 +27,10 @@ import { Step5Finalize } from './Step5Finalize';
 
 export function CreateProfileLayout() {
   const [currentStep, setCurrentStep] = useState(1);
+  const [uploading, setUploading] = useState(false);
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
   
   const form = useForm<FormData>({
     mode: 'onChange',
@@ -44,8 +51,8 @@ export function CreateProfileLayout() {
       selectedServices: [],
 
       // Step 3 - Detalles
-      phoneNumber: {
-        phone: '',
+      contact: {
+        number: '',
         whatsapp: false,
         telegram: false,
       },
@@ -72,8 +79,6 @@ export function CreateProfileLayout() {
   });
   
   const acceptTerms = form.watch('acceptTerms');
-
-  const { data: session } = useSession();
 
   const {
     data: attributeGroups,
@@ -124,10 +129,10 @@ export function CreateProfileLayout() {
         
         case 3: {
           const step3Data = {
-            phoneNumber: {
-              phone: form.getValues('phoneNumber.phone') || '',
-              whatsapp: form.getValues('phoneNumber.whatsapp') || false,
-              telegram: form.getValues('phoneNumber.telegram') || false,
+            contact: {
+              number: form.getValues('contact.number') || '',
+              whatsapp: form.getValues('contact.whatsapp') || false,
+              telegram: form.getValues('contact.telegram') || false,
             },
             age: form.getValues('age') || '',
             skinColor: form.getValues('skinColor') || '',
@@ -212,7 +217,7 @@ export function CreateProfileLayout() {
 
   // handleFormDataChange ya no es necesario con react-hook-form
 
-  const transformDataToBackendFormat = (formData: FormData) => {
+  const transformDataToBackendFormat = (formData: FormData & { photos?: string[], videos?: string[], audios?: string[] }) => {
     const features = [];
 
     // Gender feature
@@ -292,12 +297,23 @@ export function CreateProfileLayout() {
       },
       features,
       age: formData.age,
-      phoneNumber: formData.phoneNumber,
+      contact: formData.contact,
       height: formData.height,
       media: {
-        gallery: [], // Mock por ahora
-        videos: [],
-        stories: [],
+        gallery: formData.photos || [],
+        videos: formData.videos || [],
+        stories: [
+          // Agregar fotos como stories de tipo 'image'
+          ...(formData.photos || []).map(photoUrl => ({
+            link: photoUrl,
+            type: 'image'
+          })),
+          // Agregar videos como stories de tipo 'video'
+          ...(formData.videos || []).map(videoUrl => ({
+            link: videoUrl,
+            type: 'video'
+          }))
+        ],
       },
       verification: null,
       availability: formData.availability,
@@ -305,12 +321,78 @@ export function CreateProfileLayout() {
     };
   };
 
-  const handleFinalSave = (data: FormData) => {
-    const backendData = transformDataToBackendFormat(data);
-    console.log(
-      'Profile data ready for backend:',
-      JSON.stringify(backendData, null, 2),
-    );
+  const handleFinalSave = async (data: FormData) => {
+    try {
+      setUploading(true);
+      
+      // Subir archivos multimedia a Cloudinary
+      let photoUrls: string[] = [];
+      let videoUrls: string[] = [];
+      let audioUrls: string[] = [];
+      
+      if (data.photos && data.photos.length > 0) {
+        toast.loading('Subiendo fotos...');
+        photoUrls = await uploadMultipleImages(data.photos);
+        toast.dismiss();
+        toast.success(`${photoUrls.length} fotos subidas exitosamente`);
+      }
+      
+      if (data.videos && data.videos.length > 0) {
+        toast.loading('Subiendo videos...');
+        videoUrls = await uploadMultipleVideos(data.videos);
+        toast.dismiss();
+        toast.success(`${videoUrls.length} videos subidos exitosamente`);
+      }
+      
+      if (data.audios && data.audios.length > 0) {
+        toast.loading('Subiendo audios...');
+        audioUrls = await uploadMultipleAudios(data.audios);
+        toast.dismiss();
+        toast.success(`${audioUrls.length} audios subidos exitosamente`);
+      }
+      
+      // Crear datos con URLs de Cloudinary
+      const dataWithUrls = {
+        ...data,
+        photos: photoUrls,
+        videos: videoUrls,
+        audios: audioUrls
+      };
+      
+      const backendData = transformDataToBackendFormat(dataWithUrls);
+      console.log(
+        'Profile data ready for backend:',
+        JSON.stringify(backendData, null, 2),
+      );
+      
+      // Crear el perfil usando el servicio
+      const loadingToast = toast.loading('Creando perfil...');
+      try {
+        await createProfile(backendData);
+        toast.dismiss(loadingToast);
+        
+        // Invalidar la query de userProfiles para refrescar los datos
+        if (session?.user?.id) {
+          await queryClient.invalidateQueries({
+            queryKey: ['userProfiles', session.user.id]
+          });
+        }
+        
+        toast.success('Perfil creado exitosamente');
+        
+        // Redirigir a la página de cuenta
+        router.push('/cuenta');
+      } catch (profileError) {
+        toast.dismiss(loadingToast);
+        console.error('Error creating profile:', profileError);
+        toast.error('Error al crear perfil. Contacta con servicio al cliente.');
+      }
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      toast.error('Error al subir archivos. Inténtalo de nuevo.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const renderStepContent = () => {
@@ -357,7 +439,6 @@ export function CreateProfileLayout() {
   return (
     <FormProvider form={form} currentStep={currentStep}>
       <div className="min-h-screen mb-20 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
-        {/* Header */}
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -365,13 +446,6 @@ export function CreateProfileLayout() {
             <div className="lg:col-span-1">
               <div className="sticky top-24 space-y-4">
                 <SidebarContent currentStep={currentStep} />
-
-                <Button
-                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold py-3"
-                  onClick={form.handleSubmit(handleFinalSave)}
-                >
-                  Guardar
-                </Button>
               </div>
             </div>
 
@@ -408,10 +482,17 @@ export function CreateProfileLayout() {
                 {currentStep === 5 ? (
                   <Button
                     className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold px-8"
-                    disabled={!acceptTerms}
+                    disabled={!acceptTerms || uploading}
                     onClick={form.handleSubmit(handleFinalSave)}
                   >
-                    Guardar
+                    {uploading ? (
+                      <>
+                        <Loader className="h-4 w-4 mr-2 animate-spin" />
+                        Subiendo archivos...
+                      </>
+                    ) : (
+                      'Crear perfil'
+                    )}
                   </Button>
                 ) : (
                   <Button

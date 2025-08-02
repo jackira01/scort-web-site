@@ -29,6 +29,12 @@ export const getUsers = async (filters: any, options: any) => {
 
 };
 
+export const getUserProfiles = async (userId: string) => {
+  const user = await UserModel.findById(userId).populate('profiles');
+  return user?.profiles || [];
+}
+
+
 
 /* export const obtenerPerfiles = () => UserModel.find();
 

@@ -17,7 +17,6 @@ export function SidebarContent({ currentStep }: SidebarContentProps) {
               <h3 className="font-semibold text-blue-800 dark:text-blue-200">
                 Consejo rápido
               </h3>
-              <Edit className="h-3 w-3 text-blue-600" />
             </div>
             <p className="text-sm text-blue-700 dark:text-blue-300">
               Incrementa las visitas a tu sitio con un nombre y título super
