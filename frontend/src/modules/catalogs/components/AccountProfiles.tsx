@@ -5,6 +5,7 @@ import {
   Eye,
   MapPin,
   Plus,
+  Shield,
   Star,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -13,72 +14,26 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
-interface Profile {
+interface ProfileResponse {
   _id: string;
   user: string;
   name: string;
-  description: string;
-  age: string;
-  height: string;
+  profileImage: string;
   location: {
     country: string;
     state: string;
     city: string;
-  };
-  contact: {
-    number: string;
-    whatsapp: boolean;
-    telegram: boolean;
-  };
-  media: {
-    gallery: string[];
-    videos: string[];
-    stories: {
-      link: string;
-      type: string;
-      _id: string;
-    }[];
-  };
-  features: {
-    group: string;
-    value: string[];
+  },
+  age: string;
+  verification: {
     _id: string;
-  }[];
-  verification: any;
-  availability: {
-    dayOfWeek: string;
-    slots: {
-      start: string;
-      end: string;
-      timezone: string;
-      _id: string;
-    }[];
-    _id: string;
-  }[];
-  rates: {
-    hour: string;
-    price: number;
-    delivery: boolean;
-    _id: string;
-  }[];
-  paymentHistory: any[];
-  upgrades: any[];
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-  // Campos calculados para compatibilidad con el componente
-  category?: string;
-  image?: string;
-  views?: string;
-  rating?: number;
-  status?: string;
-  verified?: boolean;
-  featured?: boolean;
-  completeness?: number;
+    verificationStatus: string;
+    verificationProgress: number;
+  }
 }
 
 interface ProfileListProps {
-  profiles: Profile[];
+  profiles: ProfileResponse[];
   getProgressColor: (percentage: number) => string;
   getProgressTextColor: (percentage: number) => string;
 }
@@ -127,108 +82,120 @@ const AccountProfiles = ({
               className="group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card border-border hover:border-purple-500/50 animate-in zoom-in-50"
               style={{ animationDelay: `${index * 100}ms` }}
             >
-            <div className="relative">
-              <Image
-                width={400}
-                height={200}
-                src={profile.media?.gallery?.[0] || profile.image || '/placeholder.svg'}
-                alt={profile.name}
-                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute top-3 left-3 flex space-x-2">
-                {profile.featured && (
-                  <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white animate-pulse">
-                    <Star className="h-3 w-3 mr-1" />
-                    DESTACADO
-                  </Badge>
-                )}
-              </div>
-              <div className="absolute top-3 right-3 flex space-x-2">
-                {profile.verified && (
-                  <Badge className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100">
-                    <CheckCircle className="h-3 w-3" />
-                  </Badge>
-                )}
-                <Badge
-                  variant={
-                    profile.status === 'Activo' ? 'default' : 'secondary'
-                  }
-                  className={
-                    profile.status === 'Activo'
-                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
-                      : ''
-                  }
-                >
-                  {profile.status}
-                </Badge>
-              </div>
-            </div>
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                <div>
-                  <h3 className="font-semibold text-lg text-foreground group-hover:text-purple-600 transition-colors duration-300">
-                    {profile.name}
-                  </h3>
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
-                    <span className="flex items-center">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {profile.age} años
-                    </span>
-                    <span className="flex items-center">
-                      <MapPin className="h-3 w-3 mr-1" />
-                      {profile.location?.city || 'No especificada'}
-                    </span>
-                  </div>
+              <div className="relative">
+                <Image
+                  width={400}
+                  height={200}
+                  src={profile.profileImage || '/placeholder.svg'}
+                  alt={profile.name}
+                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute top-3 left-3 flex space-x-2">
+                  {/* {profile.featured && (
+                    <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white animate-pulse">
+                      <Star className="h-3 w-3 mr-1" />
+                      DESTACADO
+                    </Badge>
+                  )} */}
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <Badge variant="outline" className="text-xs">
-                    {profile.category}
+                <div className="absolute top-3 right-3 flex space-x-2">
+                  {profile.verification?.verificationStatus === 'Activo' && (
+                    <Badge className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100">
+                      <CheckCircle className="h-3 w-3" />
+                    </Badge>
+                  )}
+                  <Badge
+                    variant={
+                      profile.verification?.verificationStatus === 'Activo' ? 'default' : 'secondary'
+                    }
+                    className={
+                      profile.verification?.verificationStatus === 'Activo'
+                        ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
+                        : ''
+                    }
+                  >
+                    {profile.verification?.verificationStatus}
                   </Badge>
-                
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">
-                      Completitud del perfil
-                    </span>
-                    <span
-                      className={`font-medium ${getProgressTextColor(profile.completeness)}`}
-                    >
-                      {profile.completeness}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full transition-all duration-500 ${getProgressColor(profile.completeness)}`}
-                      style={{ width: `${profile.completeness}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="flex space-x-2 pt-2">
-                  <Link href={`/create-profile/${profile._id}`}>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500 transition-all duration-200"
-                    >
-                      <Edit className="h-3 w-3 mr-1" />
-                      Editar
-                    </Button>
-                  </Link>
-                  <Link href={`/perfil/${profile._id}`}>
-                    <Button
-                      size="sm"
-                      className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Ver
-                    </Button>
-                  </Link>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="font-semibold text-lg text-foreground group-hover:text-purple-600 transition-colors duration-300">
+                      {profile.name}
+                    </h3>
+                    <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
+                      <span className="flex items-center">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {profile.age} años
+                      </span>
+                      <span className="flex items-center">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {profile.location?.state && profile.location?.city && `${profile.location.state}, ${profile.location.city}`}
+                      </span>
+                    </div>
+                  </div>
+                  {/* <div className="flex items-center justify-between text-sm">
+                    <Badge variant="outline" className="text-xs">
+                      {profile.category}
+                    </Badge>
+
+                  </div> */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">
+                        Completitud del perfil
+                      </span>
+                      <span
+                        className={`font-medium ${getProgressTextColor(profile.verification?.verificationProgress)}`}
+                      >
+                        {profile.verification?.verificationProgress}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-500 ${getProgressColor(profile.verification?.verificationProgress)}`}
+                        style={{ width: `${profile.verification?.verificationProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col space-y-2 pt-2">
+                    <div className="flex space-x-2">
+                      <Link href={`/create-profile/${profile._id}`}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500 transition-all duration-200"
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Editar
+                        </Button>
+                      </Link>
+                      <Link href={`/perfil/${profile._id}`}>
+                        <Button
+                          size="sm"
+                          className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          Ver
+                        </Button>
+                      </Link>
+                    </div>
+                    <Link href={`/cuenta/verificar-perfil/${profile._id}`}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full hover:bg-green-50 dark:hover:bg-green-950/20 hover:border-green-500 transition-all duration-200"
+                      >
+                        <Shield className="h-3 w-3 mr-1" />
+                        Verificar Perfil
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}

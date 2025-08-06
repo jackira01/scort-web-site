@@ -30,8 +30,28 @@ export const getUsers = async (filters: any, options: any) => {
 };
 
 export const getUserProfiles = async (userId: string) => {
-  const user = await UserModel.findById(userId).populate('profiles');
-  return user?.profiles || [];
+  const user = await UserModel.findById(userId).populate({
+    path: 'profiles',
+    select: '_id user name age location verification media',
+    populate: {
+      path: 'verification',
+      model: 'ProfileVerification',
+      select: 'verificationProgress verificationStatus'
+    }
+  });
+  
+  const profiles = user?.profiles || [];
+  
+  // Transformar los perfiles para agregar profileImage
+  return profiles.map((profile: any) => ({
+    _id: profile._id,
+    user: profile.user,
+    name: profile.name,
+    age: profile.age,
+    location: profile.location,
+    verification: profile.verification,
+    profileImage: profile.media?.gallery?.[0] || null
+  }));
 }
 
 

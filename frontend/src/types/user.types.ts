@@ -42,10 +42,12 @@ export type Profile = {
         eyes: string;
         height: number;
     };
+    services?: string[]; // Servicios separados de features
     media: {
         gallery: string[];
         videos: string[];
         stories: string[];
+        audios?: string[];
     };
 }
 

@@ -9,7 +9,12 @@ export interface IUser {
   isVerified: boolean;
   verification_in_progress?: boolean;
   profiles: mongoose.Types.ObjectId[];
+  lastLogin: {
+    isVerified: boolean;
+    date: Date;
+  };
 }
+
 export interface IUserDocument extends IUser, Document { }
 
 const userSchema = new Schema<IUserDocument>({
@@ -19,6 +24,11 @@ const userSchema = new Schema<IUserDocument>({
   isVerified: { type: Boolean, default: false },
   verification_in_progress: { type: Boolean, default: false },
   profiles: [{ type: Schema.Types.ObjectId, ref: 'Profile' }],
+  lastLogin: {
+    isVerified: { type: Boolean, default: false },
+    date: { type: Date, default: null },
+  },
+
 });
 
 userSchema.plugin(mongoosePaginate);

@@ -1,11 +1,12 @@
 'use client';
 
-import { ProfileGallery } from '@/modules/profileDetails/components/GaleryProfile';
-import { useProfile } from '@/hooks/use-profile';
 import Loader from '@/components/Loader';
+import { useProfile } from '@/hooks/use-profile';
+import { ProfileGallery } from '@/modules/profileDetails/components/GaleryProfile';
 
 // Mock data for the profile
 import { profileData } from '@/modules/profileDetails/data';
+import AudioPlayer from './AudioPlayer';
 import AvailabilityProfile from './AvailabilityProfile';
 import { DescriptionProfile } from './DescriptionProfile';
 import PhysicalTraitsProfile from './PhysicalTraitsProfile';
@@ -29,37 +30,61 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Perfil no encontrado</h2>
-          <p className="text-gray-600 dark:text-gray-400">El perfil que buscas no existe o ha sido eliminado.</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Perfil no encontrado
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            El perfil que buscas no existe o ha sido eliminado.
+          </p>
         </div>
       </div>
     );
   }
 
-  // Adaptar los datos del perfil al formato esperado por los componentes
+  // Adaptar los datos del perfil de la API al formato esperado por los componentes
   const adaptedProfileData = {
-    ...profileData, // Mantener datos mock como fallback
+    id: profile._id,
     name: profile.name,
     age: parseInt(profile.age),
+    location: `${profile.location?.country}, ${profile.location?.state}, ${profile.location?.city}`,
+    category: 'ESCORT',
+    verified: profile.verification?.verificationStatus === 'verified',
+    online: true,
+    rating: 4.9,
+    reviews: 127,
     description: profile.description,
-    images: profile.media?.gallery || profileData.images,
+    images: profile.media?.gallery || ['/placeholder.svg?height=400&width=600'],
     videos: profile.media?.videos || [],
+    services: profile.services || [],
     physicalTraits: {
-      height: profile.height,
-      // Mapear features a physical traits
-      ...profileData.physicalTraits
+      edad: profile.age?.toString() || '',
+      ...Object.fromEntries(
+        (profile.features || []).map((feature: any) => [
+          feature.labelName?.toLowerCase() || feature.groupName,
+          Array.isArray(feature.value) ? feature.value.join(', ') : feature.value
+        ])
+      ),
+      ubicacion: `${profile.location?.state}, ${profile.location?.city}`,
+      altura: profile.height ? `${profile.height} cm` : '',
     },
-    rates: profile.rates?.map((rate: any) => ({
-      duration: rate.hour,
-      price: rate.price,
-      delivery: rate.delivery
-    })) || profileData.rates,
-    availability: profile.availability || profileData.availability,
+    rates: profile.rates || [],
+    availability: profile.availability || {
+      monday: '9:00 AM - 11:00 PM',
+      tuesday: '9:00 AM - 11:00 PM',
+      wednesday: '9:00 AM - 11:00 PM',
+      thursday: '9:00 AM - 11:00 PM',
+      friday: '24 horas',
+      saturday: '24 horas',
+      sunday: '2:00 PM - 10:00 PM',
+    },
     socialMedia: {
       whatsapp: profile.contact?.whatsapp ? profile.contact.number : null,
       telegram: profile.contact?.telegram ? profile.contact.number : null,
-      ...profileData.socialMedia
-    }
+      instagram: null,
+      twitter: null,
+      facebook: null,
+    },
+    videoUrl: '/placeholder-video.mp4',
   };
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
@@ -85,7 +110,9 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
             />
 
             {/* Social Media Buttons */}
-            <SocialMediaProfile socialMediaData={adaptedProfileData.socialMedia} />
+            <SocialMediaProfile
+              socialMediaData={adaptedProfileData.socialMedia}
+            />
 
             {/* Physical Traits */}
             <PhysicalTraitsProfile
@@ -93,13 +120,18 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
             />
 
             {/* Video Player */}
-            <VideoPlayer images={adaptedProfileData.images[1]} />
+            <VideoPlayer videos={adaptedProfileData.videos} />
+
+            {/* Audio Player */}
+            <AudioPlayer audios={profile.media?.audios || []} />
 
             {/* Rates */}
             <RatesProfile rates={adaptedProfileData.rates} />
 
             {/* Availability */}
-            <AvailabilityProfile availability={adaptedProfileData.availability} />
+            <AvailabilityProfile
+              availability={adaptedProfileData.availability}
+            />
           </div>
         </div>
       </div>

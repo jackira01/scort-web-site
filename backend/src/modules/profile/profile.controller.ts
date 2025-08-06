@@ -44,3 +44,20 @@ export const verifyProfileName = async (req: Request, res: Response) => {
     res.status(400).json({ message });
   }
 };
+
+export const createMissingVerifications = async (req: Request, res: Response) => {
+  try {
+    const result = await service.createMissingVerifications();
+    res.status(200).json({
+      success: true,
+      message: `Proceso completado. ${result.created} verificaciones creadas, ${result.errors} errores.`,
+      data: result
+    });
+  } catch (err: unknown) {
+     const message = err instanceof Error ? err.message : 'An error occurred';
+     res.status(500).json({ 
+       success: false,
+       message: `Error al crear verificaciones faltantes: ${message}` 
+     });
+   }
+ };

@@ -6,9 +6,9 @@ import { Card, CardContent } from '@/components/ui/card';
 type SocialMediaData = {
   whatsapp: string;
   telegram?: string;
-  instagram?: string;
+  /* instagram?: string;
   twitter?: string;
-  facebook?: string;
+  facebook?: string; */
 };
 
 interface SocialMediaProfileProps {

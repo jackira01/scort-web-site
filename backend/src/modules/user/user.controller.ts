@@ -92,7 +92,6 @@ export const getUsers = async (req: Request, res: Response) => {
 };
 
 export const getUserProfiles = async (req: Request, res: Response) => {
-  console.log('entre al get');
   const userId = req.params.id;
   const profiles = await userService.getUserProfiles(userId);
   res.json(profiles);

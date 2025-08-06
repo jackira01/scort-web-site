@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { connectDB } from '../config/db';
 import attributeGroupRoutes from './modules/attribute-group/attribute-group.routes';
 import profileRoutes from './modules/profile/profile.routes';
+import profileVerificationRoutes from './modules/profile-verification/profile-verification.routes';
 import userRoutes from './modules/user/user.routes';
 
 dotenv.config();
@@ -38,6 +39,7 @@ app.use(express.json());
 app.use(morgan('dev')); // esto sí muestra logs en consola
 
 app.use('/api/profile', profileRoutes);
+app.use('/api/profile-verification', profileVerificationRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/attribute-groups', attributeGroupRoutes);
 

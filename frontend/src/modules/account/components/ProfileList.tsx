@@ -134,9 +134,9 @@ export default function ProfileList({
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <Badge variant="outline" className="text-xs">
+                  {/*  <Badge variant="outline" className="text-xs">
                     {profile.category}
-                  </Badge>
+                  </Badge> */}
                   <div className="flex items-center space-x-2">
                     <span className="flex items-center text-muted-foreground">
                       <Eye className="h-3 w-3 mr-1" />

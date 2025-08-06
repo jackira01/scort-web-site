@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, CheckCircle, Loader } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -10,14 +10,24 @@ import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getAttributeGroups } from '@/services/attribute-group.service';
+import { useAttributeGroups } from '@/hooks/use-attribute-groups';
 import { createProfile } from '@/services/user.service';
-import { uploadMultipleImages, uploadMultipleVideos, uploadMultipleAudios } from '@/utils/tools';
+import {
+  uploadMultipleAudios,
+  uploadMultipleImages,
+  uploadMultipleVideos,
+} from '@/utils/tools';
 import { FormProvider } from '../context/FormContext';
 import { steps } from '../data';
-import { step1Schema, step2Schema, step3Schema, step4Schema, step5Schema } from '../schemas';
-import type { AttributeGroup, Rate } from '../types';
 import type { FormData } from '../schemas';
+import {
+  step1Schema,
+  step2Schema,
+  step3Schema,
+  step4Schema,
+  step5Schema,
+} from '../schemas';
+import type { AttributeGroup, Rate } from '../types';
 import { SidebarContent } from './SidebarContent';
 import { Step1EssentialInfo } from './Step1EssentialInfo';
 import { Step2Description } from './Step2Description';
@@ -31,7 +41,7 @@ export function CreateProfileLayout() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  
+
   const form = useForm<FormData>({
     mode: 'onChange',
     defaultValues: {
@@ -77,18 +87,10 @@ export function CreateProfileLayout() {
       acceptTerms: false,
     },
   });
-  
+
   const acceptTerms = form.watch('acceptTerms');
 
-  const {
-    data: attributeGroups,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['attributeGroups'],
-    queryFn: getAttributeGroups,
-    staleTime: 1000 * 60 * 5, // 5 min
-  });
+  const { data: attributeGroups, isLoading, error } = useAttributeGroups();
 
   // 1️⃣ Crea un map para lookup O(1)
   const groupMap = useMemo(() => {
@@ -102,7 +104,7 @@ export function CreateProfileLayout() {
 
   const validateStep = (step: number) => {
     form.clearErrors();
-    
+
     try {
       switch (step) {
         case 1: {
@@ -118,7 +120,7 @@ export function CreateProfileLayout() {
           };
           return step1Schema.safeParse(step1Data);
         }
-        
+
         case 2: {
           const step2Data = {
             description: form.getValues('description') || '',
@@ -126,13 +128,18 @@ export function CreateProfileLayout() {
           };
           return step2Schema.safeParse(step2Data);
         }
-        
+
         case 3: {
+          const contactData = form.getValues('contact') || {
+            number: '',
+            whatsapp: false,
+            telegram: false,
+          };
           const step3Data = {
             contact: {
-              number: form.getValues('contact.number') || '',
-              whatsapp: form.getValues('contact.whatsapp') || false,
-              telegram: form.getValues('contact.telegram') || false,
+              number: contactData.number || '',
+              whatsapp: contactData.whatsapp || false,
+              telegram: contactData.telegram || false,
             },
             age: form.getValues('age') || '',
             skinColor: form.getValues('skinColor') || '',
@@ -145,18 +152,20 @@ export function CreateProfileLayout() {
             rates: form.getValues('rates') || [],
             availability: form.getValues('availability') || [],
           };
+
           return step3Schema.safeParse(step3Data);
         }
-        
+
         case 4: {
           const step4Data = {
             photos: form.getValues('photos') || [],
             videos: form.getValues('videos') || [],
             audios: form.getValues('audios') || [],
           };
+
           return step4Schema.safeParse(step4Data);
         }
-        
+
         case 5: {
           const step5Data = {
             acceptTerms: form.getValues('acceptTerms') || false,
@@ -164,7 +173,7 @@ export function CreateProfileLayout() {
           };
           return step5Schema.safeParse(step5Data);
         }
-        
+
         default:
           return { success: true };
       }
@@ -173,7 +182,7 @@ export function CreateProfileLayout() {
       return { success: false, error: { issues: [] } };
     }
   };
-  
+
   const setValidationErrors = (result: any) => {
     if (result.error && result.error.issues) {
       result.error.issues.forEach((error: any) => {
@@ -194,18 +203,21 @@ export function CreateProfileLayout() {
   };
 
   const handleNext = async () => {
-    const result = validateStep(currentStep);
+    try {
+      const result = validateStep(currentStep);
 
-    console.log("result", result);
-    
-    if (!result.success) {
-      setValidationErrors(result);
-      toast.error('Por favor completa todos los campos requeridos');
-      return;
-    }
-    
-    if (currentStep < 5) {
-      setCurrentStep(currentStep + 1);
+      if (!result.success) {
+        setValidationErrors(result);
+        toast.error('Por favor completa todos los campos requeridos');
+        return;
+      }
+
+      if (currentStep < 5) {
+        setCurrentStep(currentStep + 1);
+      }
+    } catch (error) {
+      console.error('Error in handleNext:', error);
+      toast.error('Error inesperado en la validación');
     }
   };
 
@@ -217,13 +229,19 @@ export function CreateProfileLayout() {
 
   // handleFormDataChange ya no es necesario con react-hook-form
 
-  const transformDataToBackendFormat = (formData: FormData & { photos?: string[], videos?: string[], audios?: string[] }) => {
+  const transformDataToBackendFormat = (
+    formData: FormData & {
+      photos?: string[];
+      videos?: string[];
+      audios?: string[];
+    },
+  ) => {
     const features = [];
 
     // Gender feature
     if (formData.gender && groupMap.gender?._id) {
       features.push({
-        group: groupMap.gender._id,
+        group_id: groupMap.gender._id,
         value: [formData.gender],
       });
     }
@@ -231,7 +249,7 @@ export function CreateProfileLayout() {
     // Hair color feature
     if (formData.hairColor && groupMap.hair?._id) {
       features.push({
-        group: groupMap.hair._id,
+        group_id: groupMap.hair._id,
         value: [formData.hairColor],
       });
     }
@@ -239,7 +257,7 @@ export function CreateProfileLayout() {
     // Eye color feature
     if (formData.eyeColor && groupMap.eyes?._id) {
       features.push({
-        group: groupMap.eyes._id,
+        group_id: groupMap.eyes._id,
         value: [formData.eyeColor],
       });
     }
@@ -247,7 +265,7 @@ export function CreateProfileLayout() {
     // Skin color
     if (formData.skinColor && groupMap.skin?._id) {
       features.push({
-        group: groupMap.skin._id,
+        group_id: groupMap.skin._id,
         value: [formData.skinColor],
       });
     }
@@ -255,7 +273,7 @@ export function CreateProfileLayout() {
     // Sexuality
     if (formData.sexuality && groupMap.sex?._id) {
       features.push({
-        group: groupMap.sex._id,
+        group_id: groupMap.sex._id,
         value: [formData.sexuality],
       });
     }
@@ -263,7 +281,7 @@ export function CreateProfileLayout() {
     // Services → bodyType
     if (formData.selectedServices && groupMap.services?._id) {
       features.push({
-        group: groupMap.services._id,
+        group_id: groupMap.services._id,
         value: formData.selectedServices,
       });
     }
@@ -275,7 +293,7 @@ export function CreateProfileLayout() {
         Agencia: 'Agencia',
       };
       features.push({
-        group: groupMap.gender._id,
+        group_id: groupMap.gender._id,
         value: [workTypeMap[formData.workType] || 'Escort'],
       });
     } */
@@ -302,17 +320,18 @@ export function CreateProfileLayout() {
       media: {
         gallery: formData.photos || [],
         videos: formData.videos || [],
+        audios: formData.audios || [],
         stories: [
           // Agregar fotos como stories de tipo 'image'
-          ...(formData.photos || []).map(photoUrl => ({
+          ...(formData.photos || []).map((photoUrl) => ({
             link: photoUrl,
-            type: 'image'
+            type: 'image',
           })),
           // Agregar videos como stories de tipo 'video'
-          ...(formData.videos || []).map(videoUrl => ({
+          ...(formData.videos || []).map((videoUrl) => ({
             link: videoUrl,
-            type: 'video'
-          }))
+            type: 'video',
+          })),
         ],
       },
       verification: null,
@@ -324,62 +343,62 @@ export function CreateProfileLayout() {
   const handleFinalSave = async (data: FormData) => {
     try {
       setUploading(true);
-      
+
       // Subir archivos multimedia a Cloudinary
       let photoUrls: string[] = [];
       let videoUrls: string[] = [];
       let audioUrls: string[] = [];
-      
+
       if (data.photos && data.photos.length > 0) {
         toast.loading('Subiendo fotos...');
         photoUrls = await uploadMultipleImages(data.photos);
         toast.dismiss();
         toast.success(`${photoUrls.length} fotos subidas exitosamente`);
       }
-      
+
       if (data.videos && data.videos.length > 0) {
         toast.loading('Subiendo videos...');
         videoUrls = await uploadMultipleVideos(data.videos);
         toast.dismiss();
         toast.success(`${videoUrls.length} videos subidos exitosamente`);
       }
-      
+
       if (data.audios && data.audios.length > 0) {
         toast.loading('Subiendo audios...');
         audioUrls = await uploadMultipleAudios(data.audios);
         toast.dismiss();
         toast.success(`${audioUrls.length} audios subidos exitosamente`);
       }
-      
+
       // Crear datos con URLs de Cloudinary
       const dataWithUrls = {
         ...data,
         photos: photoUrls,
         videos: videoUrls,
-        audios: audioUrls
+        audios: audioUrls,
       };
-      
+
       const backendData = transformDataToBackendFormat(dataWithUrls);
       console.log(
         'Profile data ready for backend:',
         JSON.stringify(backendData, null, 2),
       );
-      
+
       // Crear el perfil usando el servicio
       const loadingToast = toast.loading('Creando perfil...');
       try {
         await createProfile(backendData);
         toast.dismiss(loadingToast);
-        
+
         // Invalidar la query de userProfiles para refrescar los datos
-        if (session?.user?.id) {
+        if (session?.user?._id) {
           await queryClient.invalidateQueries({
-            queryKey: ['userProfiles', session.user.id]
+            queryKey: ['userProfiles', session.user._id],
           });
         }
-        
+
         toast.success('Perfil creado exitosamente');
-        
+
         // Redirigir a la página de cuenta
         router.push('/cuenta');
       } catch (profileError) {
@@ -404,27 +423,22 @@ export function CreateProfileLayout() {
             /* onChange={handleFormDataChange} */
             genderGroup={groupMap.gender}
             categoryGroup={groupMap.category}
-            
           />
         );
       case 2:
-        return (
-          <Step2Description
-            serviceGroup={groupMap.services}
-          />
-        );
+        return <Step2Description serviceGroup={groupMap.services} />;
       case 3:
-          return (
-            <Step3Details
-              skinGroup={groupMap.skin}
+        return (
+          <Step3Details
+            skinGroup={groupMap.skin}
             sexualityGroup={groupMap.sex}
             eyeGroup={groupMap.eyes}
-              hairGroup={groupMap.hair}
-              bodyGroup={groupMap.body}
-            />
-          );
+            hairGroup={groupMap.hair}
+            bodyGroup={groupMap.body}
+          />
+        );
       case 4:
-          return <Step4Multimedia />;
+        return <Step4Multimedia />;
       case 5:
         return <Step5Finalize />;
       default:
@@ -439,7 +453,6 @@ export function CreateProfileLayout() {
   return (
     <FormProvider form={form} currentStep={currentStep}>
       <div className="min-h-screen mb-20 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
-
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Sidebar - Guidelines */}
@@ -454,58 +467,58 @@ export function CreateProfileLayout() {
               <div className="bg-background rounded-xl shadow-sm border border-border p-8">
                 {renderStepContent()}
 
-              {/* Navigation Buttons */}
-              <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
-                {currentStep === 1 ? (
-                  <Link href="/cuenta">
+                {/* Navigation Buttons */}
+                <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
+                  {currentStep === 1 ? (
+                    <Link href="/cuenta">
+                      <Button
+                        variant="outline"
+                        onClick={handlePrevious}
+                        className="hover:bg-muted/50 transition-colors duration-200"
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Volver
+                      </Button>
+                    </Link>
+                  ) : (
                     <Button
                       variant="outline"
                       onClick={handlePrevious}
+                      disabled={currentStep === 1}
                       className="hover:bg-muted/50 transition-colors duration-200"
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" />
-                      Volver
+                      Atrás
                     </Button>
-                  </Link>
-                ) : (
-                  <Button
-                    variant="outline"
-                    onClick={handlePrevious}
-                    disabled={currentStep === 1}
-                    className="hover:bg-muted/50 transition-colors duration-200"
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Atrás
-                  </Button>
-                )}
+                  )}
 
-                {currentStep === 5 ? (
-                  <Button
-                    className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold px-8"
-                    disabled={!acceptTerms || uploading}
-                    onClick={form.handleSubmit(handleFinalSave)}
-                  >
-                    {uploading ? (
-                      <>
-                        <Loader className="h-4 w-4 mr-2 animate-spin" />
-                        Subiendo archivos...
-                      </>
-                    ) : (
-                      'Crear perfil'
-                    )}
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleNext}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                  >
-                    próximo
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                )}
+                  {currentStep === 5 ? (
+                    <Button
+                      className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold px-8"
+                      disabled={!acceptTerms || uploading}
+                      onClick={form.handleSubmit(handleFinalSave)}
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader className="h-4 w-4 mr-2 animate-spin" />
+                          Subiendo archivos...
+                        </>
+                      ) : (
+                        'Crear perfil'
+                      )}
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleNext}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                    >
+                      próximo
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
           </div>
         </div>
 
@@ -517,10 +530,10 @@ export function CreateProfileLayout() {
                 <div
                   key={step.id}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 ${currentStep === step.id
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                    : currentStep > step.id
-                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
-                      : 'bg-muted text-muted-foreground'
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                      : currentStep > step.id
+                        ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
+                        : 'bg-muted text-muted-foreground'
                     }`}
                 >
                   <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">

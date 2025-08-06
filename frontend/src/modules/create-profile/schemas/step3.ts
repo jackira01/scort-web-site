@@ -6,11 +6,11 @@ export const step3Schema = z.object({
     number: z
       .string()
       .min(1, 'El número de teléfono es requerido')
-      .regex(/^[+]?[0-9\s\-()]+$/, 'Formato de teléfono inválido'),
+      .regex(/^[0-9]{10}$/, 'El número debe tener exactamente 10 dígitos'),
     whatsapp: z.boolean().optional(),
     telegram: z.boolean().optional(),
   }),
-  
+
   age: z
     .union([
       z.number(),
@@ -24,27 +24,27 @@ export const step3Schema = z.object({
       return num;
     })
     .refine((val) => val >= 18 && val <= 100, 'La edad debe estar entre 18 y 100 años'),
-  
+
   skinColor: z
     .string()
     .min(1, 'Debes seleccionar el color de piel'),
-  
+
   sexuality: z
     .string()
     .min(1, 'Debes seleccionar la orientación sexual'),
-  
+
   eyeColor: z
     .string()
     .min(1, 'Debes seleccionar el color de ojos'),
-  
+
   hairColor: z
     .string()
     .min(1, 'Debes seleccionar el color de cabello'),
-  
+
   bodyType: z
     .string()
     .min(1, 'Debes seleccionar el tipo de cuerpo'),
-  
+
   height: z
     .union([
       z.number(),
@@ -58,11 +58,11 @@ export const step3Schema = z.object({
       return num;
     })
     .refine((val) => val >= 40 && val <= 300, 'La altura debe estar entre 40 y 300 cm'),
-  
+
   /* bustSize: z
     .string()
     .min(1, 'Debes seleccionar el tamaño del busto'), */
-  
+
   rates: z
     .array(z.object({
       id: z.string(),
@@ -71,7 +71,7 @@ export const step3Schema = z.object({
       delivery: z.boolean(),
     }))
     .min(1, 'Debes agregar al menos una tarifa'),
-    
+
   availability: z
     .array(z.object({
       dayOfWeek: z.string(),

@@ -15,14 +15,16 @@ export interface IProfile extends Document {
         city: string;
     };
     features: {
-        group: Types.ObjectId;
+        group_id: Types.ObjectId;
         value: string | string[];
     }[];
+    services?: string[]; // Servicios separados de features
     age: string;
     contact: {
         number: string;
         whatsapp: boolean;
         telegram: boolean;
+        changedAt: Date;
     };
     height: string;
     media: {
@@ -40,6 +42,7 @@ export interface IProfile extends Document {
     paymentHistory: Types.ObjectId[];
     plan: Types.ObjectId;
     upgrades: Types.ObjectId[];
+    lastLogin: Date;
 }
 
 export interface CreateProfileDTO {
@@ -52,7 +55,7 @@ export interface CreateProfileDTO {
         city: string;
     };
     features: {
-        group: string;
+        group_id: string;
         value: string[];
     }[];
     age: string;
@@ -65,6 +68,7 @@ export interface CreateProfileDTO {
     media?: {
         gallery?: string[];
         videos?: string[];
+        audios?: string[];
         stories?: string[];
     };
     availability?: string[];
@@ -86,7 +90,7 @@ export interface IProfileInput {
         city: string;
     };
     features: {
-        group: Types.ObjectId | string;
+        group_id: Types.ObjectId | string;
         value: string;
     }[];
     age: string;
@@ -99,6 +103,7 @@ export interface IProfileInput {
     media?: {
         gallery?: string[];
         videos?: string[];
+        audios?: string[];
         stories?: string[];
     };
     verification?: Types.ObjectId;
@@ -111,14 +116,41 @@ export interface IProfileInput {
 
 export interface IProfileVerification extends Document {
     profile: Types.ObjectId;
-    documentPhotos: string[]; // required
-    selfieWithDoc: string; // required
-    facePhotos: string[]; // required
-    fullBodyPhotos: string[];
-    verificationVideo: string;
-    videoCallRequested: boolean;
-    lastSeen: Date;
-    phoneChangeDetected: boolean;
-    isVerified: boolean;
-    verifiedAt: Date;
+    verificationStatus: 'pending' | 'verified' | 'rejected';
+    verificationProgress: number;
+    steps: {
+        documentPhotos: {
+            documents: string[]
+            isVerified: boolean;
+        }; // required
+        selfieWithPoster: {
+            photo: string;
+            isVerified: boolean;
+        }; // required
+        selfieWithDoc: {
+            photo: string;
+            isVerified: boolean;
+        }; // required
+        fullBodyPhotos: {
+            photos: string[];
+            isVerified: boolean;
+        }; // required. at least 2 full body images.at least 2 face images. Face images verification. Full body images verification.
+        video: {
+            videoLink: string;
+            isVerified: boolean;
+        }; // required. Video verification.
+        videoCallRequested: {
+            videoLink: string;
+            isVerified: boolean;
+        }; // Meet with profile
+        socialMedia: {
+            accounts: string[];
+            isVerified: boolean;
+        }; // required. At least 1 social media account.
+        phoneChangeDetected: boolean;
+    }
+
+    verifiedAt: Date; // Date when profile was verified.
+    verificationFailedAt: Date; // Date when profile verification failed.
+    verificationFailedReason: string; // Reason for verification failure.
 }

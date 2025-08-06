@@ -35,23 +35,7 @@ export default function AccountLayout() {
                             </AlertDescription>
                         </Alert>
                     )}
-                    
-                    {/* Alerta informativa dismissible */}
-                    {showInfoAlert && (
-                        <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950 relative">
-                            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                            <AlertDescription className="text-blue-800 dark:text-blue-200 pr-8">
-                                Una vez verificados los perfiles, estos serán públicos.
-                            </AlertDescription>
-                            <button
-                                onClick={() => setShowInfoAlert(false)}
-                                className="absolute top-2 right-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
-                                aria-label="Cerrar alerta"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
-                        </Alert>
-                    )}
+                
                 </div>
                 
                 <div className="flex gap-8">

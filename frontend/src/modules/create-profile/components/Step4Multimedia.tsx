@@ -1,102 +1,117 @@
 'use client';
 
-import { Camera, Video, Mic, X, CheckCircle, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { Camera, CheckCircle, Mic, Upload, Video, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFormContext } from '../context/FormContext';
 
-interface Step4MultimediaProps {}
+type Step4MultimediaProps = {};
 
-export function Step4Multimedia({}: Step4MultimediaProps) {
-  const { watch, setValue, formState: { errors } } = useFormContext();
+export function Step4Multimedia({ }: Step4MultimediaProps) {
+  const {
+    watch,
+    setValue,
+    formState: { errors },
+  } = useFormContext();
   const formData = watch();
-  
-  // Estado local para manejar archivos antes de la subida final
-  const [localFiles, setLocalFiles] = useState<{
-    photos: File[];
-    videos: File[];
-    audios: File[];
-  }>({ photos: [], videos: [], audios: [] });
-  
-  const [uploading, setUploading] = useState(false);
-  
+
+  // Usar los valores del formulario como fuente de verdad
+  const photos = formData.photos || [];
+  const videos = formData.videos || [];
+  const audios = formData.audios || [];
+
   // Función para manejar la selección de archivos
-  const handleFileSelect = (type: 'photos' | 'videos' | 'audios', files: FileList | null) => {
+  const handleFileSelect = (
+    type: 'photos' | 'videos' | 'audios',
+    files: FileList | null,
+  ) => {
     if (!files) return;
-    
+
     const fileArray = Array.from(files);
-    const currentFiles = localFiles[type];
+    const currentFiles =
+      type === 'photos' ? photos : type === 'videos' ? videos : audios;
     const maxFiles = type === 'photos' ? 20 : type === 'videos' ? 8 : 6;
-    
+
     // Validar límites
     if (currentFiles.length + fileArray.length > maxFiles) {
       toast.error(`Máximo ${maxFiles} archivos permitidos para ${type}`);
       return;
     }
-    
+
     // Validar tipos de archivo
     const validTypes = {
       photos: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
       videos: ['video/mp4', 'video/avi', 'video/mov', 'video/wmv'],
-      audios: ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/x-m4a']
+      audios: [
+        'audio/mpeg',
+        'audio/mp3',
+        'audio/wav',
+        'audio/ogg',
+        'audio/m4a',
+        'audio/x-m4a',
+      ],
     };
-    
-    const invalidFiles = fileArray.filter(file => !validTypes[type].includes(file.type));
+
+    const invalidFiles = fileArray.filter(
+      (file) => !validTypes[type].includes(file.type),
+    );
     if (invalidFiles.length > 0) {
       toast.error(`Tipo de archivo no válido para ${type}`);
       return;
     }
-    
+
     // Validar tamaño (10MB por archivo)
-    const oversizedFiles = fileArray.filter(file => file.size > 10 * 1024 * 1024);
+    const oversizedFiles = fileArray.filter(
+      (file) => file.size > 10 * 1024 * 1024,
+    );
     if (oversizedFiles.length > 0) {
       toast.error('Archivo muy grande. Máximo 10MB por archivo');
       return;
     }
-    
-    // Agregar archivos al estado local y al formulario
+
+    // Agregar archivos directamente al formulario
     const newFiles = [...currentFiles, ...fileArray];
-    setLocalFiles(prev => ({
-      ...prev,
-      [type]: newFiles
-    }));
-    
-    // Guardar en el formulario para que esté disponible en handleFinalSave
     setValue(type, newFiles);
-    
+
     toast.success(`${fileArray.length} archivo(s) agregado(s) a ${type}`);
   };
-  
+
   // Función para eliminar archivos
-  const handleFileRemove = (type: 'photos' | 'videos' | 'audios', index: number) => {
-    const newFiles = localFiles[type].filter((_, i) => i !== index);
-    setLocalFiles(prev => ({
-      ...prev,
-      [type]: newFiles
-    }));
-    
-    // Actualizar también el formulario
+  const handleFileRemove = (
+    type: 'photos' | 'videos' | 'audios',
+    index: number,
+  ) => {
+    const currentFiles =
+      type === 'photos' ? photos : type === 'videos' ? videos : audios;
+    const newFiles = currentFiles.filter((_, i) => i !== index);
+
     setValue(type, newFiles);
-    
+
     toast.success('Archivo eliminado');
   };
-  
+
   // Función para renderizar la vista previa de archivos
-  const renderFilePreview = (file: File, type: 'photos' | 'videos' | 'audios', index: number) => {
+  const renderFilePreview = (
+    file: File,
+    type: 'photos' | 'videos' | 'audios',
+    index: number,
+  ) => {
     const isImage = type === 'photos';
     const isVideo = type === 'videos';
     const isAudio = type === 'audios';
-    
+
     return (
-      <div key={index} className="relative group border rounded-lg p-2 bg-muted/50">
+      <div
+        key={index}
+        className="relative group border rounded-lg p-2 bg-muted/50"
+      >
         <div className="flex items-center space-x-2">
           {isImage && (
             <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center overflow-hidden">
-              <img 
-                src={URL.createObjectURL(file)} 
+              <img
+                src={URL.createObjectURL(file)}
                 alt={file.name}
                 className="w-full h-full object-cover"
               />
@@ -113,7 +128,9 @@ export function Step4Multimedia({}: Step4MultimediaProps) {
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
+            <p className="text-sm font-medium text-foreground truncate">
+              {file.name}
+            </p>
             <p className="text-xs text-muted-foreground">
               {(file.size / (1024 * 1024)).toFixed(2)} MB
             </p>
@@ -130,7 +147,7 @@ export function Step4Multimedia({}: Step4MultimediaProps) {
       </div>
     );
   };
-  
+
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <div className="flex items-center space-x-3 mb-6">
@@ -148,7 +165,7 @@ export function Step4Multimedia({}: Step4MultimediaProps) {
               <CardTitle className="text-foreground">
                 Mis fotos <span className="text-red-500">*</span>
               </CardTitle>
-              <Badge variant="outline">{formData.photos.length} / 20</Badge>
+              <Badge variant="outline">{photos.length} / 20</Badge>
             </div>
             <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-3">
               <div className="flex items-start space-x-2">
@@ -156,16 +173,21 @@ export function Step4Multimedia({}: Step4MultimediaProps) {
                   <span className="text-white text-xs font-bold">i</span>
                 </div>
                 <p className="text-blue-700 dark:text-blue-300 text-sm">
-                  <strong>Importante:</strong> La primera imagen que subas será tu foto principal y aparecerá como imagen de portada en tu perfil.
+                  <strong>Importante:</strong> La primera imagen que subas será
+                  tu foto principal y aparecerá como imagen de portada en tu
+                  perfil.
                 </p>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className={`border-2 border-dashed rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer ${
-                errors.photos ? 'border-red-500' : 'border-muted-foreground/30'
-              }`}>
+              <div
+                className={`border-2 border-dashed rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer ${errors.photos
+                    ? 'border-red-500'
+                    : 'border-muted-foreground/30'
+                  }`}
+              >
                 <input
                   type="file"
                   accept="image/*"
@@ -182,17 +204,21 @@ export function Step4Multimedia({}: Step4MultimediaProps) {
                   </p>
                 </label>
               </div>
-              
+
               {/* Vista previa de fotos */}
-              {localFiles.photos.length > 0 && (
+              {photos.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-foreground">Fotos seleccionadas:</h4>
+                  <h4 className="text-sm font-medium text-foreground">
+                    Fotos seleccionadas:
+                  </h4>
                   <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto">
-                    {localFiles.photos.map((file, index) => renderFilePreview(file, 'photos', index))}
+                    {photos.map((file, index) =>
+                      renderFilePreview(file, 'photos', index),
+                    )}
                   </div>
                 </div>
               )}
-              
+
               {errors.photos && (
                 <p className="text-red-500 text-sm mt-2">
                   {errors.photos.message}
@@ -206,10 +232,8 @@ export function Step4Multimedia({}: Step4MultimediaProps) {
         <Card className="bg-card border-border">
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle className="text-foreground">
-                Mis videos
-              </CardTitle>
-              <Badge variant="outline">{formData.videos.length} / 8</Badge>
+              <CardTitle className="text-foreground">Mis videos</CardTitle>
+              <Badge variant="outline">{videos.length} / 8</Badge>
             </div>
           </CardHeader>
           <CardContent>
@@ -231,17 +255,21 @@ export function Step4Multimedia({}: Step4MultimediaProps) {
                   </p>
                 </label>
               </div>
-              
+
               {/* Vista previa de videos */}
-              {localFiles.videos.length > 0 && (
+              {videos.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-foreground">Videos seleccionados:</h4>
+                  <h4 className="text-sm font-medium text-foreground">
+                    Videos seleccionados:
+                  </h4>
                   <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto">
-                    {localFiles.videos.map((file, index) => renderFilePreview(file, 'videos', index))}
+                    {videos.map((file, index) =>
+                      renderFilePreview(file, 'videos', index),
+                    )}
                   </div>
                 </div>
               )}
-              
+
               {errors.videos && (
                 <p className="text-red-500 text-sm mt-2">
                   {errors.videos.message}
@@ -258,7 +286,7 @@ export function Step4Multimedia({}: Step4MultimediaProps) {
               <CardTitle className="text-foreground">
                 Mis archivos de audio
               </CardTitle>
-              <Badge variant="outline">{formData.audios.length} / 6</Badge>
+              <Badge variant="outline">{audios.length} / 6</Badge>
             </div>
           </CardHeader>
           <CardContent>
@@ -280,17 +308,21 @@ export function Step4Multimedia({}: Step4MultimediaProps) {
                   </p>
                 </label>
               </div>
-              
+
               {/* Vista previa de audios */}
-              {localFiles.audios.length > 0 && (
+              {audios.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-foreground">Audios seleccionados:</h4>
+                  <h4 className="text-sm font-medium text-foreground">
+                    Audios seleccionados:
+                  </h4>
                   <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto">
-                    {localFiles.audios.map((file, index) => renderFilePreview(file, 'audios', index))}
+                    {audios.map((file, index) =>
+                      renderFilePreview(file, 'audios', index),
+                    )}
                   </div>
                 </div>
               )}
-              
+
               {errors.audios && (
                 <p className="text-red-500 text-sm mt-2">
                   {errors.audios.message}

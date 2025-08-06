@@ -13,7 +13,7 @@ const profileSchema = new Schema<IProfile>(
     },
     features: [
       {
-        group: { type: mongoose.Schema.Types.ObjectId, ref: 'AttributeGroup', required: true }, // nombre del grupo (ej: 'gender', 'hairColor', etc.)
+        group_id: { type: mongoose.Schema.Types.ObjectId, ref: 'AttributeGroup', required: true }, // nombre del grupo (ej: 'gender', 'hairColor', etc.)
         value: [{ type: String, required: true }], // string o string[] // valor seleccionado (ej: 'Hombre', 'Rubio', etc.)
       },
     ],
@@ -22,11 +22,13 @@ const profileSchema = new Schema<IProfile>(
       number: { type: String, required: true, },
       whatsapp: { type: Boolean, required: true, default: false },
       telegram: { type: Boolean, required: true, default: false },
+      changedAt: Date,
     },
     height: { type: String, required: true },
     media: {
       gallery: [String],
       videos: [String],
+      audios: [String],
       stories: [{
         link: String,
         type: {
@@ -64,6 +66,7 @@ const profileSchema = new Schema<IProfile>(
     paymentHistory: [{ type: Schema.Types.ObjectId, ref: 'PaymentHistory' }],
     plan: { type: Schema.Types.ObjectId, ref: 'Plan' },
     upgrades: [{ type: Schema.Types.ObjectId, ref: 'Upgrade' }],
+    lastLogin: Date,
   },
   { timestamps: true },
 );

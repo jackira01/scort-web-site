@@ -2,7 +2,7 @@ import type { Types } from 'mongoose';
 import { AttributeGroupModel } from './attribute-group.model';
 
 type FeatureInput = {
-  group: Types.ObjectId | string;
+  group_id: Types.ObjectId | string;
   value: string[]; // ← ahora acepta múltiples valores
 };
 
@@ -14,11 +14,11 @@ export const validateProfileFeatures = async (features: FeatureInput[]) => {
   console.log("features", features);
 
   for (const feature of features) {
-    const group = await AttributeGroupModel.findById(feature.group);
+    const group = await AttributeGroupModel.findById(feature.group_id);
 
     if (!group) {
       throw new Error(
-        `El grupo de atributo con ID "${feature.group}" no existe.`,
+        `El grupo de atributo con ID "${feature.group_id}" no existe.`,
       );
     }
 
