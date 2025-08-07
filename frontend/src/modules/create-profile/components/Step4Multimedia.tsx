@@ -1,10 +1,12 @@
 'use client';
 
-import { Camera, CheckCircle, Mic, Upload, Video, X } from 'lucide-react';
+import { Camera, Mic, Video, X } from 'lucide-react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { applyWatermarkToFiles, needsWatermark } from '@/utils/watermark';
 import { useFormContext } from '../context/FormContext';
 
 type Step4MultimediaProps = {};
@@ -16,6 +18,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
     formState: { errors },
   } = useFormContext();
   const formData = watch();
+  const [isProcessingWatermark, setIsProcessingWatermark] = useState(false);
 
   // Usar los valores del formulario como fuente de verdad
   const photos = formData.photos || [];
@@ -23,7 +26,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
   const audios = formData.audios || [];
 
   // Función para manejar la selección de archivos
-  const handleFileSelect = (
+  const handleFileSelect = async (
     type: 'photos' | 'videos' | 'audios',
     files: FileList | null,
   ) => {
@@ -71,8 +74,52 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
       return;
     }
 
-    // Agregar archivos directamente al formulario
-    const newFiles = [...currentFiles, ...fileArray];
+    // Aplicar marca de agua a imágenes y videos
+    let processedFiles = fileArray;
+    const filesToWatermark = fileArray.filter(needsWatermark);
+
+    if (filesToWatermark.length > 0) {
+      setIsProcessingWatermark(true);
+      toast.loading('Aplicando marca de agua...', { id: 'watermark-process' });
+
+      try {
+        const watermarkedFiles = await applyWatermarkToFiles(
+          filesToWatermark,
+          undefined, // Usar texto por defecto
+          (current, total) => {
+            toast.loading(`Procesando ${current}/${total} archivos...`, {
+              id: 'watermark-process',
+            });
+          },
+        );
+
+        // Reemplazar archivos originales con los que tienen marca de agua
+        processedFiles = fileArray.map((file) => {
+          const watermarkedIndex = filesToWatermark.findIndex(
+            (f) => f === file,
+          );
+          return watermarkedIndex !== -1
+            ? watermarkedFiles[watermarkedIndex]
+            : file;
+        });
+
+        toast.success('Marca de agua aplicada correctamente', {
+          id: 'watermark-process',
+        });
+      } catch (error) {
+        console.error('Error aplicando marca de agua:', error);
+        toast.error(
+          'Error aplicando marca de agua. Usando archivos originales.',
+          { id: 'watermark-process' },
+        );
+        // Continuar con archivos originales en caso de error
+      } finally {
+        setIsProcessingWatermark(false);
+      }
+    }
+
+    // Agregar archivos procesados al formulario
+    const newFiles = [...currentFiles, ...processedFiles];
     setValue(type, newFiles);
 
     toast.success(`${fileArray.length} archivo(s) agregado(s) a ${type}`);
@@ -167,16 +214,30 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
               </CardTitle>
               <Badge variant="outline">{photos.length} / 20</Badge>
             </div>
-            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-3">
-              <div className="flex items-start space-x-2">
-                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-white text-xs font-bold">i</span>
+            <div className="space-y-3 mt-3">
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <div className="flex items-start space-x-2">
+                  <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-xs font-bold">i</span>
+                  </div>
+                  <p className="text-blue-700 dark:text-blue-300 text-sm">
+                    <strong>Importante:</strong> La primera imagen que subas
+                    será tu foto principal y aparecerá como imagen de portada en
+                    tu perfil.
+                  </p>
                 </div>
-                <p className="text-blue-700 dark:text-blue-300 text-sm">
-                  <strong>Importante:</strong> La primera imagen que subas será
-                  tu foto principal y aparecerá como imagen de portada en tu
-                  perfil.
-                </p>
+              </div>
+              <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+                <div className="flex items-start space-x-2">
+                  <div className="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-xs font-bold">✓</span>
+                  </div>
+                  <p className="text-purple-700 dark:text-purple-300 text-sm">
+                    <strong>Protección automática:</strong> Se aplicará una
+                    marca de agua a tus imágenes y videos para proteger tu
+                    contenido.
+                  </p>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -184,9 +245,9 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
             <div className="space-y-4">
               <div
                 className={`border-2 border-dashed rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer ${errors.photos
-                    ? 'border-red-500'
-                    : 'border-muted-foreground/30'
-                  }`}
+                  ? 'border-red-500'
+                  : 'border-muted-foreground/30'
+                  } ${isProcessingWatermark ? 'opacity-50 pointer-events-none' : ''}`}
               >
                 <input
                   type="file"
@@ -195,6 +256,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
                   onChange={(e) => handleFileSelect('photos', e.target.files)}
                   className="hidden"
                   id="photos-upload"
+                  disabled={isProcessingWatermark}
                 />
                 <label htmlFor="photos-upload" className="cursor-pointer">
                   <Camera className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
@@ -235,10 +297,22 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
               <CardTitle className="text-foreground">Mis videos</CardTitle>
               <Badge variant="outline">{videos.length} / 8</Badge>
             </div>
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-3">
+              <div className="flex items-start space-x-2">
+                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">ℹ</span>
+                </div>
+                <p className="text-blue-700 dark:text-blue-300 text-sm">
+                  <strong>Nota:</strong> Los videos se subirán sin marca de agua. Asegúrate de que el contenido sea apropiado.
+                </p>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer">
+              <div
+                className={`border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer ${isProcessingWatermark ? 'opacity-50 pointer-events-none' : ''}`}
+              >
                 <input
                   type="file"
                   accept="video/*"
@@ -246,6 +320,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
                   onChange={(e) => handleFileSelect('videos', e.target.files)}
                   className="hidden"
                   id="videos-upload"
+                  disabled={isProcessingWatermark}
                 />
                 <label htmlFor="videos-upload" className="cursor-pointer">
                   <Video className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
@@ -291,7 +366,9 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer">
+              <div
+                className={`border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer ${isProcessingWatermark ? 'opacity-50 pointer-events-none' : ''}`}
+              >
                 <input
                   type="file"
                   accept="audio/*"
@@ -299,6 +376,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
                   onChange={(e) => handleFileSelect('audios', e.target.files)}
                   className="hidden"
                   id="audios-upload"
+                  disabled={isProcessingWatermark}
                 />
                 <label htmlFor="audios-upload" className="cursor-pointer">
                   <Mic className="h-12 w-12 mx-auto text-muted-foreground mb-2" />

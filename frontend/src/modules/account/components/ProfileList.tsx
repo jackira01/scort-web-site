@@ -151,7 +151,7 @@ export default function ProfileList({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">
-                      Completitud del perfil
+                      Verificación del perfil
                     </span>
                     <span
                       className={`font-medium ${getProgressTextColor(profile.completeness)}`}

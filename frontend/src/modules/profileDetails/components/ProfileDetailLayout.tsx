@@ -5,7 +5,6 @@ import { useProfile } from '@/hooks/use-profile';
 import { ProfileGallery } from '@/modules/profileDetails/components/GaleryProfile';
 
 // Mock data for the profile
-import { profileData } from '@/modules/profileDetails/data';
 import AudioPlayer from './AudioPlayer';
 import AvailabilityProfile from './AvailabilityProfile';
 import { DescriptionProfile } from './DescriptionProfile';
@@ -13,6 +12,7 @@ import PhysicalTraitsProfile from './PhysicalTraitsProfile';
 import ProfielHeader from './ProfileHeader';
 import RatesProfile from './RatesProfile';
 import { SocialMediaProfile } from './SocialMediaProfile';
+import { VerificationStatus } from './VerificationStatus';
 import VideoPlayer from './VideoPlayer';
 
 export default function ProfileDetailLayout({ id }: { id: string }) {
@@ -99,6 +99,8 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
               description={adaptedProfileData.description}
               services={adaptedProfileData.services}
             />
+            {/* Verification Status */}
+            <VerificationStatus profileId={id} />
           </div>
           {/* Right Section - 20% */}
           <div className="lg:col-span-1 space-y-6">

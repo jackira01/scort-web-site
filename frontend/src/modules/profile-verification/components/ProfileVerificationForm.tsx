@@ -85,10 +85,10 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Verificación de Perfil: {verification.profile.name}
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Verificación de Perfil
             </h1>
-            <p className="text-gray-600">Gestiona y completa tu proceso de verificación</p>
+            <p className="text-gray-600 dark:text-gray-300">Gestiona la verificación del perfil: <span className="font-medium text-gray-800 dark:text-gray-200">{verification.profile.name}</span></p>
           </div>
         </div>
         {getStatusBadge(verification.verificationStatus)}
@@ -111,7 +111,7 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
               style={{ width: `${verification.verificationProgress}%` }}
             />
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             Completa todos los pasos para verificar tu perfil y aumentar tu credibilidad.
           </p>
         </CardContent>

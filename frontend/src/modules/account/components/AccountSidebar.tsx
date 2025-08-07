@@ -1,11 +1,11 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { ShieldCheck } from 'lucide-react';
-import { useUser } from '@/hooks/use-user';
 import { useState } from 'react';
-import AccountVerificationModal from './AccountVerificationModal';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { useUser } from '@/hooks/use-user';
 import { sidebarItems } from '../data';
+import AccountVerificationModal from './AccountVerificationModal';
 
 const AccountSidebar = ({
   activeSection,
@@ -37,11 +37,11 @@ const AccountSidebar = ({
               </p>
             </div>
           </div>
-          
+
           {/* Botón de Verificar Cuenta - Solo mostrar si no está verificado */}
-          {user?.isVerified && (
+          {!user?.isVerified && (
             <div className="mb-6">
-              <Button 
+              <Button
                 className="w-full bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
                 onClick={() => setIsVerificationModalOpen(true)}
               >
@@ -50,18 +50,17 @@ const AccountSidebar = ({
               </Button>
             </div>
           )}
-          
+
           <nav className="space-y-2">
             {sidebarItems.map((item, index) => (
               <button
                 type="button"
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 group animate-in slide-in-from-left-2 ${
-                  activeSection === item.id
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 group animate-in slide-in-from-left-2 ${activeSection === item.id
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                }`}
+                  }`}
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <item.icon
@@ -70,11 +69,10 @@ const AccountSidebar = ({
                 <div className="flex-1">
                   <span className="font-medium">{item.label}</span>
                   <p
-                    className={`text-xs mt-1 ${
-                      activeSection === item.id
+                    className={`text-xs mt-1 ${activeSection === item.id
                         ? 'text-white/80'
                         : 'text-muted-foreground'
-                    }`}
+                      }`}
                   >
                     {item.description}
                   </p>
@@ -84,7 +82,7 @@ const AccountSidebar = ({
           </nav>
         </CardContent>
       </Card>
-      
+
       {/* Modal de verificación */}
       {user && (
         <AccountVerificationModal
