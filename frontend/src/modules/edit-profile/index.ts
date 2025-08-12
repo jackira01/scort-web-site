@@ -1,0 +1,1 @@
+export { EditProfileLayout } from './components/EditProfileLayout';

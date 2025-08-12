@@ -6,6 +6,7 @@ const profileSchema = new Schema<IProfile>(
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     name: { type: String, required: true, unique: true },
     description: String,
+    isActive: { type: Boolean, default: true },
     location: {
       country: String,
       state: String,

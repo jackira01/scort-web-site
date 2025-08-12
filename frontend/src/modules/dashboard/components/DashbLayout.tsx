@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { sidebarItems } from '@/modules/dashboard/data';
 import { DashUserPanel } from './DashbUserPanel';
+import { DashProfilePanel } from './DashbProfilePanel';
 
 export default function DashboardLayout() {
     const [activeSection, setActiveSection] = useState('usuarios');
@@ -14,6 +15,9 @@ export default function DashboardLayout() {
         switch (activeSection) {
             case 'usuarios':
                 return <DashUserPanel />;
+
+            case 'perfiles':
+                return <DashProfilePanel />;
 
             case 'facturas':
                 return (

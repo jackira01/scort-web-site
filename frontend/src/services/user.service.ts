@@ -60,3 +60,8 @@ export const getProfileVerification = async (profileId: string) => {
     const response = await axios.get(`${API_URL}/api/profile-verification/profile/${profileId}`);
     return response.data;
 }
+
+export const updateProfile = async (profileId: string, data: any) => {
+    const response = await axios.put(`${API_URL}/api/profile/${profileId}`, data);
+    return response.data;
+}

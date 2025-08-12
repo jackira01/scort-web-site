@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu, Search, UserRound } from 'lucide-react';
+import { Menu, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useState } from 'react';
@@ -35,11 +35,11 @@ const HeaderComponent = () => {
             {/* Desktop Search */}
             <div className="hidden lg:block">
               <div className="relative group">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 group-focus-within:text-purple-600 transition-colors duration-200" />
+                {/* <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 group-focus-within:text-purple-600 transition-colors duration-200" />
                 <Input
                   placeholder="Buscar..."
                   className="pl-10 w-80 bg-muted/50 border-border focus:bg-background focus:border-purple-500 transition-all duration-200 focus:shadow-lg focus:shadow-purple-500/10"
-                />
+                /> */}
               </div>
             </div>
           </div>
@@ -89,11 +89,11 @@ const HeaderComponent = () => {
         {/* Mobile Search */}
         <div className="lg:hidden pb-4">
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 group-focus-within:text-purple-600 transition-colors duration-200" />
+            {/* <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 group-focus-within:text-purple-600 transition-colors duration-200" />
             <Input
               placeholder="Buscar..."
               className="pl-10 w-full bg-muted/50 border-border focus:bg-background focus:border-purple-500 transition-all duration-200"
-            />
+            /> */}
           </div>
         </div>
 

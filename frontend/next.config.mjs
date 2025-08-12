@@ -9,9 +9,17 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-   images: {
-    domains: ['res.cloudinary.com'],
-    },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+    unoptimized: false,
+  },
   // experimental: {
   //  turbo: {
   //    resolveAlias: {
@@ -38,11 +46,21 @@ const nextConfig = {
         headers: [
           {
             key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
+            value: 'credentialless',
           },
           {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin',
+          },
+        ],
+      },
+      // Headers específicos para imágenes de Cloudinary
+      {
+        source: '/_next/image(.*)',
+        headers: [
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
           },
         ],
       },

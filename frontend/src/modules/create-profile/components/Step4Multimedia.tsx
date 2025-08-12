@@ -234,7 +234,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
                   </div>
                   <p className="text-purple-700 dark:text-purple-300 text-sm">
                     <strong>Protección automática:</strong> Se aplicará una
-                    marca de agua a tus imágenes y videos para proteger tu
+                    marca de agua a tus imágenes proteger tu
                     contenido.
                   </p>
                 </div>

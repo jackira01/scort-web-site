@@ -1,3 +1,7 @@
+'use client';
+
+import { Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -10,12 +14,11 @@ const FilterBar = () => {
   return (
     <div className="bg-background/50 backdrop-blur border-b transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {[
-            { label: 'Género', placeholder: 'Seleccionar género' },
-            { label: 'Ubicación', placeholder: 'Seleccionar ciudad' },
-            { label: 'Edad', placeholder: 'Rango de edad' },
-            { label: 'Cuerpo', placeholder: 'Tipo de cuerpo' },
+            { label: 'Categoria', placeholder: 'Seleccionar categoria' },
+            { label: 'Departamento', placeholder: 'Seleccionar departamento' },
+            { label: 'Ciudad', placeholder: 'Seleccionar ciudad' },
           ].map((filter, index) => (
             <div
               key={filter.label}
@@ -34,6 +37,20 @@ const FilterBar = () => {
               </Select>
             </div>
           ))}
+
+          {/* Botón Buscar */}
+          <div
+            className="animate-in slide-in-from-bottom-2"
+            style={{ animationDelay: '300ms' }}
+          >
+            <Button
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+              onClick={() => console.log('Buscar clicked')}
+            >
+              <Search className="w-4 h-4 mr-2" />
+              Buscar
+            </Button>
+          </div>
         </div>
       </div>
     </div>

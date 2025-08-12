@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, Star } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -8,14 +8,10 @@ import { Badge } from '@/components/ui/badge';
 export const ProfileGallery = ({
   images,
   verified,
-  rating,
-  reviews,
   name,
 }: {
   images: string[];
   verified: boolean;
-  rating: number;
-  reviews: number;
   name: string;
 }) => {
   const [selectedImage, setSelectedImage] = useState(0);
@@ -38,11 +34,6 @@ export const ProfileGallery = ({
             Verificado
           </Badge>
         )}
-        <div className="absolute top-4 right-4 flex items-center space-x-1 bg-black/50 backdrop-blur rounded-full px-2 py-1">
-          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-          <span className="text-white text-sm font-medium">{rating}</span>
-          <span className="text-white/80 text-xs">({reviews})</span>
-        </div>
       </div>
 
       {/* Thumbnail Grid */}
@@ -50,13 +41,13 @@ export const ProfileGallery = ({
         {images.map((image, index) => (
           <button
             type="button"
-            key={image + index}
+            key={index + image}
+
             onClick={() => setSelectedImage(index)}
-            className={`relative overflow-hidden rounded-lg aspect-square group transition-all duration-200 ${
-              selectedImage === index
-                ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-background'
-                : 'hover:ring-2 hover:ring-purple-300 hover:ring-offset-2 hover:ring-offset-background'
-            }`}
+            className={`relative overflow-hidden rounded-lg aspect-square group transition-all duration-200 ${selectedImage === index
+              ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-background'
+              : 'hover:ring-2 hover:ring-purple-300 hover:ring-offset-2 hover:ring-offset-background'
+              }`}
           >
             <Image
               width={400}

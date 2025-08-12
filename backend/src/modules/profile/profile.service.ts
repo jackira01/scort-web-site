@@ -61,8 +61,29 @@ export const createProfile = async (data: CreateProfileDTO) => {
   return profile;
 };
 
-export const getProfiles = async () => {
-  return ProfileModel.find().populate('user');
+export const getProfiles = async (page: number = 1, limit: number = 10) => {
+  const skip = (page - 1) * limit;
+  
+  const [profiles, totalCount] = await Promise.all([
+    ProfileModel.find()
+      .populate('user')
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }),
+    ProfileModel.countDocuments()
+  ]);
+  
+  const totalPages = Math.ceil(totalCount / limit);
+  
+  return {
+    docs: profiles,
+    totalCount,
+    currentPage: page,
+    totalPages,
+    hasNextPage: page < totalPages,
+    hasPrevPage: page > 1,
+    limit
+  };
 };
 
 export const getProfileById = async (id: string) => {

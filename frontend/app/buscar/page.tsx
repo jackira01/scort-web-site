@@ -1,6 +1,6 @@
 'use client';
 
-import { Filter, Grid, List } from 'lucide-react';
+import { Filter, Grid, List, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,17 +19,37 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
 import SearchProfiles from '@/modules/catalogs/components/SearchProfiles';
 import AgeFilter from '@/modules/filters/components/AgeFilter';
 import CategoriesBar from '@/modules/filters/components/CategoriesBar';
 import FilterToglles from '@/modules/filters/components/FilterToglles';
 import GenderFilter from '@/modules/filters/components/GenderFilter';
 import LocationFilter from '@/modules/filters/components/LocationFIlter';
-import { profiles } from '@/modules/stories/data';
+import { useSearchFilters } from '@/hooks/use-search-filters';
+import ProfilesDebug from '@/components/debug/ProfilesDebug';
+import ApiTest from '@/components/debug/ApiTest';
 
 export default function EscortWebsite() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  
+  // Hook para manejar filtros
+  const {
+    filters,
+    updateCategory,
+    updateLocation,
+    updateFeatures,
+    updatePriceRange,
+    updateStates,
+    updatePagination,
+    updateSorting,
+    clearFilters,
+    toFilterQuery,
+    getActiveFiltersCount,
+  } = useSearchFilters();
+  
+  // Los datos se obtienen directamente en el componente SearchProfiles
 
   const FilterContent = () => (
     <div className="space-y-6">
@@ -93,20 +113,44 @@ export default function EscortWebsite() {
                   </SheetContent>
                 </Sheet>
 
-                <span className="text-muted-foreground text-sm hidden sm:block">
-                  Mostrando {profiles.length} perfiles
-                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-muted-foreground text-sm hidden sm:block">
+                    Perfiles disponibles
+                  </span>
+                  {getActiveFiltersCount() > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {getActiveFiltersCount()} filtro{getActiveFiltersCount() > 1 ? 's' : ''}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 ml-1 hover:bg-transparent"
+                        onClick={clearFilters}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center space-x-2 lg:space-x-4">
-                <Select defaultValue="relevante">
+                <Select 
+                  defaultValue="createdAt-desc" 
+                  onValueChange={(value) => {
+                    const [sortBy, sortOrder] = value.split('-');
+                    updateSorting(sortBy, sortOrder as 'asc' | 'desc');
+                  }}
+                >
                   <SelectTrigger className="w-32 lg:w-48 text-xs lg:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="relevante">Lo más relevante</SelectItem>
-                    <SelectItem value="reciente">Más reciente</SelectItem>
-                    <SelectItem value="precio">Precio</SelectItem>
+                    <SelectItem value="createdAt-desc">Más reciente</SelectItem>
+                    <SelectItem value="createdAt-asc">Más antiguo</SelectItem>
+                    <SelectItem value="name-asc">Nombre A-Z</SelectItem>
+                    <SelectItem value="name-desc">Nombre Z-A</SelectItem>
+                    <SelectItem value="age-asc">Edad menor</SelectItem>
+                    <SelectItem value="age-desc">Edad mayor</SelectItem>
                   </SelectContent>
                 </Select>
                 <div className="flex border rounded-lg">
@@ -130,9 +174,16 @@ export default function EscortWebsite() {
               </div>
             </div>
 
+            {/* Debug Info */}
+            <ApiTest />
+            <ProfilesDebug />
+            
             {/* Profiles Grid */}
-
-            <SearchProfiles viewMode={viewMode} />
+            <SearchProfiles 
+              viewMode={viewMode} 
+              filters={toFilterQuery()} 
+              onPageChange={(page) => updatePagination(page)}
+            />
           </div>
         </div>
       </div>

@@ -50,8 +50,6 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
     category: 'ESCORT',
     verified: profile.verification?.verificationStatus === 'verified',
     online: true,
-    rating: 4.9,
-    reviews: 127,
     description: profile.description,
     images: profile.media?.gallery || ['/placeholder.svg?height=400&width=600'],
     videos: profile.media?.videos || [],
@@ -77,12 +75,16 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
       saturday: '24 horas',
       sunday: '2:00 PM - 10:00 PM',
     },
+    contact: {
+      number: profile.contact?.number || '',
+      whatsapp: profile.contact?.whatsapp || false,
+      telegram: profile.contact?.telegram || false,
+    },
     socialMedia: {
-      whatsapp: profile.contact?.whatsapp ? profile.contact.number : null,
-      telegram: profile.contact?.telegram ? profile.contact.number : null,
-      instagram: null,
-      twitter: null,
-      facebook: null,
+      instagram: profile.socialMedia?.instagram || null,
+      onlyfans: profile.socialMedia?.onlyfans || null,
+      twitter: profile.socialMedia?.twitter || null,
+      facebook: profile.socialMedia?.facebook || null,
     },
     videoUrl: '/placeholder-video.mp4',
   };
@@ -113,7 +115,8 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
 
             {/* Social Media Buttons */}
             <SocialMediaProfile
-              socialMediaData={adaptedProfileData.socialMedia}
+              contact={adaptedProfileData.contact}
+              socialMedia={adaptedProfileData.socialMedia}
             />
 
             {/* Physical Traits */}

@@ -162,7 +162,7 @@ const AccountProfiles = ({
                   </div>
                   <div className="flex flex-col space-y-2 pt-2">
                     <div className="flex space-x-2">
-                      <Link href={`/create-profile/${profile._id}`}>
+                      <Link href={`/cuenta/editar-perfil/${profile._id}`}>
                         <Button
                           size="sm"
                           variant="outline"

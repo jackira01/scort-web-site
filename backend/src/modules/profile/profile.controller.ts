@@ -11,8 +11,11 @@ export const createProfile = async (req: Request, res: Response) => {
   }
 };
 
-export const getProfiles = async (_req: Request, res: Response) => {
-  const profiles = await service.getProfiles();
+export const getProfiles = async (req: Request, res: Response) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  
+  const profiles = await service.getProfiles(page, limit);
   res.json(profiles);
 };
 

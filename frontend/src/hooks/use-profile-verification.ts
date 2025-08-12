@@ -8,7 +8,8 @@ export const useProfileVerification = (profileId: string | undefined) => {
     queryKey: ['profileVerification', profileId],
     queryFn: () => getProfileVerification(profileId!),
     enabled: !!profileId,
-    staleTime: 0, // Sin cache para que se actualice inmediatamente
+    staleTime: 3 * 60 * 1000, // 3 minutos - evitar fetching excesivo
+    gcTime: 10 * 60 * 1000, // 10 minutos en cache
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   });

@@ -4,6 +4,7 @@ import express from 'express';
 import morgan from 'morgan';
 import { connectDB } from '../config/db';
 import attributeGroupRoutes from './modules/attribute-group/attribute-group.routes';
+import filtersRoutes from './modules/filters/filters.routes';
 import profileRoutes from './modules/profile/profile.routes';
 import profileVerificationRoutes from './modules/profile-verification/profile-verification.routes';
 import userRoutes from './modules/user/user.routes';
@@ -38,6 +39,7 @@ if (ENVIROMENT === 'development') {
 app.use(express.json());
 app.use(morgan('dev')); // esto sí muestra logs en consola
 
+app.use('/api/filters', filtersRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/profile-verification', profileVerificationRoutes);
 app.use('/api/user', userRoutes);

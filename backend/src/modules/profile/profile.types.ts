@@ -9,6 +9,7 @@ export interface IProfile extends Document {
     user: Types.ObjectId;
     name: string;
     description: string;
+    isActive: boolean;
     location: {
         country: string;
         state: string;
@@ -33,7 +34,14 @@ export interface IProfile extends Document {
         stories: IStories[];
         audios: string[];
     };
-    availability: Types.ObjectId[];
+    availability: {
+        dayOfWeek: string;
+        slots: {
+            start: string;
+            end: string;
+            timezone: string;
+        }[];
+    }[];
     verification: Types.ObjectId | boolean;
     rates: {
         hour: string; // formato HH:mm
