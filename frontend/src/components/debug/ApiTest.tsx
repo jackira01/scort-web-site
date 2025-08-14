@@ -9,7 +9,6 @@ export default function ApiTest() {
   
   const testApi = async () => {
     setLoading(true);
-    console.log('Testing API with URL:', `${process.env.NEXT_PUBLIC_API_URL}/api/filters/profiles`);
     
     try {
       const requestBody = {
@@ -20,8 +19,6 @@ export default function ApiTest() {
         sortOrder: 'desc'
       };
       
-      console.log('Request body:', requestBody);
-      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/filters/profiles`, {
         method: 'POST',
         headers: {
@@ -30,20 +27,14 @@ export default function ApiTest() {
         body: JSON.stringify(requestBody)
       });
       
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-      
       if (!response.ok) {
         const errorText = await response.text();
-        console.log('Error response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
       
       const data = await response.json();
-      console.log('Response data:', data);
       setResult(data);
     } catch (error) {
-      console.error('API Test Error:', error);
       setResult({ error: error.message });
     } finally {
       setLoading(false);

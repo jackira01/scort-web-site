@@ -14,6 +14,7 @@ export interface SearchFilters {
   // Características
   features?: {
     gender?: string;
+    sex?: string[];
     age?: string[];
     height?: string[];
     weight?: string[];
@@ -50,13 +51,14 @@ export interface SearchFilters {
   sortOrder?: 'asc' | 'desc';
 }
 
-export const useSearchFilters = () => {
+export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
   const [filters, setFilters] = useState<SearchFilters>({
     page: 1,
     limit: 12,
     sortBy: 'createdAt',
     sortOrder: 'desc',
     isActive: true,
+    ...initialFilters,
   });
 
   // Actualizar categoría
@@ -166,9 +168,13 @@ export const useSearchFilters = () => {
 
   // Convertir a FilterQuery para la API
   const toFilterQuery = useCallback((): FilterQuery => {
-    return {
+    const query = {
       ...filters,
     };
+    
+    console.log('🚀 [DEBUG] Query generada para la API:', query);
+    
+    return query;
   }, [filters]);
 
   // Obtener conteo de filtros activos
@@ -178,16 +184,80 @@ export const useSearchFilters = () => {
     if (filters.category) count++;
     if (filters.location?.department || filters.location?.city) count++;
     if (filters.features?.gender) count++;
+    if (filters.features?.sex && filters.features.sex.length > 0) count++;
     if (filters.features?.age && filters.features.age.length > 0) count++;
+    if (filters.features?.ageRange?.min || filters.features?.ageRange?.max) count++;
     if (filters.priceRange?.min || filters.priceRange?.max) count++;
     if (filters.isVerified !== undefined) count++;
 
     return count;
   }, [filters]);
 
+  // Método genérico para actualizar filtros
+  const updateFilter = useCallback((key: string, value: any) => {
+    console.log('🔧 [DEBUG] Actualizando filtro:', { key, value });
+    
+    setFilters((prev) => {
+      const newFilters = { ...prev };
+      
+      console.log('🔧 [DEBUG] Filtros anteriores:', prev);
+      
+      // Manejar filtros anidados en features
+      if (['gender', 'sex', 'age', 'height', 'weight', 'bodyType', 'ethnicity', 'hairColor', 'eyeColor', 'services'].includes(key)) {
+        newFilters.features = {
+          ...prev.features,
+          [key]: value,
+        };
+        console.log('🔧 [DEBUG] Filtro de características actualizado:', newFilters.features);
+      }
+      // Manejar filtros de ubicación
+      else if (['department', 'city'].includes(key)) {
+        newFilters.location = {
+          ...prev.location,
+          [key]: value,
+        };
+        console.log('🔧 [DEBUG] Filtro de ubicación actualizado:', newFilters.location);
+      }
+      // Manejar filtros de rango de precios
+      else if (['minPrice', 'maxPrice'].includes(key)) {
+        newFilters.priceRange = {
+          ...prev.priceRange,
+          [key === 'minPrice' ? 'min' : 'max']: value,
+        };
+        console.log('🔧 [DEBUG] Filtro de rango de precios actualizado:', newFilters.priceRange);
+      }
+      // Manejar filtros de rango de edad
+      else if (['minAge', 'maxAge'].includes(key)) {
+        newFilters.features = {
+          ...prev.features,
+          ageRange: {
+            ...prev.features?.ageRange,
+            [key === 'minAge' ? 'min' : 'max']: value,
+          },
+        };
+        console.log('🔧 [DEBUG] Filtro de rango de edad actualizado:', newFilters.features?.ageRange);
+      }
+      // Manejar filtros directos
+      else {
+        (newFilters as any)[key] = value;
+        console.log('🔧 [DEBUG] Filtro directo actualizado:', { [key]: value });
+      }
+      
+      const finalFilters = {
+        ...newFilters,
+        page: 1, // Reset page when changing filters
+      };
+      
+      console.log('🔧 [DEBUG] Filtros finales:', finalFilters);
+      
+      return finalFilters;
+    });
+  }, []);
+
   return {
     filters,
     setFilters,
+    updateFilter,
     updateCategory,
     updateLocation,
     updateFeatures,

@@ -21,6 +21,10 @@ export const checkProfileNameExists = async (name: string) => {
 };
 
 export const createProfile = async (data: CreateProfileDTO) => {
+  console.log('=== PROFILE CREATION DEBUG ===');
+  console.log('Received data:', JSON.stringify(data, null, 2));
+  console.log('Features array:', JSON.stringify(data.features, null, 2));
+  
   await validateProfileFeatures(data.features);
 
   // profile name can exist
@@ -30,6 +34,7 @@ export const createProfile = async (data: CreateProfileDTO) => {
     } */
 
   const profile = await ProfileModel.create(data);
+  console.log('Profile created successfully:', profile._id);
 
   // Agregar el perfil al array de profiles del usuario
   await UserModel.findByIdAndUpdate(

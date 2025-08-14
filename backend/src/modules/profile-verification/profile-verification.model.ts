@@ -42,6 +42,10 @@ const ProfileVerificationSchema = new Schema<IProfileVerification>({
             type: Boolean,
             default: false,
         },
+        lastLogin: {
+            isVerified: { type: Boolean, default: false },
+            date: { type: Date, default: null },
+        },
     },
     verifiedAt: { type: Date, default: undefined }, // Date when profile was verified.
     verificationFailedAt: { type: Date, default: undefined }, // Date when profile verification failed.

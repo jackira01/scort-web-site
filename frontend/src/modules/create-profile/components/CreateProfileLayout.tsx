@@ -114,7 +114,7 @@ export function CreateProfileLayout() {
             category: form.getValues('category') || '',
             location: {
               country: 'Colombia',
-              state: form.getValues('location.state') || '',
+              department: form.getValues('location.department') || '',
               city: form.getValues('location.city') || '',
             },
           };
@@ -278,6 +278,14 @@ export function CreateProfileLayout() {
       });
     }
 
+    // Category feature
+    if (formData.category && groupMap.category?._id) {
+      features.push({
+        group_id: groupMap.category._id,
+        value: [formData.category],
+      });
+    }
+
     // Services → bodyType
     if (formData.selectedServices && groupMap.services?._id) {
       features.push({
@@ -310,7 +318,7 @@ export function CreateProfileLayout() {
       description: formData.description,
       location: {
         country: formData.location.country,
-        state: formData.location.state,
+        department: formData.location.department,
         city: formData.location.city,
       },
       features,
@@ -379,10 +387,13 @@ export function CreateProfileLayout() {
       };
 
       const backendData = transformDataToBackendFormat(dataWithUrls);
-      console.log(
-        'Profile data ready for backend:',
-        JSON.stringify(backendData, null, 2),
-      );
+      
+      // Debug logging
+      console.log('=== FRONTEND DEBUG ===');
+      console.log('Backend data:', JSON.stringify(backendData, null, 2));
+      console.log('Features array:', JSON.stringify(backendData.features, null, 2));
+      console.log('Category in formData:', dataWithUrls.category);
+      console.log('Category group:', groupMap.category);
 
       // Crear el perfil usando el servicio
       const loadingToast = toast.loading('Creando perfil...');

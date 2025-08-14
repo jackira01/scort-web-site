@@ -12,7 +12,7 @@ export const formSchema = z.object({
   category: z.string().min(1, 'Debes seleccionar una categoría'),
   location: z.object({
     country: z.string().min(1, 'El país es requerido'),
-    state: z.string().min(1, 'El departamento es requerido'),
+    department: z.string().min(1, 'El departamento es requerido'),
     city: z.string().min(1, 'La ciudad es requerida'),
   }),
 

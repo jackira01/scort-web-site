@@ -12,7 +12,7 @@ GET /api/filters/profiles
 **Parámetros de consulta:**
 - `category` (string): Filtrar por categoría
 - `country` (string): Filtrar por país
-- `state` (string): Filtrar por estado/departamento
+- `department` (string): Filtrar por departamento
 - `city` (string): Filtrar por ciudad
 - `features` (string): JSON stringificado con características. Ejemplo: `{"gender":"female","age":["18-25","26-35"]}`
 - `minPrice` (number): Precio mínimo
@@ -77,7 +77,7 @@ Retorna el número total de perfiles que coinciden con los filtros especificados
     "categories": ["escort", "masajes", "acompañantes"],
     "locations": {
       "countries": ["Colombia", "México", "Argentina"],
-      "states": ["Bogotá", "Antioquia", "Valle del Cauca"],
+      "departments": ["Bogotá", "Antioquia", "Valle del Cauca"],
       "cities": ["Bogotá", "Medellín", "Cali"]
     },
     "features": {

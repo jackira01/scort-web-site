@@ -16,7 +16,7 @@ curl -X GET "http://localhost:5000/api/filters/options"
     "categories": ["escort", "masajes", "acompañantes"],
     "locations": {
       "countries": ["Colombia", "México", "Argentina"],
-      "states": ["Bogotá", "Antioquia", "Valle del Cauca"],
+      "departments": ["Bogotá", "Antioquia", "Valle del Cauca"],
       "cities": ["Bogotá", "Medellín", "Cali"]
     },
     "features": {
@@ -37,10 +37,21 @@ curl -X GET "http://localhost:5000/api/filters/options"
 curl -X GET "http://localhost:5000/api/filters/profiles"
 ```
 
-## 3. Filtrar perfiles por ciudad
+## 3. Filtrar perfiles por ubicación
 
+### Por ciudad específica:
 ```bash
 curl -X GET "http://localhost:5000/api/filters/profiles?city=Bogotá"
+```
+
+### Por estado/departamento (devuelve todos los perfiles del estado):
+```bash
+curl -X GET "http://localhost:5000/api/filters/profiles?department=Antioquia"
+```
+
+### Por estado y ciudad específica:
+```bash
+curl -X GET "http://localhost:5000/api/filters/profiles?department=Antioquia&city=Medellín"
 ```
 
 ## 4. Filtrar perfiles por categoría y rango de precios
@@ -96,7 +107,8 @@ fetch('http://localhost:5000/api/filters/options')
 // Filtrar perfiles
 const filters = {
   category: 'escort',
-  city: 'Bogotá',
+  'location[department]': 'Antioquia',
+  'location[city]': 'Medellín',
   features: JSON.stringify({
     gender: 'female',
     age: ['18-25', '26-35']
@@ -112,6 +124,17 @@ const queryString = new URLSearchParams(filters).toString();
 fetch(`http://localhost:5000/api/filters/profiles?${queryString}`)
   .then(response => response.json())
   .then(data => console.log(data));
+
+// Ejemplo: Filtrar solo por estado (sin ciudad)
+const departmentOnlyFilters = {
+  category: 'escorts',
+  'location[department]': 'Antioquia', // Devuelve todos los perfiles de Antioquia
+};
+
+const departmentQueryString = new URLSearchParams(departmentOnlyFilters).toString();
+fetch(`http://localhost:5000/api/filters/profiles?${departmentQueryString}`)
+  .then(response => response.json())
+  .then(data => console.log('Perfiles de Antioquia:', data));
 ```
 
 ## Notas Importantes

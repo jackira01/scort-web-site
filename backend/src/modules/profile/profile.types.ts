@@ -12,7 +12,7 @@ export interface IProfile extends Document {
     isActive: boolean;
     location: {
         country: string;
-        state: string;
+        department: string;
         city: string;
     };
     features: {
@@ -59,7 +59,7 @@ export interface CreateProfileDTO {
     description?: string;
     location: {
         country: string;
-        state: string;
+        department: string;
         city: string;
     };
     features: {
@@ -94,7 +94,7 @@ export interface IProfileInput {
     description?: string;
     location: {
         country: string;
-        state: string;
+        department: string;
         city: string;
     };
     features: {
@@ -156,6 +156,10 @@ export interface IProfileVerification extends Document {
             isVerified: boolean;
         }; // required. At least 1 social media account.
         phoneChangeDetected: boolean;
+        lastLogin: {
+            isVerified: boolean;
+            date: Date | null;
+        };
     }
 
     verifiedAt: Date; // Date when profile was verified.

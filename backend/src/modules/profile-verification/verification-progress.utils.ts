@@ -11,47 +11,46 @@ export const calculateVerificationProgress = (
   user?: IUser
 ): number => {
   let completedSteps = 0;
-  const totalSteps = 10;
+  const totalSteps = 9;
 
   // 1. Fotos de documentos - Solo cuenta si está verificado
-  if (verification.steps?.documentPhotos?.documents?.length > 0 && 
-      verification.steps?.documentPhotos?.isVerified === true) {
+  if (verification.steps?.documentPhotos?.documents?.length > 0 &&
+    verification.steps?.documentPhotos?.isVerified === true) {
     completedSteps++;
   }
 
   // 2. Selfie con póster - Solo cuenta si está verificado
-  if (verification.steps?.selfieWithPoster?.photo && 
-      verification.steps?.selfieWithPoster?.isVerified === true) {
+  if (verification.steps?.selfieWithPoster?.photo &&
+    verification.steps?.selfieWithPoster?.isVerified === true) {
     completedSteps++;
   }
 
   // 3. Selfie con documento - Solo cuenta si está verificado
-  if (verification.steps?.selfieWithDoc?.photo && 
-      verification.steps?.selfieWithDoc?.isVerified === true) {
+  if (verification.steps?.selfieWithDoc?.photo &&
+    verification.steps?.selfieWithDoc?.isVerified === true) {
     completedSteps++;
   }
 
   // 4. Fotos de cuerpo completo - Solo cuenta si está verificado
-  if (verification.steps?.fullBodyPhotos?.photos?.length >= 2 && 
-      verification.steps?.fullBodyPhotos?.isVerified === true) {
+  if (verification.steps?.fullBodyPhotos?.photos?.length > 0 &&
+    verification.steps?.fullBodyPhotos?.isVerified === true) {
     completedSteps++;
   }
 
   // 5. Vídeo - Solo cuenta si está verificado
-  if (verification.steps?.video?.videoLink && 
-      verification.steps?.video?.isVerified === true) {
+  if (verification.steps?.video?.videoLink &&
+    verification.steps?.video?.isVerified === true) {
     completedSteps++;
   }
 
   // 6. Solicitud de videollamada - Solo cuenta si está verificado
-  if (verification.steps?.videoCallRequested?.videoLink && 
-      verification.steps?.videoCallRequested?.isVerified === true) {
+  if (verification.steps?.videoCallRequested?.isVerified === true) {
     completedSteps++;
   }
 
   // 7. Redes sociales - Solo cuenta si está verificado
-  if (verification.steps?.socialMedia?.accounts?.length > 0 && 
-      verification.steps?.socialMedia?.isVerified === true) {
+  if (verification.steps?.socialMedia?.accounts?.length > 0 &&
+    verification.steps?.socialMedia?.isVerified === true) {
     completedSteps++;
   }
 
@@ -62,20 +61,15 @@ export const calculateVerificationProgress = (
     completedSteps++;
   }
 
-  // 9. Last Login (del modelo User)
+  // 9. Last Login (del modelo ProfileVerification)
   // true = ha hecho login en los últimos 30 días = +1 punto
-  if (user?.lastLogin?.isVerified === true) {
-    completedSteps++;
-  }
-
-  // 10. Verificación general del usuario (isVerified del modelo User)
-  if (user?.isVerified === true) {
+  if (verification.steps?.lastLogin?.isVerified === true) {
     completedSteps++;
   }
 
   // Calcular porcentaje (cada paso vale 10%)
   const progressPercentage = (completedSteps / totalSteps) * 100;
-  
+
   return Math.round(progressPercentage);
 };
 

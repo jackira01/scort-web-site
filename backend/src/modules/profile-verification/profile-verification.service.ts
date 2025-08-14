@@ -14,6 +14,8 @@ import { calculateVerificationProgress } from './verification-progress.utils';
 // Función auxiliar para recalcular el progreso de verificación
 const recalculateVerificationProgress = async (verification: IProfileVerification) => {
   try {
+
+    
     // Obtener datos del usuario asociado al perfil
     const populatedVerification = await ProfileVerification.findById(verification._id)
       .populate({
@@ -26,22 +28,27 @@ const recalculateVerificationProgress = async (verification: IProfileVerificatio
       .lean();
 
     if (!populatedVerification?.profile) {
+
       return verification.verificationProgress;
     }
 
     const user = (populatedVerification.profile as any)?.user;
     const newProgress = calculateVerificationProgress(verification, user);
+    
 
-    // Actualizar el progreso en la base de datos
-    await ProfileVerification.findByIdAndUpdate(
+
+    // Actualizar SOLO el progreso en la base de datos, sin tocar los steps
+    const updatedVerification = await ProfileVerification.findByIdAndUpdate(
       verification._id,
-      { verificationProgress: newProgress },
+      { $set: { verificationProgress: newProgress } },
       { new: true }
-    );
+    ).lean();
+    
+
 
     return newProgress;
   } catch (error) {
-    console.error('Error al recalcular progreso de verificación:', error);
+
     return verification.verificationProgress;
   }
 };
@@ -75,7 +82,50 @@ export const getProfileVerificationById = async (verificationId: string | Types.
 // Crear nueva verificación
 export const createProfileVerification = async (verificationData: CreateProfileVerificationDTO) => {
   try {
-    const verification = new ProfileVerification(verificationData);
+    // Inicializar steps con valores por defecto
+    const defaultSteps = {
+      documentPhotos: {
+        documents: [],
+        isVerified: false
+      },
+      selfieWithPoster: {
+        photo: undefined,
+        isVerified: false
+      },
+      selfieWithDoc: {
+        photo: undefined,
+        isVerified: false
+      },
+      fullBodyPhotos: {
+        photos: [],
+        isVerified: false
+      },
+      video: {
+        videoLink: undefined,
+        isVerified: false
+      },
+      videoCallRequested: {
+        videoLink: undefined,
+        isVerified: false
+      },
+      socialMedia: {
+        accounts: [],
+        isVerified: false
+      },
+      phoneChangeDetected: false,
+      lastLogin: {
+        isVerified: false,
+        date: null
+      }
+    };
+
+    const verificationWithDefaults = {
+      ...verificationData,
+      steps: defaultSteps,
+      verificationProgress: 0
+    };
+
+    const verification = new ProfileVerification(verificationWithDefaults);
     await verification.save();
     
     return await ProfileVerification.findById(verification._id)
@@ -131,24 +181,61 @@ export const updateVerificationSteps = async (
   stepsUpdate: UpdateVerificationStepsDTO
 ) => {
   try {
+
+    
+    // Primero obtener los datos actuales para hacer un merge correcto
+    const currentVerification = await ProfileVerification.findById(verificationId).lean();
+    if (!currentVerification) {
+      throw new Error('Verificación no encontrada');
+    }
+    
+
+    
+    // Hacer un merge profundo de los steps existentes con los nuevos datos
+    const updatedSteps = { ...currentVerification.steps };
+    
+    Object.keys(stepsUpdate).forEach(stepKey => {
+      const stepData = stepsUpdate[stepKey as keyof UpdateVerificationStepsDTO];
+      const currentStepData = updatedSteps[stepKey as keyof typeof updatedSteps];
+      
+      if (stepData && typeof stepData === 'object') {
+        // Merge el step actual con los nuevos datos
+        const mergedData = Object.assign({}, currentStepData, stepData);
+        updatedSteps[stepKey as keyof typeof updatedSteps] = mergedData as any;
+
+      } else {
+        updatedSteps[stepKey as keyof typeof updatedSteps] = stepData as any;
+      }
+    });
+    
+
+    
+    // Actualizar con los steps completos
     const verification = await ProfileVerification.findByIdAndUpdate(
       verificationId,
-      { $set: { steps: stepsUpdate } },
+      { $set: { steps: updatedSteps } },
       { new: true, runValidators: true }
     ).lean();
 
     if (!verification) {
-      throw new Error('Verificación no encontrada');
+      throw new Error('Verificación no encontrada después de actualización');
     }
+    
+
 
     // Recalcular progreso automáticamente
     await recalculateVerificationProgress(verification);
     
     // Retornar verificación actualizada
-    return await ProfileVerification.findById(verificationId)
+    const finalVerification = await ProfileVerification.findById(verificationId)
       .populate('profile', 'name user')
       .lean();
+      
+
+    
+    return finalVerification;
   } catch (error) {
+
     throw new Error(`Error al actualizar pasos de verificación: ${error}`);
   }
 };

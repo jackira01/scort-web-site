@@ -18,7 +18,7 @@ export const step1Schema = z.object({
   
   location: z.object({
     country: z.string().min(1, 'El país es requerido'),
-    state: z.string().min(1, 'El departamento es requerido'),
+    department: z.string().min(1, 'El departamento es requerido'),
     city: z.string().min(1, 'La ciudad es requerida'),
   }),
 });

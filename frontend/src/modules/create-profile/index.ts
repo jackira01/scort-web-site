@@ -9,4 +9,4 @@ export { SidebarContent } from './components/SidebarContent';
 
 export * from './types';
 export * from './data';
-export * from './colombiaData';
+export * from '@/utils/colombiaData';

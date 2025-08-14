@@ -1,6 +1,6 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
-import { authUser } from "@/services/user.service";
+import { authUser, updateUserLastLogin } from "@/services/user.service";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [Google],
@@ -11,6 +11,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const userData = await authUser({ email: user.email, name: user.name });
         // Puedes guardar datos extra en el token si lo necesitas
         token.userId = userData._id;
+        
+        // Actualizar lastLogin del usuario
+        try {
+          await updateUserLastLogin(userData._id);
+        } catch (error) {
+          console.error('Error updating lastLogin:', error);
+        }
       }
       return token;
     },

@@ -16,6 +16,7 @@ router.get('/:id/profiles', userController.getUserProfiles);
 router.post('/', userController.getUsers);
 router.get('/:id', userController.getUserById);
 router.put('/:id', userController.updateUser);
+router.put('/:id/last-login', userController.updateUserLastLogin);
 
 
 

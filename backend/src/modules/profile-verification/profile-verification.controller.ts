@@ -258,6 +258,8 @@ export const updateVerificationSteps = async (req: Request, res: Response): Prom
     const { id } = req.params;
     const stepsData: UpdateVerificationStepsDTO = req.body;
 
+
+
     if (!id) {
       res.status(400).json({
         success: false,
@@ -274,6 +276,8 @@ export const updateVerificationSteps = async (req: Request, res: Response): Prom
       return;
     }
 
+
+
     const updatedVerification = await profileVerificationService.updateVerificationSteps(id, stepsData);
 
     if (!updatedVerification) {
@@ -284,13 +288,15 @@ export const updateVerificationSteps = async (req: Request, res: Response): Prom
       return;
     }
 
+
+
     res.status(200).json({
       success: true,
       data: updatedVerification,
       message: 'Pasos de verificación actualizados y progreso recalculado exitosamente'
     });
   } catch (error) {
-    console.error('Error al actualizar pasos de verificación:', error);
+
     res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

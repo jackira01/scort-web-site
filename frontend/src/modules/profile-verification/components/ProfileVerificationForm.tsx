@@ -40,7 +40,7 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
   }
 
   const verification = verificationData?.data;
-  
+
   if (!verification) {
     return (
       <div className="text-center py-8">
@@ -137,7 +137,7 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
                 {getStatusIcon(verification.steps.selfieWithPoster.isVerified)}
-                <span className="font-medium">Selfie con Póster</span>
+                <span className="font-medium">Selfie con Cartel</span>
               </div>
               <span className="text-sm text-gray-500">
                 {verification.steps.selfieWithPoster.photo ? 'Completado' : 'Pendiente'}
@@ -174,7 +174,7 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-3 border rounded-lg">
+            {/* <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
                 {getStatusIcon(verification.steps.videoCallRequested.isVerified)}
                 <span className="font-medium">Videollamada</span>
@@ -182,7 +182,7 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
               <span className="text-sm text-gray-500">
                 {verification.steps.videoCallRequested.videoLink ? 'Completado' : 'Pendiente'}
               </span>
-            </div>
+            </div> */}
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
@@ -218,7 +218,7 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
 
       {/* Verification Form */}
       {showForm && (
-        <VerificationStepsForm 
+        <VerificationStepsForm
           profileId={profileId}
           verificationId={verification._id}
           initialData={verification.steps}

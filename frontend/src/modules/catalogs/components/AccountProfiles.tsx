@@ -132,7 +132,7 @@ const AccountProfiles = ({
                       </span>
                       <span className="flex items-center">
                         <MapPin className="h-3 w-3 mr-1" />
-                        {profile.location?.state && profile.location?.city && `${profile.location.state}, ${profile.location.city}`}
+                        {profile.location?.department && profile.location?.city && `${profile.location.department}, ${profile.location.city}`}
                       </span>
                     </div>
                   </div>

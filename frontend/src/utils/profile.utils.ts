@@ -45,7 +45,7 @@ export const transformProfilesToCards = (
  * Formatea la ubicación para mostrar en las cards
  */
 export const formatLocation = (location: {
-  department: string;
+  state: string;
   city: string;
 }): string => {
   return `${location.city}, ${location.department}`;

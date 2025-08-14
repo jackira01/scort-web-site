@@ -10,7 +10,7 @@ const router = Router();
  * @query {
  *   category?: string,
  *   country?: string,
- *   state?: string,
+ *   department?: string,
  *   city?: string,
  *   features?: string (JSON stringified object),
  *   minPrice?: number,
@@ -39,7 +39,7 @@ router.get('/profiles', controller.getFilteredProfiles);
  *   category?: string,
  *   location?: {
  *     country?: string,
- *     state?: string,
+ *     department?: string,
  *     city?: string
  *   },
  *   features?: {
@@ -86,7 +86,7 @@ router.post('/profiles', controller.getFilteredProfilesPost);
  *   categories: string[],
  *   locations: {
  *     countries: string[],
- *     states: string[],
+ *     departments: string[],
  *     cities: string[]
  *   },
  *   features: {

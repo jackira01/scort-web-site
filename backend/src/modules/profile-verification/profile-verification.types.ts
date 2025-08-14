@@ -22,6 +22,10 @@ export interface CreateProfileVerificationDTO {
   socialMedia?: boolean;
   lastSeen?: Date;
   phoneChangeDetected?: boolean;
+  lastLogin?: {
+    isVerified?: boolean;
+    date?: Date | null;
+  };
   verifiedAt?: Date;
   verificationFailedAt?: Date;
   verificationFailedReason?: string;
@@ -49,6 +53,10 @@ export interface CreateCompleteProfileVerificationDTO {
   socialMedia: boolean;
   lastSeen?: Date;
   phoneChangeDetected?: boolean;
+  lastLogin?: {
+    isVerified?: boolean;
+    date?: Date | null;
+  };
   verifiedAt?: Date;
   verificationFailedAt?: Date;
   verificationFailedReason?: string;
@@ -75,6 +83,10 @@ export interface UpdateProfileVerificationDTO {
   socialMedia?: boolean;
   lastSeen?: Date;
   phoneChangeDetected?: boolean;
+  lastLogin?: {
+    isVerified?: boolean;
+    date?: Date | null;
+  };
   verifiedAt?: Date;
   verificationFailedAt?: Date;
   verificationFailedReason?: string;
@@ -108,6 +120,10 @@ export interface UpdateProfileVerificationDTO {
       isVerified?: boolean;
     };
     phoneChangeDetected?: boolean;
+    lastLogin?: {
+      isVerified?: boolean;
+      date?: Date | null;
+    };
   };
 }
 
@@ -148,6 +164,10 @@ export interface UpdateVerificationStepsDTO {
     isVerified?: boolean;
   };
   phoneChangeDetected?: boolean;
+  lastLogin?: {
+    isVerified?: boolean;
+    date?: Date | null;
+  };
 }
 
 // DTO para filtros de búsqueda

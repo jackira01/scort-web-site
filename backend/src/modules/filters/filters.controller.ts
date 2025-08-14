@@ -11,7 +11,7 @@ export const getFilteredProfiles = async (req: Request, res: Response) => {
       const {
         category,
         country, 
-        state,
+        department,
         city,
         features,
         minPrice,
@@ -28,6 +28,11 @@ export const getFilteredProfiles = async (req: Request, res: Response) => {
         fields
       } = req.query;
 
+      // Extraer parámetros de location anidados
+      const locationParams = req.query.location as any;
+      const locationDepartment = locationParams?.department || req.query['location[department]'];
+      const locationCity = locationParams?.city || req.query['location[city]'];
+
       // Construir objeto de filtros
       const filters: FilterQuery = {};
 
@@ -42,11 +47,15 @@ export const getFilteredProfiles = async (req: Request, res: Response) => {
       if (isVerified !== undefined) filters.isVerified = isVerified === 'true';
 
       // Filtros de ubicación
-      if (country || state || city) {
+      if (country || department || city || locationDepartment || locationCity) {
         filters.location = {};
         if (country) filters.location.country = country as string;
-        if (state) filters.location.state = state as string;
+        if (department) filters.location.department = department as string;
+         else if (locationDepartment) filters.location.department = locationDepartment as string;
+        
+        // Solo agregar city si está presente
         if (city) filters.location.city = city as string;
+        else if (locationCity) filters.location.city = locationCity as string;
       }
 
       // Filtros de características

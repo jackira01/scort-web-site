@@ -1,24 +1,20 @@
-import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
-const FilterToglles = () => {
-  const [filters, setFilters] = useState({
-    presentado: false,
-    verificado: false,
-    enLinea: false,
-    video: false,
-    favoritos: false,
-  });
+interface FilterToggleProps {
+  filters: {
+    verified: boolean;
+    video: boolean;
+  };
+  onFilterChange: (key: string, value: boolean) => void;
+}
 
+const FilterToglles = ({ filters, onFilterChange }: FilterToggleProps) => {
   return (
     <div className="space-y-4 mb-6">
       {Object.entries({
-        presentado: 'Presentado',
-        verificado: 'Verificado',
-        enLinea: 'En línea',
+        verified: 'Verificado',
         video: 'Video',
-        favoritos: 'Favoritos',
       }).map(([key, label]) => (
         <div key={key} className="flex items-center justify-between">
           <Label
@@ -30,9 +26,13 @@ const FilterToglles = () => {
           <Switch
             id={key}
             checked={filters[key as keyof typeof filters]}
-            onCheckedChange={(checked) =>
-              setFilters((prev) => ({ ...prev, [key]: checked }))
-            }
+            onCheckedChange={(checked) => {
+              if (key === 'verified') {
+                onFilterChange('isVerified', checked);
+              } else if (key === 'video') {
+                onFilterChange('hasVideos', checked);
+              }
+            }}
           />
         </div>
       ))}

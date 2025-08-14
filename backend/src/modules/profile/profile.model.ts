@@ -9,7 +9,7 @@ const profileSchema = new Schema<IProfile>(
     isActive: { type: Boolean, default: true },
     location: {
       country: String,
-      state: String,
+      department: String,
       city: String,
     },
     features: [

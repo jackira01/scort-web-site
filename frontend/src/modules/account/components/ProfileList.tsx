@@ -209,9 +209,7 @@ export default function ProfileList({
           profileName={selectedProfileForVerification.name}
           images={selectedProfileForVerification.verificationImages || []}
           onVerifyProfile={() => {
-            console.log(
-              `Verificando perfil de ${selectedProfileForVerification.name}`,
-            );
+            // Verificando perfil
             setVerificationCarouselOpen(false);
             setSelectedProfileForVerification(null);
           }}

@@ -1,33 +1,74 @@
-import { Badge } from '@/components/ui/badge';
+'use client';
 
-const GenderFilter = () => {
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAttributeGroupByKey } from '@/hooks/use-filter-attribute-groups';
+
+interface GenderFilterProps {
+  selectedGender?: string;
+  onGenderChange?: (gender: string) => void;
+}
+
+const GenderFilter = ({ selectedGender, onGenderChange }: GenderFilterProps) => {
+  const { data: genderGroup, isLoading, error } = useAttributeGroupByKey('gender');
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <h4 className="font-medium text-foreground">Género</h4>
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="flex items-center space-x-2">
+              <Skeleton className="h-4 w-4 rounded" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-5 w-8 ml-auto rounded-full" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !genderGroup) {
+    return (
+      <div className="space-y-3">
+        <h4 className="font-medium text-foreground">Género</h4>
+        <p className="text-sm text-muted-foreground">Error al cargar opciones</p>
+      </div>
+    );
+  }
+
+  const activeVariants = genderGroup.variants.filter(variant => variant.active !== false);
+
   return (
     <div className="space-y-3">
-      <h4 className="font-medium text-foreground">Género</h4>
+      <h4 className="font-medium text-foreground">{genderGroup.name}</h4>
       <div className="space-y-2">
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            id="mujer"
-            className="rounded"
-            defaultChecked
-          />
-          <label htmlFor="mujer" className="text-sm text-muted-foreground">
-            Mujer
-          </label>
-          <Badge variant="secondary" className="ml-auto">
-            23
-          </Badge>
-        </div>
-        <div className="flex items-center space-x-2">
-          <input type="checkbox" id="trans" className="rounded" />
-          <label htmlFor="trans" className="text-sm text-muted-foreground">
-            Trans
-          </label>
-          <Badge variant="secondary" className="ml-auto">
-            8
-          </Badge>
-        </div>
+        {activeVariants.map((variant) => {
+          const isSelected = selectedGender === variant.value;
+          return (
+            <div key={variant.value} className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id={`gender-${variant.value}`}
+                name="gender"
+                className="rounded"
+                checked={isSelected}
+                onChange={() => onGenderChange?.(variant.value)}
+              />
+              <label 
+                htmlFor={`gender-${variant.value}`} 
+                className="text-sm text-muted-foreground cursor-pointer flex-1"
+              >
+                {variant.value}
+              </label>
+              {/* TODO: Implementar conteo de perfiles por género */}
+              <Badge variant="secondary" className="ml-auto">
+                0
+              </Badge>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

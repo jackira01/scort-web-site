@@ -65,10 +65,7 @@ const SearchProfiles = ({
     : [];
 
   // Debug logs
-  console.log('SearchProfiles - Raw data:', data);
-  console.log('SearchProfiles - data.profiles:', data?.profiles);
-  console.log('SearchProfiles - profiles after transform:', profiles);
-  console.log('SearchProfiles - profiles.length:', profiles.length);
+  // SearchProfiles data processing
 
   return (
     <>

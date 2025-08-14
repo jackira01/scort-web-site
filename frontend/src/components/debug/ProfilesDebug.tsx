@@ -14,21 +14,13 @@ export default function ProfilesDebug() {
   const { data, isLoading, error, refetch, isError, status } = useFilteredProfiles(filters);
   
   const handleClearCacheAndRefetch = async () => {
-    console.log('Clearing cache and refetching...');
     await queryClient.invalidateQueries({ queryKey: ['filtered-profiles'] });
     await refetch();
   };
   
   const handleForceRefetch = async () => {
-    console.log('Force refetching...');
     await refetch();
   };
-  
-  console.log('Debug - Data:', data);
-  console.log('Debug - Loading:', isLoading);
-  console.log('Debug - Error:', error);
-  console.log('Debug - Status:', status);
-  console.log('Debug - IsError:', isError);
   
   return (
     <div className="p-4 border rounded mb-4">

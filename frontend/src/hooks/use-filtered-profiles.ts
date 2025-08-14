@@ -11,21 +11,13 @@ export const useFilteredProfiles = (
   filters: Omit<FilterQuery, 'fields'> = {},
   options?: Omit<UseQueryOptions<ProfilesResponse>, 'queryKey' | 'queryFn'>
 ) => {
-  console.log('useFilteredProfiles called with filters:', filters);
-  
-  const queryKey = ['filtered-profiles', filters];
-  console.log('useFilteredProfiles queryKey:', queryKey);
-  
   const query = useQuery({
     queryKey: ['filtered-profiles', filters],
     queryFn: async () => {
-      console.log('🚀 Query function executing with filters:', filters);
       try {
         const result = await getProfilesForCards(filters);
-        console.log('✅ Query function result:', result);
         return result;
       } catch (error) {
-        console.error('❌ Query function error:', error);
         throw error;
       }
     },
@@ -37,14 +29,6 @@ export const useFilteredProfiles = (
     refetchOnMount: true, // Refetch cuando se monta el componente
     retry: 3, // Reintentos en caso de error
     ...options,
-  });
-  
-  console.log('🔍 Query state:', {
-    data: query.data,
-    isLoading: query.isLoading,
-    error: query.error,
-    status: query.status,
-    fetchStatus: query.fetchStatus
   });
   
   return query;

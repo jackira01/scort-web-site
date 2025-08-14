@@ -32,7 +32,7 @@ export const DashProfilePanel = () => {
     return <div>Ups algo salio mal</div>;
   }
 
-  console.log("profilesData", profilesData);
+  // profilesData loaded
 
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">

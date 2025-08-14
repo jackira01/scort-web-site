@@ -65,3 +65,8 @@ export const updateProfile = async (profileId: string, data: any) => {
     const response = await axios.put(`${API_URL}/api/profile/${profileId}`, data);
     return response.data;
 }
+
+export const updateUserLastLogin = async (userId: string) => {
+    const response = await axios.put(`${API_URL}/api/user/${userId}/last-login`);
+    return response.data;
+}

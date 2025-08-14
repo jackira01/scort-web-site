@@ -40,8 +40,8 @@ export const getFilteredProfiles = async (filters: FilterQuery): Promise<FilterR
         if (location.country) {
           query['location.country'] = location.country;
         }
-        if (location.state) {
-          query['location.state'] = location.state;
+        if (location.department) {
+          query['location.department'] = location.department;
         }
         if (location.city) {
           query['location.city'] = location.city;
@@ -218,7 +218,7 @@ export const getFilterOptions = async (): Promise<FilterOptions> => {
             $group: {
               _id: null,
               countries: { $addToSet: '$location.country' },
-              states: { $addToSet: '$location.state' },
+              departments: { $addToSet: '$location.department' },
               cities: { $addToSet: '$location.city' }
             }
           }
@@ -253,7 +253,7 @@ export const getFilterOptions = async (): Promise<FilterOptions> => {
         categories: categories.filter(Boolean) as string[],
         locations: {
           countries: (locations[0]?.countries?.filter(Boolean) || []) as string[],
-          states: (locations[0]?.states?.filter(Boolean) || []) as string[],
+          departments: (locations[0]?.departments?.filter(Boolean) || []) as string[],
           cities: (locations[0]?.cities?.filter(Boolean) || []) as string[]
         },
         features,

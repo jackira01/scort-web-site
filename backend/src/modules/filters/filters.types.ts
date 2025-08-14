@@ -2,7 +2,7 @@ export interface FilterQuery {
   category?: string;
   location?: {
     country?: string;
-    state?: string;
+    department?: string;
     city?: string;
   };
   features?: {
@@ -41,7 +41,7 @@ export interface FilterOptions {
   categories: string[];
   locations: {
     countries: string[];
-    states: string[];
+    departments: string[];
     cities: string[];
   };
   features: {

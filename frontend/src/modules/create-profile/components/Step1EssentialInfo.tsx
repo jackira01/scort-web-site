@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Controller } from 'react-hook-form';
-import { colombiaDepartments } from '../colombiaData';
+import { colombiaLocations } from '@/utils/colombiaData';
 import type { AttributeGroup } from '../types';
 import { useFormContext } from '../context/FormContext';
 
@@ -27,7 +27,7 @@ export function Step1EssentialInfo({
 }: Step1EssentialInfoProps) {
   const { register, control, watch, setValue, formState: { errors } } = useFormContext();
   const gender = watch('gender');
-  const locationState = watch('location.state');
+  const locationDepartment = watch('location.department');
 
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
@@ -160,7 +160,7 @@ export function Step1EssentialInfo({
                 Departamento
               </Label>
               <Controller
-              name="location.state"
+              name="location.department"
               control={control}
               render={({ field }) => (
                 <Select
@@ -170,21 +170,21 @@ export function Step1EssentialInfo({
                   }}
                   value={field.value}
                 >
-                  <SelectTrigger className={errors.location?.state ? 'border-red-500' : ''}>
+                  <SelectTrigger className={errors.location?.department ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Selecciona departamento" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.keys(colombiaDepartments).map((department) => (
-                      <SelectItem key={department} value={department}>
-                        {department}
+                    {Object.values(colombiaLocations).map((department) => (
+                      <SelectItem key={department.original} value={department.original}>
+                        {department.original}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
             />
-            {errors.location?.state && (
-              <p className="text-red-500 text-sm mt-1">{errors.location.state.message}</p>
+            {errors.location?.department && (
+              <p className="text-red-500 text-sm mt-1">{errors.location.department.message}</p>
             )}
             </div>
 
@@ -197,20 +197,20 @@ export function Step1EssentialInfo({
                 <Select
                   onValueChange={field.onChange}
                   value={field.value}
-                  disabled={!locationState}
+                  disabled={!locationDepartment}
                 >
                   <SelectTrigger className={errors.location?.city ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Selecciona ciudad" />
                   </SelectTrigger>
                   <SelectContent>
-                    {locationState &&
-                      colombiaDepartments[
-                        locationState as keyof typeof colombiaDepartments
-                      ]?.map((city) => (
-                        <SelectItem key={city} value={city}>
-                          {city}
-                        </SelectItem>
-                      ))}
+                    {locationDepartment &&
+                      Object.values(colombiaLocations)
+                        .find(dept => dept.original === locationDepartment)
+                        ?.cities.map((city) => (
+                          <SelectItem key={city.original} value={city.original}>
+                            {city.original}
+                          </SelectItem>
+                        ))}
                   </SelectContent>
                 </Select>
               )}

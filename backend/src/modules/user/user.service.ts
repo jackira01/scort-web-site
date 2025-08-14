@@ -54,6 +54,23 @@ export const getUserProfiles = async (userId: string) => {
   }));
 }
 
+// Actualizar lastLogin del usuario
+export const updateUserLastLogin = async (userId: string) => {
+  try {
+    const user = await UserModel.findByIdAndUpdate(
+      userId,
+      {
+        'lastLogin.date': new Date(),
+        'lastLogin.isVerified': true
+      },
+      { new: true }
+    );
+    return user;
+  } catch (error) {
+    throw new Error(`Error al actualizar lastLogin: ${error}`);
+  }
+};
+
 
 
 /* export const obtenerPerfiles = () => UserModel.find();

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 export default function RatesProfile({
   rates,
 }: {
-  rates: { duration: string; price: number; currency: string; delivery?: boolean }[];
+  rates: { hour: string; price: number; delivery?: boolean }[];
 }) {
   return (
     <Card className="bg-card border-border animate-in fade-in-50 slide-in-from-right-12 duration-1100">
@@ -15,13 +15,13 @@ export default function RatesProfile({
       </CardHeader>
       <CardContent className="p-4">
         <div className="space-y-3">
-          {rates.map((rate) => (
+          {rates.map((rate, index) => (
             <div
-              key={`${rate.duration}-${rate.currency}`}
+              key={`${rate.hour}-${index}`}
               className="flex justify-between items-center p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors duration-200"
             >
               <div className="flex flex-col">
-                <span className="text-foreground text-sm">{rate.duration}</span>
+                <span className="text-foreground text-sm">{rate.hour}</span>
                 {rate.delivery !== undefined && (
                   <span className="text-xs text-muted-foreground mt-1">
                     {rate.delivery ? "Domicilio incluido" : "Domicilio no incluido"}
@@ -29,7 +29,7 @@ export default function RatesProfile({
                 )}
               </div>
               <span className="text-foreground font-semibold">
-                ${rate.price} {rate.currency}
+                ${rate.price.toLocaleString('es-CO')} COP
               </span>
             </div>
           ))}

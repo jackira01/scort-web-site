@@ -98,7 +98,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
   // Llenar el formulario con los datos del perfil existente
   useEffect(() => {
     if (profileDetails && attributeGroups) {
-      console.log('Cargando datos del perfil:', profileDetails);
+      // Cargando datos del perfil
       
       // Función para obtener el valor de una característica por grupo
       const getFeatureValue = (groupKey: string) => {
@@ -106,7 +106,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
           f.group?.key === groupKey
         );
         const value = feature?.value?.[0] || '';
-        console.log(`Feature ${groupKey}:`, value);
+        // Feature procesado
         return value;
       };
 
@@ -177,7 +177,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       form.setValue('gender', formData.gender);
       form.setValue('category', formData.category);
       form.setValue('location.country', formData.location.country);
-      form.setValue('location.state', formData.location.state);
+      form.setValue('location.department', formData.location.department);
       form.setValue('location.city', formData.location.city);
       
       // Step 2 - Descripción y servicios
@@ -210,23 +210,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       // Forzar re-render de los campos controlados
       form.trigger();
       
-      console.log('Valores establecidos en el formulario:', {
-        gender: form.getValues('gender'),
-        category: form.getValues('category'),
-        locationState: form.getValues('location.state'),
-        locationCity: form.getValues('location.city'),
-        skinColor: form.getValues('skinColor'),
-        sexuality: form.getValues('sexuality'),
-      });
-      
-      console.log('Attribute groups disponibles:', {
-        gender: groupMap['gender']?.variants?.map(v => ({ id: v._id, value: v.value, active: v.active })),
-        category: groupMap['category']?.variants?.map(v => ({ id: v._id, value: v.value, active: v.active })),
-        skinColor: groupMap['skin_color']?.variants?.map(v => ({ id: v._id, value: v.value, active: v.active })),
-        sexuality: groupMap['sexuality']?.variants?.map(v => ({ id: v._id, value: v.value, active: v.active })),
-      });
-      
-      console.log('Profile details completo:', profileDetails);
+      // Valores establecidos en el formulario
     }
   }, [profileDetails, form, attributeGroups]);
 
@@ -254,7 +238,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
             category: form.getValues('category') || '',
             location: {
               country: 'Colombia',
-              state: form.getValues('location.state') || '',
+              department: form.getValues('location.department') || '',
               city: form.getValues('location.city') || '',
             },
           };
@@ -369,6 +353,14 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       });
     }
 
+    // Category feature
+    if (formData.category && groupMap.category?._id) {
+      features.push({
+        group_id: groupMap.category._id,
+        value: [formData.category],
+      });
+    }
+
     // Services
     if (formData.selectedServices && groupMap.services?._id) {
       features.push({
@@ -389,7 +381,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       description: formData.description,
       location: {
         country: formData.location.country,
-        state: formData.location.state,
+        department: formData.location.department,
         city: formData.location.city,
       },
       features,
@@ -423,7 +415,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
     if (validation.success) {
       setCurrentStep((prev) => Math.min(prev + 1, steps.length));
     } else {
-      console.log('Validation errors:', validation.error?.issues);
+      // Validation errors
       toast.error('Por favor completa todos los campos requeridos');
     }
   };
@@ -434,7 +426,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
 
   const handleSubmit = async () => {
     const data = form.getValues();
-    console.log('Form data before submission:', data);
+    // Form data before submission
 
     setUploading(true);
 
@@ -493,10 +485,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       };
 
       const backendData = transformDataToBackendFormat(dataWithUrls);
-      console.log(
-        'Profile data ready for backend:',
-        JSON.stringify(backendData, null, 2),
-      );
+      // Profile data ready for backend
 
       // Actualizar el perfil usando el servicio
       const loadingToast = toast.loading('Actualizando perfil...');

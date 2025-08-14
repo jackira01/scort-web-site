@@ -11,7 +11,7 @@ export interface ProfileMedia {
 }
 
 export interface ProfileLocation {
-  department: string;
+  state: string;
   city: string;
 }
 

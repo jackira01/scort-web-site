@@ -91,6 +91,31 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
+// Actualizar lastLogin del usuario
+export const updateUserLastLogin = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = await userService.updateUserLastLogin(id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    
+    res.json({
+      success: true,
+      message: 'LastLogin actualizado correctamente',
+      data: {
+        lastLogin: user.lastLogin
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: `Error al actualizar lastLogin: ${error}` 
+    });
+  }
+};
+
 export const getUserProfiles = async (req: Request, res: Response) => {
   const userId = req.params.id;
   const profiles = await userService.getUserProfiles(userId);

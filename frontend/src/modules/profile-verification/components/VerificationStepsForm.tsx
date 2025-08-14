@@ -14,7 +14,7 @@ import { uploadMultipleImages, uploadMultipleVideos } from '@/utils/tools';
 
 const verificationSchema = z.object({
   documentPhotos: z.object({
-    documents: z.array(z.string()).optional(),
+    documents: z.array(z.string()).max(2, 'Máximo 2 documentos permitidos').optional(),
   }),
   selfieWithPoster: z.object({
     photo: z.string().optional(),
@@ -29,6 +29,7 @@ const verificationSchema = z.object({
     videoLink: z.string().optional(),
   }),
   videoCallRequested: z.object({
+    isRequested: z.boolean().optional(),
     videoLink: z.string().optional(),
   }),
   socialMedia: z.object({
@@ -77,6 +78,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
         videoLink: initialData.video?.videoLink || '',
       },
       videoCallRequested: {
+        isRequested: initialData.videoCallRequested?.isRequested || false,
         videoLink: initialData.videoCallRequested?.videoLink || '',
       },
       socialMedia: {
@@ -138,13 +140,18 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
     try {
       const formData = { ...data };
 
-      // Subir documentos
+      // Subir documentos (máximo 2)
       if (tempDocuments.length > 0) {
+        if (tempDocuments.length > 2) {
+          toast.error('Máximo 2 documentos permitidos');
+          setIsSubmitting(false);
+          return;
+        }
         const uploadedDocs = await handleFileUpload(tempDocuments, 'documents');
-        formData.documentPhotos.documents = [...(formData.documentPhotos.documents || []), ...uploadedDocs];
+        formData.documentPhotos.documents = uploadedDocs;
       }
 
-      // Subir selfie con póster
+      // Subir selfie con cartel
       if (tempSelfieWithPoster) {
         const uploadedSelfie = await handleFileUpload([tempSelfieWithPoster], 'selfieWithPoster');
         if (uploadedSelfie.length > 0) {
@@ -160,10 +167,15 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
         }
       }
 
-      // Subir fotos de cuerpo completo
+      // Subir fotos de cuerpo completo (exactamente 2)
       if (tempFullBodyPhotos.length > 0) {
+        if (tempFullBodyPhotos.length !== 2) {
+          toast.error('Se requieren exactamente 2 fotos de cuerpo completo');
+          setIsSubmitting(false);
+          return;
+        }
         const uploadedPhotos = await handleFileUpload(tempFullBodyPhotos, 'fullBodyPhotos');
-        formData.fullBodyPhotos.photos = [...(formData.fullBodyPhotos.photos || []), ...uploadedPhotos];
+        formData.fullBodyPhotos.photos = uploadedPhotos;
       }
 
       // Subir video
@@ -176,9 +188,9 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
       // Subir video de videollamada
       if (tempVideoCall) {
-        const uploadedVideo = await handleFileUpload([tempVideoCall], 'videoCall');
-        if (uploadedVideo.length > 0) {
-          formData.videoCallRequested.videoLink = uploadedVideo[0];
+        const uploadedVideoCall = await handleFileUpload([tempVideoCall], 'videoCall');
+        if (uploadedVideoCall.length > 0) {
+          formData.videoCallRequested.videoLink = uploadedVideoCall[0];
         }
       }
 
@@ -219,6 +231,9 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
             {/* Documentos */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Fotos de Documentos</h3>
+              <p className="text-sm text-blue-600 dark:text-blue-400 mb-3">
+                📄 Sube el documento por ambas caras (sea pasaporte, DNI o cédula de ciudadanía). Máximo 2 imágenes.
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="documents" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Subir nuevos documentos</label>
@@ -229,6 +244,11 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                     accept="image/*"
                     onChange={(e) => {
                       const files = Array.from(e.target.files || []);
+                      if (files.length > 2) {
+                        toast.error('Máximo 2 documentos permitidos');
+                        e.target.value = '';
+                        return;
+                      }
                       setTempDocuments(files);
                     }}
                     disabled={uploadingFiles.documents}
@@ -245,13 +265,13 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                     <div className="grid grid-cols-2 gap-2">
                       {form.watch('documentPhotos.documents')!.map((docUrl, index) => (
                         <div key={index} className="relative">
-                          <img 
-                            src={docUrl} 
-                            alt={`Documento ${index + 1}`} 
+                          <img
+                            src={docUrl}
+                            alt={`Documento ${index + 1}`}
                             className="w-full h-24 object-cover rounded border cursor-pointer"
                             onClick={() => window.open(docUrl, '_blank')}
                           />
-                          <button 
+                          <button
                             type="button"
                             onClick={() => window.open(docUrl, '_blank')}
                             className="absolute top-1 right-1 bg-blue-600 text-white p-1 rounded text-xs hover:bg-blue-700"
@@ -270,10 +290,15 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
             {/* Selfie con Póster */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Selfie con Póster</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Selfie con Cartel</h3>
+              <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mb-3">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  📸 <strong>Instrucciones:</strong> Toma una selfie sosteniendo un cartel o papel con el nombre de tu perfil y la fecha actual. Esta foto ayuda a verificar tu identidad.
+                </p>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="selfieWithPoster" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Subir nueva foto</label>
+                  <label htmlFor="selfieWithPoster" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Subir foto con cartel</label>
                   <Input
                     id="selfieWithPoster"
                     type="file"
@@ -291,16 +316,16 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   )}
                 </div>
                 <div>
-                  <label htmlFor="currentSelfieWithPoster" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Foto actual</label>
+                  <label htmlFor="currentSelfieWithPoster" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Foto con cartel actual</label>
                   {form.watch('selfieWithPoster.photo') ? (
                     <div className="relative inline-block">
-                      <img 
-                        src={form.watch('selfieWithPoster.photo')!} 
-                        alt="Selfie con poster" 
+                      <img
+                        src={form.watch('selfieWithPoster.photo')!}
+                        alt="Selfie con cartel"
                         className="w-full h-32 object-cover rounded border cursor-pointer"
                         onClick={() => window.open(form.watch('selfieWithPoster.photo')!, '_blank')}
                       />
-                      <button 
+                      <button
                         type="button"
                         onClick={() => window.open(form.watch('selfieWithPoster.photo')!, '_blank')}
                         className="absolute top-1 right-1 bg-blue-600 text-white p-1 rounded text-xs hover:bg-blue-700"
@@ -341,13 +366,13 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   <label htmlFor="currentSelfieWithDoc" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Foto actual</label>
                   {form.watch('selfieWithDoc.photo') ? (
                     <div className="relative inline-block">
-                      <img 
-                        src={form.watch('selfieWithDoc.photo')!} 
-                        alt="Selfie con documento" 
+                      <img
+                        src={form.watch('selfieWithDoc.photo')!}
+                        alt="Selfie con documento"
                         className="w-full h-32 object-cover rounded border cursor-pointer"
                         onClick={() => window.open(form.watch('selfieWithDoc.photo')!, '_blank')}
                       />
-                      <button 
+                      <button
                         type="button"
                         onClick={() => window.open(form.watch('selfieWithDoc.photo')!, '_blank')}
                         className="absolute top-1 right-1 bg-blue-600 text-white p-1 rounded text-xs hover:bg-blue-700"
@@ -365,6 +390,9 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
             {/* Fotos de Cuerpo Completo */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Fotos de Cuerpo Completo</h3>
+              <p className="text-sm text-blue-600 dark:text-blue-400 mb-3">
+                📸 Debes elegir exactamente 2 imágenes de cuerpo completo para completar la verificación.
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="fullBodyPhotos" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Subir nuevas fotos</label>
@@ -375,6 +403,11 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                     accept="image/*"
                     onChange={(e) => {
                       const files = Array.from(e.target.files || []);
+                      if (files.length !== 2) {
+                        toast.error('Debes seleccionar exactamente 2 fotos de cuerpo completo');
+                        e.target.value = '';
+                        return;
+                      }
                       setTempFullBodyPhotos(files);
                     }}
                     disabled={uploadingFiles.fullBodyPhotos}
@@ -391,13 +424,13 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                     <div className="grid grid-cols-2 gap-2">
                       {form.watch('fullBodyPhotos.photos')!.map((photoUrl, index) => (
                         <div key={index} className="relative">
-                          <img 
-                            src={photoUrl} 
-                            alt={`Foto cuerpo completo ${index + 1}`} 
+                          <img
+                            src={photoUrl}
+                            alt={`Foto cuerpo completo ${index + 1}`}
                             className="w-full h-32 object-cover rounded border cursor-pointer"
                             onClick={() => window.open(photoUrl, '_blank')}
                           />
-                          <button 
+                          <button
                             type="button"
                             onClick={() => window.open(photoUrl, '_blank')}
                             className="absolute top-1 right-1 bg-blue-600 text-white p-1 rounded text-xs hover:bg-blue-700"
@@ -417,6 +450,9 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
             {/* Video */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Video de Verificación</h3>
+              <p className="text-sm text-blue-600 dark:text-blue-400 mb-3">
+                🎥 Se necesita un video con letrero que incluya el nombre del perfil y el texto solicitado por PREPAGOSVIP.
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="video" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Subir nuevo video</label>
@@ -440,12 +476,12 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   <label htmlFor="currentVideo" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Video actual</label>
                   {form.watch('video.videoLink') ? (
                     <div className="relative">
-                      <video 
-                        src={form.watch('video.videoLink')!} 
-                        controls 
+                      <video
+                        src={form.watch('video.videoLink')!}
+                        controls
                         className="w-full h-32 rounded border"
                       />
-                      <button 
+                      <button
                         type="button"
                         onClick={() => window.open(form.watch('video.videoLink')!, '_blank')}
                         className="absolute top-1 right-1 bg-blue-600 text-white p-1 rounded text-xs hover:bg-blue-700"
@@ -460,36 +496,6 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               </div>
             </div>
 
-            {/* Video de Videollamada */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Video de Videollamada</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="videoCall" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Subir nuevo video</label>
-                  <Input
-                    id="videoCall"
-                    type="file"
-                    accept="video/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] || null;
-                      setTempVideoCall(file);
-                    }}
-                    disabled={uploadingFiles.videoCall}
-                  />
-                  {tempVideoCall && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      Archivo seleccionado: {tempVideoCall.name}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="currentVideoCall" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Video actual</label>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                      {form.watch('videoCallRequested.videoLink') ? 'Video guardado' : 'Sin video'}
-                    </p>
-                </div>
-              </div>
-            </div>
 
             {/* Redes Sociales */}
             <div className="space-y-4">
@@ -529,6 +535,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 type="submit"
                 disabled={isSubmitting || Object.values(uploadingFiles).some(Boolean)}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+
               >
                 {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
