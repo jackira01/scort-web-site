@@ -163,17 +163,19 @@ export function Step3Details({
             <Label className="text-foreground">Piel <span className="text-red-500">*</span></Label>
             <div className="flex flex-wrap gap-2 mt-2">
               {skinGroup.variants
-                .filter((v) => v.active)
-                .map((variant) => (
-                  <Button
-                    key={variant._id}
-                    variant={formData.skinColor === variant.value ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setValue('skinColor', variant.value)}
-                  >
-                    {variant.value}
-                  </Button>
-                ))}
+                  .filter((v) => v.active)
+                  .map((variant) => (
+                    <Button
+                      key={variant._id}
+                      variant={
+                        formData.skinColor === variant.value ? 'default' : 'outline'
+                      }
+                      size="sm"
+                      onClick={() => setValue('skinColor', variant.value)}
+                    >
+                      {variant.label || variant.value}
+                    </Button>
+                  ))}
             </div>
             {errors.skinColor && (
               <p className="text-red-500 text-sm mt-1">
@@ -186,19 +188,19 @@ export function Step3Details({
             <Label className="text-foreground">Sexo <span className="text-red-500">*</span></Label>
             <div className="flex flex-wrap gap-2 mt-2">
               {sexualityGroup.variants
-                .filter((v) => v.active)
-                .map((variant) => (
-                  <Button
-                    key={variant._id}
-                    variant={
-                      formData.sexuality === variant.value ? 'default' : 'outline'
-                    }
-                    size="sm"
-                    onClick={() => setValue('sexuality', variant.value)}
-                  >
-                    {variant.value}
-                  </Button>
-                ))}
+                  .filter((v) => v.active)
+                  .map((variant) => (
+                    <Button
+                      key={variant._id}
+                      variant={
+                        formData.sexuality === variant.value ? 'default' : 'outline'
+                      }
+                      size="sm"
+                      onClick={() => setValue('sexuality', variant.value)}
+                    >
+                      {variant.label || variant.value}
+                    </Button>
+                  ))}
             </div>
             {errors.sexuality && (
               <p className="text-red-500 text-sm mt-1">
@@ -228,7 +230,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('eyeColor', variant.value)}
                     >
-                      {variant.value}
+                      {variant.label || variant.value}
                     </Button>
                   ))}
               </div>
@@ -253,7 +255,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('hairColor', variant.value)}
                     >
-                      {variant.value}
+                      {variant.label || variant.value}
                     </Button>
                   ))}
               </div>
@@ -276,7 +278,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('bodyType', variant.value)}
                     >
-                      {variant.value}
+                      {variant.label || variant.value}
                     </Button>
                   ))}
               </div>

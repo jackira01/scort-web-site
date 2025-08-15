@@ -11,7 +11,7 @@ type FeatureInput = {
  * Verifica que el grupo exista y que cada valor esté entre sus variantes activas.
  */
 export const validateProfileFeatures = async (features: FeatureInput[]) => {
-  console.log("features", features);
+  // Debug: features
 
   for (const feature of features) {
     const group = await AttributeGroupModel.findById(feature.group_id);
@@ -24,7 +24,7 @@ export const validateProfileFeatures = async (features: FeatureInput[]) => {
 
     for (const val of feature.value) {
       const isValidVariant = group.variants.some(
-        (variant) => variant.value === val && variant.active,
+        (variant) => variant.value === val.toLowerCase().trim() && variant.active,
       );
 
       if (!isValidVariant) {

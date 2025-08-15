@@ -410,6 +410,61 @@ export const isValidCity = (departmentNormalized: string, cityNormalized: string
   return department?.cities.some(city => city.normalized === cityNormalized) || false;
 };
 
+// Tipos para el nuevo formato de ubicación
+export interface LocationValue {
+  value: string; // Valor normalizado (sin tildes, minúsculas)
+  label: string; // Valor para mostrar (con tildes, formato original)
+}
+
+// Función para obtener todos los departamentos en formato LocationValue
+export const getAllDepartments = (): LocationValue[] => {
+  return Object.values(colombiaLocations).map(dept => ({
+    value: dept.normalized,
+    label: dept.original
+  }));
+};
+
+// Función para obtener todas las ciudades de un departamento en formato LocationValue
+export const getCitiesByDepartment = (departmentNormalized: string): LocationValue[] => {
+  const department = colombiaLocations[departmentNormalized];
+  if (!department) return [];
+
+  return department.cities.map(city => ({
+    value: city.normalized,
+    label: city.original
+  }));
+};
+
+// Función para obtener un departamento específico en formato LocationValue
+export const getDepartmentLocationValue = (normalizedName: string): LocationValue | null => {
+  const department = colombiaLocations[normalizedName];
+  if (!department) return null;
+
+  return {
+    value: department.normalized,
+    label: department.original
+  };
+};
+
+// Función para obtener una ciudad específica en formato LocationValue
+export const getCityLocationValue = (departmentNormalized: string, cityNormalized: string): LocationValue | null => {
+  const city = getCityByNormalized(departmentNormalized, cityNormalized);
+  if (!city) return null;
+
+  return {
+    value: city.normalized,
+    label: city.original
+  };
+};
+
+// Función para obtener el país Colombia en formato LocationValue
+export const getCountryLocationValue = (): LocationValue => {
+  return {
+    value: 'colombia',
+    label: 'Colombia'
+  };
+};
+
 export type Department = keyof typeof colombiaDepartments;
 export type City = typeof colombiaDepartments[Department][number];
 export type NormalizedDepartment = keyof typeof colombiaLocations;

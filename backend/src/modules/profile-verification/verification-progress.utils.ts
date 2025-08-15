@@ -61,9 +61,12 @@ export const calculateVerificationProgress = (
     completedSteps++;
   }
 
-  // 9. Last Login (del modelo ProfileVerification)
-  // true = ha hecho login en los últimos 30 días = +1 punto
-  if (verification.steps?.lastLogin?.isVerified === true) {
+  // 9. Last Login - Verificar usando los datos del usuario
+  // Para perfiles nuevos (sin lastLogin previo) se considera como true
+  // Para perfiles existentes, verificar si ha hecho login en los últimos 30 días
+  const userLastLoginDate = user?.lastLogin?.date || null;
+  const lastLoginVerified = checkLastLoginVerification(userLastLoginDate);
+  if (lastLoginVerified) {
     completedSteps++;
   }
 

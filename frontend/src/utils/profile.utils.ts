@@ -45,10 +45,12 @@ export const transformProfilesToCards = (
  * Formatea la ubicación para mostrar en las cards
  */
 export const formatLocation = (location: {
-  state: string;
-  city: string;
+  department: { value: string; label: string } | string;
+  city: { value: string; label: string } | string;
 }): string => {
-  return `${location.city}, ${location.department}`;
+  const departmentLabel = typeof location.department === 'object' ? location.department.label : location.department;
+  const cityLabel = typeof location.city === 'object' ? location.city.label : location.city;
+  return `${cityLabel}, ${departmentLabel}`;
 };
 
 /**

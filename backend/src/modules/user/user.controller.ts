@@ -82,11 +82,11 @@ export const getUsers = async (req: Request, res: Response) => {
 
   try {
     const getUsers = await userService.getUsers(filters, options);
-    console.log(getUsers);
+    // Debug: getUsers
 
     return res.status(200).json(getUsers);
   } catch (error) {
-    console.error(error);
+    // Error occurred
     res.status(500).json({ message: error });
   }
 };

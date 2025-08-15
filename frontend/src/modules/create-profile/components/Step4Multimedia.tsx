@@ -107,7 +107,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
           id: 'watermark-process',
         });
       } catch (error) {
-        console.error('Error aplicando marca de agua:', error);
+        // Error aplicando marca de agua
         toast.error(
           'Error aplicando marca de agua. Usando archivos originales.',
           { id: 'watermark-process' },

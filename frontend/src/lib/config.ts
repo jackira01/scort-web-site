@@ -21,25 +21,22 @@ export const PAGINATION = {
 
 // Categorías disponibles
 export const CATEGORIES = [
-  { value: 'escorts', label: 'Escorts' },
+  { value: 'escort', label: 'Escorts' },
   { value: 'masajes', label: 'Masajes' },
   { value: 'trans', label: 'Trans' },
   { value: 'maduras', label: 'Maduras' },
 ];
 
-import { colombiaLocations } from '@/utils/colombiaData';
+import { getAllDepartments, getCitiesByDepartment } from '@/utils/colombiaData';
 
 // Convertir datos de Colombia al formato esperado por la aplicación
 function createLocationsFromColombiaData() {
   const locations: Record<string, { label: string; cities: { value: string; label: string }[] }> = {};
   
-  Object.entries(colombiaLocations).forEach(([departmentKey, departmentData]) => {
-    locations[departmentKey] = {
-      label: departmentData.original,
-      cities: departmentData.cities.map(city => ({
-        value: city.normalized,
-        label: city.original
-      }))
+  getAllDepartments().forEach(department => {
+    locations[department.value] = {
+      label: department.label,
+      cities: getCitiesByDepartment(department.value)
     };
   });
   
@@ -51,9 +48,9 @@ export const LOCATIONS = createLocationsFromColombiaData();
 
 // Rutas populares para pre-generación
 export const POPULAR_ROUTES = [
-  { categoria: 'escorts', departamento: 'bogota', ciudad: 'chapinero' },
-  { categoria: 'escorts', departamento: 'medellin', ciudad: 'el-poblado' },
-  { categoria: 'escorts', departamento: 'cali', ciudad: 'cali-aguacatal' },
+  { categoria: 'escort', departamento: 'bogota', ciudad: 'chapinero' },
+  { categoria: 'escort', departamento: 'medellin', ciudad: 'el-poblado' },
+  { categoria: 'escort', departamento: 'cali', ciudad: 'cali-aguacatal' },
   { categoria: 'masajes', departamento: 'bogota', ciudad: 'usaquen' },
   { categoria: 'masajes', departamento: 'medellin', ciudad: 'laureles' },
   { categoria: 'trans', departamento: 'bogota', ciudad: 'chapinero' },

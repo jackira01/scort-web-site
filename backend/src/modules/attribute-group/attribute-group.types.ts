@@ -3,7 +3,7 @@ import type { Document } from 'mongoose';
 export interface CreateAttributeGroupInput {
     name: string;
     key: string;
-    variants: { value: string }[];
+    variants: { label: string; value: string }[];
 }
 
 export interface UpdateVariantInput {
@@ -14,7 +14,8 @@ export interface UpdateVariantInput {
 }
 
 export interface Variant {
-    value: string;
+    label: string;  // Para mostrar al usuario
+    value: string;  // Para lógica de negocio (normalizado, lowercase)
     active?: boolean;
 }
 

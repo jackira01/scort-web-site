@@ -6,7 +6,7 @@ import ProfileCardSkeleton from './ProfileCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ProfilesResponse, FilterQuery } from '@/types/profile.types';
-import { getFilteredProfiles } from '@/services/filters.service';
+import { getProfilesForCards } from '@/services/filters.service';
 
 interface SearchProfilesSSGProps {
   viewMode: 'grid' | 'list';
@@ -31,10 +31,11 @@ export default function SearchProfilesSSG({
     setError(null);
     
     try {
-      const newData = await getFilteredProfiles(newFilters);
+      // Usar getProfilesForCards que ya está optimizado para excluir features
+      const newData = await getProfilesForCards(newFilters);
       setProfilesData(newData);
     } catch (err) {
-      console.error('Error fetching filtered profiles:', err);
+      // Error fetching filtered profiles
       setError('Error al cargar los perfiles. Por favor, intenta de nuevo.');
     } finally {
       setIsLoading(false);

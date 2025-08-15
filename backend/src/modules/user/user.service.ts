@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import UserModel from './User.model';
+import ProfileVerification from '../profile-verification/profile-verification.model';
+import { checkLastLoginVerification } from '../profile-verification/verification-progress.utils';
 
 export const createUser = (data: any) => UserModel.create(data);
 export const findUserByEmail = async (email: string) => {
@@ -65,6 +67,23 @@ export const updateUserLastLogin = async (userId: string) => {
       },
       { new: true }
     );
+    
+    // Actualizar también las verificaciones de perfil asociadas
+    if (user && user.profiles.length > 0) {
+      const isLastLoginVerified = checkLastLoginVerification(user.lastLogin.date);
+      
+      // Actualizar todas las verificaciones de perfiles del usuario
+      await ProfileVerification.updateMany(
+        { profile: { $in: user.profiles } },
+        {
+          $set: {
+            'steps.lastLogin.isVerified': isLastLoginVerified,
+            'steps.lastLogin.date': user.lastLogin.date
+          }
+        }
+      );
+    }
+    
     return user;
   } catch (error) {
     throw new Error(`Error al actualizar lastLogin: ${error}`);

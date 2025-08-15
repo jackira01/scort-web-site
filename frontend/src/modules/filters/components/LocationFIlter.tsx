@@ -5,7 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { LOCATIONS } from '@/lib/config';
+import { getAllDepartments, getCitiesByDepartment } from '@/utils/colombiaData';
 
 interface LocationFilterProps {
   selectedDepartment?: string;
@@ -32,7 +32,7 @@ const LocationFilter = ({
   };
 
   const availableCities = selectedDepartment
-    ? LOCATIONS[selectedDepartment as keyof typeof LOCATIONS]?.cities || []
+    ? getCitiesByDepartment(selectedDepartment)
     : [];
 
   return (
@@ -49,9 +49,9 @@ const LocationFilter = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Todos los departamentos</SelectItem>
-          {Object.entries(LOCATIONS).map(([key, location]) => (
-            <SelectItem key={key} value={key}>
-              {location.label}
+          {getAllDepartments().map((department) => (
+            <SelectItem key={department.value} value={department.value}>
+              {department.label}
             </SelectItem>
           ))}
         </SelectContent>

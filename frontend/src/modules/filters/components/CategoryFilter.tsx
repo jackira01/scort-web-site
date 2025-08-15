@@ -12,6 +12,14 @@ interface CategoryFilterProps {
 const CategoryFilter = ({ selectedCategory, onCategoryChange }: CategoryFilterProps) => {
   const { data: categoryGroup, isLoading, error } = useAttributeGroupByKey('category');
 
+  // Debug logging
+  console.log('🔍 [CategoryFilter] Estado del hook:', { 
+    isLoading, 
+    error: error?.message || error, 
+    categoryGroup,
+    hasVariants: categoryGroup?.variants?.length || 0
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -52,15 +60,16 @@ const CategoryFilter = ({ selectedCategory, onCategoryChange }: CategoryFilterPr
                 type="radio"
                 id={`category-${variant.value}`}
                 name="category"
-                className="rounded"
+                value={variant.value}
                 checked={isSelected}
                 onChange={() => onCategoryChange?.(variant.value)}
+                className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
               />
-              <label 
-                htmlFor={`category-${variant.value}`} 
-                className="text-sm text-muted-foreground cursor-pointer flex-1"
+              <label
+                htmlFor={`category-${variant.value}`}
+                className="text-sm font-medium text-foreground cursor-pointer flex-1"
               >
-                {variant.value}
+                {variant.label || variant.value}
               </label>
               {/* TODO: Implementar conteo de perfiles por categoría */}
               <Badge variant="secondary" className="ml-auto">

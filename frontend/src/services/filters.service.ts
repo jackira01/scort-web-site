@@ -2,83 +2,7 @@ import axios from 'axios';
 import type { FilterQuery, ProfilesResponse } from '@/types/profile.types';
 import { API_URL } from '@/lib/config';
 
-/**
- * Obtiene perfiles filtrados usando GET (para filtros simples)
- */
-export const getFilteredProfiles = async (
-  params: FilterQuery,
-): Promise<ProfilesResponse> => {
-  console.log('📡 [DEBUG] Iniciando petición GET con parámetros:', params);
-  
-  const queryParams = new URLSearchParams();
-
-  // Agregar parámetros básicos
-  if (params.category) queryParams.append('category', params.category);
-  if (params.isActive !== undefined)
-    queryParams.append('isActive', params.isActive.toString());
-  if (params.isVerified !== undefined)
-    queryParams.append('isVerified', params.isVerified.toString());
-  if (params.page) queryParams.append('page', params.page.toString());
-  if (params.limit) queryParams.append('limit', params.limit.toString());
-  if (params.sortBy) queryParams.append('sortBy', params.sortBy);
-  if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
-
-  // Agregar campos específicos
-  if (params.fields && params.fields.length > 0) {
-    queryParams.append('fields', params.fields.join(','));
-  }
-
-  // Agregar ubicación
-  if (params.location?.department) {
-    queryParams.append('location[department]', params.location.department);
-  }
-  if (params.location?.city) {
-    queryParams.append('location[city]', params.location.city);
-  }
-
-  // Agregar rango de precios
-  if (params.priceRange?.min) {
-    queryParams.append('minPrice', params.priceRange.min.toString());
-  }
-  if (params.priceRange?.max) {
-    queryParams.append('maxPrice', params.priceRange.max.toString());
-  }
-
-  const finalUrl = `${API_URL}/api/filters/profiles?${queryParams.toString()}`;
-  console.log('📡 [DEBUG] URL de la petición GET:', finalUrl);
-  console.log('📡 [DEBUG] Query params construidos:', queryParams.toString());
-
-  const response = await axios.get(finalUrl);
-  
-  console.log('📡 [DEBUG] Respuesta GET recibida:', {
-    status: response.status,
-    statusText: response.statusText,
-    data: response.data
-  });
-  
-  // El backend devuelve { success: true, data: FilterResponse }
-  // Necesitamos transformar la estructura para que coincida con ProfilesResponse
-  if (response.data.success && response.data.data) {
-    const backendData = response.data.data;
-    const transformedData = {
-      profiles: backendData.profiles,
-      pagination: {
-        currentPage: backendData.currentPage,
-        totalPages: backendData.totalPages,
-        totalProfiles: backendData.totalCount, // Transformar totalCount a totalProfiles
-        hasNextPage: backendData.hasNextPage,
-        hasPrevPage: backendData.hasPrevPage,
-      },
-    };
-    
-    console.log('📡 [DEBUG] Datos transformados GET:', transformedData);
-    
-    return transformedData;
-  } else {
-    console.error('📡 [DEBUG] Error en respuesta GET:', response.data);
-    throw new Error(response.data.message || 'Error en la respuesta del servidor');
-  }
-};
+// Función GET eliminada - solo se usa POST para filtros de perfiles
 
 /**
  * Obtiene perfiles filtrados usando POST (para filtros complejos)
@@ -180,28 +104,23 @@ export const getFilterOptions = async () => {
 };
 
 /**
- * Obtiene el conteo total de perfiles con filtros aplicados
+ * Obtiene el conteo total de perfiles con filtros aplicados usando POST
  */
 export const getProfilesCount = async (
-  params: FilterQuery,
+  filters: FilterQuery,
 ): Promise<{ count: number }> => {
-  const queryParams = new URLSearchParams();
+  const response = await fetch(`${API_URL}/api/filters/profiles/count`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(filters),
+  });
 
-  if (params.category) queryParams.append('category', params.category);
-  if (params.isActive !== undefined)
-    queryParams.append('isActive', params.isActive.toString());
-  if (params.isVerified !== undefined)
-    queryParams.append('isVerified', params.isVerified.toString());
-
-  if (params.location?.department) {
-    queryParams.append('location[department]', params.location.department);
-  }
-  if (params.location?.city) {
-    queryParams.append('location[city]', params.location.city);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
 
-  const response = await axios.get(
-    `${API_URL}/api/filters/profiles/count?${queryParams.toString()}`,
-  );
-  return response.data;
+  const responseData = await response.json();
+  return responseData.success ? responseData.data : responseData;
 };

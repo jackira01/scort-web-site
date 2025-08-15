@@ -9,7 +9,7 @@ import {
   UpdateVerificationStepsDTO,
   ProfileVerificationFiltersDTO
 } from './profile-verification.types';
-import { calculateVerificationProgress } from './verification-progress.utils';
+import { calculateVerificationProgress, checkLastLoginVerification } from './verification-progress.utils';
 
 // Función auxiliar para recalcular el progreso de verificación
 const recalculateVerificationProgress = async (verification: IProfileVerification) => {
@@ -82,6 +82,20 @@ export const getProfileVerificationById = async (verificationId: string | Types.
 // Crear nueva verificación
 export const createProfileVerification = async (verificationData: CreateProfileVerificationDTO) => {
   try {
+    // Obtener datos del usuario para inicializar correctamente lastLogin
+    let userLastLoginDate = null;
+    let lastLoginVerified = true; // Por defecto true para perfiles nuevos
+    
+    if (verificationData.profile) {
+      // Buscar el perfil y su usuario asociado
+      const ProfileModel = require('../profile/profile.model').default;
+      const profile = await ProfileModel.findById(verificationData.profile).populate('user');
+      if (profile?.user?.lastLogin?.date) {
+        userLastLoginDate = profile.user.lastLogin.date;
+        lastLoginVerified = checkLastLoginVerification(userLastLoginDate);
+      }
+    }
+    
     // Inicializar steps con valores por defecto
     const defaultSteps = {
       documentPhotos: {
@@ -114,8 +128,8 @@ export const createProfileVerification = async (verificationData: CreateProfileV
       },
       phoneChangeDetected: false,
       lastLogin: {
-        isVerified: false,
-        date: null
+        isVerified: lastLoginVerified,
+        date: userLastLoginDate
       }
     };
 

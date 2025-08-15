@@ -37,15 +37,20 @@ export interface FilterResponse {
   hasPrevPage: boolean;
 }
 
+export interface FilterOptionItem {
+  label: string;
+  value: string;
+}
+
 export interface FilterOptions {
-  categories: string[];
+  categories: FilterOptionItem[];
   locations: {
     countries: string[];
     departments: string[];
     cities: string[];
   };
   features: {
-    [groupKey: string]: string[];
+    [groupKey: string]: FilterOptionItem[];
   };
   priceRange: {
     min: number;

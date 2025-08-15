@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
-import { CATEGORIES, LOCATIONS } from '@/lib/config';
+import { useFilterOptions } from '@/hooks/use-filter-options';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -12,12 +12,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { createSlug } from '@/utils/slug';
 
 const FilterBar = () => {
   const router = useRouter();
   const [categoria, setCategoria] = useState('');
   const [departamento, setDepartamento] = useState('');
   const [ciudad, setCiudad] = useState('');
+  
+  // Obtener opciones de filtros de la API
+  const { data: filterOptions, loading: optionsLoading, error: optionsError } = useFilterOptions();
+  
+  console.log('🔄 [FilterBar] Estado de opciones de filtros:', {
+    loading: optionsLoading,
+    data: filterOptions,
+    error: optionsError
+  });
 
   const handleSearch = () => {
     // Validar que al menos la categoría esté seleccionada
@@ -27,9 +38,18 @@ const FilterBar = () => {
     }
 
     // Construir la ruta dinámica basada en los parámetros seleccionados
-    const segments = [categoria];
-    if (departamento) segments.push(departamento);
-    if (ciudad && departamento) segments.push(ciudad);
+    // Convertir los nombres de la API a slugs amigables para URLs
+    const segments = [createSlug(categoria)];
+    if (departamento) segments.push(createSlug(typeof departamento === 'string' ? departamento : departamento.value || departamento.label));
+    if (ciudad && departamento) segments.push(createSlug(typeof ciudad === 'string' ? ciudad : ciudad.value || ciudad.label));
+    
+    console.log('🔗 [FilterBar] Construyendo ruta dinámica:', {
+      categoria,
+      departamento,
+      ciudad,
+      segments,
+      finalUrl: `/${segments.join('/')}`
+    });
     
     // Navegar a la nueva ruta dinámica
     router.push(`/${segments.join('/')}`);
@@ -44,18 +64,28 @@ const FilterBar = () => {
             className="animate-in slide-in-from-bottom-2"
             style={{ animationDelay: '0ms' }}
           >
-            <Select value={categoria} onValueChange={setCategoria}>
-              <SelectTrigger className="w-full hover:border-purple-500 transition-all duration-200 focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/10">
-                <SelectValue placeholder="Seleccionar categoría" />
-              </SelectTrigger>
-              <SelectContent>
-                 {CATEGORIES.map((category) => (
-                   <SelectItem key={category.value} value={category.value}>
-                     {category.label}
-                   </SelectItem>
-                 ))}
-               </SelectContent>
-            </Select>
+            {optionsLoading ? (
+              <Skeleton className="h-10 w-full" />
+            ) : optionsError || !filterOptions?.categories ? (
+              <Select disabled>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Error al cargar categorías" />
+                </SelectTrigger>
+              </Select>
+            ) : (
+              <Select value={categoria} onValueChange={setCategoria}>
+                <SelectTrigger className="w-full hover:border-purple-500 transition-all duration-200 focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/10">
+                  <SelectValue placeholder="Seleccionar categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filterOptions.categories.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Departamento */}
@@ -68,9 +98,9 @@ const FilterBar = () => {
                 <SelectValue placeholder="Seleccionar departamento" />
               </SelectTrigger>
               <SelectContent>
-                 {Object.entries(LOCATIONS).map(([key, location]) => (
-                   <SelectItem key={key} value={key}>
-                     {location.label}
+                 {filterOptions?.locations?.departments?.map((department) => (
+                   <SelectItem key={typeof department === 'string' ? department : department.value} value={typeof department === 'string' ? department : department.value}>
+                     {typeof department === 'string' ? department : department.label}
                    </SelectItem>
                  ))}
                </SelectContent>
@@ -87,9 +117,9 @@ const FilterBar = () => {
                 <SelectValue placeholder="Seleccionar ciudad" />
               </SelectTrigger>
               <SelectContent>
-                 {departamento && LOCATIONS[departamento as keyof typeof LOCATIONS]?.cities.map((city) => (
-                   <SelectItem key={city.value} value={city.value}>
-                     {city.label}
+                 {filterOptions?.locations?.cities?.map((city) => (
+                   <SelectItem key={typeof city === 'string' ? city : city.value} value={typeof city === 'string' ? city : city.value}>
+                     {typeof city === 'string' ? city : city.label}
                    </SelectItem>
                  ))}
                </SelectContent>

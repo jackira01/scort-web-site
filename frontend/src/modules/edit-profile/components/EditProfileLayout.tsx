@@ -21,6 +21,7 @@ import {
 import { FormProvider } from '../../create-profile/context/FormContext';
 import { steps } from '../../create-profile/data';
 import type { FormData } from '../../create-profile/schemas';
+import { normalizeSimpleText } from '@/utils/normalize-text';
 import {
   step1Schema,
   step2Schema,
@@ -113,7 +114,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       // Validar que los valores extraídos no estén vacíos
       const validateFeatureValue = (value: string, fieldName: string) => {
         if (!value || value.trim() === '') {
-          console.warn(`Campo ${fieldName} está vacío o no válido:`, value);
+          // Campo está vacío o no válido
           return '';
         }
         return value;
@@ -144,9 +145,9 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         gender: getFeatureValue('gender'),
         category: profileDetails.category || '',
         location: {
-          country: profileDetails.location?.country || 'Colombia',
-          state: profileDetails.location?.state || '',
-          city: profileDetails.location?.city || '',
+          country: profileDetails.location?.country?.label || profileDetails.location?.country || 'Colombia',
+          department: profileDetails.location?.department?.label || profileDetails.location?.department || '',
+          city: profileDetails.location?.city?.label || profileDetails.location?.city || '',
         },
         description: profileDetails.description || '',
         selectedServices: getSelectedServices(),
@@ -299,7 +300,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
           return { success: false, error: { issues: [] } };
       }
     } catch (error) {
-      console.error('Validation error:', error);
+      // Validation error
       return { success: false, error: { issues: [] } };
     }
   };
@@ -380,9 +381,18 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       name: formData.profileName,
       description: formData.description,
       location: {
-        country: formData.location.country,
-        department: formData.location.department,
-        city: formData.location.city,
+        country: {
+          value: 'colombia',
+          label: 'Colombia'
+        },
+        department: {
+          value: formData.location.department ? normalizeSimpleText(formData.location.department) : '',
+          label: formData.location.department || ''
+        },
+        city: {
+          value: formData.location.city ? normalizeSimpleText(formData.location.city) : '',
+          label: formData.location.city || ''
+        }
       },
       features,
       age: formData.age,
@@ -509,11 +519,11 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         router.push('/cuenta');
       } catch (profileError) {
         toast.dismiss(loadingToast);
-        console.error('Error updating profile:', profileError);
+        // Error updating profile
         toast.error('Error al actualizar perfil. Contacta con servicio al cliente.');
       }
     } catch (error) {
-      console.error('Error uploading files:', error);
+      // Error uploading files
       toast.error('Error al subir archivos. Inténtalo de nuevo.');
     } finally {
       setUploading(false);

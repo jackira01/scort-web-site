@@ -8,9 +8,18 @@ const profileSchema = new Schema<IProfile>(
     description: String,
     isActive: { type: Boolean, default: true },
     location: {
-      country: String,
-      department: String,
-      city: String,
+      country: {
+        value: { type: String, required: true }, // Valor normalizado
+        label: { type: String, required: true }, // Valor para mostrar
+      },
+      department: {
+        value: { type: String, required: true }, // Valor normalizado
+        label: { type: String, required: true }, // Valor para mostrar
+      },
+      city: {
+        value: { type: String, required: true }, // Valor normalizado
+        label: { type: String, required: true }, // Valor para mostrar
+      },
     },
     features: [
       {

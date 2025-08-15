@@ -10,9 +10,15 @@ export interface ProfileMedia {
   audios?: ProfileMediaItem[];
 }
 
+export interface LocationValue {
+  value: string; // Valor normalizado (sin tildes, minúsculas)
+  label: string; // Valor para mostrar (con tildes, formato original)
+}
+
 export interface ProfileLocation {
-  state: string;
-  city: string;
+  country: LocationValue;
+  department: LocationValue;
+  city: LocationValue;
 }
 
 export interface ProfileVerification {

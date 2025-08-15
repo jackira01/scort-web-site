@@ -46,7 +46,7 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
     id: profile._id,
     name: profile.name,
     age: parseInt(profile.age),
-    location: `${profile.location?.country}, ${profile.location?.state}, ${profile.location?.city}`,
+    location: `${profile.location?.country?.label || profile.location?.country}, ${profile.location?.department?.label || profile.location?.department}, ${profile.location?.city?.label || profile.location?.city}`,
     category: 'ESCORT',
     verified: profile.verification?.verificationStatus === 'verified',
     online: true,
@@ -62,7 +62,7 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
           Array.isArray(feature.value) ? feature.value.join(', ') : feature.value
         ])
       ),
-      ubicacion: `${profile.location?.state}, ${profile.location?.city}`,
+      ubicacion: `${profile.location?.department?.label || profile.location?.department}, ${profile.location?.city?.label || profile.location?.city}`,
       altura: profile.height ? `${profile.height} cm` : '',
     },
     rates: profile.rates || [],

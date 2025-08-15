@@ -64,7 +64,7 @@ const SearchProfiles = ({
     ? transformProfilesToCards(data.profiles)
     : [];
 
-  // Debug logs
+
   // SearchProfiles data processing
 
   return (

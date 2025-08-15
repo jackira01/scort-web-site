@@ -52,15 +52,16 @@ const GenderFilter = ({ selectedGender, onGenderChange }: GenderFilterProps) => 
                 type="radio"
                 id={`gender-${variant.value}`}
                 name="gender"
-                className="rounded"
+                value={variant.value}
                 checked={isSelected}
                 onChange={() => onGenderChange?.(variant.value)}
+                className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
               />
-              <label 
-                htmlFor={`gender-${variant.value}`} 
-                className="text-sm text-muted-foreground cursor-pointer flex-1"
+              <label
+                htmlFor={`gender-${variant.value}`}
+                className="text-sm font-medium text-foreground cursor-pointer flex-1"
               >
-                {variant.value}
+                {variant.label || variant.value}
               </label>
               {/* TODO: Implementar conteo de perfiles por género */}
               <Badge variant="secondary" className="ml-auto">

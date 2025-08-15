@@ -11,9 +11,18 @@ export interface IProfile extends Document {
     description: string;
     isActive: boolean;
     location: {
-        country: string;
-        department: string;
-        city: string;
+        country: {
+            value: string; // Valor normalizado (sin tildes, minúsculas)
+            label: string; // Valor para mostrar (con tildes, formato original)
+        };
+        department: {
+            value: string; // Valor normalizado (sin tildes, minúsculas)
+            label: string; // Valor para mostrar (con tildes, formato original)
+        };
+        city: {
+            value: string; // Valor normalizado (sin tildes, minúsculas)
+            label: string; // Valor para mostrar (con tildes, formato original)
+        };
     };
     features: {
         group_id: Types.ObjectId;
@@ -58,9 +67,18 @@ export interface CreateProfileDTO {
     name: string;
     description?: string;
     location: {
-        country: string;
-        department: string;
-        city: string;
+        country: {
+            value: string;
+            label: string;
+        };
+        department: {
+            value: string;
+            label: string;
+        };
+        city: {
+            value: string;
+            label: string;
+        };
     };
     features: {
         group_id: string;
@@ -93,9 +111,18 @@ export interface IProfileInput {
     name: string;
     description?: string;
     location: {
-        country: string;
-        department: string;
-        city: string;
+        country: {
+            value: string;
+            label: string;
+        };
+        department: {
+            value: string;
+            label: string;
+        };
+        city: {
+            value: string;
+            label: string;
+        };
     };
     features: {
         group_id: Types.ObjectId | string;

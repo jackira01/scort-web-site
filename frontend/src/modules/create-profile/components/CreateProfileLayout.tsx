@@ -20,6 +20,7 @@ import {
 import { FormProvider } from '../context/FormContext';
 import { steps } from '../data';
 import type { FormData } from '../schemas';
+import { normalizeSimpleText } from '@/utils/normalize-text';
 import {
   step1Schema,
   step2Schema,
@@ -178,7 +179,7 @@ export function CreateProfileLayout() {
           return { success: true };
       }
     } catch (error) {
-      console.error('Error en validación:', error);
+      // Error en validación
       return { success: false, error: { issues: [] } };
     }
   };
@@ -216,7 +217,7 @@ export function CreateProfileLayout() {
         setCurrentStep(currentStep + 1);
       }
     } catch (error) {
-      console.error('Error in handleNext:', error);
+      // Error in handleNext
       toast.error('Error inesperado en la validación');
     }
   };
@@ -317,9 +318,18 @@ export function CreateProfileLayout() {
       name: formData.profileName,
       description: formData.description,
       location: {
-        country: formData.location.country,
-        department: formData.location.department,
-        city: formData.location.city,
+        country: {
+          value: 'colombia',
+          label: 'Colombia'
+        },
+        department: {
+          value: formData.location.department ? normalizeSimpleText(formData.location.department) : '',
+          label: formData.location.department || ''
+        },
+        city: {
+          value: formData.location.city ? normalizeSimpleText(formData.location.city) : '',
+          label: formData.location.city || ''
+        }
       },
       features,
       age: formData.age,
@@ -388,12 +398,7 @@ export function CreateProfileLayout() {
 
       const backendData = transformDataToBackendFormat(dataWithUrls);
       
-      // Debug logging
-      console.log('=== FRONTEND DEBUG ===');
-      console.log('Backend data:', JSON.stringify(backendData, null, 2));
-      console.log('Features array:', JSON.stringify(backendData.features, null, 2));
-      console.log('Category in formData:', dataWithUrls.category);
-      console.log('Category group:', groupMap.category);
+      // Frontend debug removed
 
       // Crear el perfil usando el servicio
       const loadingToast = toast.loading('Creando perfil...');
@@ -414,11 +419,11 @@ export function CreateProfileLayout() {
         router.push('/cuenta');
       } catch (profileError) {
         toast.dismiss(loadingToast);
-        console.error('Error creating profile:', profileError);
+        // Error creating profile
         toast.error('Error al crear perfil. Contacta con servicio al cliente.');
       }
     } catch (error) {
-      console.error('Error uploading files:', error);
+      // Error uploading files
       toast.error('Error al subir archivos. Inténtalo de nuevo.');
     } finally {
       setUploading(false);

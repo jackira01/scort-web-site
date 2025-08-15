@@ -14,7 +14,7 @@ export const compressImage = async (file: File): Promise<File> => {
   try {
     return await imageCompression(file, options);
   } catch (error) {
-    console.error('Error al comprimir imagen:', error);
+    // Error al comprimir imagen
     return file; // si falla, sigue con el original
   }
 };
@@ -36,7 +36,7 @@ export const uploadMultipleImages = async (
       );
       uploadedUrls.push(response.data.secure_url);
     } catch (error) {
-      console.error(`Error al subir ${file.name}:`, error);
+      // Error al subir archivo
       uploadedUrls.push(null); // O maneja según tu lógica
     }
   }
@@ -61,7 +61,7 @@ export const uploadMultipleVideos = async (
       );
       uploadedUrls.push(response.data.secure_url);
     } catch (error) {
-      console.error(`Error al subir video ${file.name}:`, error);
+      // Error al subir video
       uploadedUrls.push(null);
     }
   }
@@ -86,7 +86,7 @@ export const uploadMultipleAudios = async (
       );
       uploadedUrls.push(response.data.secure_url);
     } catch (error) {
-      console.error(`Error al subir audio ${file.name}:`, error);
+      // Error al subir audio
       uploadedUrls.push(null);
     }
   }

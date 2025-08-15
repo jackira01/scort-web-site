@@ -16,7 +16,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         try {
           await updateUserLastLogin(userData._id);
         } catch (error) {
-          console.error('Error updating lastLogin:', error);
+          // Error updating lastLogin
         }
       }
       return token;

@@ -59,15 +59,22 @@ const SexFilter = ({ selectedSex = [], onSexChange }: SexFilterProps) => {
               <input
                 type="checkbox"
                 id={`sex-${variant.value}`}
-                className="rounded"
+                value={variant.value}
                 checked={isSelected}
-                onChange={() => handleSexToggle(variant.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const newSelection = isSelected
+                    ? selectedSex.filter(s => s !== value)
+                    : [...selectedSex, value];
+                  onSexChange?.(newSelection);
+                }}
+                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
               />
-              <label 
-                htmlFor={`sex-${variant.value}`} 
-                className="text-sm text-muted-foreground cursor-pointer flex-1"
+              <label
+                htmlFor={`sex-${variant.value}`}
+                className="text-sm font-medium text-foreground cursor-pointer flex-1"
               >
-                {variant.value}
+                {variant.label || variant.value}
               </label>
               {/* TODO: Implementar conteo de perfiles por orientación sexual */}
               <Badge variant="secondary" className="ml-auto">

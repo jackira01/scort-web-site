@@ -72,6 +72,7 @@ export interface UpgradeOption {
 export interface Variant {
   _id: string;
   value: string;
+  label: string;
   active: boolean;
 }
 

@@ -20,9 +20,9 @@ interface ProfileResponse {
   name: string;
   profileImage: string;
   location: {
-    country: string;
-    state: string;
-    city: string;
+    country: { value: string; label: string } | string;
+    department: { value: string; label: string } | string;
+    city: { value: string; label: string } | string;
   },
   age: string;
   verification: {
@@ -132,7 +132,7 @@ const AccountProfiles = ({
                       </span>
                       <span className="flex items-center">
                         <MapPin className="h-3 w-3 mr-1" />
-                        {profile.location?.department && profile.location?.city && `${profile.location.department}, ${profile.location.city}`}
+                        {profile.location?.department && profile.location?.city && `${typeof profile.location.department === 'object' ? profile.location.department.label : profile.location.department}, ${typeof profile.location.city === 'object' ? profile.location.city.label : profile.location.city}`}
                       </span>
                     </div>
                   </div>

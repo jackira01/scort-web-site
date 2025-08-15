@@ -77,7 +77,7 @@ export default function AccountVerificationModal({
                     onClose();
                 })
                 .catch((error) => {
-                    console.error('Error al subir las imagenes:', error);
+                    // Error al subir las imagenes
                     setLoading(false);
                     toast.dismiss();
                     toast.error('Error al subir las imagenes');

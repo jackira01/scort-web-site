@@ -28,7 +28,7 @@ export const DashUserPanel = () => {
   }
 
   if (error) {
-    console.error(error);
+    // Error occurred
     return <div>Ups algo salio mal</div>;
   }
 

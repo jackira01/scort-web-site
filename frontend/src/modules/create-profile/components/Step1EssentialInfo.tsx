@@ -1,7 +1,5 @@
 'use client';
 
-import { CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -66,26 +64,26 @@ export function Step1EssentialInfo({
               name="gender"
               control={control}
               render={({ field }) => (
-            <Select
-             onValueChange={field.onChange}
-             value={field.value}
-             >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona tu género" />
-              </SelectTrigger>
-              <SelectContent>
-                {genderGroup.variants
-                  .filter((v) => v.active)
-                  .map((variant) => (
-                    <SelectItem key={variant._id} value={variant.value}>
-                      {variant.value}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona tu género" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {genderGroup.variants
+                      .filter((v) => v.active)
+                      .map((variant) => (
+                        <SelectItem key={variant._id} value={variant.value}>
+                          {variant.label || variant.value}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
 
-             </Select>
+                </Select>
               )}
-              />
+            />
             {errors.gender && (
               <p className="text-red-500 text-sm mt-1">{errors.gender.message}</p>
             )}
@@ -160,64 +158,64 @@ export function Step1EssentialInfo({
                 Departamento
               </Label>
               <Controller
-              name="location.department"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    setValue('location.city', ''); // Reset city when department changes
-                  }}
-                  value={field.value}
-                >
-                  <SelectTrigger className={errors.location?.department ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Selecciona departamento" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(colombiaLocations).map((department) => (
-                      <SelectItem key={department.original} value={department.original}>
-                        {department.original}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                name="location.department"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setValue('location.city', ''); // Reset city when department changes
+                    }}
+                    value={field.value}
+                  >
+                    <SelectTrigger className={errors.location?.department ? 'border-red-500' : ''}>
+                      <SelectValue placeholder="Selecciona departamento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.values(colombiaLocations).map((department) => (
+                        <SelectItem key={department.original} value={department.original}>
+                          {department.original}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.location?.department && (
+                <p className="text-red-500 text-sm mt-1">{errors.location.department.message}</p>
               )}
-            />
-            {errors.location?.department && (
-              <p className="text-red-500 text-sm mt-1">{errors.location.department.message}</p>
-            )}
             </div>
 
             <div>
               <Label className="text-sm text-muted-foreground">Ciudad</Label>
               <Controller
-              name="location.city"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                  disabled={!locationDepartment}
-                >
-                  <SelectTrigger className={errors.location?.city ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Selecciona ciudad" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locationDepartment &&
-                      Object.values(colombiaLocations)
-                        .find(dept => dept.original === locationDepartment)
-                        ?.cities.map((city) => (
-                          <SelectItem key={city.original} value={city.original}>
-                            {city.original}
-                          </SelectItem>
-                        ))}
-                  </SelectContent>
-                </Select>
+                name="location.city"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={!locationDepartment}
+                  >
+                    <SelectTrigger className={errors.location?.city ? 'border-red-500' : ''}>
+                      <SelectValue placeholder="Selecciona ciudad" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locationDepartment &&
+                        Object.values(colombiaLocations)
+                          .find(dept => dept.original === locationDepartment)
+                          ?.cities.map((city) => (
+                            <SelectItem key={city.original} value={city.original}>
+                              {city.original}
+                            </SelectItem>
+                          ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.location?.city && (
+                <p className="text-red-500 text-sm mt-1">{errors.location.city.message}</p>
               )}
-            />
-            {errors.location?.city && (
-              <p className="text-red-500 text-sm mt-1">{errors.location.city.message}</p>
-            )}
             </div>
           </div>
         </div>

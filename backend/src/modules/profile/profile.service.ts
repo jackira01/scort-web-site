@@ -21,9 +21,7 @@ export const checkProfileNameExists = async (name: string) => {
 };
 
 export const createProfile = async (data: CreateProfileDTO) => {
-  console.log('=== PROFILE CREATION DEBUG ===');
-  console.log('Received data:', JSON.stringify(data, null, 2));
-  console.log('Features array:', JSON.stringify(data.features, null, 2));
+  // Profile creation debug removed
   
   await validateProfileFeatures(data.features);
 
@@ -34,7 +32,7 @@ export const createProfile = async (data: CreateProfileDTO) => {
     } */
 
   const profile = await ProfileModel.create(data);
-  console.log('Profile created successfully:', profile._id);
+  // Profile created successfully
 
   // Agregar el perfil al array de profiles del usuario
   await UserModel.findByIdAndUpdate(
@@ -59,7 +57,7 @@ export const createProfile = async (data: CreateProfileDTO) => {
       );
     }
   } catch (error) {
-    console.warn('Error al crear verificación automática:', error);
+    // Error al crear verificación automática
     // No fallar la creación del perfil si falla la verificación
   }
 
@@ -110,7 +108,7 @@ export const getProfileById = async (id: string) => {
   profile.features.forEach((feature: any) => {
     // Verificar que el populate funcionó correctamente
     if (!feature.group_id || typeof feature.group_id === 'string') {
-      console.warn('Feature group_id not populated properly:', feature);
+      // Feature group_id not populated properly
       otherFeatures.push({
         group_id: feature.group_id,
         value: feature.value,
@@ -158,9 +156,7 @@ export const createMissingVerifications = async () => {
       verification: { $in: [null, undefined] },
     });
 
-    console.log(
-      `Encontrados ${profilesWithoutVerification.length} perfiles sin verificación`,
-    );
+    // Encontrados perfiles sin verificación
 
     const results: any[] = [];
     for (const profile of profilesWithoutVerification) {
@@ -188,12 +184,9 @@ export const createMissingVerifications = async () => {
           status: 'created',
         });
 
-        console.log(`Verificación creada para perfil: ${profile.name}`);
+        // Verificación creada para perfil
       } catch (error: any) {
-        console.error(
-          `Error creando verificación para perfil ${profile.name}:`,
-          error,
-        );
+        // Error creando verificación para perfil
         results.push({
           profileId: profile._id,
           profileName: profile.name,

@@ -2,7 +2,12 @@ import mongoose, { Schema } from 'mongoose';
 import type { IAttributeGroup, Variant } from './attribute-group.types';
 
 const VariantSchema = new Schema<Variant>({
-    value: { type: String, required: true },
+    label: { type: String, required: true },  // Para mostrar al usuario
+    value: { 
+        type: String, 
+        required: true,
+        set: (val: string) => val.toLowerCase().trim()  // Auto-normalización
+    },
     active: { type: Boolean, default: true },
 });
 

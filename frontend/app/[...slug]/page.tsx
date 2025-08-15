@@ -1,34 +1,82 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import type { ProfilesResponse } from '@/types/profile.types';
-import { REVALIDATE_TIME, PAGINATION, CATEGORIES, LOCATIONS, API_URL } from '@/lib/config';
-import { isValidDepartment, isValidCity, getDepartmentByNormalized, getCityByNormalized } from '@/utils/colombiaData';
+import { PAGINATION, API_URL } from '@/lib/config';
+import { slugToText } from '@/utils/slug';
+import { getDepartmentByNormalized, isValidDepartment as isValidDepartmentLocal, isValidCity as isValidCityLocal } from '@/utils/colombiaData';
 import SearchPageClient from './SearchPageClient';
 
 // Permitir rutas dinámicas que no estén pre-generadas
 export const dynamicParams = true;
 
 interface SearchPageProps {
-  params: {
+  params: Promise<{
     slug: string[];
-  };
+  }>;
 }
 
-// Función para validar si una categoría es válida
-function isValidCategory(categoria: string): boolean {
-  return CATEGORIES.some(cat => cat.value === categoria);
+// Función para obtener opciones de filtros de la API
+async function getFilterOptions() {
+  try {
+    const res = await fetch(`${API_URL}/api/filters/options`, {
+      next: { revalidate: 300 } // Cache por 5 minutos
+    });
+    if (!res.ok) throw new Error('Failed to fetch filter options');
+    const data = await res.json();
+    return data.success ? data.data : null;
+  } catch (error) {
+    console.error('Error fetching filter options:', error);
+    return null;
+  }
 }
 
-// Las funciones isValidDepartment e isValidCity ahora se importan desde colombiaData
+// Función para validar si una categoría es válida usando la API
+async function isValidCategory(categoria: string): Promise<boolean> {
+  const options = await getFilterOptions();
+  if (!options) return false;
+  return options.categories.some((cat: any) => cat.value === categoria);
+}
+
+// Función para validar si un departamento es válido usando datos locales
+async function isValidDepartment(departamento: string): Promise<boolean> {
+  // Usar validación local primero (más confiable)
+  const isValidLocal = isValidDepartmentLocal(departamento);
+  console.log('🔍 [DEBUG] Validación local de departamento:', { departamento, isValidLocal });
+  
+  if (isValidLocal) {
+    return true;
+  }
+  
+  // Fallback a API si no está en datos locales
+  const options = await getFilterOptions();
+  if (!options) return false;
+  const isValidAPI = options.locations.departments.includes(departamento);
+  console.log('🔍 [DEBUG] Validación API de departamento:', { departamento, isValidAPI });
+  
+  return isValidAPI;
+}
+
+// Función para validar si una ciudad es válida usando datos locales
+async function isValidCity(ciudad: string): Promise<boolean> {
+  // Para validar ciudad necesitamos el departamento, lo obtenemos del contexto
+  // Por ahora usamos solo la API ya que necesitamos el contexto del departamento
+  const options = await getFilterOptions();
+  if (!options) return false;
+  const isValidAPI = options.locations.cities.includes(ciudad);
+  console.log('🔍 [DEBUG] Validación API de ciudad:', { ciudad, isValidAPI });
+  
+  return isValidAPI;
+}
 
 // Generar metadata dinámico para SEO
 export async function generateMetadata({
   params,
 }: SearchPageProps): Promise<Metadata> {
-  const [categoria, departamento, ciudad] = params.slug || [];
+  const { slug } = await params;
+  const [categoria, departamento, ciudad] = slug || [];
   
   // Validar parámetros
-  if (!categoria || !isValidCategory(categoria)) {
+  if (!categoria || !(await isValidCategory(categoria))) {
     return {
       title: 'Página no encontrada',
       description: 'La página que buscas no existe.',
@@ -41,12 +89,10 @@ export async function generateMetadata({
 
   if (ciudad && departamento) {
     // Ruta completa: /categoria/departamento/ciudad
-    const deptData = getDepartmentByNormalized(departamento);
-    const cityData = getCityByNormalized(departamento, ciudad);
-    const deptLabel = deptData?.original || departamento;
-    const cityLabel = cityData?.original || ciudad;
+    const deptLabel = slugToText(departamento);
+    const cityLabel = slugToText(ciudad);
     
-    pageTitle = `${categoria.charAt(0).toUpperCase() + categoria.slice(1)} en ${cityLabel}, ${deptLabel} - Perfiles Verificados`;
+    pageTitle = `${slugToText(categoria)} en ${cityLabel}, ${deptLabel} - Perfiles Verificados`;
     pageDescription = `Encuentra los mejores perfiles de ${categoria} en ${cityLabel}, ${deptLabel}. Perfiles verificados y actualizados.`;
     keywords = `${categoria}, ${cityLabel}, ${deptLabel}, perfiles, verificados`;
   } else if (departamento) {
@@ -82,21 +128,44 @@ export async function generateMetadata({
 }
 
 export default async function SearchPage({ params }: SearchPageProps) {
-  const [categoria, departamento, ciudad] = params.slug || [];
+  const { slug } = await params;
+  const [categoria, departamento, ciudad] = slug || [];
+
+  console.log('🔍 [DEBUG] Parámetros de ruta recibidos:', { categoria, departamento, ciudad, slug });
 
   // Validar parámetros obligatorios
-  if (!categoria || !isValidCategory(categoria)) {
+  if (!categoria) {
+    console.log('❌ [DEBUG] No se proporcionó categoría');
+    notFound();
+  }
+
+  // Verificar si la categoría es válida
+  const isValidCat = await isValidCategory(categoria);
+  console.log('🔍 [DEBUG] ¿Es categoría válida?', { categoria, isValid: isValidCat });
+  
+  if (!isValidCat) {
+    console.log('❌ [DEBUG] Categoría no válida:', categoria);
     notFound();
   }
 
   // Validar departamento si está presente
-  if (departamento && !isValidDepartment(departamento)) {
-    notFound();
+  if (departamento) {
+    const isValidDept = await isValidDepartment(departamento);
+    console.log('🔍 [DEBUG] ¿Es departamento válido?', { departamento, isValid: isValidDept });
+    if (!isValidDept) {
+      console.log('❌ [DEBUG] Departamento no válido:', departamento);
+      notFound();
+    }
   }
 
   // Validar ciudad si está presente
-  if (ciudad && departamento && !isValidCity(departamento, ciudad)) {
-    notFound();
+  if (ciudad) {
+    const isValidCit = await isValidCity(ciudad);
+    console.log('🔍 [DEBUG] ¿Es ciudad válida?', { ciudad, isValid: isValidCit });
+    if (!isValidCit) {
+      console.log('❌ [DEBUG] Ciudad no válida:', ciudad);
+      notFound();
+    }
   }
 
   // Obtener datos del servidor con ISR
@@ -105,7 +174,8 @@ export default async function SearchPage({ params }: SearchPageProps) {
   try {
     // Construir URL con parámetros de consulta
     const queryParams = new URLSearchParams();
-    queryParams.append('category', categoria);
+    // Convertir slug de categoría de vuelta a texto original para la API
+    queryParams.append('category', slugToText(categoria));
     queryParams.append('isActive', 'true');
     queryParams.append('page', '1');
     queryParams.append('limit', PAGINATION.DEFAULT_LIMIT.toString());
@@ -113,11 +183,12 @@ export default async function SearchPage({ params }: SearchPageProps) {
     queryParams.append('sortOrder', 'desc');
 
     // Agregar filtros de ubicación si están presentes
+    // Convertir slugs de vuelta a texto original para la API
     if (departamento) {
-      queryParams.append('location[department]', departamento);
+      queryParams.append('location[department]', slugToText(departamento));
     }
     if (ciudad) {
-      queryParams.append('location[city]', ciudad);
+      queryParams.append('location[city]', slugToText(ciudad));
     }
 
     // Fetch con revalidate para ISR
@@ -149,7 +220,7 @@ export default async function SearchPage({ params }: SearchPageProps) {
       throw new Error(responseData.message || 'Error en la respuesta del servidor');
     }
   } catch (error) {
-    console.error('Error fetching profiles for SSG:', error);
+    // Error fetching profiles for SSG
     
     // En caso de error, devolver datos vacíos
     profilesData = {
