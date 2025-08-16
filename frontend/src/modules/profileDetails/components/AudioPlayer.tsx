@@ -216,6 +216,7 @@ export default function AudioPlayer({ audios }: AudioPlayerProps) {
             <p className="text-xs font-medium text-muted-foreground">Lista de audios:</p>
             {audios.map((audio, index) => (
               <button
+                type="button"
                 key={index}
                 onClick={() => setCurrentAudioIndex(index)}
                 className={`w-full text-left px-2 py-1 rounded text-xs transition-colors duration-200 ${

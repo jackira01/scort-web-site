@@ -41,7 +41,7 @@ async function isValidCategory(categoria: string): Promise<boolean> {
 async function isValidDepartment(departamento: string): Promise<boolean> {
   // Usar validación local primero (más confiable)
   const isValidLocal = isValidDepartmentLocal(departamento);
-  console.log('🔍 [DEBUG] Validación local de departamento:', { departamento, isValidLocal });
+
   
   if (isValidLocal) {
     return true;
@@ -51,7 +51,7 @@ async function isValidDepartment(departamento: string): Promise<boolean> {
   const options = await getFilterOptions();
   if (!options) return false;
   const isValidAPI = options.locations.departments.includes(departamento);
-  console.log('🔍 [DEBUG] Validación API de departamento:', { departamento, isValidAPI });
+  
   
   return isValidAPI;
 }
@@ -63,7 +63,7 @@ async function isValidCity(ciudad: string): Promise<boolean> {
   const options = await getFilterOptions();
   if (!options) return false;
   const isValidAPI = options.locations.cities.includes(ciudad);
-  console.log('🔍 [DEBUG] Validación API de ciudad:', { ciudad, isValidAPI });
+  
   
   return isValidAPI;
 }
@@ -131,29 +131,29 @@ export default async function SearchPage({ params }: SearchPageProps) {
   const { slug } = await params;
   const [categoria, departamento, ciudad] = slug || [];
 
-  console.log('🔍 [DEBUG] Parámetros de ruta recibidos:', { categoria, departamento, ciudad, slug });
+
 
   // Validar parámetros obligatorios
   if (!categoria) {
-    console.log('❌ [DEBUG] No se proporcionó categoría');
+
     notFound();
   }
 
   // Verificar si la categoría es válida
   const isValidCat = await isValidCategory(categoria);
-  console.log('🔍 [DEBUG] ¿Es categoría válida?', { categoria, isValid: isValidCat });
+
   
   if (!isValidCat) {
-    console.log('❌ [DEBUG] Categoría no válida:', categoria);
+
     notFound();
   }
 
   // Validar departamento si está presente
   if (departamento) {
     const isValidDept = await isValidDepartment(departamento);
-    console.log('🔍 [DEBUG] ¿Es departamento válido?', { departamento, isValid: isValidDept });
+
     if (!isValidDept) {
-      console.log('❌ [DEBUG] Departamento no válido:', departamento);
+
       notFound();
     }
   }
@@ -161,9 +161,9 @@ export default async function SearchPage({ params }: SearchPageProps) {
   // Validar ciudad si está presente
   if (ciudad) {
     const isValidCit = await isValidCity(ciudad);
-    console.log('🔍 [DEBUG] ¿Es ciudad válida?', { ciudad, isValid: isValidCit });
+    
     if (!isValidCit) {
-      console.log('❌ [DEBUG] Ciudad no válida:', ciudad);
+      
       notFound();
     }
   }

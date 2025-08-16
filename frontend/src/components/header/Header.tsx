@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu, UserRound } from 'lucide-react';
+import { Menu, UserRound, ChevronDown, Shield, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useState } from 'react';
@@ -14,11 +14,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import SignIn, { SignOut } from '../authentication/sign-in';
 
 const HeaderComponent = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const isAdmin = session?.user?.role === 'admin';
 
   return (
     <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-b sticky top-0 z-50 transition-all duration-300">
@@ -47,29 +54,45 @@ const HeaderComponent = () => {
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-4">
             <ThemeToggle />
-            <Button
-              variant="ghost"
-              className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
-            >
-              <Menu className="h-4 w-4 mr-2" />
-              Explorar
-            </Button>
-            {status === 'authenticated' ? (
-              <>
-                <Link href="/cuenta">
-                  <Button
-                    variant="ghost"
-                    className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
-                  >
-                    <UserRound className="h-4 w-4 mr-2" />
-                    Mi cuenta
-                  </Button>
-                </Link>
-                <SignOut />
-              </>
-            ) : (
-              <SignIn />
-            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+                >
+                  <Menu className="h-4 w-4 mr-2" />
+                  Explorar
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/adminboard" className="flex items-center">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Panel de administrador
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {status === 'authenticated' && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/cuenta" className="flex items-center">
+                        <UserRound className="h-4 w-4 mr-2" />
+                        Mi cuenta
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <div className="flex items-center w-full">
+                        <LogOut className="h-4 w-4 mr-2" />
+                        <SignOut />
+                      </div>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {status !== 'authenticated' && <SignIn />}
           </div>
 
           {/* Mobile Menu Button */}
@@ -100,29 +123,45 @@ const HeaderComponent = () => {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="lg:hidden border-t bg-background/95 backdrop-blur py-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
-            >
-              <Menu className="h-4 w-4 mr-2" />
-              Explorar
-            </Button>
-            {status === 'authenticated' ? (
-              <>
-                <Link href="/cuenta">
-                  <Button
-                    variant="ghost"
-                    className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
-                  >
-                    <UserRound className="h-4 w-4 mr-2" />
-                    Mi cuenta
-                  </Button>
-                </Link>
-                <SignOut />
-              </>
-            ) : (
-              <SignIn />
-            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+                >
+                  <Menu className="h-4 w-4 mr-2" />
+                  Explorar
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/adminboard" className="flex items-center">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Panel de administrador
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {status === 'authenticated' && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/cuenta" className="flex items-center">
+                        <UserRound className="h-4 w-4 mr-2" />
+                        Mi cuenta
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <div className="flex items-center w-full">
+                        <LogOut className="h-4 w-4 mr-2" />
+                        <SignOut />
+                      </div>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {status !== 'authenticated' && <SignIn />}
             <div className="flex items-center justify-center pt-2">
               <Select defaultValue="español">
                 <SelectTrigger className="w-32">

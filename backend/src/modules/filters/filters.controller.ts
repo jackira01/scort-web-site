@@ -10,8 +10,7 @@ import type { FilterQuery } from './filters.types';
  */
 export const getFilteredProfilesPost = async (req: Request, res: Response) => {
   try {
-    console.log('🔍 [BACKEND FILTERS DEBUG] === CONTROLADOR POST - PARÁMETROS RECIBIDOS ===');
-    console.log('🔍 [BACKEND FILTERS DEBUG] req.body completo:', JSON.stringify(req.body, null, 2));
+
     
     // Procesar el body de la misma manera que GET procesa query params
     const {
@@ -85,7 +84,7 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
     if (sortOrder) filters.sortOrder = sortOrder;
     if (fields) filters.fields = fields;
     
-    console.log('🔍 [BACKEND FILTERS DEBUG] Filtros procesados para POST:', JSON.stringify(filters, null, 2));
+
 
     // Validaciones adicionales
     if (filters.page && (isNaN(filters.page) || filters.page < 1)) {
@@ -120,14 +119,7 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
     }
 
     // Obtener perfiles filtrados
-    console.log('🔍 [BACKEND FILTERS DEBUG] Llamando al servicio con filtros:', JSON.stringify(filters, null, 2));
     const result = await service.getFilteredProfiles(filters);
-    console.log('🔍 [BACKEND FILTERS DEBUG] Resultado del servicio:', {
-      totalCount: result.totalCount,
-      profilesLength: result.profiles?.length,
-      currentPage: result.currentPage,
-      totalPages: result.totalPages
-    });
 
     const response = {
       success: true,
@@ -135,23 +127,13 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
       message: 'Perfiles obtenidos exitosamente'
     };
     
-    console.log('🔍 [BACKEND FILTERS DEBUG] Enviando respuesta POST:', {
-      success: response.success,
-      totalCount: response.data.totalCount,
-      profilesCount: response.data.profiles?.length,
-      message: response.message
-    });
+
     
     res.status(200).json(response);
   } catch (error: unknown) {
-    console.error('🚨 [BACKEND FILTERS DEBUG] === ERROR EN CONTROLADOR POST ===');
-    console.error('🚨 [BACKEND FILTERS DEBUG] Error completo:', error);
-    
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     const errorStack = error instanceof Error ? error.stack : undefined;
     const errorName = error instanceof Error ? error.name : 'UnknownError';
-    
-    console.error('🚨 [BACKEND FILTERS DEBUG] Stack trace:', errorStack);
     
     // Error in getFilteredProfilesPost controller
     res.status(500).json({

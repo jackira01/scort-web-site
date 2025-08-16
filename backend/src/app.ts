@@ -36,31 +36,12 @@ if (ENVIROMENT === 'development') {
     app.use(cors(corsOptions));
 }
 
-// Middleware de debug ANTES del parsing para ver datos raw
-app.use((req, res, next) => {
-  if (req.method === 'POST' && req.url.includes('/api/filters/profiles')) {
-    console.log('🔍 [DEBUG MIDDLEWARE PRE] === PETICIÓN POST ANTES DEL PARSING ===');
-    console.log('🔍 [DEBUG MIDDLEWARE PRE] URL:', req.url);
-    console.log('🔍 [DEBUG MIDDLEWARE PRE] Content-Type:', req.get('Content-Type'));
-    console.log('🔍 [DEBUG MIDDLEWARE PRE] Content-Length:', req.get('Content-Length'));
-  }
-  next();
-});
+
 
 app.use(express.json());
 app.use(morgan('dev')); // esto sí muestra logs en consola
 
-// Middleware de debug DESPUÉS del parsing para ver body parseado
-app.use((req, res, next) => {
-  if (req.method === 'POST' && req.url.includes('/api/filters/profiles')) {
-    console.log('🔍 [DEBUG MIDDLEWARE POST] === PETICIÓN POST DESPUÉS DEL PARSING ===');
-    console.log('🔍 [DEBUG MIDDLEWARE POST] URL:', req.url);
-    console.log('🔍 [DEBUG MIDDLEWARE POST] Body:', JSON.stringify(req.body, null, 2));
-    console.log('🔍 [DEBUG MIDDLEWARE POST] Body type:', typeof req.body);
-    console.log('🔍 [DEBUG MIDDLEWARE POST] Body keys:', Object.keys(req.body || {}));
-  }
-  next();
-});
+
 
 app.use('/api/filters', filtersRoutes);
 app.use('/api/profile', profileRoutes);

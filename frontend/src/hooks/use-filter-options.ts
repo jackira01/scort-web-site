@@ -38,10 +38,10 @@ export const useFilterOptions = (): UseFilterOptionsReturn => {
       try {
         setLoading(true);
         setError(null);
-        console.log('🔄 [FILTER OPTIONS] Fetching filter options from API...');
+  
         
         const response = await getFilterOptions();
-        console.log('✅ [FILTER OPTIONS] Filter options received:', response);
+  
         
         if (response.success && response.data) {
           setData(response.data);

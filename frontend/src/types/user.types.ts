@@ -12,6 +12,7 @@ export interface BaseUser {
     _id?: string;
     isVerified?: boolean;
     verification_in_progress?: boolean;
+    role?: 'admin' | 'user' | 'guest';
 }
 export interface User extends BaseUser {
     email?: string;
@@ -19,6 +20,7 @@ export interface User extends BaseUser {
     verificationDocument: string[];
     profiles?: Profile[];
     password?: string;
+    role: 'admin' | 'user' | 'guest';
 
 }
 

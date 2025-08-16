@@ -27,30 +27,30 @@ export function middleware(request: NextRequest) {
     
     // Excluir rutas que no son de búsqueda/filtrado
     if (EXCLUDED_ROUTES.includes(categoria)) {
-      console.log('🔍 [MIDDLEWARE] Ruta excluida del sistema de búsqueda:', categoria);
+  
       return NextResponse.next();
     }
     
-    console.log('🔍 [MIDDLEWARE] Procesando ruta de búsqueda:', { pathname, categoria, departamento, ciudad });
+  
     
     // Verificar si es una ruta de categoría válida
     if (categoria && !VALID_CATEGORIES.includes(categoria)) {
-      console.log('❌ [MIDDLEWARE] Categoría no válida:', categoria);
+  
       
       // Si parece ser un departamento, redirigir a una categoría por defecto
       if (VALID_DEPARTMENTS.includes(categoria)) {
-        console.log('🔄 [MIDDLEWARE] Redirigiendo departamento a categoría por defecto');
+    
         const redirectUrl = new URL(`/escort/${categoria}`, request.url);
         return NextResponse.redirect(redirectUrl);
       }
       
       // Si no es ni categoría ni departamento válido, continuar al 404
-      console.log('❌ [MIDDLEWARE] Ruta no válida, continuando al 404');
+  
     }
     
     // Verificar departamento si está presente
     if (departamento && !VALID_DEPARTMENTS.includes(departamento)) {
-      console.log('❌ [MIDDLEWARE] Departamento no válido:', departamento);
+  
     }
   }
   

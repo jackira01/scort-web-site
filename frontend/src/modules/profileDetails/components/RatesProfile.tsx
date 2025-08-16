@@ -18,19 +18,33 @@ export default function RatesProfile({
           {rates.map((rate, index) => (
             <div
               key={`${rate.hour}-${index}`}
-              className="flex justify-between items-center p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors duration-200"
+              className="p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors duration-200 space-y-2"
             >
-              <div className="flex flex-col">
-                <span className="text-foreground text-sm">{rate.hour}</span>
-                {rate.delivery !== undefined && (
-                  <span className="text-xs text-muted-foreground mt-1">
-                    {rate.delivery ? "Domicilio incluido" : "Domicilio no incluido"}
-                  </span>
-                )}
+              {/* Precio */}
+              <div className="flex justify-between items-center">
+                <span className="text-foreground text-sm font-medium">Tarifa/precio</span>
+                <span className="text-foreground font-medium">
+                  ${rate.price.toLocaleString('es-CO')} COP
+                </span>
               </div>
-              <span className="text-foreground font-semibold">
-                ${rate.price.toLocaleString('es-CO')} COP
-              </span>
+
+              {/* Tiempo */}
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground text-xs">Tiempo</span>
+                <span className="text-foreground text-xs">
+                  {rate.hour} hora{rate.hour !== '1' && rate.hour !== '01:00' ? 's' : ''}
+                </span>
+              </div>
+
+              {/* Domicilio */}
+              {rate.delivery !== undefined && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground text-xs">Domicilio</span>
+                  <span className="text-xs text-foreground">
+                    {rate.delivery ? "Incluido" : "No incluido"}
+                  </span>
+                </div>
+              )}
             </div>
           ))}
         </div>

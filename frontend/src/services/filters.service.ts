@@ -10,11 +10,10 @@ import { API_URL } from '@/lib/config';
 export const getFilteredProfilesPost = async (
   filters: FilterQuery,
 ): Promise<ProfilesResponse> => {
-  console.log('📡 [DEBUG] Iniciando petición POST con filtros:', filters);
+
   
   const postUrl = `${API_URL}/api/filters/profiles`;
-  console.log('📡 [DEBUG] URL de la petición POST:', postUrl);
-  console.log('📡 [DEBUG] Body de la petición POST:', JSON.stringify(filters, null, 2));
+
 
   try {
     const response = await fetch(postUrl, {
@@ -25,7 +24,7 @@ export const getFilteredProfilesPost = async (
       body: JSON.stringify(filters),
     });
 
-    console.log('📡 [DEBUG] Respuesta POST status:', response.status, response.statusText);
+
 
     if (!response.ok) {
       console.error('📡 [DEBUG] Error en petición POST:', response.status, response.statusText);
@@ -33,7 +32,7 @@ export const getFilteredProfilesPost = async (
     }
 
     const responseData = await response.json();
-    console.log('📡 [DEBUG] Respuesta POST recibida:', responseData);
+
     
     // El backend devuelve { success: true, data: FilterResponse }
     // Necesitamos transformar la estructura para que coincida con ProfilesResponse
@@ -50,7 +49,7 @@ export const getFilteredProfilesPost = async (
         },
       };
       
-      console.log('📡 [DEBUG] Datos transformados POST:', transformedData);
+  
       
       return transformedData;
     } else {
@@ -69,7 +68,7 @@ export const getFilteredProfilesPost = async (
 export const getProfilesForCards = async (
   params: Omit<FilterQuery, 'fields'> = {},
 ): Promise<ProfilesResponse> => {
-  console.log('🎯 [DEBUG] getProfilesForCards - Parámetros recibidos:', params);
+
   
   const optimizedParams: FilterQuery = {
     ...params,
@@ -89,7 +88,7 @@ export const getProfilesForCards = async (
     sortOrder: params.sortOrder || 'desc',
   };
 
-  console.log('🎯 [DEBUG] getProfilesForCards - Parámetros optimizados:', optimizedParams);
+
 
   // Usar POST para mejor rendimiento con campos específicos
   return getFilteredProfilesPost(optimizedParams);

@@ -4,6 +4,11 @@
  * @returns El slug generado
  */
 export const createSlug = (text: string): string => {
+  // Validar que text sea un string válido y no esté vacío
+  if (!text || typeof text !== 'string') {
+    return '';
+  }
+  
   return text
     .toLowerCase()
     .normalize('NFD') // Descompone caracteres acentuados

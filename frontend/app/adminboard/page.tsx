@@ -1,5 +1,10 @@
+import AdminProtection from "@/components/AdminProtection";
 import DashboardLayout from "@/modules/dashboard/components/DashbLayout";
 
 export default function Dashboard() {
-  return <DashboardLayout />;
+  return (
+    <AdminProtection>
+      <DashboardLayout />
+    </AdminProtection>
+  );
 }

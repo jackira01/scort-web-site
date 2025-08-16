@@ -27,6 +27,20 @@ export interface UpdateVariantInput {
   active?: boolean;
 }
 
+export interface AddVariantInput {
+  label: string;
+  value: string;
+}
+
+export interface RemoveVariantInput {
+  variantIndex: number;
+}
+
+export interface UpdateGroupInput {
+  name?: string;
+  key?: string;
+}
+
 // Tipos específicos para los filtros
 export interface FilterAttributeGroup {
   key: 'gender' | 'category' | 'sex';

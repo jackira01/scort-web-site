@@ -29,3 +29,40 @@ export const patchVariant = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error updating variant', error });
     }
 };
+
+export const deleteGroup = async (req: Request, res: Response) => {
+    try {
+        await service.deleteAttributeGroup(req.params.id);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting attribute group', error });
+    }
+};
+
+export const addVariant = async (req: Request, res: Response) => {
+    try {
+        const updated = await service.addVariant(req.params.id, req.body);
+        res.json(updated);
+    } catch (error) {
+        res.status(500).json({ message: 'Error adding variant', error });
+    }
+};
+
+export const removeVariant = async (req: Request, res: Response) => {
+    try {
+        const { variantIndex } = req.body;
+        const updated = await service.removeVariant(req.params.id, variantIndex);
+        res.json(updated);
+    } catch (error) {
+        res.status(500).json({ message: 'Error removing variant', error });
+    }
+};
+
+export const updateGroup = async (req: Request, res: Response) => {
+    try {
+        const updated = await service.updateGroup(req.params.id, req.body);
+        res.json(updated);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating group', error });
+    }
+};

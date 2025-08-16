@@ -21,14 +21,17 @@ const FilterBar = () => {
   const [departamento, setDepartamento] = useState('');
   const [ciudad, setCiudad] = useState('');
   
+  // Función para manejar cambio de departamento
+  const handleDepartmentChange = (value: string) => {
+    setDepartamento(value);
+    // Limpiar ciudad cuando se cambie el departamento
+    setCiudad('');
+  };
+  
   // Obtener opciones de filtros de la API
   const { data: filterOptions, loading: optionsLoading, error: optionsError } = useFilterOptions();
   
-  console.log('🔄 [FilterBar] Estado de opciones de filtros:', {
-    loading: optionsLoading,
-    data: filterOptions,
-    error: optionsError
-  });
+
 
   const handleSearch = () => {
     // Validar que al menos la categoría esté seleccionada
@@ -43,13 +46,7 @@ const FilterBar = () => {
     if (departamento) segments.push(createSlug(typeof departamento === 'string' ? departamento : departamento.value || departamento.label));
     if (ciudad && departamento) segments.push(createSlug(typeof ciudad === 'string' ? ciudad : ciudad.value || ciudad.label));
     
-    console.log('🔗 [FilterBar] Construyendo ruta dinámica:', {
-      categoria,
-      departamento,
-      ciudad,
-      segments,
-      finalUrl: `/${segments.join('/')}`
-    });
+
     
     // Navegar a la nueva ruta dinámica
     router.push(`/${segments.join('/')}`);
@@ -93,7 +90,7 @@ const FilterBar = () => {
             className="animate-in slide-in-from-bottom-2"
             style={{ animationDelay: '100ms' }}
           >
-            <Select value={departamento} onValueChange={setDepartamento}>
+            <Select value={departamento} onValueChange={handleDepartmentChange}>
               <SelectTrigger className="w-full hover:border-purple-500 transition-all duration-200 focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/10">
                 <SelectValue placeholder="Seleccionar departamento" />
               </SelectTrigger>
@@ -112,7 +109,7 @@ const FilterBar = () => {
             className="animate-in slide-in-from-bottom-2"
             style={{ animationDelay: '200ms' }}
           >
-            <Select value={ciudad} onValueChange={setCiudad}>
+            <Select value={ciudad} onValueChange={setCiudad} disabled={!departamento}>
               <SelectTrigger className="w-full hover:border-purple-500 transition-all duration-200 focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/10">
                 <SelectValue placeholder="Seleccionar ciudad" />
               </SelectTrigger>

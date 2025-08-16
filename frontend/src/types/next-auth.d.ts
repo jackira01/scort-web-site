@@ -6,6 +6,7 @@ declare module "next-auth" {
             _id: string;
             email: string;
             name: string;
+            role: 'admin' | 'user' | 'guest';
             verificationDocument?: string[];
             password?: string; // Optional, as not all users may have a password
             isVerified: boolean;

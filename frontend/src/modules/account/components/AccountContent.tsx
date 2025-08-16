@@ -1,6 +1,6 @@
 'use client';
 
-import AccountProfiles from '@/modules/catalogs/components/AccountProfiles';
+import AccountProfiles from './AccountProfiles';
 import PaymentHistory from '@/modules/payments/components/PaymentHistory';
 import AccountSettings from '@/modules/settings/components/AccountSettings';
 import { paymentHistoryData } from '@/utils/MockedData';

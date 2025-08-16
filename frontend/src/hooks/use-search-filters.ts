@@ -172,7 +172,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
       ...filters,
     };
     
-    console.log('🚀 [DEBUG] Query generada para la API:', query);
+
     
     return query;
   }, [filters]);
@@ -195,12 +195,12 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
 
   // Método genérico para actualizar filtros
   const updateFilter = useCallback((key: string, value: any) => {
-    console.log('🔧 [DEBUG] Actualizando filtro:', { key, value });
+
     
     setFilters((prev) => {
       const newFilters = { ...prev };
       
-      console.log('🔧 [DEBUG] Filtros anteriores:', prev);
+
       
       // Manejar filtros anidados en features
       if (['gender', 'sex', 'age', 'height', 'weight', 'bodyType', 'ethnicity', 'hairColor', 'eyeColor', 'services'].includes(key)) {
@@ -208,7 +208,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
           ...prev.features,
           [key]: value,
         };
-        console.log('🔧 [DEBUG] Filtro de características actualizado:', newFilters.features);
+
       }
       // Manejar filtros de ubicación
       else if (['department', 'city'].includes(key)) {
@@ -216,7 +216,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
           ...prev.location,
           [key]: value,
         };
-        console.log('🔧 [DEBUG] Filtro de ubicación actualizado:', newFilters.location);
+
       }
       // Manejar filtros de rango de precios
       else if (['minPrice', 'maxPrice'].includes(key)) {
@@ -224,7 +224,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
           ...prev.priceRange,
           [key === 'minPrice' ? 'min' : 'max']: value,
         };
-        console.log('🔧 [DEBUG] Filtro de rango de precios actualizado:', newFilters.priceRange);
+
       }
       // Manejar filtros de rango de edad
       else if (['minAge', 'maxAge'].includes(key)) {
@@ -235,12 +235,12 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
             [key === 'minAge' ? 'min' : 'max']: value,
           },
         };
-        console.log('🔧 [DEBUG] Filtro de rango de edad actualizado:', newFilters.features?.ageRange);
+        
       }
       // Manejar filtros directos
       else {
         (newFilters as any)[key] = value;
-        console.log('🔧 [DEBUG] Filtro directo actualizado:', { [key]: value });
+
       }
       
       const finalFilters = {
@@ -248,7 +248,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
         page: 1, // Reset page when changing filters
       };
       
-      console.log('🔧 [DEBUG] Filtros finales:', finalFilters);
+
       
       return finalFilters;
     });

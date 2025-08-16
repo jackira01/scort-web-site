@@ -18,6 +18,7 @@ export const getUserById = async (req: Request, res: Response) => {
     verificationDocument: user.verificationDocument,
     isVerified: user.isVerified,
     verification_in_progress: user.verification_in_progress,
+    role: user.role,
   });
 };
 
@@ -36,6 +37,7 @@ export const authGoogleUserController = async (req: Request, res: Response) => {
     _id: user._id,
     isVerified: user.isVerified,
     verification_in_progress: user.verification_in_progress,
+    role: user.role,
   });
 };
 

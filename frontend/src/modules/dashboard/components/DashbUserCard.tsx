@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Edit,
   Shield,
@@ -7,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import EditUserModal from '@/components/EditUserModal';
 import type { User } from '@/types/user.types';
 
 export const DashboardUserCard = ({
@@ -20,7 +22,9 @@ export const DashboardUserCard = ({
   setSelecteduserForVerification: any
   setVerificationCarouselOpen: any
 }) => {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   return (
+    <>
     <Card
       className="group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card border-border hover:border-purple-500/50 animate-in zoom-in-50"
       style={{ animationDelay: `${index * 150}ms` }}
@@ -75,6 +79,7 @@ export const DashboardUserCard = ({
             <Button
               size="sm"
               variant="outline"
+              onClick={() => setIsEditModalOpen(true)}
               className="hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500 transition-all duration-200"
             >
               <Edit className="h-3 w-3 mr-1" />
@@ -98,5 +103,12 @@ export const DashboardUserCard = ({
         </div>
       </CardContent>
     </Card>
+    
+    <EditUserModal
+      user={user}
+      isOpen={isEditModalOpen}
+      onOpenChange={setIsEditModalOpen}
+    />
+    </>
   );
 };

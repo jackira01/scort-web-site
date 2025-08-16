@@ -44,7 +44,7 @@ export const getUserProfiles = async (userId: string) => {
   
   const profiles = user?.profiles || [];
   
-  // Transformar los perfiles para agregar profileImage
+  // Devolver los perfiles con el objeto media completo
   return profiles.map((profile: any) => ({
     _id: profile._id,
     user: profile.user,
@@ -52,7 +52,7 @@ export const getUserProfiles = async (userId: string) => {
     age: profile.age,
     location: profile.location,
     verification: profile.verification,
-    profileImage: profile.media?.gallery?.[0] || null
+    media: profile.media
   }));
 }
 

@@ -95,7 +95,7 @@ export interface CreateProfileDTO {
         gallery?: string[];
         videos?: string[];
         audios?: string[];
-        stories?: string[];
+        stories?: IStories[];
     };
     availability?: string[];
     rates?: string[];
@@ -139,7 +139,7 @@ export interface IProfileInput {
         gallery?: string[];
         videos?: string[];
         audios?: string[];
-        stories?: string[];
+        stories?: IStories[];
     };
     verification?: Types.ObjectId;
     availability?: Types.ObjectId[];

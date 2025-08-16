@@ -159,6 +159,7 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
                 <div className="flex space-x-1">
                   {videos.map((_, index) => (
                     <button
+                      type="button"
                       key={index}
                       className={`w-2 h-2 rounded-full transition-colors duration-200 ${index === currentVideoIndex ? 'bg-white' : 'bg-white/50'
                         }`}
@@ -211,6 +212,7 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
                <div className="absolute bottom-4 right-4 flex space-x-2">
                  {videos.map((_, index) => (
                    <button
+                     type="button"
                      key={index}
                      className={`w-3 h-3 rounded-full transition-colors duration-200 ${
                        index === currentVideoIndex ? 'bg-white' : 'bg-white/50'

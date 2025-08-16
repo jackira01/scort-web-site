@@ -12,13 +12,7 @@ interface CategoryFilterProps {
 const CategoryFilter = ({ selectedCategory, onCategoryChange }: CategoryFilterProps) => {
   const { data: categoryGroup, isLoading, error } = useAttributeGroupByKey('category');
 
-  // Debug logging
-  console.log('🔍 [CategoryFilter] Estado del hook:', { 
-    isLoading, 
-    error: error?.message || error, 
-    categoryGroup,
-    hasVariants: categoryGroup?.variants?.length || 0
-  });
+
 
   if (isLoading) {
     return (

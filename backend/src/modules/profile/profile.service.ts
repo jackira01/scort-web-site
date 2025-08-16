@@ -64,15 +64,26 @@ export const createProfile = async (data: CreateProfileDTO) => {
   return profile;
 };
 
-export const getProfiles = async (page: number = 1, limit: number = 10) => {
+export const getProfiles = async (page: number = 1, limit: number = 10, fields?: string) => {
   const skip = (page - 1) * limit;
   
+  // Construir la query base
+  let query = ProfileModel.find()
+    .populate('user')
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 });
+  
+  // Aplicar selección de campos si se especifica
+  if (fields) {
+    // Convertir string separado por comas a formato de Mongoose
+    const fieldsArray = fields.split(',').map(field => field.trim());
+    const selectFields = fieldsArray.join(' ');
+    query = query.select(selectFields) as any;
+  }
+  
   const [profiles, totalCount] = await Promise.all([
-    ProfileModel.find()
-      .populate('user')
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 }),
+    query.exec(),
     ProfileModel.countDocuments()
   ]);
   
@@ -141,6 +152,20 @@ export const updateProfile = async (
   id: string,
   data: Partial<CreateProfileDTO>,
 ) => {
+  // Si se está actualizando el campo media, hacer merge con los datos existentes
+  if (data.media) {
+    const existingProfile = await ProfileModel.findById(id);
+    if (existingProfile && existingProfile.media) {
+      // Hacer merge del campo media preservando los datos existentes
+      data.media = {
+        gallery: data.media.gallery || existingProfile.media.gallery || [],
+        videos: data.media.videos || existingProfile.media.videos || [],
+        audios: data.media.audios || existingProfile.media.audios || [],
+        stories: data.media.stories || existingProfile.media.stories || [],
+      };
+    }
+  }
+  
   return ProfileModel.findByIdAndUpdate(id, data, { new: true });
 };
 
@@ -207,4 +232,34 @@ export const createMissingVerifications = async () => {
       `Error al crear verificaciones faltantes: ${error?.message || error}`,
     );
   }
+};
+
+export const getProfilesWithStories = async (page: number = 1, limit: number = 10) => {
+  const skip = (page - 1) * limit;
+  
+  // Filtrar perfiles que tengan al menos una historia en media.stories
+  // Solo seleccionar los campos necesarios: _id, name, media
+  const query = ProfileModel.find({
+    'media.stories': { $exists: true, $ne: [] },
+    isActive: true
+  })
+    .select('_id name media')
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 });
+
+  const countQuery = ProfileModel.countDocuments({
+    'media.stories': { $exists: true, $ne: [] },
+    isActive: true
+  });
+
+  const [profiles, total] = await Promise.all([query.exec(), countQuery]);
+
+  return {
+    profiles,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 };

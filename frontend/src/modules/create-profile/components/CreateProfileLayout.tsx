@@ -363,9 +363,9 @@ export function CreateProfileLayout() {
       setUploading(true);
 
       // Subir archivos multimedia a Cloudinary
-      let photoUrls: string[] = [];
-      let videoUrls: string[] = [];
-      let audioUrls: string[] = [];
+      let photoUrls: (string | null)[] = [];
+      let videoUrls: (string | null)[] = [];
+      let audioUrls: (string | null)[] = [];
 
       if (data.photos && data.photos.length > 0) {
         toast.loading('Subiendo fotos...');
@@ -397,7 +397,7 @@ export function CreateProfileLayout() {
       };
 
       const backendData = transformDataToBackendFormat(dataWithUrls);
-      
+
       // Frontend debug removed
 
       // Crear el perfil usando el servicio
@@ -546,10 +546,10 @@ export function CreateProfileLayout() {
                 <div
                   key={step.id}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 ${currentStep === step.id
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                      : currentStep > step.id
-                        ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
-                        : 'bg-muted text-muted-foreground'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                    : currentStep > step.id
+                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
+                      : 'bg-muted text-muted-foreground'
                     }`}
                 >
                   <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">

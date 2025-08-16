@@ -58,8 +58,7 @@ export default function SearchPageClient({
     },
   };
   
-  console.log('🏠 [DEBUG] SearchPageClient - Filtros iniciales:', initialFilters);
-  console.log('🏠 [DEBUG] SearchPageClient - Props recibidas:', { categoria, departamento, ciudad });
+
   
   const {
     filters,
@@ -68,30 +67,19 @@ export default function SearchPageClient({
     activeFiltersCount,
   } = useSearchFilters(initialFilters);
   
-  console.log('🏠 [DEBUG] SearchPageClient - Filtros actuales del hook:', filters);
-  console.log('🏠 [DEBUG] SearchPageClient - Conteo de filtros activos:', activeFiltersCount);
+
   
-  // Rastrear cambios en los filtros
-  useEffect(() => {
-    console.log('🔄 [DEBUG] SearchPageClient - Los filtros han cambiado:', filters);
-  }, [filters]);
+
   
-  // Rastrear cambios en el conteo de filtros activos
-  useEffect(() => {
-    console.log('🔢 [DEBUG] SearchPageClient - Conteo de filtros activos cambió a:', activeFiltersCount);
-  }, [activeFiltersCount]);
+
   
-  // Función wrapper para limpiar filtros con debug
+  // Función wrapper para limpiar filtros
   const handleClearFilters = () => {
-    console.log('🧹 [DEBUG] SearchPageClient - Botón "Restaurar filtros" presionado');
-    console.log('🧹 [DEBUG] SearchPageClient - Filtros antes de limpiar:', filters);
     clearFilters();
   };
   
-  // Función wrapper para actualizar filtros con debug
+  // Función wrapper para actualizar filtros
   const handleUpdateFilter = (key: string, value: any) => {
-    console.log('🔧 [DEBUG] SearchPageClient - updateFilter llamado desde UI:', { key, value });
-    console.log('🔧 [DEBUG] SearchPageClient - Filtros actuales antes del cambio:', filters);
     updateFilter(key, value);
   };
 
@@ -105,17 +93,13 @@ export default function SearchPageClient({
 
   // Manejar cambio de ubicación
   const handleLocationChange = (newDepartment?: string, newCity?: string) => {
-    console.log('📍 [DEBUG] SearchPageClient - Cambio de ubicación:', { newDepartment, newCity });
     const newUrl = buildUrl(categoria, newDepartment, newCity);
-    console.log('📍 [DEBUG] SearchPageClient - Nueva URL de ubicación:', newUrl);
     router.push(newUrl);
   };
 
   // Manejar cambio de categoría
   const handleCategoryChange = (newCategory: string) => {
-    console.log('📂 [DEBUG] SearchPageClient - Cambio de categoría:', newCategory);
     const newUrl = buildUrl(newCategory, departamento, ciudad);
-    console.log('📂 [DEBUG] SearchPageClient - Nueva URL de categoría:', newUrl);
     router.push(newUrl);
   };
 
@@ -367,7 +351,6 @@ export default function SearchPageClient({
               onPageChange={(page) => {
                 // Aquí podrías implementar navegación con parámetros de página
                 // Por ahora mantenemos la funcionalidad básica
-                console.log('Page change:', page);
               }}
             />
           </div>

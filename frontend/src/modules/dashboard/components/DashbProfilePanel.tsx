@@ -21,7 +21,7 @@ export const DashProfilePanel = () => {
     data: profilesData,
     isLoading,
     error,
-  } = useAllProfiles(currentPage, limit);
+  } = useAllProfiles(currentPage, limit, '_id,name,age,isActive,media');
 
   if (isLoading) {
     return <Loader />;

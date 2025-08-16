@@ -14,8 +14,9 @@ export const createProfile = async (req: Request, res: Response) => {
 export const getProfiles = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
+  const fields = req.query.fields as string;
   
-  const profiles = await service.getProfiles(page, limit);
+  const profiles = await service.getProfiles(page, limit, fields);
   res.json(profiles);
 };
 
@@ -34,6 +35,22 @@ export const updateProfile = async (req: Request, res: Response) => {
 export const deleteProfile = async (req: Request, res: Response) => {
   await service.deleteProfile(req.params.id);
   res.status(204).send();
+};
+
+export const getProfilesPost = async (req: Request, res: Response) => {
+  try {
+    const { page = 1, limit = 10, fields } = req.body;
+    
+    // Convertir a números para asegurar tipos correctos
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    
+    const profiles = await service.getProfiles(pageNum, limitNum, fields);
+    res.json(profiles);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An error occurred';
+    res.status(400).json({ message });
+  }
 };
 
 export const verifyProfileName = async (req: Request, res: Response) => {
@@ -64,3 +81,16 @@ export const createMissingVerifications = async (req: Request, res: Response) =>
      });
    }
  };
+
+export const getProfilesWithStories = async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    
+    const profiles = await service.getProfilesWithStories(page, limit);
+    res.json(profiles);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An error occurred';
+    res.status(500).json({ message });
+  }
+};

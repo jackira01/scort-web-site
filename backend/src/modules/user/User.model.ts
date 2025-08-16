@@ -9,6 +9,7 @@ export interface IUser {
   isVerified: boolean;
   verification_in_progress?: boolean;
   profiles: mongoose.Types.ObjectId[];
+  role: 'admin' | 'user' | 'guest';
   lastLogin: {
     isVerified: boolean;
     date: Date;
@@ -24,6 +25,7 @@ const userSchema = new Schema<IUserDocument>({
   isVerified: { type: Boolean, default: false },
   verification_in_progress: { type: Boolean, default: false },
   profiles: [{ type: Schema.Types.ObjectId, ref: 'Profile' }],
+  role: { type: String, enum: ['admin', 'user', 'guest'], default: 'user' },
   lastLogin: {
     isVerified: { type: Boolean, default: false },
     date: { type: Date, default: null },

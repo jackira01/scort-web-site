@@ -1,20 +1,17 @@
 'use client';
 
+import { AlertTriangle } from 'lucide-react';
 import Loader from '@/components/Loader';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useUser } from '@/hooks/use-user';
 import AccountContent from '@/modules/account/components/AccountContent';
 import AccountProgressBar from '@/modules/account/components/AccountProgressBar';
 import AccountSidebar from '@/modules/account/components/AccountSidebar'; // si es exclusivo de account
 import { useAccountSection } from '@/modules/account/hooks/useAccountSection';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Info, X } from 'lucide-react';
-import { useState } from 'react';
 
 export default function AccountLayout() {
     const { activeSection, setActiveSection } = useAccountSection();
     const { data: user, isLoading } = useUser();
-    const [showInfoAlert, setShowInfoAlert] = useState(true);
-
     const accountCompleteness = 65;
 
     if (isLoading || !user) {
@@ -31,13 +28,13 @@ export default function AccountLayout() {
                         <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
                             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                             <AlertDescription className="text-amber-800 dark:text-amber-200">
-                                Tus perfiles no estarán públicos hasta que verifiques tu cuenta.
+                                Tus perfiles no estarán públicos hasta que verifiques tu
+                                identidad.
                             </AlertDescription>
                         </Alert>
                     )}
-                
                 </div>
-                
+
                 <div className="flex gap-8">
                     <AccountSidebar
                         activeSection={activeSection}

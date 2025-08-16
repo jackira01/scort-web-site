@@ -8,6 +8,7 @@ export interface ProfileMedia {
   gallery?: string[];
   videos?: ProfileMediaItem[];
   audios?: ProfileMediaItem[];
+  stories?: { link: string; type: 'image' | 'video' }[];
 }
 
 export interface LocationValue {
