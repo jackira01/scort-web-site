@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getAllDepartments } from '@/utils/colombiaData';
 
 // Lista de categorías válidas (debe coincidir con el backend)
 const VALID_CATEGORIES = ['escort', 'masajista', 'modelo', 'acompañante'];
 
-// Lista de departamentos válidos (algunos ejemplos principales)
-const VALID_DEPARTMENTS = [
-  'bogota', 'antioquia', 'valle-del-cauca', 'atlantico', 'santander',
-  'cundinamarca', 'bolivar', 'norte-de-santander', 'tolima', 'cordoba'
-];
+// Lista completa de departamentos válidos de Colombia
+const VALID_DEPARTMENTS = getAllDepartments().map(dept => dept.value);
 
 // Lista de rutas que NO deben ser procesadas por el sistema de búsqueda
 const EXCLUDED_ROUTES = [

@@ -1,11 +1,38 @@
 import type { Request, Response } from 'express';
 import * as service from './profile.service';
+import {
+  subscribeProfile,
+  purchaseUpgrade,
+} from './profile.service';
+import { 
+  validatePaidPlanAssignment,
+  validateUpgradePurchase,
+  getUserUsageStats,
+  BusinessValidationError 
+} from '../validation/business-validation.service';
 
 export const createProfile = async (req: Request, res: Response) => {
   try {
+    const { userId, planCode, orderId } = req.body;
+
+    // Si se especifica un plan pago, validar límites
+    if (planCode && planCode !== 'GRATIS') {
+      await validatePaidPlanAssignment(
+        userId,
+        planCode,
+        undefined,
+        orderId
+      );
+    }
+
     const newProfile = await service.createProfile(req.body);
     res.status(201).json(newProfile);
   } catch (err: unknown) {
+    // Manejar errores de validación de negocio
+    if (err instanceof BusinessValidationError) {
+      return res.status(409).json({ message: err.message });
+    }
+    
     const message = err instanceof Error ? err.message : 'An error occurred';
     res.status(400).json({ message });
   }
@@ -35,6 +62,101 @@ export const updateProfile = async (req: Request, res: Response) => {
 export const deleteProfile = async (req: Request, res: Response) => {
   await service.deleteProfile(req.params.id);
   res.status(204).send();
+};
+
+// Nuevos endpoints para suscripción y upgrades
+export const subscribeProfileController = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { planCode, variantDays, orderId } = req.body;
+
+    if (!planCode || !variantDays) {
+      return res.status(400).json({ error: 'planCode y variantDays son requeridos' });
+    }
+
+    // Obtener el perfil para validaciones
+    const profile = await service.getProfileById(id);
+    if (!profile) {
+      return res.status(404).json({ error: 'Perfil no encontrado' });
+    }
+
+    // Validaciones de negocio
+    await validatePaidPlanAssignment(
+      profile.user.toString(),
+      planCode,
+      id,
+      orderId
+    );
+
+    const updatedProfile = await subscribeProfile(id, planCode, variantDays);
+    res.status(200).json(updatedProfile);
+  } catch (error: any) {
+    console.error('Error subscribing profile:', error);
+    
+    // Manejar errores de validación de negocio
+    if (error instanceof BusinessValidationError) {
+      return res.status(409).json({ error: error.message });
+    }
+    
+    if (error.message.includes('no encontrado') || error.message.includes('no encontrada')) {
+      return res.status(404).json({ error: error.message });
+    }
+    
+    if (error.message.includes('Máximo')) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const purchaseUpgradeController = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { code, orderId } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ error: 'code es requerido' });
+    }
+
+    // Obtener el perfil para validaciones
+    const profile = await service.getProfileById(id);
+    if (!profile) {
+      return res.status(404).json({ error: 'Perfil no encontrado' });
+    }
+
+    // Validaciones de negocio
+    await validateUpgradePurchase(
+      profile.user.toString(),
+      id,
+      code,
+      orderId
+    );
+
+    const updatedProfile = await purchaseUpgrade(id, code);
+    res.status(200).json(updatedProfile);
+  } catch (error: any) {
+    console.error('Error purchasing upgrade:', error);
+    
+    // Manejar errores de validación de negocio
+    if (error instanceof BusinessValidationError) {
+      return res.status(409).json({ error: error.message });
+    }
+    
+    if (error.message.includes('no encontrado')) {
+      return res.status(404).json({ error: error.message });
+    }
+    
+    if ((error as any).status === 409 || error.message.includes('ya activo') || error.message.includes('sin un plan activo')) {
+      return res.status(409).json({ error: error.message });
+    }
+    
+    if (error.message.includes('requeridos no activos')) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    res.status(500).json({ error: 'Internal server error' });
+  }
 };
 
 export const getProfilesPost = async (req: Request, res: Response) => {
@@ -89,6 +211,19 @@ export const getProfilesWithStories = async (req: Request, res: Response) => {
     
     const profiles = await service.getProfilesWithStories(page, limit);
     res.json(profiles);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An error occurred';
+    res.status(500).json({ message });
+  }
+};
+
+// Endpoint para obtener estadísticas de uso del usuario (debugging)
+export const getUserUsageStatsController = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    
+    const stats = await getUserUsageStats(userId);
+    res.json(stats);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'An error occurred';
     res.status(500).json({ message });

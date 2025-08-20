@@ -5,6 +5,20 @@ export interface IStories {
     type: 'image' | 'video';
 }
 
+export interface IPlanAssignment {
+    planCode: string;           // ref lógico a PlanDefinition.code
+    variantDays: number;        // 7|15|30|180...
+    startAt: Date;
+    expiresAt: Date;
+}
+
+export interface IProfileUpgrade {
+    code: string;               // ref a UpgradeDefinition.code
+    startAt: Date;
+    endAt: Date;
+    purchaseAt: Date;
+}
+
 export interface IProfile extends Document {
     user: Types.ObjectId;
     name: string;
@@ -58,8 +72,13 @@ export interface IProfile extends Document {
     }[];
     paymentHistory: Types.ObjectId[];
     plan: Types.ObjectId;
-    upgrades: Types.ObjectId[];
     lastLogin: Date;
+    
+    // Nuevos campos para motor de visibilidad
+    planAssignment: IPlanAssignment | null;
+    upgrades: IProfileUpgrade[];
+    lastShownAt?: Date;           // para rotación
+    visible: boolean;             // default true mientras no expire plan
 }
 
 export interface CreateProfileDTO {
@@ -101,8 +120,23 @@ export interface CreateProfileDTO {
     rates?: string[];
     paymentHistory?: string[];
     plan?: string;
-    upgrades?: string[];
     verification?: string;
+    
+    // Nuevos campos opcionales para motor de visibilidad
+    planAssignment?: {
+        planCode: string;
+        variantDays: number;
+        startAt: Date;
+        expiresAt: Date;
+    };
+    upgrades?: {
+        code: string;
+        startAt: Date;
+        endAt: Date;
+        purchaseAt: Date;
+    }[];
+    lastShownAt?: Date;
+    visible?: boolean;
 }
 
 
@@ -146,7 +180,12 @@ export interface IProfileInput {
     rates?: Types.ObjectId[];
     paymentHistory?: Types.ObjectId[];
     plan?: Types.ObjectId;
-    upgrades?: Types.ObjectId[];
+    
+    // Nuevos campos opcionales para motor de visibilidad
+    planAssignment?: IPlanAssignment;
+    upgrades?: IProfileUpgrade[];
+    lastShownAt?: Date;
+    visible?: boolean;
 }
 
 export interface IProfileVerification extends Document {

@@ -13,4 +13,11 @@ router.get('/:id', controller.getProfileById);
 router.put('/:id', controller.updateProfile);
 router.delete('/:id', controller.deleteProfile);
 
+// Nuevas rutas para suscripción y upgrades
+router.post('/:id/subscribe', controller.subscribeProfileController);
+router.post('/:id/purchase-upgrade', controller.purchaseUpgradeController);
+
+// Ruta para estadísticas de uso del usuario (debugging)
+router.get('/user/:userId/usage-stats', controller.getUserUsageStatsController);
+
 export default router;

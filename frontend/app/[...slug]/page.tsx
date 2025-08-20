@@ -39,33 +39,43 @@ async function isValidCategory(categoria: string): Promise<boolean> {
 
 // Función para validar si un departamento es válido usando datos locales
 async function isValidDepartment(departamento: string): Promise<boolean> {
-  // Usar validación local primero (más confiable)
+  // Usar validación local primero (más confiable y rápida)
   const isValidLocal = isValidDepartmentLocal(departamento);
-
   
   if (isValidLocal) {
     return true;
   }
   
-  // Fallback a API si no está en datos locales
-  const options = await getFilterOptions();
-  if (!options) return false;
-  const isValidAPI = options.locations.departments.includes(departamento);
-  
-  
-  return isValidAPI;
+  // Fallback a API solo si es necesario
+  try {
+    const options = await getFilterOptions();
+    if (!options) return false;
+    return options.locations.departments.includes(departamento);
+  } catch (error) {
+    console.error('Error validating department via API:', error);
+    return false;
+  }
 }
 
 // Función para validar si una ciudad es válida usando datos locales
-async function isValidCity(ciudad: string): Promise<boolean> {
-  // Para validar ciudad necesitamos el departamento, lo obtenemos del contexto
-  // Por ahora usamos solo la API ya que necesitamos el contexto del departamento
-  const options = await getFilterOptions();
-  if (!options) return false;
-  const isValidAPI = options.locations.cities.includes(ciudad);
+async function isValidCity(ciudad: string, departamento?: string): Promise<boolean> {
+  // Si tenemos el departamento, usar validación local primero
+  if (departamento) {
+    const isValidLocal = isValidCityLocal(departamento, ciudad);
+    if (isValidLocal) {
+      return true;
+    }
+  }
   
-  
-  return isValidAPI;
+  // Fallback a API
+  try {
+    const options = await getFilterOptions();
+    if (!options) return false;
+    return options.locations.cities.includes(ciudad);
+  } catch (error) {
+    console.error('Error validating city via API:', error);
+    return false;
+  }
 }
 
 // Generar metadata dinámico para SEO
@@ -135,16 +145,15 @@ export default async function SearchPage({ params }: SearchPageProps) {
 
   // Validar parámetros obligatorios
   if (!categoria) {
-
+    console.log('❌ [VALIDATION] Missing category parameter');
     notFound();
   }
 
   // Verificar si la categoría es válida
   const isValidCat = await isValidCategory(categoria);
-
   
   if (!isValidCat) {
-
+    console.log(`❌ [VALIDATION] Invalid category: ${categoria}`);
     notFound();
   }
 
@@ -153,17 +162,17 @@ export default async function SearchPage({ params }: SearchPageProps) {
     const isValidDept = await isValidDepartment(departamento);
 
     if (!isValidDept) {
-
+      console.log(`❌ [VALIDATION] Invalid department: ${departamento}`);
       notFound();
     }
   }
 
-  // Validar ciudad si está presente
+  // Validar ciudad si está presente (necesita departamento para validación local)
   if (ciudad) {
-    const isValidCit = await isValidCity(ciudad);
+    const isValidCit = await isValidCity(ciudad, departamento);
     
     if (!isValidCit) {
-      
+      console.log(`❌ [VALIDATION] Invalid city: ${ciudad} in department: ${departamento}`);
       notFound();
     }
   }
@@ -194,7 +203,7 @@ export default async function SearchPage({ params }: SearchPageProps) {
     // Fetch con revalidate para ISR
     const res = await fetch(
       `${API_URL}/api/filters/profiles?${queryParams.toString()}`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 3600 } } // 1 hora
     );
 
     if (!res.ok) {
@@ -220,9 +229,9 @@ export default async function SearchPage({ params }: SearchPageProps) {
       throw new Error(responseData.message || 'Error en la respuesta del servidor');
     }
   } catch (error) {
-    // Error fetching profiles for SSG
+    console.error('❌ [ERROR] Failed to fetch profiles for ISR:', error);
     
-    // En caso de error, devolver datos vacíos
+    // En caso de error, devolver datos vacíos para evitar crash
     profilesData = {
       profiles: [],
       pagination: {
@@ -251,5 +260,5 @@ export async function generateStaticParams() {
 }
 
 // Configurar revalidación para ISR (Incremental Static Regeneration)
-// Las páginas se regenerarán cada 60 segundos cuando sean solicitadas
-export const revalidate = 60;
+// Las páginas se regenerarán cada hora cuando sean solicitadas
+export const revalidate = 3600; // 1 hora

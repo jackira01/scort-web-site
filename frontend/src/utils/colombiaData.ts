@@ -34,7 +34,7 @@ export const colombiaDepartments = {
     "Ciudad Bolívar",
     "Sumapaz"
   ],
-  "Medellín": [
+  /* "Medellín": [
     "Popular",
     "Santa Cruz",
     "Manrique",
@@ -65,7 +65,7 @@ export const colombiaDepartments = {
     "Cañaveralejo",
     "Pance-Lili",
     "Zona Rural"
-  ],
+  ], */
   "Amazonas": [
     "Leticia",
     "Puerto Nariño"

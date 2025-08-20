@@ -3,6 +3,8 @@ import { createProfileVerification } from '../profile-verification/profile-verif
 import UserModel from '../user/User.model';
 import { ProfileModel } from './profile.model';
 import type { CreateProfileDTO } from './profile.types';
+import { PlanDefinitionModel } from '../plans/plan.model';
+import { UpgradeDefinitionModel } from '../plans/upgrade.model';
 
 export const checkProfileNameExists = async (name: string) => {
   const profile = await ProfileModel.findOne({ name });
@@ -262,4 +264,154 @@ export const getProfilesWithStories = async (page: number = 1, limit: number = 1
     limit,
     totalPages: Math.ceil(total / limit),
   };
+};
+
+// Nuevas funciones para suscripción y upgrades
+export const subscribeProfile = async (profileId: string, planCode: string, variantDays: number) => {
+  // Validar que el plan y variante existen
+  const plan = await PlanDefinitionModel.findOne({ code: planCode });
+  if (!plan) {
+    throw new Error(`Plan con código ${planCode} no encontrado`);
+  }
+
+  const variant = plan.variants.find(v => v.days === variantDays);
+  if (!variant) {
+    throw new Error(`Variante de ${variantDays} días no encontrada para el plan ${planCode}`);
+  }
+
+  const profile = await ProfileModel.findById(profileId);
+  if (!profile) {
+    throw new Error('Perfil no encontrado');
+  }
+
+  // Reglas de negocio: máximo 3 AMATISTA visibles por usuario
+  if (planCode === 'AMATISTA') {
+    const amatistaCount = await ProfileModel.countDocuments({
+      user: profile.user,
+      visible: true,
+      'planAssignment.planCode': 'AMATISTA'
+    });
+    if (amatistaCount >= 3) {
+      throw new Error('Máximo 3 perfiles AMATISTA visibles por usuario');
+    }
+  }
+
+  // Regla de negocio: máximo 10 perfiles con plan pago por usuario
+  if (planCode !== 'AMATISTA') {
+    const paidPlansCount = await ProfileModel.countDocuments({
+      user: profile.user,
+      'planAssignment.planCode': { $ne: 'AMATISTA' },
+      'planAssignment.expiresAt': { $gt: new Date() }
+    });
+    if (paidPlansCount >= 10) {
+      throw new Error('Máximo 10 perfiles con plan pago por usuario');
+    }
+  }
+
+  // Calcular fechas
+  const startAt = new Date();
+  const expiresAt = new Date(startAt.getTime() + (variantDays * 24 * 60 * 60 * 1000));
+
+  // Actualizar perfil
+  const updatedProfile = await ProfileModel.findByIdAndUpdate(
+    profileId,
+    {
+      planAssignment: {
+        planCode,
+        variantDays,
+        startAt,
+        expiresAt
+      },
+      visible: true
+    },
+    { new: true }
+  );
+
+  return updatedProfile;
+};
+
+export const purchaseUpgrade = async (profileId: string, upgradeCode: string) => {
+  // Validar que el upgrade existe
+  const upgrade = await UpgradeDefinitionModel.findOne({ code: upgradeCode });
+  if (!upgrade) {
+    throw new Error(`Upgrade con código ${upgradeCode} no encontrado`);
+  }
+
+  const profile = await ProfileModel.findById(profileId);
+  if (!profile) {
+    throw new Error('Perfil no encontrado');
+  }
+
+  // Verificar que el perfil tiene un plan activo
+  if (!profile.planAssignment || profile.planAssignment.expiresAt < new Date()) {
+    const error = new Error('No se pueden comprar upgrades sin un plan activo');
+    (error as any).status = 409;
+    throw error;
+  }
+
+  // Verificar dependencias (upgrades requeridos)
+  if (upgrade.requires && upgrade.requires.length > 0) {
+    const now = new Date();
+    const activeUpgrades = profile.upgrades.filter(u => u.endAt > now);
+    const activeUpgradeCodes = activeUpgrades.map(u => u.code);
+    
+    const missingRequirements = upgrade.requires.filter(req => !activeUpgradeCodes.includes(req));
+    if (missingRequirements.length > 0) {
+      throw new Error(`Upgrades requeridos no activos: ${missingRequirements.join(', ')}`);
+    }
+  }
+
+  const now = new Date();
+  const endAt = new Date(now.getTime() + (upgrade.durationHours * 60 * 60 * 1000));
+
+  // Verificar si ya existe un upgrade activo del mismo tipo
+  const existingUpgradeIndex = profile.upgrades.findIndex(
+    u => u.code === upgradeCode && u.endAt > now
+  );
+
+  // Aplicar stacking policy
+  switch (upgrade.stackingPolicy) {
+    case 'reject':
+      if (existingUpgradeIndex !== -1) {
+        const error = new Error('Upgrade ya activo');
+        (error as any).status = 409;
+        throw error;
+      }
+      break;
+      
+    case 'replace':
+      if (existingUpgradeIndex !== -1) {
+        profile.upgrades.splice(existingUpgradeIndex, 1);
+      }
+      break;
+      
+    case 'extend':
+      if (existingUpgradeIndex !== -1) {
+        const existingUpgrade = profile.upgrades[existingUpgradeIndex];
+        existingUpgrade.endAt = new Date(existingUpgrade.endAt.getTime() + (upgrade.durationHours * 60 * 60 * 1000));
+        const updatedProfile = await ProfileModel.findByIdAndUpdate(
+          profileId,
+          { upgrades: profile.upgrades },
+          { new: true }
+        );
+        return updatedProfile;
+      }
+      break;
+  }
+
+  // Agregar nuevo upgrade
+  const newUpgrade = {
+    code: upgradeCode,
+    startAt: now,
+    endAt,
+    purchaseAt: now
+  };
+
+  const updatedProfile = await ProfileModel.findByIdAndUpdate(
+    profileId,
+    { $push: { upgrades: newUpgrade } },
+    { new: true }
+  );
+
+  return updatedProfile;
 };

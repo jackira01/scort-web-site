@@ -7,6 +7,7 @@ import AttributeGroupsAdmin from './AttributeGroupsAdmin';
 import { sidebarItems } from '@/modules/dashboard/data';
 import { DashUserPanel } from './DashbUserPanel';
 import { DashProfilePanel } from './DashbProfilePanel';
+import ConfigManager from '@/components/admin/ConfigManager/ConfigManager';
 
 export default function DashboardLayout() {
     const [activeSection, setActiveSection] = useState('usuarios');
@@ -90,6 +91,13 @@ export default function DashboardLayout() {
                 return (
                     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
                         <AttributeGroupsAdmin />
+                    </div>
+                );
+
+            case 'configuracion':
+                return (
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                        <ConfigManager />
                     </div>
                 );
 

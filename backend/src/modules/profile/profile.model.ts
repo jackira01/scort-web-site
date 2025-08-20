@@ -75,10 +75,34 @@ const profileSchema = new Schema<IProfile>(
     ],
     paymentHistory: [{ type: Schema.Types.ObjectId, ref: 'PaymentHistory' }],
     plan: { type: Schema.Types.ObjectId, ref: 'Plan' },
-    upgrades: [{ type: Schema.Types.ObjectId, ref: 'Upgrade' }],
     lastLogin: Date,
+    
+    // Nuevos campos para motor de visibilidad
+    planAssignment: {
+      type: {
+        planCode: { type: String },           // ref lógico a PlanDefinition.code
+        variantDays: { type: Number },        // 7|15|30|180...
+        startAt: { type: Date },
+        expiresAt: { type: Date },
+      },
+      default: null
+    },
+    upgrades: [{
+      code: { type: String, required: true },               // ref a UpgradeDefinition.code
+      startAt: { type: Date, required: true },
+      endAt: { type: Date, required: true },
+      purchaseAt: { type: Date, required: true },
+    }],
+    lastShownAt: { type: Date },           // para rotación
+    visible: { type: Boolean, default: true },             // default true mientras no expire plan
   },
   { timestamps: true },
 );
+
+// Índices para motor de visibilidad
+profileSchema.index({ visible: 1 });
+profileSchema.index({ 'planAssignment.expiresAt': 1 });
+profileSchema.index({ lastShownAt: 1 });
+profileSchema.index({ visible: 1, 'planAssignment.expiresAt': 1, lastShownAt: 1 }); // Índice compuesto
 
 export const ProfileModel = mongoose.model<IProfile>('Profile', profileSchema);

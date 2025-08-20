@@ -1,4 +1,4 @@
-import { Receipt, Settings, User } from "lucide-react";
+import { Receipt, Settings, User, Cog } from "lucide-react";
 
 export const userProfiles = [
     {
@@ -153,6 +153,15 @@ export const sidebarItems = [
         badge: null,
         description:
             'Detalles generales',
+        active: false,
+    },
+    {
+        id: 'configuracion',
+        label: 'Configuración',
+        icon: Cog,
+        badge: null,
+        description:
+            'Gestiona parámetros de configuración del sistema',
         active: false,
     },
 ];
