@@ -103,7 +103,8 @@ const UpgradeDefinitionSchema = new Schema<IUpgradeDefinition>({
 }, {
     timestamps: true,
     toJSON: { virtuals: true },
-    toObject: { virtuals: true }
+    toObject: { virtuals: true },
+    collection: 'upgradedefinitions'
 });
 
 // Índices

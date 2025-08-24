@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAttributeGroupByKey } from '@/hooks/use-filter-attribute-groups';
+import { useSexFilterCounts } from '@/hooks/use-filter-counts';
 
 interface SexFilterProps {
   selectedSex?: string[];
@@ -11,6 +12,7 @@ interface SexFilterProps {
 
 const SexFilter = ({ selectedSex = [], onSexChange }: SexFilterProps) => {
   const { data: sexGroup, isLoading, error } = useAttributeGroupByKey('sex');
+  const { data: sexCounts, isLoading: countsLoading } = useSexFilterCounts();
 
   if (isLoading) {
     return (
@@ -74,11 +76,10 @@ const SexFilter = ({ selectedSex = [], onSexChange }: SexFilterProps) => {
                 htmlFor={`sex-${variant.value}`}
                 className="text-sm font-medium text-foreground cursor-pointer flex-1"
               >
-                {variant.label || variant.value}
+                {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
               </label>
-              {/* TODO: Implementar conteo de perfiles por orientación sexual */}
               <Badge variant="secondary" className="ml-auto">
-                0
+                {countsLoading ? '...' : (sexCounts?.[variant.value] || 0)}
               </Badge>
             </div>
           );

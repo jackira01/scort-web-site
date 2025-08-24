@@ -36,6 +36,7 @@ import { Step3Details } from './Step3Details';
 import { Step4Multimedia } from './Step4Multimedia';
 import { Step5Finalize } from './Step5Finalize';
 
+
 export function CreateProfileLayout() {
   const [currentStep, setCurrentStep] = useState(1);
   const [uploading, setUploading] = useState(false);
@@ -86,6 +87,10 @@ export function CreateProfileLayout() {
       // Step 5 - Finalizar
       selectedUpgrades: [],
       acceptTerms: false,
+
+      // Step 5 - Selección de Plan (integrado en finalizar)
+      selectedPlan: undefined,
+      selectedVariant: undefined,
     },
   });
 
@@ -171,9 +176,13 @@ export function CreateProfileLayout() {
           const step5Data = {
             acceptTerms: form.getValues('acceptTerms') || false,
             selectedUpgrades: form.getValues('selectedUpgrades') || [],
+            selectedPlan: form.getValues('selectedPlan'),
+            selectedVariant: form.getValues('selectedVariant'),
           };
           return step5Schema.safeParse(step5Data);
         }
+
+
 
         default:
           return { success: true };
@@ -339,22 +348,17 @@ export function CreateProfileLayout() {
         gallery: formData.photos || [],
         videos: formData.videos || [],
         audios: formData.audios || [],
-        stories: [
-          // Agregar fotos como stories de tipo 'image'
-          ...(formData.photos || []).map((photoUrl) => ({
-            link: photoUrl,
-            type: 'image',
-          })),
-          // Agregar videos como stories de tipo 'video'
-          ...(formData.videos || []).map((videoUrl) => ({
-            link: videoUrl,
-            type: 'video',
-          })),
-        ],
+        stories: [], // Las stories se llenan en otra sección, no durante la creación del perfil
       },
       verification: null,
       availability: formData.availability,
       rates,
+      planAssignment: formData.selectedPlan && formData.selectedVariant ? {
+        planCode: formData.selectedPlan.code,
+        variantDays: formData.selectedVariant.days,
+        startAt: new Date(),
+        expiresAt: new Date(Date.now() + (formData.selectedVariant.days * 24 * 60 * 60 * 1000))
+      } : null,
     };
   };
 
@@ -399,6 +403,7 @@ export function CreateProfileLayout() {
       const backendData = transformDataToBackendFormat(dataWithUrls);
 
       // Frontend debug removed
+      console.log('Object sent to backend for profile creation:', backendData);
 
       // Crear el perfil usando el servicio
       const loadingToast = toast.loading('Creando perfil...');
@@ -457,6 +462,7 @@ export function CreateProfileLayout() {
         return <Step4Multimedia />;
       case 5:
         return <Step5Finalize />;
+
       default:
         return null;
     }

@@ -45,6 +45,29 @@ export const formSchema = z.object({
   // Step 5 - Finalizar
   selectedUpgrades: z.array(z.string()).optional(),
   acceptTerms: z.boolean().optional(),
+
+  // Step 5 - Selección de Plan (integrado en finalizar)
+  selectedPlan: z.object({
+    _id: z.string(),
+    name: z.string(),
+    code: z.string(),
+    variants: z.array(z.object({
+      price: z.number(),
+      days: z.number(),
+      durationRank: z.number()
+    })),
+    contentLimits: z.object({
+      maxPhotos: z.number(),
+      maxVideos: z.number(),
+      maxAudios: z.number(),
+      maxProfiles: z.number()
+    })
+  }).optional(),
+  selectedVariant: z.object({
+    price: z.number(),
+    days: z.number(),
+    durationRank: z.number()
+  }).optional(),
 });
 
 export type FormData = z.infer<typeof formSchema>;

@@ -84,7 +84,7 @@ export default function EditUserModal({ user, isOpen, onOpenChange }: EditUserMo
       onOpenChange(false);
     } catch (error) {
       toast.error('Error al actualizar el usuario');
-      console.error('Error updating user:', error);
+
     } finally {
       setIsLoading(false);
     }

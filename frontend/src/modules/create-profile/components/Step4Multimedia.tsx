@@ -1,13 +1,21 @@
 'use client';
 
 import { Camera, Mic, Video, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { applyWatermarkToFiles, needsWatermark } from '@/utils/watermark';
 import { useFormContext } from '../context/FormContext';
+import { usePlans } from '@/hooks/usePlans';
+import { useConfigValue } from '@/hooks/use-config-parameters';
+
+interface DefaultPlanConfig {
+  enabled: boolean;
+  planId: string | null;
+  planCode: string | null;
+}
 
 type Step4MultimediaProps = {};
 
@@ -19,6 +27,46 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
   } = useFormContext();
   const formData = watch();
   const [isProcessingWatermark, setIsProcessingWatermark] = useState(false);
+  const [contentLimits, setContentLimits] = useState({
+    maxPhotos: 20, // valores por defecto
+    maxVideos: 8,
+    maxAudios: 6
+  });
+
+  // Obtener planes disponibles
+  const { data: plansResponse } = usePlans({
+    limit: 50,
+    page: 1,
+    isActive: true
+  });
+  const plans = plansResponse?.plans || [];
+
+  // Obtener configuración del plan por defecto
+  const { value: defaultConfig } = useConfigValue<DefaultPlanConfig>(
+    'system.default_plan',
+    {
+      enabled: true,
+      defaultValue: { enabled: false, planId: null, planCode: null }
+    }
+  );
+
+  // Cargar límites del plan por defecto
+  useEffect(() => {
+    if (defaultConfig?.enabled && defaultConfig.planId && plans.length > 0) {
+      console.log('defaultConfig', defaultConfig);
+      const defaultPlan = plans.find(plan => plan._id === defaultConfig.planId);
+      console.log('plans', plans);
+      console.log('defaultPlan', defaultPlan);
+
+      if (defaultPlan && defaultPlan.variants) {
+        setContentLimits({
+          maxPhotos: defaultPlan.variants[0].contentLimits.maxPhotos || 20,
+          maxVideos: defaultPlan.variants[0].contentLimits.maxVideos || 8,
+          maxAudios: defaultPlan.variants[0].contentLimits.maxAudios || 6
+        });
+      }
+    }
+  }, [defaultConfig, plans]);
 
   // Usar los valores del formulario como fuente de verdad
   const photos = formData.photos || [];
@@ -35,11 +83,18 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
     const fileArray = Array.from(files);
     const currentFiles =
       type === 'photos' ? photos : type === 'videos' ? videos : audios;
-    const maxFiles = type === 'photos' ? 20 : type === 'videos' ? 8 : 6;
 
-    // Validar límites
-    if (currentFiles.length + fileArray.length > maxFiles) {
-      toast.error(`Máximo ${maxFiles} archivos permitidos para ${type}`);
+    // Validar límites dinámicos
+    const limits = {
+      photos: contentLimits.maxPhotos,
+      videos: contentLimits.maxVideos,
+      audios: contentLimits.maxAudios,
+    };
+
+    if (currentFiles.length + fileArray.length > limits[type]) {
+      toast.error(
+        `Solo puedes subir un máximo de ${limits[type]} ${type === 'photos' ? 'fotos' : type === 'videos' ? 'videos' : 'audios'}`,
+      );
       return;
     }
 
@@ -212,7 +267,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
               <CardTitle className="text-foreground">
                 Mis fotos <span className="text-red-500">*</span>
               </CardTitle>
-              <Badge variant="outline">{photos.length} / 20</Badge>
+              <Badge variant="outline">{photos.length} / {contentLimits.maxPhotos}</Badge>
             </div>
             <div className="space-y-3 mt-3">
               <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
@@ -295,7 +350,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle className="text-foreground">Mis videos</CardTitle>
-              <Badge variant="outline">{videos.length} / 8</Badge>
+              <Badge variant="outline">{videos.length} / {contentLimits.maxVideos}</Badge>
             </div>
             <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-3">
               <div className="flex items-start space-x-2">
@@ -361,7 +416,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
               <CardTitle className="text-foreground">
                 Mis archivos de audio
               </CardTitle>
-              <Badge variant="outline">{audios.length} / 6</Badge>
+              <Badge variant="outline">{audios.length} / {contentLimits.maxAudios}</Badge>
             </div>
           </CardHeader>
           <CardContent>

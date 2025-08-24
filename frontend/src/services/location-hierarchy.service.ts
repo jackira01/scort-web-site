@@ -58,7 +58,7 @@ export class LocationHierarchyService {
                 timezone: countryConfig.value.timezone || 'America/Bogota',
             };
         } catch (error) {
-            console.error('Error fetching country data:', error);
+
             return null;
         }
     }
@@ -94,7 +94,7 @@ export class LocationHierarchyService {
 
             return departments;
         } catch (error) {
-            console.error('Error fetching departments:', error);
+
             return [];
         }
     }
@@ -122,10 +122,7 @@ export class LocationHierarchyService {
                 coordinates: city.value.coordinates,
             }));
         } catch (error) {
-            console.error(
-                `Error fetching cities for department ${departmentNormalized}:`,
-                error,
-            );
+
             return [];
         }
     }
@@ -174,7 +171,7 @@ export class LocationHierarchyService {
 
             return { departments, cities };
         } catch (error) {
-            console.error('Error searching locations:', error);
+
             return { departments: [], cities: [] };
         }
     }
@@ -186,7 +183,7 @@ export class LocationHierarchyService {
         try {
             return await ConfigParameterService.getByKey(key);
         } catch (error) {
-            console.error(`Error fetching location ${key}:`, error);
+
             return null;
         }
     }
@@ -228,7 +225,7 @@ export class LocationHierarchyService {
                 },
             ];
         } catch (error) {
-            console.error('Error building hierarchical options:', error);
+
             return [];
         }
     }
@@ -256,7 +253,7 @@ export class LocationHierarchyService {
 
             return true;
         } catch (error) {
-            console.error('Error validating location:', error);
+
             return false;
         }
     }
@@ -290,7 +287,7 @@ export class LocationHierarchyService {
                 departmentWithMostCities,
             };
         } catch (error) {
-            console.error('Error getting location stats:', error);
+
             return {
                 totalDepartments: 0,
                 totalCities: 0,

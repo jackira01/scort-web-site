@@ -49,7 +49,7 @@ export const useFilterOptions = (): UseFilterOptionsReturn => {
           throw new Error('Invalid response format');
         }
       } catch (err) {
-        console.error('❌ [FILTER OPTIONS] Error fetching filter options:', err);
+  
         setError(err instanceof Error ? err.message : 'Error fetching filter options');
       } finally {
         setLoading(false);

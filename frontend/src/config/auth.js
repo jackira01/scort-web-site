@@ -29,7 +29,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.verification_in_progress = userData.verification_in_progress;
         } catch (error) {
           // Error obteniendo datos del usuario, mantener los datos del token
-          console.error('Error fetching updated user data:', error);
+  
         }
       }
       return token;

@@ -21,7 +21,19 @@ export const uploadUserDocument = async (userId: string, documentUrl: string) =>
   return user;
 };
 
-export const getUserById = (id: string) => UserModel.findById(id);
+export const getUserById = async (id: string) => {
+  try {
+    // Validar formato de ObjectId de MongoDB
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      throw new Error('Formato de ID de usuario inválido');
+    }
+    
+    return await UserModel.findById(id);
+  } catch (error) {
+    console.error('Error en getUserById service:', error);
+    throw error;
+  }
+};
 
 export const updateUser = (id: string, data: any) =>
   UserModel.findByIdAndUpdate(id, data, { new: true });

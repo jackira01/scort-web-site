@@ -36,7 +36,7 @@ export function ConfigParameterList({
             try {
                 await deleteParameter.mutateAsync(parameter._id);
             } catch (error) {
-                console.error('Error deleting parameter:', error);
+          
             }
         }
     };
@@ -45,7 +45,7 @@ export function ConfigParameterList({
         try {
             await toggleActive.mutateAsync(parameter._id);
         } catch (error) {
-            console.error('Error toggling parameter status:', error);
+      
         }
     };
 

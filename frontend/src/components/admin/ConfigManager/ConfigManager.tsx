@@ -24,6 +24,7 @@ import { ConfigParameterForm } from './ConfigParameterForm';
 import { ConfigParameterList } from './ConfigParameterList';
 import { LocationManager } from './LocationManager';
 import { MembershipManager } from './MembershipManager';
+import { ProfileLimitsManager } from './ProfileLimitsManager';
 import { TextManager } from './TextManager';
 
 type ViewMode =
@@ -32,7 +33,8 @@ type ViewMode =
     | 'edit'
     | 'locations'
     | 'texts'
-    | 'memberships';
+    | 'memberships'
+    | 'profile-limits';
 
 interface ConfigManagerProps {
     className?: string;
@@ -119,18 +121,16 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
     const handleExport = async () => {
         try {
             // Implementar exportación
-            console.log('Exporting configurations...');
         } catch (error) {
-            console.error('Export failed:', error);
+            // Error handled by the service
         }
     };
 
     const handleImport = async (file: File) => {
         try {
             // Implementar importación
-            console.log('Importing configurations...', file);
         } catch (error) {
-            console.error('Import failed:', error);
+            // Error handled by the service
         }
     };
 
@@ -169,12 +169,24 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
 
                     <button
                         onClick={() => setViewMode('memberships')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'memberships'
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            viewMode === 'memberships'
                                 ? 'bg-blue-100 text-blue-700'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                     >
                         Membresías
+                    </button>
+
+                    <button
+                        onClick={() => setViewMode('profile-limits')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            viewMode === 'profile-limits'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                    >
+                        Límites de Perfiles
                     </button>
 
                     <button
@@ -311,6 +323,14 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
                 return (
                     <div className="p-6">
                         <MembershipManager />
+                    </div>
+                );
+
+            case 'profile-limits':
+                console.log('[DEBUG] ConfigManager: Rendering profile-limits section');
+                return (
+                    <div className="p-6">
+                        <ProfileLimitsManager />
                     </div>
                 );
 

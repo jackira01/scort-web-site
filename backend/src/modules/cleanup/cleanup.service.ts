@@ -15,17 +15,18 @@ export const hideExpiredProfiles = async (now: Date = new Date()): Promise<numbe
     const result = await ProfileModel.updateMany(
       {
         visible: true,
+        isActive: true,
         'planAssignment.expiresAt': { $lte: now }
       },
       {
-        $set: { visible: false }
+        $set: { visible: false, isActive: false }
       }
     );
 
-    console.log(`[Cleanup] Hidden ${result.modifiedCount} expired profiles at ${now.toISOString()}`);
+    console.log(`[Cleanup] Hidden and deactivated ${result.modifiedCount} expired profiles at ${now.toISOString()}`);
     return result.modifiedCount;
   } catch (error) {
-    console.error('[Cleanup] Error hiding expired profiles:', error);
+    console.error('[Cleanup] Error hiding and deactivating expired profiles:', error);
     throw error;
   }
 };

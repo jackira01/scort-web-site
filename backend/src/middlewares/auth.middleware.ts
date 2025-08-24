@@ -1,9 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import UserModel from '../modules/user/User.model';
-
-interface AuthRequest extends Request {
-  user?: any;
-}
+import { AuthRequest } from '../types/auth.types';
 
 export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -20,7 +17,12 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
       return res.status(401).json({ message: 'Usuario no encontrado' });
     }
 
-    req.user = user;
+    // Ensure the user object has both id and _id for compatibility
+    req.user = {
+      ...user.toObject(),
+      _id: (user._id as string).toString(),
+      id: (user._id as string).toString()
+    };
     next();
   } catch (error) {
     res.status(401).json({ message: 'Error de autenticación' });
@@ -31,6 +33,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
 export const devAuthMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
   // For development purposes, you can bypass authentication
   // Remove this in production
-  req.user = { _id: 'dev-user-id', role: 'admin' };
+  // Using a valid ObjectId format for development
+  req.user = { id: '507f1f77bcf86cd799439011', _id: '507f1f77bcf86cd799439011', role: 'admin' };
   next();
 };

@@ -29,8 +29,8 @@ const planVariantsValidation = body('variants')
             if (!variant.days || !Number.isInteger(variant.days) || variant.days <= 0) {
                 throw new Error('Cada variante debe tener días válidos (número entero positivo)');
             }
-            if (!variant.price || typeof variant.price !== 'number' || variant.price <= 0) {
-                throw new Error('Cada variante debe tener un precio válido (número positivo)');
+            if (typeof variant.price !== 'number' || variant.price < 0) {
+                throw new Error('Cada variante debe tener un precio válido (número no negativo)');
             }
             if (!Number.isInteger(variant.durationRank) || variant.durationRank < 0) {
                 throw new Error('Cada variante debe tener un durationRank válido (número entero >= 0)');
@@ -211,12 +211,6 @@ router.get('/',
     plansController.getAllPlans.bind(plansController)
 );
 
-// GET /api/plans/:id - Obtener plan por ID
-router.get('/:id', 
-    idParamValidation,
-    plansController.getPlanById.bind(plansController)
-);
-
 // GET /api/plans/code/:code - Obtener plan por código
 router.get('/code/:code', 
     codeParamValidation,
@@ -228,6 +222,38 @@ router.get('/level/:level',
     levelParamValidation,
     query('activeOnly').optional().isBoolean(),
     plansController.getPlansByLevel.bind(plansController)
+);
+
+// ==================== RUTAS DE UPGRADES ====================
+
+// GET /api/plans/upgrades - Obtener todos los upgrades
+router.get('/upgrades', 
+    paginationValidation,
+    plansController.getAllUpgrades.bind(plansController)
+);
+
+// GET /api/upgrades/:id - Obtener upgrade por ID
+router.get('/upgrades/:id', 
+    idParamValidation,
+    plansController.getUpgradeById.bind(plansController)
+);
+
+// GET /api/upgrades/code/:code - Obtener upgrade por código
+router.get('/upgrades/code/:code', 
+    codeParamValidation,
+    plansController.getUpgradeByCode.bind(plansController)
+);
+
+// GET /api/upgrades/:code/dependency-tree - Obtener árbol de dependencias
+router.get('/upgrades/:code/dependency-tree', 
+    codeParamValidation,
+    plansController.getUpgradeDependencyTree.bind(plansController)
+);
+
+// GET /api/plans/:id - Obtener plan por ID
+router.get('/:id', 
+    idParamValidation,
+    plansController.getPlanById.bind(plansController)
 );
 
 // POST /api/plans - Crear nuevo plan
@@ -267,26 +293,6 @@ router.get('/:code/validate-upgrades',
     plansController.validatePlanUpgrades.bind(plansController)
 );
 
-// ==================== RUTAS DE UPGRADES ====================
-
-// GET /api/upgrades - Obtener todos los upgrades
-router.get('/upgrades', 
-    paginationValidation,
-    plansController.getAllUpgrades.bind(plansController)
-);
-
-// GET /api/upgrades/:id - Obtener upgrade por ID
-router.get('/upgrades/:id', 
-    idParamValidation,
-    plansController.getUpgradeById.bind(plansController)
-);
-
-// GET /api/upgrades/code/:code - Obtener upgrade por código
-router.get('/upgrades/code/:code', 
-    codeParamValidation,
-    plansController.getUpgradeByCode.bind(plansController)
-);
-
 // POST /api/upgrades - Crear nuevo upgrade
 router.post('/upgrades', [
     upgradeCodeValidation,
@@ -314,12 +320,6 @@ router.put('/upgrades/:id', [
 router.delete('/upgrades/:id', 
     idParamValidation,
     plansController.deleteUpgrade.bind(plansController)
-);
-
-// GET /api/upgrades/:code/dependency-tree - Obtener árbol de dependencias
-router.get('/upgrades/:code/dependency-tree', 
-    codeParamValidation,
-    plansController.getUpgradeDependencyTree.bind(plansController)
 );
 
 export default router;

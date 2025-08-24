@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAttributeGroupByKey } from '@/hooks/use-filter-attribute-groups';
+import { useGenderFilterCounts } from '@/hooks/use-filter-counts';
 
 interface GenderFilterProps {
   selectedGender?: string;
@@ -11,6 +12,7 @@ interface GenderFilterProps {
 
 const GenderFilter = ({ selectedGender, onGenderChange }: GenderFilterProps) => {
   const { data: genderGroup, isLoading, error } = useAttributeGroupByKey('gender');
+  const { data: genderCounts, isLoading: countsLoading } = useGenderFilterCounts();
 
   if (isLoading) {
     return (
@@ -61,11 +63,10 @@ const GenderFilter = ({ selectedGender, onGenderChange }: GenderFilterProps) => 
                 htmlFor={`gender-${variant.value}`}
                 className="text-sm font-medium text-foreground cursor-pointer flex-1"
               >
-                {variant.label || variant.value}
+                {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
               </label>
-              {/* TODO: Implementar conteo de perfiles por género */}
               <Badge variant="secondary" className="ml-auto">
-                0
+                {countsLoading ? '...' : (genderCounts?.[variant.value] || 0)}
               </Badge>
             </div>
           );

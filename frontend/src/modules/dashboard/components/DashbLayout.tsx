@@ -8,6 +8,9 @@ import { sidebarItems } from '@/modules/dashboard/data';
 import { DashUserPanel } from './DashbUserPanel';
 import { DashProfilePanel } from './DashbProfilePanel';
 import ConfigManager from '@/components/admin/ConfigManager/ConfigManager';
+import PlansManager from '@/components/admin/plans/PlansManager';
+import DefaultPlanManager from '@/components/admin/DefaultPlanManager';
+
 
 export default function DashboardLayout() {
     const [activeSection, setActiveSection] = useState('usuarios');
@@ -98,6 +101,20 @@ export default function DashboardLayout() {
                 return (
                     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
                         <ConfigManager />
+                    </div>
+                );
+
+            case 'planes':
+                return (
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                        <PlansManager />
+                    </div>
+                );
+
+            case 'plan-defecto':
+                return (
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                        <DefaultPlanManager />
                     </div>
                 );
 

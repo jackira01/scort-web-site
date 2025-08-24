@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '@/lib/axios';
 import type { BaseUser, User } from '@/types/user.types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -68,5 +68,10 @@ export const updateProfile = async (profileId: string, data: any) => {
 
 export const updateUserLastLogin = async (userId: string) => {
     const response = await axios.put(`${API_URL}/api/user/${userId}/last-login`);
+    return response.data;
+}
+
+export const deleteProfile = async (profileId: string) => {
+    const response = await axios.delete(`${API_URL}/api/profile/${profileId}`);
     return response.data;
 }

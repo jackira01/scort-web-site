@@ -36,6 +36,7 @@ export const getHomeFeed = async (options: HomeFeedOptions = {}): Promise<HomeFe
   // Filtrar perfiles visibles con plan activo
   const visibleProfiles = await ProfileModel.find({
     visible: true,
+    isActive: true,
     'planAssignment.expiresAt': { $gt: now }
   }).exec();
 

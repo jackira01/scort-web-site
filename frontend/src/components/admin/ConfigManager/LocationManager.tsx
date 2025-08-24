@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { MapPin, Plus, Edit, Trash2, Globe, Navigation } from 'lucide-react';
-import { useLocationConfigs, useCreateConfigParameter, useUpdateConfigParameter, useDeleteConfigParameter } from '../../../hooks/use-config-parameters';
+import { useLocationConfig, useCreateConfigParameter, useUpdateConfigParameter, useDeleteConfigParameter } from '../../../hooks/use-config-parameters';
 import type { LocationConfig, ConfigParameterFormData } from '../../../types/config-parameter.types';
 
 interface LocationFormData {
@@ -46,7 +46,7 @@ export function LocationManager() {
     const [formData, setFormData] = useState<LocationFormData>(DEFAULT_LOCATION);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    const { locations, loading, error, refetch } = useLocationConfigs();
+    const { locations, loading, error, refetch } = useLocationConfig();
     const createMutation = useCreateConfigParameter();
     const updateMutation = useUpdateConfigParameter();
     const deleteMutation = useDeleteConfigParameter();
@@ -86,7 +86,7 @@ export function LocationManager() {
                 await deleteMutation.mutateAsync(location._id);
                 refetch();
             } catch (error) {
-                console.error('Error deleting location:', error);
+          
             }
         }
     };
@@ -178,7 +178,7 @@ export function LocationManager() {
             setEditingLocation(null);
             refetch();
         } catch (error) {
-            console.error('Error saving location:', error);
+      
         }
     };
 

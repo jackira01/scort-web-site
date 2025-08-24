@@ -73,7 +73,7 @@ export function useConfigParameters(
                     }
                 );
             } catch (error) {
-                console.error('Error fetching config parameters:', error);
+
                 return {
                     docs: [],
                     totalCount: 0,
@@ -99,7 +99,7 @@ export function useConfigParameters(
     return {
         parameters: data?.docs || [],
         loading,
-        error: error?.message || null,
+        error: error ? (error.message || String(error)) : null,
         totalCount: data?.totalCount || 0,
         currentPage: data?.currentPage || 1,
         totalPages: data?.totalPages || 1,
@@ -132,7 +132,7 @@ export function useConfigParameter(
     return {
         parameter: parameter || null,
         loading,
-        error: error?.message || null,
+        error: error ? (error.message || String(error)) : null,
         refetch,
     };
 }
@@ -145,24 +145,44 @@ export function useConfigParameterByKey(
     activeOnly: boolean = true,
     options?: { enabled?: boolean },
 ): UseConfigParameterResult {
+    console.log('[DEBUG] useConfigParameterByKey called with:', { key, activeOnly, options });
+
+    const queryKey = configParameterKeys.byKey(key);
+    console.log('[DEBUG] Query key generated:', queryKey);
+
     const {
         data: parameter,
         isLoading: loading,
         error,
         refetch,
     } = useQuery({
-        queryKey: configParameterKeys.byKey(key),
-        queryFn: () => ConfigParameterService.getByKey(key, activeOnly),
+        queryKey,
+        queryFn: async () => {
+            console.log('[DEBUG] Query function executing for key:', key);
+            try {
+                const result = await ConfigParameterService.getByKey(key, activeOnly);
+                console.log('[DEBUG] ConfigParameterService.getByKey result:', result);
+                return result;
+            } catch (err) {
+                console.error('[DEBUG] ConfigParameterService.getByKey error:', err);
+                throw err;
+            }
+        },
         enabled: (options?.enabled ?? true) && !!key,
         staleTime: 10 * 60 * 1000, // 10 minutos para valores por key
     });
 
-    return {
+    console.log('[DEBUG] useQuery result:', { parameter, loading, error });
+
+    const result = {
         parameter: parameter || null,
         loading,
-        error: error?.message || null,
+        error: error ? (error.message || String(error)) : null,
         refetch,
     };
+
+    console.log('[DEBUG] Final hook result:', result);
+    return result;
 }
 
 /**
@@ -188,7 +208,7 @@ export function useConfigParametersByCategory(
     return {
         parameters: parameters || [],
         loading,
-        error: error?.message || null,
+        error: error ? (error.message || String(error)) : null,
         refetch,
     };
 }
@@ -216,7 +236,7 @@ export function useConfigParametersByType(
     return {
         parameters: parameters || [],
         loading,
-        error: error?.message || null,
+        error: error ? (error.message || String(error)) : null,
         refetch,
     };
 }
@@ -248,7 +268,7 @@ export function useConfigValue<T = any>(
     return {
         value: value ?? options?.defaultValue ?? null,
         loading,
-        error: error?.message || null,
+        error: error ? (error.message || String(error)) : null,
         refetch,
     };
 }
@@ -279,7 +299,7 @@ export function useConfigValues(
     return {
         values: values || {},
         loading,
-        error: error?.message || null,
+        error: error ? (error.message || String(error)) : null,
         refetch,
     };
 }
@@ -300,7 +320,7 @@ export function useConfigCategories(options?: { enabled?: boolean }) {
                 const result = await ConfigParameterService.getCategories();
                 return result || [];
             } catch (error) {
-                console.error('Error fetching categories:', error);
+
                 return [];
             }
         },
@@ -313,7 +333,7 @@ export function useConfigCategories(options?: { enabled?: boolean }) {
     return {
         categories: categories || [],
         loading,
-        error: error?.message || null,
+        error: error ? (error.message || String(error)) : null,
         refetch,
     };
 }
@@ -334,7 +354,7 @@ export function useConfigTags(options?: { enabled?: boolean }) {
                 const result = await ConfigParameterService.getTags();
                 return result || [];
             } catch (error) {
-                console.error('Error fetching tags:', error);
+
                 return [];
             }
         },
@@ -347,7 +367,7 @@ export function useConfigTags(options?: { enabled?: boolean }) {
     return {
         tags: tags || [],
         loading,
-        error: error?.message || null,
+        error: error ? (error.message || String(error)) : null,
         refetch,
     };
 }

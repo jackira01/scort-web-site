@@ -21,7 +21,7 @@ export const DashProfilePanel = () => {
     data: profilesData,
     isLoading,
     error,
-  } = useAllProfiles(currentPage, limit, '_id,name,age,isActive,media');
+  } = useAllProfiles(currentPage, limit, '_id,name,profileName,age,isActive,media,featured,location,verification,isVerified');
 
   if (isLoading) {
     return <Loader />;
@@ -44,7 +44,7 @@ export const DashProfilePanel = () => {
 
       {/* Perfiles */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {profilesData?.docs?.map((profile, index) => (
+        {profilesData?.profiles?.map((profile, index) => (
           <DashbProfileCard
             key={profile._id}
             profile={profile}
@@ -54,7 +54,7 @@ export const DashProfilePanel = () => {
           />
         ))}
       </div>
-      
+
       {/* Paginación */}
       {profilesData && profilesData.totalPages > 1 && (
         <Pagination
@@ -67,7 +67,7 @@ export const DashProfilePanel = () => {
           limit={profilesData.limit}
         />
       )}
-      
+
       {/* Admin Profile Verification Carousel */}
       {selectedProfileForVerification && (
         <AdminProfileVerificationCarousel

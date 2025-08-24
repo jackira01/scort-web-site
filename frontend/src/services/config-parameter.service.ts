@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../lib/axios';
 import { API_URL } from '../lib/config';
 import type {
     ConfigParameter,
@@ -60,10 +60,39 @@ export class ConfigParameterService {
      */
     static async getByKey(key: string, activeOnly: boolean = true): Promise<ConfigParameter> {
         const params = activeOnly ? '?activeOnly=true' : '?activeOnly=false';
-        const response = await axios.get<ConfigParameterApiResponse>(
-            `${API_BASE_URL}/key/${key}${params}`
-        );
-        return response.data.data;
+        const url = `${API_BASE_URL}/key/${key}${params}`;
+        
+        console.log('[DEBUG] ConfigParameterService.getByKey called with:', { key, activeOnly });
+        console.log('[DEBUG] API URL:', url);
+        console.log('[DEBUG] API_BASE_URL:', API_BASE_URL);
+        
+        try {
+            const response = await axios.get<ConfigParameterApiResponse>(url);
+            console.log('[DEBUG] API Response status:', response.status);
+            console.log('[DEBUG] API Response headers:', response.headers);
+            console.log('[DEBUG] API Response data:', response.data);
+            
+            if (!response.data) {
+                console.error('[DEBUG] Response.data is undefined!');
+                throw new Error('Response data is undefined');
+            }
+            
+            if (!response.data.data) {
+                console.error('[DEBUG] Response.data.data is undefined!');
+                console.error('[DEBUG] Full response.data structure:', JSON.stringify(response.data, null, 2));
+                throw new Error('Response data.data is undefined');
+            }
+            
+            console.log('[DEBUG] Returning parameter:', response.data.data);
+            return response.data.data;
+        } catch (error) {
+            console.error('[DEBUG] ConfigParameterService.getByKey error:', error);
+            if (error.response) {
+                console.error('[DEBUG] Error response status:', error.response.status);
+                console.error('[DEBUG] Error response data:', error.response.data);
+            }
+            throw error;
+        }
     }
 
     /**
@@ -135,7 +164,7 @@ export class ConfigParameterService {
             const response = await axios.get<ConfigValueApiResponse>(`${API_BASE_URL}/value/${key}`);
             return response.data.data.value;
         } catch (error) {
-            console.warn(`Configuration value not found for key: ${key}`);
+        
             return null;
         }
     }
@@ -151,7 +180,7 @@ export class ConfigParameterService {
             );
             return response.data.data;
         } catch (error) {
-            console.warn('Error fetching multiple configuration values:', error);
+        
             return {};
         }
     }
@@ -245,7 +274,7 @@ export class ConfigParameterService {
                 this.getSystemConfig()
             ]);
         } catch (error) {
-            console.warn('Error preloading common configurations:', error);
+        
         }
     }
 
@@ -270,7 +299,7 @@ export class ConfigParameterService {
                 const created = await this.create(config);
                 results.push(created);
             } catch (error) {
-                console.error(`Error importing config ${config.key}:`, error);
+          
             }
         }
         

@@ -41,15 +41,20 @@ export class PlansController {
                 limit = 10,
                 sortBy = 'level',
                 sortOrder = 'asc',
-                activeOnly = 'true'
+                isActive,
+                search
             } = req.query;
+            
+            // Si isActive está definido, usarlo; si no, mostrar todos los planes (no filtrar por defecto)
+            const activeOnly = isActive !== undefined ? isActive === 'true' : false;
             
             const options = {
                 page: parseInt(page as string),
                 limit: parseInt(limit as string),
                 sortBy: sortBy as string,
                 sortOrder: sortOrder as 'asc' | 'desc',
-                activeOnly: activeOnly === 'true'
+                activeOnly,
+                search: search as string
             };
             
             const result = await plansService.getAllPlans(options);
@@ -250,20 +255,33 @@ export class PlansController {
     
     async getAllUpgrades(req: Request, res: Response): Promise<void> {
         try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Errores de validación',
+                    errors: errors.array()
+                });
+                return;
+            }
+            
             const {
                 page = 1,
                 limit = 10,
                 sortBy = 'code',
                 sortOrder = 'asc',
-                activeOnly = 'true'
+                active
             } = req.query;
+            
+            // Si active está definido, usarlo; si no, mostrar todos los upgrades (no filtrar por defecto)
+            const activeOnly = active !== undefined ? active === 'true' : false;
             
             const options = {
                 page: parseInt(page as string),
                 limit: parseInt(limit as string),
                 sortBy: sortBy as string,
                 sortOrder: sortOrder as 'asc' | 'desc',
-                activeOnly: activeOnly === 'true'
+                activeOnly
             };
             
             const result = await plansService.getAllUpgrades(options);

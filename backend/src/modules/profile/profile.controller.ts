@@ -47,6 +47,19 @@ export const getProfiles = async (req: Request, res: Response) => {
   res.json(profiles);
 };
 
+export const getProfilesForHome = async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    
+    const profiles = await service.getProfilesForHome(page, limit);
+    res.json(profiles);
+  } catch (error: any) {
+    console.error('Error getting profiles for home:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 export const getProfileById = async (req: Request, res: Response) => {
   const profile = await service.getProfileById(req.params.id);
   if (!profile)
@@ -224,6 +237,51 @@ export const getUserUsageStatsController = async (req: Request, res: Response) =
     
     const stats = await getUserUsageStats(userId);
     res.json(stats);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An error occurred';
+    res.status(500).json({ message });
+  }
+};
+
+// Endpoint para validar límites de perfiles de un usuario
+export const validateUserProfileLimitsController = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { planCode } = req.query;
+    
+    const validation = await service.validateUserProfileLimits(userId, planCode as string);
+    res.json(validation);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An error occurred';
+    res.status(500).json({ message });
+  }
+};
+
+// Endpoint para obtener resumen de perfiles de un usuario
+export const getUserProfilesSummaryController = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    
+    const summary = await service.getUserProfilesSummary(userId);
+    res.json(summary);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An error occurred';
+    res.status(500).json({ message });
+  }
+};
+
+// Endpoint para validar upgrade de plan de un perfil
+export const validateProfilePlanUpgradeController = async (req: Request, res: Response) => {
+  try {
+    const { profileId } = req.params;
+    const { planCode } = req.body;
+    
+    if (!planCode) {
+      return res.status(400).json({ error: 'planCode es requerido' });
+    }
+    
+    const validation = await service.validateProfilePlanUpgrade(profileId, planCode);
+    res.json(validation);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'An error occurred';
     res.status(500).json({ message });

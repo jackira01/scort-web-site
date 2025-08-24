@@ -8,18 +8,36 @@ export const CreateUserController = async (req: Request, res: Response) => {
 };
 
 export const getUserById = async (req: Request, res: Response) => {
-  const user = await userService.getUserById(req.params.id);
+  try {
+    const { id } = req.params;
+    
+    // Validar que el ID sea válido
+    if (!id) {
+      return res.status(400).json({ mensaje: 'ID de usuario requerido' });
+    }
 
-  if (!user) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
-  res.json({
-    _id: user._id,
-    email: user.email,
-    name: user.name,
-    verificationDocument: user.verificationDocument,
-    isVerified: user.isVerified,
-    verification_in_progress: user.verification_in_progress,
-    role: user.role,
-  });
+    const user = await userService.getUserById(id);
+
+    if (!user) {
+      return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+    }
+    
+    res.json({
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+      verificationDocument: user.verificationDocument,
+      isVerified: user.isVerified,
+      verification_in_progress: user.verification_in_progress,
+      role: user.role,
+    });
+  } catch (error) {
+    console.error('Error al obtener usuario por ID:', error);
+    res.status(500).json({ 
+      mensaje: 'Error interno del servidor al obtener usuario',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
 };
 
 export const verifyUserController = async (req: Request, res: Response) => { };

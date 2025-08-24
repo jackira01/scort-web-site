@@ -50,6 +50,7 @@ export interface QueryOptions {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
     activeOnly?: boolean;
+    search?: string;
 }
 
 export class PlansService {
@@ -88,10 +89,25 @@ export class PlansService {
             limit = 10,
             sortBy = 'level',
             sortOrder = 'asc',
-            activeOnly = true
+            activeOnly = true,
+            search
         } = options;
         
-        const query = activeOnly ? { active: true } : {};
+        const query: any = {};
+        
+        // Filtro por estado activo solo si activeOnly es true
+        if (activeOnly) {
+            query.active = true;
+        }
+        
+        // Filtro de búsqueda
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { code: { $regex: search, $options: 'i' } }
+            ];
+        }
+        
         const sort: any = {};
         sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
         

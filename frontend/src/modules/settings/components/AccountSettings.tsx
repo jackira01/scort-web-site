@@ -1,8 +1,42 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useSession } from 'next-auth/react';
+import { Crown, Gem, Shield, Star, Zap } from 'lucide-react';
+
+// Tipo para el plan actual
+interface CurrentPlan {
+  level: number;
+  name: string;
+  code?: string;
+}
 
 const AccountSettings = () => {
+  const { data: session } = useSession();
+  const user = session?.user;
+  
+  // Función para obtener información del plan
+  const getPlanInfo = (level: number) => {
+    switch (level) {
+      case 1:
+        return { name: 'AMATISTA', icon: <Crown className="h-4 w-4 text-purple-500" />, color: 'text-purple-600' };
+      case 2:
+        return { name: 'ZAFIRO', icon: <Gem className="h-4 w-4 text-blue-500" />, color: 'text-blue-600' };
+      case 3:
+        return { name: 'ESMERALDA', icon: <Shield className="h-4 w-4 text-green-500" />, color: 'text-green-600' };
+      case 4:
+        return { name: 'ORO', icon: <Star className="h-4 w-4 text-orange-500" />, color: 'text-orange-600' };
+      case 5:
+        return { name: 'DIAMANTE', icon: <Zap className="h-4 w-4 text-yellow-500" />, color: 'text-yellow-600' };
+      default:
+        return { name: 'BÁSICO', icon: <Zap className="h-4 w-4 text-gray-500" />, color: 'text-gray-600' };
+    }
+  };
+  
+  // Temporal: usar datos básicos hasta que se implemente la integración completa con perfiles
+  const currentPlan: CurrentPlan | null = null; // user?.profile?.planAssignment?.plan;
+  const planInfo = currentPlan ? getPlanInfo(currentPlan.level) : getPlanInfo(0);
+  
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <h1 className="text-2xl lg:text-3xl font-bold  bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -27,7 +61,7 @@ const AccountSettings = () => {
                 id="fullName"
                 type="text"
                 className="text-foreground bg-transparent border-none p-0 m-0 focus:ring-0"
-                value="Nicolas Alvarez"
+                value={user?.name || 'Usuario'}
                 readOnly
                 tabIndex={-1}
                 aria-readonly="true"
@@ -37,7 +71,7 @@ const AccountSettings = () => {
               <span className="text-sm font-medium text-muted-foreground">
                 Email
               </span>
-              <p className="text-foreground">tecnologico03@gmail.com</p>
+              <p className="text-foreground">{user?.email || 'No disponible'}</p>
             </div>
             <div>
               <label
@@ -123,7 +157,18 @@ const AccountSettings = () => {
               <span className="text-sm font-medium text-muted-foreground">
                 Plan actual
               </span>
-              <p className="text-foreground font-semibold">Premium Plus</p>
+              <div className="flex items-center gap-2 mt-1">
+                {planInfo.icon}
+                <p className={`font-semibold ${planInfo.color}`}>
+                  {currentPlan?.name || planInfo.name}
+                </p>
+                {/* Temporal: comentado hasta implementar integración completa con perfiles */}
+                {/* {user?.profile?.planAssignment?.activeUpgrades?.some(upgrade => upgrade.code === 'IMPULSO') && (
+                  <Badge variant="secondary" className="bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300">
+                    🚀 IMPULSO
+                  </Badge>
+                )} */}
+              </div>
             </div>
             <div>
               <span className="text-sm font-medium text-muted-foreground">

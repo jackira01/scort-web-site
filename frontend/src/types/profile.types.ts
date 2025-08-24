@@ -23,14 +23,83 @@ export interface ProfileLocation {
 }
 
 export interface ProfileVerification {
+  _id?: string;
   isVerified: boolean;
   verifiedAt?: Date;
+  verificationStatus?: 'pending' | 'verified' | 'rejected';
+  verificationProgress?: number;
   documents?: {
     type: string;
     status: 'pending' | 'approved' | 'rejected';
   }[];
 }
 
+// Interfaz base para perfiles compatible con backend
+export interface IProfile {
+  _id: string;
+  user: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  location: ProfileLocation;
+  features: {
+    group_id: string;
+    value: string | string[];
+  }[];
+  services?: string[];
+  age: string;
+  contact: {
+    number: string;
+    whatsapp: boolean;
+    telegram: boolean;
+    changedAt: Date | string;
+  };
+  height: string;
+  media: {
+    gallery: string[];
+    videos: string[];
+    stories: { _id?: string; link: string; type: 'image' | 'video' }[];
+    audios: string[];
+  };
+  availability: {
+    dayOfWeek: string;
+    slots: {
+      start: string;
+      end: string;
+      timezone: string;
+    }[];
+  }[];
+  verification: ProfileVerification | boolean;
+  rates: {
+    hour: string;
+    price: number;
+  }[];
+  paymentHistory: string[];
+  lastLogin: Date | string;
+  
+  // Campos para motor de visibilidad
+  planAssignment: {
+    planCode: string;
+    variantDays: number;
+    startAt: Date | string;
+    expiresAt: Date | string;
+  } | null;
+  upgrades: {
+    code: string;
+    startAt: Date | string;
+    endAt: Date | string;
+    purchaseAt: Date | string;
+  }[];
+  lastShownAt?: Date | string;
+  visible: boolean;
+  
+  // Campos adicionales para UI
+  isOnline?: boolean;
+  level?: number;
+  priority?: number;
+}
+
+// Mantener Profile para compatibilidad
 export interface Profile {
   _id: string;
   name: string;
@@ -81,6 +150,13 @@ export interface FilterQuery {
   fields?: string[];
 }
 
+export interface FilterCounts {
+  categories?: Record<string, number>;
+  genders?: Record<string, number>;
+  sex?: Record<string, number>;
+  locations?: Record<string, number>;
+}
+
 export interface ProfilesResponse {
   profiles: Profile[];
   pagination: {
@@ -90,6 +166,7 @@ export interface ProfilesResponse {
     hasNextPage: boolean;
     hasPrevPage: boolean;
   };
+  filterCounts?: FilterCounts;
 }
 
 export interface ProfileCardData {
@@ -103,4 +180,39 @@ export interface ProfileCardData {
   featured?: boolean;
   online?: boolean;
   hasVideo?: boolean;
+}
+
+// Tipos para el feed de Home
+export interface HomeFeedProfile extends IProfile {
+  level: number;
+  priority: number;
+}
+
+export interface HomeFeedResponse {
+  profiles: HomeFeedProfile[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+  metadata: {
+    levelSeparators: Array<{
+      level: number;
+      startIndex: number;
+      count: number;
+    }>;
+  };
+}
+
+export interface FeedStatsResponse {
+  totalProfiles: number;
+  visibleProfiles: number;
+  profilesByLevel: Record<number, number>;
+  averageLastShownHours: number;
+}
+
+export interface HomeFeedOptions {
+  page?: number;
+  pageSize?: number;
 }

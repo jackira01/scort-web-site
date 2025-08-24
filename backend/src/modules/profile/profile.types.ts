@@ -79,6 +79,10 @@ export interface IProfile extends Document {
     upgrades: IProfileUpgrade[];
     lastShownAt?: Date;           // para rotación
     visible: boolean;             // default true mientras no expire plan
+    
+    // Campos de timestamps de Mongoose
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface CreateProfileDTO {
@@ -119,7 +123,6 @@ export interface CreateProfileDTO {
     availability?: string[];
     rates?: string[];
     paymentHistory?: string[];
-    plan?: string;
     verification?: string;
     
     // Nuevos campos opcionales para motor de visibilidad

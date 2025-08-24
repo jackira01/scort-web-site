@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Type, Plus, Edit, Trash2, Globe, Eye, EyeOff } from 'lucide-react';
-import { useTextConfigs, useCreateConfigParameter, useUpdateConfigParameter, useDeleteConfigParameter } from '../../../hooks/use-config-parameters';
+import { useTextConfig, useCreateConfigParameter, useUpdateConfigParameter, useDeleteConfigParameter } from '../../../hooks/use-config-parameters';
 import type { TextConfig, ConfigParameterFormData } from '../../../types/config-parameter.types';
 
 interface TextFormData {
@@ -55,7 +55,7 @@ export function TextManager() {
     const [activeLanguage, setActiveLanguage] = useState('es');
     const [previewMode, setPreviewMode] = useState(false);
 
-    const { texts, loading, error, refetch } = useTextConfigs();
+    const { texts, loading, error, refetch } = useTextConfig();
     const createMutation = useCreateConfigParameter();
     const updateMutation = useUpdateConfigParameter();
     const deleteMutation = useDeleteConfigParameter();
@@ -93,7 +93,7 @@ export function TextManager() {
                 await deleteMutation.mutateAsync(text._id);
                 refetch();
             } catch (error) {
-                console.error('Error deleting text:', error);
+          
             }
         }
     };
@@ -180,7 +180,7 @@ export function TextManager() {
             setEditingText(null);
             refetch();
         } catch (error) {
-            console.error('Error saving text:', error);
+      
         }
     };
 

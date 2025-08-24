@@ -6,7 +6,7 @@ const profileSchema = new Schema<IProfile>(
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     name: { type: String, required: true, unique: true },
     description: String,
-    isActive: { type: Boolean, default: true },
+    isActive: { type: Boolean, default: false },
     location: {
       country: {
         value: { type: String, required: true }, // Valor normalizado
@@ -74,9 +74,8 @@ const profileSchema = new Schema<IProfile>(
       },
     ],
     paymentHistory: [{ type: Schema.Types.ObjectId, ref: 'PaymentHistory' }],
-    plan: { type: Schema.Types.ObjectId, ref: 'Plan' },
     lastLogin: Date,
-    
+
     // Nuevos campos para motor de visibilidad
     planAssignment: {
       type: {

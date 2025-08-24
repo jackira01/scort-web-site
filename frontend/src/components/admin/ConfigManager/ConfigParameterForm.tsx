@@ -235,7 +235,7 @@ export function ConfigParameterForm({
 
             onSubmit(submitData);
         } catch (error) {
-            console.error('Error submitting form:', error);
+      
         }
     };
 

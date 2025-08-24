@@ -1,5 +1,7 @@
 import { AttributeGroupModel as AttributeGroup } from '../attribute-group/attribute-group.model';
 import { ProfileModel as Profile } from '../profile/profile.model';
+import { sortProfiles } from '../visibility/visibility.service';
+import { updateLastShownAt } from '../feeds/feeds.service';
 import type {
   FilterOptions,
   FilterQuery,
@@ -22,8 +24,8 @@ export const getFilteredProfiles = async (
       isVerified,
       page = 1,
       limit = 20,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      // sortBy = 'createdAt',
+      // sortOrder = 'desc',
       fields,
     } = filters;
 
@@ -31,6 +33,12 @@ export const getFilteredProfiles = async (
 
     // Construir query de MongoDB
     const query: any = {};
+
+    // Alinear con home feed: solo perfiles visibles, activos y con plan activo
+    const now = new Date();
+    query.visible = true;
+    query.isActive = true;
+    query['planAssignment.expiresAt'] = { $gt: now };
 
     // Solo agregar filtro isActive si está definido
     if (isActive !== undefined) {
@@ -98,7 +106,7 @@ export const getFilteredProfiles = async (
           featureConditions.push(condition);
         } else {
           // Si es un valor único (normalizado) - buscar en el array de valores del perfil
-          const normalizedValue = value.toLowerCase().trim();
+          const normalizedValue = (value as string).toLowerCase().trim();
           const condition = {
             features: {
               $elemMatch: {
@@ -181,23 +189,17 @@ export const getFilteredProfiles = async (
     // Configurar paginación
     const skip = (page - 1) * limit;
 
-    // Configurar ordenamiento
-    const sort: any = {};
-    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    // Determinar campos a seleccionar: asegurar campos requeridos por el motor de visibilidad
+    const requiredFields = ['planAssignment', 'upgrades', 'lastShownAt', 'createdAt'];
+    const finalFields = Array.isArray(fields) && fields.length > 0
+      ? Array.from(new Set([...fields, ...requiredFields]))
+      : ['_id', 'name', 'age', 'location', 'description', 'verification', 'media', 'isActive', ...requiredFields];
+    const selectFields = finalFields.join(' ');
 
-    // Determinar campos a seleccionar
-    const selectFields =
-      fields && fields.length > 0
-        ? fields.join(' ')
-        : '_id name age location description verification media isActive';
-
-    // Construir consulta base
+    // Construir consulta base (sin sort/skip/limit: ordenaremos en memoria con el motor de visibilidad)
     let profileQuery = Profile.find(query)
       .select(selectFields)
-      .populate('user', 'isVerified')
-      .sort(sort)
-      .skip(skip)
-      .limit(limit);
+      .populate('user', 'isVerified');
 
     // Agregar populate para campos que requieren datos completos
     if (!fields || fields.includes('verification')) {
@@ -211,13 +213,25 @@ export const getFilteredProfiles = async (
 
     const startTime = Date.now();
 
-    // Ejecutar consulta
-    const [profiles, totalCount] = await Promise.all([
+    // Ejecutar consulta completa para aplicar ordenamiento personalizado
+    const [allProfiles, totalCount] = await Promise.all([
       profileQuery.lean(),
       Profile.countDocuments(query),
     ]);
 
+    // Ordenar perfiles usando el motor de visibilidad (nivel -> score -> lastShownAt -> createdAt)
+    const sortedProfiles = await sortProfiles(allProfiles as any, now);
+
+    // Aplicar paginación después del ordenamiento
+    const paginatedProfiles = sortedProfiles.slice(skip, skip + limit);
+
+    // Actualizar lastShownAt para los perfiles servidos (rotación justa)
+    if (paginatedProfiles.length > 0) {
+      await updateLastShownAt(paginatedProfiles.map(p => (p._id as any).toString()));
+    }
+
     const executionTime = Date.now() - startTime;
+    void executionTime; // mantener variable para debugging futuro si se requiere
 
     // Calcular información de paginación
     const totalPages = Math.ceil(totalCount / limit);
@@ -233,14 +247,9 @@ export const getFilteredProfiles = async (
       limit,
     };
 
-    const result = {
-      profiles,
-      pagination: paginationInfo,
-    };
-
     return {
-      ...result.pagination,
-      profiles: result.profiles,
+      ...paginationInfo,
+      profiles: paginatedProfiles,
     };
   } catch (error) {
     // Error in getFilteredProfiles
@@ -319,18 +328,18 @@ export const getFilterOptions = async (): Promise<FilterOptions> => {
           .filter(Boolean)
         : [],
       locations: {
-        countries: locations[0]?.countries?.filter(Boolean) || [],
-        departments: locations[0]?.departments?.filter(Boolean) || [],
-        cities: locations[0]?.cities?.filter(Boolean) || [],
+        countries: (locations[0]?.countries || []).filter(Boolean),
+        departments: (locations[0]?.departments || []).filter(Boolean),
+        cities: (locations[0]?.cities || []).filter(Boolean),
       },
       features,
       priceRange: {
         min: priceRange[0]?.minPrice || 0,
-        max: priceRange[0]?.maxPrice || 1000000,
+        max: priceRange[0]?.maxPrice || 0,
       },
     };
   } catch (error) {
     // Error in getFilterOptions
-    throw new Error('Error al obtener opciones de filtros');
+    throw error;
   }
 };

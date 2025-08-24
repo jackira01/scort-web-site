@@ -1,27 +1,70 @@
-import { ArrowRight } from 'lucide-react';
+'use client';
+
+import { ArrowRight, Loader2 } from 'lucide-react';
+import { useHomeFeedWithSeparators } from '@/hooks/useFeeds';
 import CardComponent from '@/components/Card/Card';
-import { Button } from '@/components/ui/button';
 
 const HomeProfiles = () => {
+  const { data: feedData, profiles, isLoading, error } = useHomeFeedWithSeparators();
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-pink-600" />
+          <span className="ml-2 text-gray-600 dark:text-gray-300">Cargando perfiles...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <p className="text-red-600 dark:text-red-400">Error al cargar perfiles</p>
+          <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
+            {error instanceof Error ? error.message : 'Error desconocido'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const totalProfiles = feedData?.pagination?.total || 0;
+
+  if (!profiles || profiles.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <p className="text-gray-600 dark:text-gray-300">No hay perfiles disponibles</p>
+        </div>
+      </div>
+    );
+  }
   return (
-    <div className="animate-in fade-in-50 slide-in-from-bottom-6 duration-700">
-      <div className="flex items-center justify-between mb-6">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl lg:text-3xl font-bold title-gradient bg-clip-text text-transparent">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             Scorts populares
           </h2>
-          <p className="text-muted-foreground mt-1">Personas destacadas</p>
+          <p className="text-gray-600 dark:text-gray-300 mt-1">
+            {totalProfiles > 0 ? `${totalProfiles} personas destacadas` : 'Personas destacadas'}
+          </p>
         </div>
-        {/* <Button
-          variant="outline"
-          className="group hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white hover:border-transparent transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25"
-        >
-          Ver más
-          <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
-        </Button> */}
+        {totalProfiles > 12 && (
+          <button className="flex items-center gap-2 text-pink-600 hover:text-pink-700 font-medium">
+            Ver más
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
-
-      <CardComponent />
+      
+      {/* Renderizar perfiles en el orden jerárquico del backend */}
+      <div>
+        <CardComponent profiles={profiles} />
+      </div>
     </div>
   );
 };

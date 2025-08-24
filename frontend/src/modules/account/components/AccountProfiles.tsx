@@ -6,6 +6,7 @@ import {
   MapPin,
   Plus,
   Shield,
+  Trash2,
   Upload,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -16,6 +17,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import UploadStoryModal from './UploadStoryModal';
+import DeleteProfileModal from './DeleteProfileModal';
+import { deleteProfile } from '@/services/user.service';
 
 interface ProfileResponse {
   _id: string;
@@ -46,11 +49,11 @@ interface ProfileListProps {
   getProgressTextColor: (percentage: number) => string;
 }
 
-const AccountProfiles = ({
+export default function AccountProfiles({
   profiles,
   getProgressColor,
   getProgressTextColor,
-}: ProfileListProps) => {
+}: ProfileListProps) {
   const [uploadStoryModalOpen, setUploadStoryModalOpen] = useState(false);
   const [selectedProfileForStory, setSelectedProfileForStory] =
     useState<ProfileResponse | null>(null);
@@ -58,8 +61,12 @@ const AccountProfiles = ({
     link: string;
     type: 'image' | 'video';
   } | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedProfileForDelete, setSelectedProfileForDelete] =
+    useState<ProfileResponse | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  console.log('selectedProfileForStory:', selectedProfileForStory);
+  
 
   const handleDeleteStory = async (profileId: string, storyIndex: number) => {
     try {
@@ -95,9 +102,47 @@ const AccountProfiles = ({
       // Recargar la página para mostrar los cambios
       window.location.reload();
     } catch (error) {
-      console.error('Error al eliminar historia:', error);
+
       toast.error('Error al eliminar la historia');
     }
+  };
+
+  const handleDeleteProfile = async () => {
+    if (!selectedProfileForDelete) return;
+
+    try {
+      setIsDeleting(true);
+      toast.loading('Eliminando perfil...');
+      
+      await deleteProfile(selectedProfileForDelete._id);
+      
+      toast.dismiss();
+      toast.success('Perfil eliminado correctamente');
+      
+      // Cerrar el modal
+      setDeleteModalOpen(false);
+      setSelectedProfileForDelete(null);
+      
+      // Recargar la página para mostrar los cambios
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Error al eliminar el perfil');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const openDeleteModal = (profile: ProfileResponse) => {
+    setSelectedProfileForDelete(profile);
+    setDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setSelectedProfileForDelete(null);
   };
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
@@ -314,6 +359,18 @@ const AccountProfiles = ({
                         </Button>
                       </Link>
                     </div>
+                    {/* Tercera fila - Botón de eliminar */}
+                    <div className="flex">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => openDeleteModal(profile)}
+                        className="w-full hover:bg-red-600 transition-all duration-200"
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Eliminar Perfil
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -389,8 +446,15 @@ const AccountProfiles = ({
           </button>
         </div>
       )}
+
+      {/* Delete Profile Modal */}
+      <DeleteProfileModal
+        isOpen={deleteModalOpen}
+        onClose={closeDeleteModal}
+        onConfirm={handleDeleteProfile}
+        profile={selectedProfileForDelete}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 };
-
-export default AccountProfiles;

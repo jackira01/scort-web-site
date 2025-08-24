@@ -5,7 +5,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { getAllDepartments, getCitiesByDepartment } from '@/utils/colombiaData';
+import { useLocationFilterCounts } from '@/hooks/use-filter-counts';
 
 interface LocationFilterProps {
   selectedDepartment?: string;
@@ -18,6 +20,7 @@ const LocationFilter = ({
   selectedCity,
   onLocationChange,
 }: LocationFilterProps) => {
+  const { data: locationCounts, isLoading: countsLoading } = useLocationFilterCounts();
   const handleDepartmentChange = (department: string) => {
     // Al cambiar departamento, limpiar la ciudad
     onLocationChange(department === 'all' ? undefined : department, undefined);
@@ -51,7 +54,12 @@ const LocationFilter = ({
           <SelectItem value="all">Todos los departamentos</SelectItem>
           {getAllDepartments().map((department) => (
             <SelectItem key={department.value} value={department.value}>
-              {department.label}
+              <div className="flex items-center justify-between w-full">
+                <span>{department.label}</span>
+                <Badge variant="secondary" className="ml-2">
+                  {countsLoading ? '...' : (locationCounts?.[department.value] || 0)}
+                </Badge>
+              </div>
             </SelectItem>
           ))}
         </SelectContent>

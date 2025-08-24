@@ -1,19 +1,21 @@
-import axios from 'axios';
-import type { FilterQuery, ProfilesResponse } from '@/types/profile.types';
+import axios from '@/lib/axios';
+import type { FilterQuery, ProfilesResponse, FilterCounts } from '@/types/profile.types';
 import { API_URL } from '@/lib/config';
 
 // Función GET eliminada - solo se usa POST para filtros de perfiles
 
 /**
  * Obtiene perfiles filtrados usando POST (para filtros complejos)
+ * Ahora con soporte opcional para conteos integrados
  */
 export const getFilteredProfilesPost = async (
   filters: FilterQuery,
+  includeCounts: boolean = false,
 ): Promise<ProfilesResponse> => {
-
-  
   const postUrl = `${API_URL}/api/filters/profiles`;
-
+  
+  // Agregar parámetro para solicitar conteos si se especifica
+  const requestBody = includeCounts ? { ...filters, includeCounts } : filters;
 
   try {
     const response = await fetch(postUrl, {
@@ -21,43 +23,46 @@ export const getFilteredProfilesPost = async (
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(filters),
+      body: JSON.stringify(requestBody),
     });
 
-
-
     if (!response.ok) {
-      console.error('📡 [DEBUG] Error en petición POST:', response.status, response.statusText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const responseData = await response.json();
 
-    
-    // El backend devuelve { success: true, data: FilterResponse }
-    // Necesitamos transformar la estructura para que coincida con ProfilesResponse
     if (responseData.success && responseData.data) {
       const backendData = responseData.data;
-      const transformedData = {
+      
+      // Procesar conteos si están incluidos
+      let filterCounts: FilterCounts | undefined;
+      if (includeCounts && backendData.filterCounts) {
+        filterCounts = {
+          categories: backendData.filterCounts.categories || {},
+          genders: backendData.filterCounts.genders || {},
+          sex: backendData.filterCounts.sex || {},
+          locations: backendData.filterCounts.locations || {},
+        };
+      }
+      
+      const transformedData: ProfilesResponse = {
         profiles: backendData.profiles,
         pagination: {
           currentPage: backendData.currentPage,
           totalPages: backendData.totalPages,
-          totalProfiles: backendData.totalCount, // Transformar totalCount a totalProfiles
+          totalProfiles: backendData.totalCount,
           hasNextPage: backendData.hasNextPage,
           hasPrevPage: backendData.hasPrevPage,
         },
+        filterCounts,
       };
-      
-  
       
       return transformedData;
     } else {
-      console.error('📡 [DEBUG] Error en respuesta POST:', responseData);
       throw new Error(responseData.message || 'Error en la respuesta del servidor');
     }
   } catch (error) {
-    console.error('📡 [DEBUG] Error en petición POST:', error);
     throw error;
   }
 };
@@ -102,24 +107,21 @@ export const getFilterOptions = async () => {
   return response.data;
 };
 
+// Función getProfilesCount eliminada - ahora se usa getFilterCounts optimizado
+
+// Función getFilteredProfilesWithCounts eliminada - ahora se usa getFilteredProfilesPost con includeCounts
+
 /**
- * Obtiene el conteo total de perfiles con filtros aplicados usando POST
+ * Obtiene solo los conteos de filtros sin perfiles (más eficiente para filtros)
  */
-export const getProfilesCount = async (
-  filters: FilterQuery,
-): Promise<{ count: number }> => {
-  const response = await fetch(`${API_URL}/api/filters/profiles/count`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(filters),
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+export const getFilterCounts = async (): Promise<FilterCounts> => {
+  try {
+    // Usar filtros vacíos para obtener conteos generales
+    const emptyFilters: FilterQuery = { limit: 0 }; // limit 0 para no traer perfiles
+    const response = await getFilteredProfilesPost(emptyFilters, true);
+    return response.filterCounts || {};
+  } catch (error) {
+    console.error('Error getting filter counts:', error);
+    return {};
   }
-
-  const responseData = await response.json();
-  return responseData.success ? responseData.data : responseData;
 };

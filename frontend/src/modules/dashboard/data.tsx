@@ -1,4 +1,4 @@
-import { Receipt, Settings, User, Cog } from "lucide-react";
+import { Receipt, Settings, User, Cog, CreditCard, Zap, UserCheck } from "lucide-react";
 
 export const userProfiles = [
     {
@@ -162,6 +162,24 @@ export const sidebarItems = [
         badge: null,
         description:
             'Gestiona parámetros de configuración del sistema',
+        active: false,
+    },
+    {
+        id: 'planes',
+        label: 'Planes y Upgrades',
+        icon: CreditCard,
+        badge: null,
+        description:
+            'Gestiona planes de suscripción y upgrades temporales del sistema',
+        active: false,
+    },
+    {
+        id: 'plan-defecto',
+        label: 'Plan por Defecto',
+        icon: UserCheck,
+        badge: null,
+        description:
+            'Configura el plan que se asigna automáticamente a nuevos perfiles',
         active: false,
     },
 ];

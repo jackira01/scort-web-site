@@ -1,8 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-
-interface AuthRequest extends Request {
-  user?: any;
-}
+import { Response, NextFunction } from 'express';
+import { AuthRequest } from '../types/auth.types';
 
 export const adminMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
   try {

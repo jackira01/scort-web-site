@@ -33,7 +33,7 @@ export default function PhysicalTraitsProfile({
                 {labelMap[key] || key}
               </span>
               <span className="text-foreground text-sm font-medium">
-                {value}
+                {typeof value === 'object' && value !== null && 'label' in value ? value.label : value}
               </span>
             </div>
           ))}

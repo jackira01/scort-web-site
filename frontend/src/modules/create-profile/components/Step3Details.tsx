@@ -173,7 +173,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('skinColor', variant.value)}
                     >
-                      {variant.label || variant.value}
+                      {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
                     </Button>
                   ))}
             </div>
@@ -198,7 +198,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('sexuality', variant.value)}
                     >
-                      {variant.label || variant.value}
+                      {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
                     </Button>
                   ))}
             </div>
@@ -230,7 +230,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('eyeColor', variant.value)}
                     >
-                      {variant.label || variant.value}
+                      {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
                     </Button>
                   ))}
               </div>
@@ -255,7 +255,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('hairColor', variant.value)}
                     >
-                      {variant.label || variant.value}
+                      {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
                     </Button>
                   ))}
               </div>
@@ -278,7 +278,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('bodyType', variant.value)}
                     >
-                      {variant.label || variant.value}
+                      {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
                     </Button>
                   ))}
               </div>

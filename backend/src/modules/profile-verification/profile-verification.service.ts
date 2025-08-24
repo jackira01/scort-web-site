@@ -1,7 +1,19 @@
 import ProfileVerification from './profile-verification.model';
 import type { IProfileVerification } from '../profile/profile.types';
 import type { Types } from 'mongoose';
-import UserModel from '../user/User.model';
+import UserModel, { type IUser } from '../user/User.model';
+import { ProfileModel } from '../profile/profile.model';
+import type { IProfile } from '../profile/profile.types';
+
+// Interface para Profile con User poblado
+interface IProfileWithUser extends Omit<IProfile, 'user'> {
+  user: IUser;
+}
+
+// Interface para ProfileVerification con Profile y User poblados
+interface IProfileVerificationWithPopulatedProfile extends Omit<IProfileVerification, 'profile'> {
+  profile: IProfileWithUser;
+}
 import {
   CreateProfileVerificationDTO,
   UpdateProfileVerificationDTO,
@@ -25,14 +37,14 @@ const recalculateVerificationProgress = async (verification: IProfileVerificatio
           model: 'User'
         }
       })
-      .lean();
+      .lean() as IProfileVerificationWithPopulatedProfile | null;
 
     if (!populatedVerification?.profile) {
 
       return verification.verificationProgress;
     }
 
-    const user = (populatedVerification.profile as any)?.user;
+    const user = populatedVerification.profile.user;
     const newProgress = calculateVerificationProgress(verification, user);
     
 
@@ -88,9 +100,9 @@ export const createProfileVerification = async (verificationData: CreateProfileV
     
     if (verificationData.profile) {
       // Buscar el perfil y su usuario asociado
-      const ProfileModel = require('../profile/profile.model').default;
-      const profile = await ProfileModel.findById(verificationData.profile).populate('user');
-      if (profile?.user?.lastLogin?.date) {
+      const profile = await ProfileModel.findById(verificationData.profile).populate('user') as IProfileWithUser | null;
+      // Verificar que user esté poblado correctamente
+      if (profile && profile.user && profile.user.lastLogin?.date) {
         userLastLoginDate = profile.user.lastLogin.date;
         lastLoginVerified = checkLastLoginVerification(userLastLoginDate);
       }
