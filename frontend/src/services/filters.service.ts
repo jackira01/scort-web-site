@@ -13,7 +13,7 @@ export const getFilteredProfilesPost = async (
   includeCounts: boolean = false,
 ): Promise<ProfilesResponse> => {
   const postUrl = `${API_URL}/api/filters/profiles`;
-  
+
   // Agregar parámetro para solicitar conteos si se especifica
   const requestBody = includeCounts ? { ...filters, includeCounts } : filters;
 
@@ -34,7 +34,7 @@ export const getFilteredProfilesPost = async (
 
     if (responseData.success && responseData.data) {
       const backendData = responseData.data;
-      
+
       // Procesar conteos si están incluidos
       let filterCounts: FilterCounts | undefined;
       if (includeCounts && backendData.filterCounts) {
@@ -45,7 +45,7 @@ export const getFilteredProfilesPost = async (
           locations: backendData.filterCounts.locations || {},
         };
       }
-      
+
       const transformedData: ProfilesResponse = {
         profiles: backendData.profiles,
         pagination: {
@@ -57,7 +57,7 @@ export const getFilteredProfilesPost = async (
         },
         filterCounts,
       };
-      
+
       return transformedData;
     } else {
       throw new Error(responseData.message || 'Error en la respuesta del servidor');
@@ -74,7 +74,7 @@ export const getProfilesForCards = async (
   params: Omit<FilterQuery, 'fields'> = {},
 ): Promise<ProfilesResponse> => {
 
-  
+
   const optimizedParams: FilterQuery = {
     ...params,
     fields: [

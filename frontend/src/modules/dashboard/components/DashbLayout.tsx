@@ -10,6 +10,7 @@ import { DashProfilePanel } from './DashbProfilePanel';
 import ConfigManager from '@/components/admin/ConfigManager/ConfigManager';
 import PlansManager from '@/components/admin/plans/PlansManager';
 import DefaultPlanManager from '@/components/admin/DefaultPlanManager';
+import BlogsManager from '@/components/admin/blogs/BlogsManager';
 
 
 export default function DashboardLayout() {
@@ -115,6 +116,13 @@ export default function DashboardLayout() {
                 return (
                     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
                         <DefaultPlanManager />
+                    </div>
+                );
+
+            case 'blogs':
+                return (
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                        <BlogsManager />
                     </div>
                 );
 

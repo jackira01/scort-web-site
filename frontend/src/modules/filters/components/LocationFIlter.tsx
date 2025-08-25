@@ -41,7 +41,7 @@ const LocationFilter = ({
   return (
     <div className="space-y-3">
       <h4 className="font-medium text-foreground">Ubicación</h4>
-      
+
       {/* Selector de Departamento */}
       <Select
         value={selectedDepartment || 'all'}

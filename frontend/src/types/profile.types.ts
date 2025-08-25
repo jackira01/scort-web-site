@@ -76,7 +76,7 @@ export interface IProfile {
   }[];
   paymentHistory: string[];
   lastLogin: Date | string;
-  
+
   // Campos para motor de visibilidad
   planAssignment: {
     planCode: string;
@@ -92,7 +92,7 @@ export interface IProfile {
   }[];
   lastShownAt?: Date | string;
   visible: boolean;
-  
+
   // Campos adicionales para UI
   isOnline?: boolean;
   level?: number;

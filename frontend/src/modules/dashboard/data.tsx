@@ -1,4 +1,4 @@
-import { Receipt, Settings, User, Cog, CreditCard, Zap, UserCheck } from "lucide-react";
+import { Receipt, Settings, User, Cog, CreditCard, Zap, UserCheck, FileText } from "lucide-react";
 
 export const userProfiles = [
     {
@@ -180,6 +180,15 @@ export const sidebarItems = [
         badge: null,
         description:
             'Configura el plan que se asigna automáticamente a nuevos perfiles',
+        active: false,
+    },
+    {
+        id: 'blogs',
+        label: 'Blogs',
+        icon: FileText,
+        badge: null,
+        description:
+            'Gestiona artículos del blog: crear, editar, publicar y administrar contenido',
         active: false,
     },
 ];

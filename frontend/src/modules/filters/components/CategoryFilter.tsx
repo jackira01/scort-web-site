@@ -67,7 +67,7 @@ const CategoryFilter = ({ selectedCategory, onCategoryChange }: CategoryFilterPr
               >
                 {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
               </label>
-              
+
               <Badge variant="secondary" className="ml-auto">
                 {countsLoading ? '...' : (categoryCounts?.[variant.value] || 0)}
               </Badge>

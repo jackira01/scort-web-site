@@ -22,7 +22,7 @@ export const useOptimizedFilterCounts = () => {
  */
 export const useCategoryFilterCounts = () => {
   const { data: allCounts, isLoading, error } = useOptimizedFilterCounts();
-  
+
   return {
     data: allCounts?.categories || {},
     isLoading,
@@ -35,7 +35,7 @@ export const useCategoryFilterCounts = () => {
  */
 export const useGenderFilterCounts = () => {
   const { data: allCounts, isLoading, error } = useOptimizedFilterCounts();
-  
+
   return {
     data: allCounts?.genders || {},
     isLoading,
@@ -48,7 +48,7 @@ export const useGenderFilterCounts = () => {
  */
 export const useSexFilterCounts = () => {
   const { data: allCounts, isLoading, error } = useOptimizedFilterCounts();
-  
+
   return {
     data: allCounts?.sex || {},
     isLoading,
@@ -61,7 +61,7 @@ export const useSexFilterCounts = () => {
  */
 export const useLocationFilterCounts = () => {
   const { data: allCounts, isLoading, error } = useOptimizedFilterCounts();
-  
+
   return {
     data: allCounts?.locations || {},
     isLoading,
@@ -76,7 +76,7 @@ export const useLocationFilterCounts = () => {
  */
 export const useAllFilterCounts = () => {
   const { data, isLoading, error, refetch } = useOptimizedFilterCounts();
-  
+
   return {
     categories: data?.categories || {},
     genders: data?.genders || {},

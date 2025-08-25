@@ -46,7 +46,7 @@ const SexFilter = ({ selectedSex = [], onSexChange }: SexFilterProps) => {
     const newSelectedSex = selectedSex.includes(sexValue)
       ? selectedSex.filter(s => s !== sexValue)
       : [...selectedSex, sexValue];
-    
+
     onSexChange?.(newSelectedSex);
   };
 

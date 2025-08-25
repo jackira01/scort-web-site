@@ -1,10 +1,6 @@
 import { categories } from '@/utils/MockedData';
-import { Badge } from '@/components/ui/badge';
-import { useCategoryFilterCounts } from '@/hooks/use-filter-counts';
 
 const CategoriesFilter = () => {
-  const { data: categoryCounts, isLoading: countsLoading } = useCategoryFilterCounts();
-  
   return (
     <div className="bg-background/95 backdrop-blur border-b transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,13 +16,7 @@ const CategoriesFilter = () => {
               }`}
               style={{ animationDelay: `${index * 50}ms` }}
             >
-              <span>{category.label}</span>
-              <Badge 
-                variant={category.active ? "outline" : "secondary"} 
-                className={`ml-2 text-xs ${category.active ? 'border-white/30 text-white' : ''}`}
-              >
-                {countsLoading ? '...' : (categoryCounts?.[category.value] || 0)}
-              </Badge>
+              {category.label}
             </button>
           ))}
         </div>

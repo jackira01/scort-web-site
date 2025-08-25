@@ -4,6 +4,7 @@ import express from 'express';
 import morgan from 'morgan';
 import { connectDB } from './config/db';
 import attributeGroupRoutes from './modules/attribute-group/attribute-group.routes';
+import blogRoutes from './modules/blog/blog.routes';
 import cleanupRoutes from './modules/cleanup/cleanup.routes';
 import { configParameterRoutes } from './modules/config-parameter/config-parameter.routes';
 import feedsRoutes from './modules/feeds/feeds.routes';
@@ -48,6 +49,8 @@ app.use(morgan('dev')); // esto sí muestra logs en consola
 
 
 
+app.use('/api/attribute-groups', attributeGroupRoutes);
+app.use('/api/blogs', blogRoutes);
 app.use('/api/cleanup', cleanupRoutes);
 app.use('/api/config-parameters', configParameterRoutes);
 app.use('/api/feeds', enforceVisibilityForFeeds, feedsRoutes);
@@ -56,6 +59,5 @@ app.use('/api/plans', plansRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/profile-verification', profileVerificationRoutes);
 app.use('/api/user', userRoutes);
-app.use('/api/attribute-groups', attributeGroupRoutes);
 
 export default app;
