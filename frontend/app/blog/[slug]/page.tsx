@@ -18,12 +18,6 @@ interface BlogDetailPageProps {
   }>;
 }
 
-
-
-
-
-
-
 const BlogDetailSkeleton = () => (
   <div className="min-h-screen bg-gray-50">
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -78,8 +72,8 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
       {/* Main Layout - 75/25 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Main Content - 75% */}
-          <article className="flex-1 lg:w-3/4">
+          {/* Main Content - 70% */}
+          <article className="flex-1 lg:w-[70%]">
             {/* Header */}
             <header className="mb-8">
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
@@ -118,8 +112,8 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
             </div>
           </article>
 
-          {/* Sidebar - 25% */}
-          <aside className="lg:w-1/4 lg:sticky lg:top-24 lg:self-start">
+          {/* Sidebar - 35% */}
+          <aside className="lg:w-[30%] lg:sticky lg:top-24 lg:self-start">
             {/* Related Blogs */}
             {relatedBlogs && relatedBlogs.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm border p-6">
@@ -131,14 +125,14 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
                   {relatedBlogs.map((relatedBlog) => (
                     <div key={relatedBlog._id} className="group">
                       <div className="flex gap-3">
-                        <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden rounded-lg">
+                        <div className="relative w-24 h-24 flex-shrink-0 overflow-hidden rounded-lg">
                           {relatedBlog.coverImage ? (
                             <Image
                               src={relatedBlog.coverImage}
                               alt={relatedBlog.title}
                               fill
                               className="object-cover group-hover:scale-105 transition-transform duration-300"
-                              sizes="64px"
+                              sizes="72px"
                             />
                           ) : (
                             <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
@@ -146,14 +140,14 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
                             </div>
                           )}
                         </div>
-                        
+
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-gray-900 text-sm line-clamp-2 group-hover:text-blue-600 transition-colors mb-1">
+                          <h3 className="font-medium text-gray-900 text-md line-clamp-2 group-hover:text-blue-600 transition-colors mb-1">
                             <Link href={`/blog/${relatedBlog.slug}`}>
                               {relatedBlog.title}
                             </Link>
                           </h3>
-                          
+
                           <div className="flex items-center gap-1 text-xs text-gray-500">
                             <Calendar className="w-3 h-3" />
                             <span>{blogService.formatDate(relatedBlog.createdAt)}</span>

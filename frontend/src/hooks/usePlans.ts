@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import { useToast } from '@/hooks/use-toast';
 import {
   Plan,
   Upgrade,
@@ -336,6 +336,7 @@ export const usePlansByLevel = (level: number) => {
 
 export const useCreatePlan = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   return useMutation({
     mutationFn: plansApi.create,
@@ -346,13 +347,18 @@ export const useCreatePlan = () => {
       // Toast se maneja en el componente PlanForm
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al crear plan');
+      toast({
+        title: "Error",
+        description: error.message || 'Error al crear plan',
+        variant: "destructive",
+      });
     },
   });
 };
 
 export const useUpdatePlan = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   return useMutation({
     mutationFn: plansApi.update,
@@ -364,13 +370,18 @@ export const useUpdatePlan = () => {
       // Toast se maneja en el componente PlanForm
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al actualizar plan');
+      toast({
+        title: "Error",
+        description: error.message || 'Error al actualizar plan',
+        variant: "destructive",
+      });
     },
   });
 };
 
 export const useDeletePlan = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   return useMutation({
     mutationFn: plansApi.delete,
@@ -379,10 +390,17 @@ export const useDeletePlan = () => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
       // También refrescar queries específicas
       queryClient.refetchQueries({ queryKey: ['plans'] });
-      toast.success('Plan eliminado exitosamente');
+      toast({
+        title: "Éxito",
+        description: 'Plan eliminado exitosamente',
+      });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar plan');
+      toast({
+        title: "Error",
+        description: error.message || 'Error al eliminar plan',
+        variant: "destructive",
+      });
     },
   });
 };
@@ -421,22 +439,31 @@ export const useUpgradeDependencyTree = () => {
 
 export const useCreateUpgrade = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   return useMutation({
     mutationFn: upgradesApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['upgrades'] });
       queryClient.invalidateQueries({ queryKey: ['upgrades', 'dependency-tree'] });
-      toast.success('Upgrade creado exitosamente');
+      toast({
+        title: "Éxito",
+        description: 'Upgrade creado exitosamente',
+      });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al crear upgrade');
+      toast({
+        title: "Error",
+        description: error.message || 'Error al crear upgrade',
+        variant: "destructive",
+      });
     },
   });
 };
 
 export const useUpdateUpgrade = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   return useMutation({
     mutationFn: upgradesApi.update,
@@ -444,26 +471,41 @@ export const useUpdateUpgrade = () => {
       queryClient.invalidateQueries({ queryKey: ['upgrades'] });
       queryClient.invalidateQueries({ queryKey: ['upgrade', data._id] });
       queryClient.invalidateQueries({ queryKey: ['upgrades', 'dependency-tree'] });
-      toast.success('Upgrade actualizado exitosamente');
+      toast({
+        title: "Éxito",
+        description: 'Upgrade actualizado exitosamente',
+      });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al actualizar upgrade');
+      toast({
+        title: "Error",
+        description: error.message || 'Error al actualizar upgrade',
+        variant: "destructive",
+      });
     },
   });
 };
 
 export const useDeleteUpgrade = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   return useMutation({
     mutationFn: upgradesApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['upgrades'] });
       queryClient.invalidateQueries({ queryKey: ['upgrades', 'dependency-tree'] });
-      toast.success('Upgrade eliminado exitosamente');
+      toast({
+        title: "Éxito",
+        description: 'Upgrade eliminado exitosamente',
+      });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar upgrade');
+      toast({
+        title: "Error",
+        description: error.message || 'Error al eliminar upgrade',
+        variant: "destructive",
+      });
     },
   });
 };

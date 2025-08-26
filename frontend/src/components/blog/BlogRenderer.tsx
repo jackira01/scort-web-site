@@ -9,6 +9,17 @@ import { AlertCircle } from "lucide-react";
 // Importar tipos de JSX para evitar errores de TypeScript
 import type { JSX } from "react";
 
+// Función para procesar HTML y convertirlo a JSX
+const processHtmlToJsx = (html: string): JSX.Element => {
+  // Reemplazar etiquetas HTML comunes con componentes JSX
+  const processedHtml = html
+    .replace(/<b>(.*?)<\/b>/g, '<strong>$1</strong>')
+    .replace(/<i>(.*?)<\/i>/g, '<em>$1</em>')
+    .replace(/<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>/g, '<a href="$1" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">$2</a>');
+  
+  return <span dangerouslySetInnerHTML={{ __html: processedHtml }} />;
+};
+
 type BlogRendererProps = {
   content: OutputData;
   className?: string;
@@ -46,17 +57,16 @@ const BlogRenderer: React.FC<BlogRendererProps> = ({ content, className = "" }) 
       return React.createElement(
         tagName,
         { 
-          className: levelClasses[level as keyof typeof levelClasses] || levelClasses[2],
-          dangerouslySetInnerHTML: { __html: data.text }
-        }
+          className: levelClasses[level as keyof typeof levelClasses] || levelClasses[2]
+        },
+        processHtmlToJsx(data.text)
       );
     },
     
     paragraph: ({ data }: any) => (
-      <p 
-        className="text-foreground leading-relaxed mb-4 text-base"
-        dangerouslySetInnerHTML={{ __html: data.text }}
-      />
+      <p className="text-foreground leading-relaxed mb-4 text-base">
+        {processHtmlToJsx(data.text)}
+      </p>
     ),
     
     list: ({ data }: any) => {
@@ -70,11 +80,9 @@ const BlogRenderer: React.FC<BlogRendererProps> = ({ content, className = "" }) 
           {data.items.map((item: any, index: number) => {
             const content = typeof item === 'string' ? item : (item.content || item.text || JSON.stringify(item));
             return (
-              <li 
-                key={index} 
-                className="text-base leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: content }}
-              />
+              <li key={index} className="text-base leading-relaxed">
+                {processHtmlToJsx(content)}
+              </li>
             );
           })}
         </Tag>
@@ -101,15 +109,13 @@ const BlogRenderer: React.FC<BlogRendererProps> = ({ content, className = "" }) 
     
     quote: ({ data }: any) => (
       <blockquote className="border-l-4 border-primary pl-6 py-4 mb-6 bg-muted/50 rounded-r-lg">
-        <p 
-          className="text-lg italic text-foreground mb-2 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: `"${data.text}"` }}
-        />
+        <p className="text-lg italic text-foreground mb-2 leading-relaxed">
+          "{processHtmlToJsx(data.text)}"
+        </p>
         {data.caption && (
-          <cite 
-            className="text-sm text-muted-foreground font-medium"
-            dangerouslySetInnerHTML={{ __html: `— ${data.caption}` }}
-          />
+          <cite className="text-sm text-muted-foreground font-medium">
+            — {processHtmlToJsx(data.caption)}
+          </cite>
         )}
       </blockquote>
     ),
