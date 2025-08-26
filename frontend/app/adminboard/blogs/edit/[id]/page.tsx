@@ -1,85 +1,115 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Eye, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
-import { useBlogById, useUpdateBlog, useDeleteBlog, useToggleBlog } from '../../../../../src/hooks/use-blogs';
+import { ArrowLeft, Save, Eye, Trash2, ToggleLeft, ToggleRight, Upload } from 'lucide-react';
+import { useBlog, useUpdateBlog, useDeleteBlog, useToggleBlog } from '../../../../../src/hooks/use-blogs';
 import { blogService } from '../../../../../src/services/blog.service';
+import { useDeferredUpload } from '../../../../../src/hooks/use-deferred-upload';
 import { Button } from '../../../../../src/components/ui/button';
 import { Input } from '../../../../../src/components/ui/input';
 import { Label } from '../../../../../src/components/ui/label';
-import { Textarea } from '../../../../../src/components/ui/textarea';
+import dynamic from 'next/dynamic';
+
+const BlogEditor = dynamic(() => import('../../../../../src/components/blog/BlogEditor'), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-[400px] border border-border rounded-lg p-4 bg-background flex items-center justify-center">
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
+        <span className="text-muted-foreground">Cargando editor...</span>
+      </div>
+    </div>
+  )
+});
+
+import { BlogEditorRef } from '../../../../../src/components/blog/BlogEditor';
+import BlogRenderer from '../../../../../src/components/blog/BlogRenderer';
+import { OutputData } from '@editorjs/editorjs';
 import { Switch } from '../../../../../src/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../../src/components/ui/card';
 import { Badge } from '../../../../../src/components/ui/badge';
 import { Separator } from '../../../../../src/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../../../src/components/ui/alert-dialog';
-import { toast } from 'react-hot-toast';
+import { toast } from '../../../../../src/hooks/use-toast';
 
 interface BlogFormData {
   title: string;
   slug: string;
-  content: object;
+  content: OutputData;
   coverImage: string;
+  coverImageFileId?: string;
   published: boolean;
+}
+
+interface BlogFormErrors {
+  title?: string;
+  slug?: string;
+  content?: string;
+  coverImage?: string;
+  published?: string;
 }
 
 export default function EditBlogPage() {
   const router = useRouter();
   const params = useParams();
   const blogId = params.id as string;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<BlogEditorRef>(null);
 
   const [formData, setFormData] = useState<BlogFormData>({
     title: '',
     slug: '',
-    content: { blocks: [] },
+    content: { blocks: [], time: Date.now(), version: '2.28.2' },
     coverImage: '',
+    coverImageFileId: undefined,
     published: false,
   });
-  const [contentText, setContentText] = useState('');
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [errors, setErrors] = useState<Partial<BlogFormData>>({});
+  const [errors, setErrors] = useState<BlogFormErrors>({});
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
 
-  const { data: blog, isLoading, error } = useBlogById(blogId);
+  const { data: blog, isLoading, error } = useBlog(blogId);
   const updateBlogMutation = useUpdateBlog();
   const deleteBlogMutation = useDeleteBlog();
   const toggleBlogMutation = useToggleBlog();
+  const { addPendingFile, removePendingFile, uploadAllPendingFiles, getPreviewUrl, clearPendingFiles, processEditorContent } = useDeferredUpload();
+
+  // Limpiar archivos pendientes al desmontar el componente
+  useEffect(() => {
+    return () => {
+      clearPendingFiles();
+    };
+  }, [clearPendingFiles]);
 
   // Initialize form data when blog is loaded
   useEffect(() => {
     if (blog && !isInitialized) {
+      // Asegurar que el contenido tenga la estructura correcta de OutputData
+      const blogContent = blog.content as OutputData;
+      const content: OutputData = {
+        blocks: blogContent?.blocks || [],
+        time: blogContent?.time || Date.now(),
+        version: blogContent?.version || '2.28.2'
+      };
+
       setFormData({
         title: blog.title,
         slug: blog.slug,
-        content: blog.content,
+        content,
         coverImage: blog.coverImage || '',
         published: blog.published,
       });
-
-      // Convert content to text for editing
-      if (blog.content && Array.isArray((blog.content as any).blocks)) {
-        const text = (blog.content as any).blocks.map((block: any) => {
-          switch (block.type) {
-            case 'header':
-              const level = '#'.repeat(block.data?.level || 2);
-              return `${level} ${block.data?.text || ''}`;
-            case 'paragraph':
-            default:
-              return block.data?.text || '';
-          }
-        }).join('\n\n');
-        setContentText(text);
-      }
 
       setIsInitialized(true);
     }
   }, [blog, isInitialized]);
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<BlogFormData> = {};
+    const newErrors: BlogFormErrors = {};
 
     if (!formData.title.trim()) {
       newErrors.title = 'El título es requerido';
@@ -89,7 +119,7 @@ export default function EditBlogPage() {
       newErrors.slug = 'El slug es requerido';
     }
 
-    if (!contentText.trim()) {
+    if (!formData.content || !formData.content.blocks || formData.content.blocks.length === 0) {
       newErrors.content = 'El contenido es requerido';
     }
 
@@ -105,10 +135,8 @@ export default function EditBlogPage() {
     setFormData(prev => ({
       ...prev,
       title,
-      // Only auto-generate slug if it matches the current auto-generated slug
-      slug: prev.slug === blogService.generateSlug(prev.title)
-        ? blogService.generateSlug(title)
-        : prev.slug
+      // Solo generar slug automáticamente si no ha sido editado manualmente
+      slug: isSlugManuallyEdited ? prev.slug : blogService.generateSlug(title)
     }));
     if (errors.title) {
       setErrors(prev => ({ ...prev, title: undefined }));
@@ -116,6 +144,7 @@ export default function EditBlogPage() {
   };
 
   const handleSlugChange = (slug: string) => {
+    setIsSlugManuallyEdited(true);
     setFormData(prev => ({
       ...prev,
       slug: blogService.generateSlug(slug)
@@ -125,44 +154,8 @@ export default function EditBlogPage() {
     }
   };
 
-  const handleContentChange = (content: string) => {
-    setContentText(content);
-
-    // Convert simple text to Editor.js format
-    const blocks = content.split('\n\n').filter(paragraph => paragraph.trim()).map(paragraph => {
-      const trimmed = paragraph.trim();
-
-      // Check if it's a header (starts with #)
-      if (trimmed.startsWith('#')) {
-        const level = trimmed.match(/^#+/)?.[0].length || 2;
-        const text = trimmed.replace(/^#+\s*/, '');
-        return {
-          type: 'header',
-          data: {
-            text,
-            level: Math.min(level, 6)
-          }
-        };
-      }
-
-      // Regular paragraph
-      return {
-        type: 'paragraph',
-        data: {
-          text: trimmed
-        }
-      };
-    });
-
-    setFormData(prev => ({
-      ...prev,
-      content: { blocks }
-    }));
-
-    if (errors.content) {
-      setErrors(prev => ({ ...prev, content: undefined }));
-    }
-  };
+  // Función eliminada: handleContentChange ya no es necesaria
+  // El contenido se obtiene directamente del editor cuando se necesita
 
   const handleCoverImageChange = (coverImage: string) => {
     setFormData(prev => ({ ...prev, coverImage }));
@@ -171,30 +164,126 @@ export default function EditBlogPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCoverImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    if (!validateForm()) {
-      toast.error('Por favor corrige los errores en el formulario');
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Error',
+        description: 'Solo se permiten archivos de imagen',
+        variant: 'destructive'
+      });
       return;
     }
 
-    try {
-      await updateBlogMutation.mutateAsync({
-        id: blogId,
-        data: {
-          title: formData.title,
-          slug: formData.slug,
-          content: formData.content,
-          coverImage: formData.coverImage || undefined,
-          published: formData.published,
-        }
+    // Validar tamaño (máximo 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: 'Error',
+        description: 'El archivo es demasiado grande. Máximo 10MB.',
+        variant: 'destructive'
       });
+      return;
+    }
 
-      toast.success('Blog actualizado exitosamente');
-      router.push('/adminboard?section=blogs');
+    // Remover archivo anterior si existe
+    if (formData.coverImageFileId) {
+      removePendingFile(formData.coverImageFileId);
+    }
+
+    // Agregar archivo para subida diferida
+    const { id, preview } = addPendingFile(file, 'image');
+    
+    setFormData(prev => ({
+      ...prev,
+      coverImage: preview,
+      coverImageFileId: id
+    }));
+
+    if (errors.coverImage) {
+      setErrors(prev => ({ ...prev, coverImage: undefined }));
+    }
+
+    toast({
+      title: 'Imagen seleccionada',
+      description: 'Se subirá al guardar el blog.',
+      variant: 'default'
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      // Obtener contenido actual del editor
+      if (editorRef.current) {
+        const editorData = await editorRef.current.getData();
+        const updatedFormData = { ...formData, content: editorData };
+        
+        // Validar con el contenido actualizado
+        const newErrors: BlogFormErrors = {};
+
+        if (!updatedFormData.title.trim()) {
+          newErrors.title = 'El título es requerido';
+        }
+
+        if (!updatedFormData.slug.trim()) {
+          newErrors.slug = 'El slug es requerido';
+        }
+
+        if (!updatedFormData.content || !updatedFormData.content.blocks || updatedFormData.content.blocks.length === 0) {
+          newErrors.content = 'El contenido es requerido';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+          setErrors(newErrors);
+          toast({
+            title: 'Error en el formulario',
+            description: 'Por favor corrige los errores en el formulario',
+            variant: 'destructive'
+          });
+          return;
+        }
+
+        // Subir archivos pendientes a Cloudinary
+        const uploadedUrls = await uploadAllPendingFiles('blog-images');
+        
+        // Procesar imagen de portada
+        let finalCoverImage = updatedFormData.coverImage;
+        if (updatedFormData.coverImageFileId && uploadedUrls[updatedFormData.coverImageFileId]) {
+          finalCoverImage = uploadedUrls[updatedFormData.coverImageFileId];
+        }
+
+        // Procesar contenido del editor para reemplazar URLs temporales
+        const processedContent = processEditorContent(updatedFormData.content, uploadedUrls);
+
+        await updateBlogMutation.mutateAsync({
+          id: blogId,
+          data: {
+            title: updatedFormData.title,
+            slug: updatedFormData.slug,
+            content: processedContent,
+            coverImage: finalCoverImage || undefined,
+            published: updatedFormData.published,
+          }
+        });
+
+        toast({
+          title: 'Blog actualizado',
+          description: 'Blog actualizado exitosamente',
+          variant: 'default'
+        });
+        router.push('/adminboard?section=blogs');
+      }
     } catch (error) {
       console.error('Error updating blog:', error);
+      toast({
+        title: 'Error',
+        description: 'Error al actualizar el blog',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -210,46 +299,62 @@ export default function EditBlogPage() {
   const handleDelete = async () => {
     try {
       await deleteBlogMutation.mutateAsync(blogId);
-      toast.success('Blog eliminado exitosamente');
+      toast({
+        title: 'Blog eliminado',
+        description: 'Blog eliminado exitosamente',
+        variant: 'default'
+      });
       router.push('/adminboard?section=blogs');
     } catch (error) {
       console.error('Error deleting blog:', error);
     }
   };
 
+  const [previewContent, setPreviewContent] = useState<OutputData | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+
+  const updatePreviewContent = async () => {
+    try {
+      setIsLoadingPreview(true);
+      // Obtener contenido actual del editor para la vista previa
+      let contentToRender = formData.content;
+      
+      if (editorRef.current) {
+        contentToRender = await editorRef.current.getData();
+      }
+      
+      console.log('Preview - contentToRender:', contentToRender);
+      console.log('Preview - blocks length:', contentToRender?.blocks?.length);
+      
+      setPreviewContent(contentToRender);
+    } catch (error) {
+      console.error('Error rendering preview:', error);
+      setPreviewContent(null);
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
   const renderPreview = () => {
-    if (!formData.content || !Array.isArray((formData.content as any).blocks)) {
+    if (isLoadingPreview) {
+      return <p className="text-gray-500">Cargando vista previa...</p>;
+    }
+    
+    if (!previewContent || !previewContent.blocks || previewContent.blocks.length === 0) {
       return <p className="text-gray-500">No hay contenido para mostrar</p>;
     }
 
     return (
-      <div className="prose prose-lg max-w-none">
-        {(formData.content as any).blocks.map((block: any, index: number) => {
-          switch (block.type) {
-            case 'paragraph':
-              return (
-                <p key={index} className="mb-4 text-gray-700 leading-relaxed">
-                  {block.data?.text || ''}
-                </p>
-              );
-            case 'header':
-              const HeaderTag = `h${block.data?.level || 2}` as keyof JSX.IntrinsicElements;
-              return (
-                <HeaderTag key={index} className="font-bold text-gray-900 mb-4 mt-8">
-                  {block.data?.text || ''}
-                </HeaderTag>
-              );
-            default:
-              return (
-                <p key={index} className="mb-4 text-gray-700 leading-relaxed">
-                  {block.data?.text || ''}
-                </p>
-              );
-          }
-        })}
-      </div>
+      <BlogRenderer content={previewContent} />
     );
   };
+
+  // Actualizar preview cuando se cambie a modo preview
+  useEffect(() => {
+    if (isPreviewMode) {
+      updatePreviewContent();
+    }
+  }, [isPreviewMode]);
 
   if (isLoading) {
     return (
@@ -467,16 +572,40 @@ export default function EditBlogPage() {
                 {/* Cover Image */}
                 <div>
                   <Label htmlFor="coverImage">Imagen de Portada</Label>
-                  <Input
-                    id="coverImage"
-                    value={formData.coverImage}
-                    onChange={(e) => handleCoverImageChange(e.target.value)}
-                    placeholder="https://ejemplo.com/imagen.jpg"
-                    className={errors.coverImage ? 'border-red-500' : ''}
-                  />
-                  <p className="text-sm text-gray-600 mt-1">
-                    URL de la imagen de portada (opcional)
-                  </p>
+                  <div className="space-y-3">
+                    {/* URL Input */}
+                    <Input
+                      id="coverImage"
+                      value={formData.coverImage}
+                      onChange={(e) => handleCoverImageChange(e.target.value)}
+                      placeholder="https://ejemplo.com/imagen.jpg"
+                      className={errors.coverImage ? 'border-red-500' : ''}
+                    />
+                    <p className="text-sm text-gray-600">
+                      URL de la imagen de portada (opcional)
+                    </p>
+                    
+                    {/* File Upload */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCoverImageFileChange}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-2"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Subir desde equipo
+                      </Button>
+                      <span className="text-sm text-gray-500">o ingresa una URL arriba</span>
+                    </div>
+                  </div>
                   {errors.coverImage && (
                     <p className="text-sm text-red-600 mt-1">{errors.coverImage}</p>
                   )}
@@ -516,15 +645,17 @@ export default function EditBlogPage() {
               <CardHeader>
                 <CardTitle>Contenido *</CardTitle>
                 <p className="text-sm text-gray-600">
-                  Escribe el contenido del blog. Puedes usar # para títulos (ej: # Título, ## Subtítulo).
+                  Usa el editor para crear contenido rico con imágenes, títulos, listas y más.
                 </p>
               </CardHeader>
               <CardContent>
-                <Textarea
-                  value={contentText}
-                  onChange={(e) => handleContentChange(e.target.value)}
-                  placeholder="Escribe el contenido del blog aquí...&#10;&#10;# Título Principal&#10;&#10;Este es un párrafo de ejemplo.&#10;&#10;## Subtítulo&#10;&#10;Otro párrafo con más contenido."
-                  className={`min-h-[400px] font-mono text-sm ${errors.content ? 'border-red-500' : ''}`}
+                <BlogEditor
+                  ref={editorRef}
+                  initialData={formData.content}
+                  deferredUpload={{
+                    addPendingFile,
+                    uploadAllPendingFiles
+                  }}
                 />
                 {errors.content && (
                   <p className="text-sm text-red-600 mt-1">{errors.content}</p>

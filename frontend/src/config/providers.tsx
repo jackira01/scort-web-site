@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { SessionProvider } from 'next-auth/react';
 import { type PropsWithChildren, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
+import { Toaster as ShadcnToaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 
 const enviroment = process.env.NODE_ENV;
@@ -47,6 +48,7 @@ export function Providers({ children }: PropsWithChildren) {
       >
         <SessionProvider>
           <Toaster position="top-right" />
+          <ShadcnToaster />
           {children}
         </SessionProvider>
       </ThemeProvider>

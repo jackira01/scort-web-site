@@ -90,6 +90,13 @@ export const useBlog = (identifier: string, enabled: boolean = true) => {
 };
 
 /**
+ * Hook para obtener un blog por ID (alias de useBlog para compatibilidad)
+ */
+export const useBlogById = (id: string, enabled: boolean = true) => {
+  return useBlog(id, enabled);
+};
+
+/**
  * Hook para obtener blogs relacionados
  */
 export const useRelatedBlogs = (blogId: string, limit: number = 3) => {
@@ -273,6 +280,18 @@ export const useAllBlogs = (filters: BlogFilters = {}) => {
 };
 
 /**
+ * Hook para obtener todos los blogs incluyendo no publicados (para adminboard)
+ */
+export const useAdminBlogs = (filters: BlogFilters = {}) => {
+  return useQuery({
+    queryKey: [...blogKeys.lists(), 'admin', filters],
+    queryFn: () => blogService.getAllBlogsForAdmin(filters),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
+  });
+};
+
+/**
  * Hook para prefetch de un blog
  */
 export const usePrefetchBlog = () => {
@@ -290,6 +309,7 @@ export const usePrefetchBlog = () => {
 export default {
   useBlogs,
   useBlog,
+  useBlogById,
   useRelatedBlogs,
   useSearchBlogs,
   useCreateBlog,
@@ -298,5 +318,6 @@ export default {
   useDeleteBlog,
   usePublishedBlogs,
   useAllBlogs,
+  useAdminBlogs,
   usePrefetchBlog,
 };

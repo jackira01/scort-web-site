@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AttributeGroupsAdmin from './AttributeGroupsAdmin';
@@ -15,6 +16,14 @@ import BlogsManager from '@/components/admin/blogs/BlogsManager';
 
 export default function DashboardLayout() {
     const [activeSection, setActiveSection] = useState('usuarios');
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const section = searchParams.get('section');
+        if (section) {
+            setActiveSection(section);
+        }
+    }, [searchParams]);
 
 
     const renderContent = () => {

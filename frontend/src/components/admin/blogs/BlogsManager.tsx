@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAllBlogs, useDeleteBlog, useToggleBlog } from '../../../hooks/use-blogs';
+import { useAdminBlogs, useDeleteBlog, useToggleBlog } from '../../../hooks/use-blogs';
 import { blogService } from '../../../services/blog.service';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -209,7 +209,7 @@ export default function BlogsManager() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [blogToDelete, setBlogToDelete] = useState<string | null>(null);
 
-  const { data, isLoading, error } = useAllBlogs({
+  const { data, isLoading, error } = useAdminBlogs({
     search: searchTerm,
     published: statusFilter === 'all' ? undefined : statusFilter === 'published',
     page: currentPage,
