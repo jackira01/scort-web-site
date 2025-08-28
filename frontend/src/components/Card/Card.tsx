@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { VerificationBar } from '@/components/VerificationBar/VerificationBar';
 import type { IProfile } from '@/types/profile.types';
 
 interface CardComponentProps {
@@ -85,6 +86,17 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                     </span>
                   </span>
                 </div>
+                
+                {/* Barra de verificación */}
+                {profile.verification && (
+                  <div className="mt-2">
+                    <VerificationBar 
+                      verification={profile.verification} 
+                      size="sm" 
+                      className="w-full"
+                    />
+                  </div>
+                )}
               </div>
               <Link href={`/perfil/${profile._id}`} className="mt-2 sm:mt-3">
                 <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 text-xs sm:text-sm py-1 sm:py-2">

@@ -149,6 +149,8 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
               description={adaptedProfileData.description}
               services={adaptedProfileData.services}
             />
+            {/* Rates - Moved from right side */}
+            <RatesProfile rates={adaptedProfileData.rates} />
             {/* Verification Status */}
             <div id="verification-section">
               <VerificationStatus profileId={id} />
@@ -179,9 +181,6 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
 
             {/* Audio Player */}
             <AudioPlayer audios={profile.media?.audios || []} />
-
-            {/* Rates */}
-            <RatesProfile rates={adaptedProfileData.rates} />
 
             {/* Availability */}
             <AvailabilityProfile

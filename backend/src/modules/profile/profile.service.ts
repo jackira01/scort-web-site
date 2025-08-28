@@ -137,10 +137,7 @@ export const getProfiles = async (page: number = 1, limit: number = 10, fields?:
       path: 'user',
       select: 'name email',
     })
-    .populate({
-      path: 'verification',
-      select: 'verificationStatus verifiedAt',
-    })
+    .populate('verification')
     .populate({
       path: 'features.group_id',
       select: 'name label',
@@ -151,11 +148,18 @@ export const getProfiles = async (page: number = 1, limit: number = 10, fields?:
 
   const now = new Date();
   const profiles = rawProfiles.map(profile => {
-    const verification = profile.verification;
+    // Calcular estado de verificación basado en campos individuales
     let isVerified = false;
-    if (verification && typeof verification === 'object' && 'verificationStatus' in verification) {
-      isVerified = (verification as { verificationStatus: string }).verificationStatus === 'verified';
+    if (profile.verification) {
+      const verification = profile.verification as any;
+      const verifiedCount = Object.values(verification).filter(status => status === 'verified').length;
+      const totalFields = Object.keys(verification).length;
+      
+      if (verifiedCount === totalFields && totalFields > 0) {
+        isVerified = true;
+      }
     }
+    
     const featured = profile.upgrades?.some(upgrade =>
       (upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT') &&
       new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
@@ -213,10 +217,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
       createdAt: 1,
       updatedAt: 1
     })
-    .populate({
-      path: 'verification',
-      select: 'verificationStatus',
-    })
+    .populate('verification')
     .lean();
 
   // Obtener definiciones de planes para mapear códigos a niveles y features
@@ -380,10 +381,32 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
   // Limpiar información de jerarquía antes de devolver y mapear hasDestacadoUpgrade
   const cleanProfiles = paginatedProfiles.map(profile => {
     const { _hierarchyInfo, ...cleanProfile } = profile;
+    
+    // Calcular estado de verificación basado en campos individuales
+    let isVerified = false;
+    let verificationLevel = 'pending';
+    
+    if (profile.verification) {
+      const verification = profile.verification as any;
+      const verifiedCount = Object.values(verification).filter(status => status === 'verified').length;
+      const totalFields = Object.keys(verification).length;
+      
+      if (verifiedCount === totalFields && totalFields > 0) {
+        isVerified = true;
+        verificationLevel = 'verified';
+      } else if (verifiedCount > 0) {
+        verificationLevel = 'partial';
+      }
+    }
+    
     return {
       ...cleanProfile,
       hasDestacadoUpgrade: _hierarchyInfo.hasHighlightUpgrade,
-      hasImpulsoUpgrade: _hierarchyInfo.hasBoostUpgrade
+      hasImpulsoUpgrade: _hierarchyInfo.hasBoostUpgrade,
+      verification: {
+        isVerified,
+        verificationLevel
+      }
     };
   });
 

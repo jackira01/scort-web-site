@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { VerificationBar } from '@/components/VerificationBar/VerificationBar';
 import type { Profile, ProfileCardData } from '@/types/profile.types';
 import {
   formatLocation,
@@ -129,6 +130,17 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                     </span>
                   </span>
                 </div>
+                
+                {/* Barra de verificación */}
+                {profile.verification && (
+                  <div className="mt-2">
+                    <VerificationBar 
+                      verification={profile.verification} 
+                      size="sm" 
+                      className="w-full"
+                    />
+                  </div>
+                )}
               </div>
             </div>
             

@@ -275,9 +275,36 @@ export const getFilteredProfiles = async (
       limit,
     };
 
+    // Agregar información de verificación a los perfiles
+    const profilesWithVerification = paginatedProfiles.map(profile => {
+      // Calcular estado de verificación basado en verificationStatus
+      let isVerified = false;
+      let verificationLevel = 'pending';
+      
+      if (profile.verification) {
+        const verifiedCount = Object.values(profile.verification).filter(status => status === 'verified').length;
+        const totalFields = Object.keys(profile.verification).length;
+        
+        if (verifiedCount === totalFields && totalFields > 0) {
+          isVerified = true;
+          verificationLevel = 'verified';
+        } else if (verifiedCount > 0) {
+          verificationLevel = 'partial';
+        }
+      }
+      
+      return {
+        ...profile,
+        verification: {
+          isVerified,
+          verificationLevel
+        }
+      };
+    });
+
     return {
       ...paginationInfo,
-      profiles: paginatedProfiles,
+      profiles: profilesWithVerification,
     };
   } catch (error) {
     // Error in getFilteredProfiles

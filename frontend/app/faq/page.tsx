@@ -224,16 +224,17 @@ const FAQPage = () => {
                 {popularFAQs.map((faq) => {
                   const category = categories.find(cat => cat.id === faq.category);
                   return (
-                    <div key={faq.id} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                      <div className="flex items-center space-x-3">
-                        <Badge className={category?.color}>
+                    <div key={faq.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                        <Badge className={`${category?.color} flex-shrink-0 w-fit`}>
                           {category?.name}
                         </Badge>
-                        <span className="font-medium text-gray-900">{faq.question}</span>
+                        <span className="font-medium text-gray-900 text-sm sm:text-base break-words">{faq.question}</span>
                       </div>
                       <Button 
                         variant="ghost" 
                         size="sm"
+                        className="flex-shrink-0 w-full sm:w-auto"
                         onClick={() => {
                           setSelectedCategory(faq.category);
                           document.getElementById(`faq-${faq.id}`)?.scrollIntoView({ behavior: 'smooth' });

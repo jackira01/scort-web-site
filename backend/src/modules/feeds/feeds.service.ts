@@ -38,7 +38,9 @@ export const getHomeFeed = async (options: HomeFeedOptions = {}): Promise<HomeFe
     visible: true,
     isActive: true,
     'planAssignment.expiresAt': { $gt: now }
-  }).exec();
+  })
+  .populate('verification')
+  .exec();
 
   // Ordenar perfiles usando el motor de visibilidad
   const sortedProfiles = await sortProfiles(visibleProfiles, now);
@@ -71,7 +73,35 @@ export const getHomeFeed = async (options: HomeFeedOptions = {}): Promise<HomeFe
   const totalPages = Math.ceil(total / pageSize);
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
-  const paginatedProfiles = sortedProfiles.slice(startIndex, endIndex);
+  const paginatedProfilesRaw = sortedProfiles.slice(startIndex, endIndex);
+  
+  // Agregar información de verificación a los perfiles paginados
+  const paginatedProfiles = paginatedProfilesRaw.map(profile => {
+    // Calcular estado de verificación basado en campos individuales
+    let isVerified = false;
+    let verificationLevel = 'pending';
+    
+    if (profile.verification) {
+      const verification = profile.verification as any;
+      const verifiedCount = Object.values(verification).filter(status => status === 'verified').length;
+      const totalFields = Object.keys(verification).length;
+      
+      if (verifiedCount === totalFields && totalFields > 0) {
+        isVerified = true;
+        verificationLevel = 'verified';
+      } else if (verifiedCount > 0) {
+        verificationLevel = 'partial';
+      }
+    }
+    
+    return {
+      ...profile.toObject(),
+      verification: {
+        isVerified,
+        verificationLevel
+      }
+    };
+  });
 
   // Actualizar lastShownAt para los perfiles servidos (fairness rotation)
   if (paginatedProfiles.length > 0) {

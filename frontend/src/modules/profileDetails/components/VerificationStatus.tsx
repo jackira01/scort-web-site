@@ -58,37 +58,37 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
   // Definir los pasos de verificación con sus etiquetas
   const verificationSteps: VerificationStep[] = [
     {
-      label: "Mayoría de edad revisada",
+      label: "Documentación de edad validada",
       isVerified: steps?.documentPhotos?.isVerified || false,
       hasData: (steps?.documentPhotos?.documents?.length || 0) > 0
     },
     {
-      label: "Identidad verificada",
+      label: "Autenticidad de identidad confirmada",
       isVerified: steps?.selfieWithDoc?.isVerified || false,
       hasData: !!steps?.selfieWithDoc?.photo
     },
     {
-      label: "Perfil verificado con vídeo",
+      label: "Validación por videollamada completada",
       isVerified: steps?.video?.isVerified || false,
       hasData: !!steps?.video?.videoLink
     },
     {
-      label: "Usuario desde hace más de 1 año",
+      label: "Miembro establecido con antigüedad",
       isVerified: true, // Este parece ser un campo calculado basado en la fecha de registro
       hasData: true
     },
     {
-      label: "No ha cambiado de teléfono",
+      label: "Consistencia en datos de contacto",
       isVerified: !steps?.phoneChangeDetected,
       hasData: true
     },
     {
-      label: "El usuario no se ha publicado en otras ciudades o barrios en grandes urbes",
+      label: "Ubicación geográfica estable",
       isVerified: true, // Este requeriría lógica adicional para verificar
       hasData: true
     },
     {
-      label: "Índice de actividad",
+      label: "Nivel de participación activa",
       isVerified: true, // Este requeriría lógica adicional basada en la actividad del usuario
       hasData: true
     }
@@ -140,7 +140,7 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
     <Card className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-sm">
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Entienda qué hace que este perfil sea confiable:
+          Factores que garantizan la confiabilidad de este perfil:
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -156,39 +156,44 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
                 </p>
                 {getStatusBadge(step)}
               </div>
-              {step.label === "Mayoría de edad revisada" && (
+              {step.label === "Documentación de edad validada" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  Revisamos la mayoría de edad de todos los usuarios.
+                  Verificamos que todos nuestros usuarios sean mayores de edad mediante documentación oficial.
                 </p>
               )}
-              {step.label === "Identidad verificada" && (
+              {step.label === "Autenticidad de identidad confirmada" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  El usuario ha entregado su documento de identidad y coincide con su foto o vídeo de verificación.
+                  La identidad ha sido autenticada mediante documentos oficiales que coinciden con las fotografías de verificación.
                 </p>
               )}
-              {step.label === "Perfil verificado con vídeo" && (
+              {step.label === "Fotos de perfil verificadas" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  Las fotos de este perfil han sido verificadas, hemos tomado un vídeo en vivo al usuario de su cara con un cartel que pone mileróticos y ha enviado las fotos de su perfil a cara descubierta.
+                  Las imágenes del perfil han sido autenticadas y corresponden con la documentación de identidad.
                 </p>
               )}
-              {step.label === "Usuario desde hace más de 1 año" && (
+              {step.label === "Validación por videollamada completada" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  Es usuario desde hace más de 1 año y no hemos aceptado ningún reporte negativo de él, si es un usuario activo es confiable.
+                  Se ha realizado una verificación en tiempo real mediante videollamada con identificación visual y cartel de validación.
                 </p>
               )}
-              {step.label === "No ha cambiado de teléfono" && (
+              {step.label === "Miembro establecido con antigüedad" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  El usuario no ha cambiado de teléfono.
+                  Cuenta con más de un año de membresía activa sin reportes negativos validados, lo que demuestra confiabilidad.
                 </p>
               )}
-              {step.label === "El usuario no se ha publicado en otras ciudades o barrios en grandes urbes" && (
+              {step.label === "Consistencia en datos de contacto" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  El usuario no se ha publicado en otras ciudades o barrios en grandes urbes en los últimos 7 días.
+                  Mantiene estabilidad en su información de contacto sin cambios frecuentes.
                 </p>
               )}
-              {step.label === "Índice de actividad" && (
+              {step.label === "Ubicación geográfica estable" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  Es usuario desde hace más de 1 año, ha sido muy activo en el portal y no ha sido aceptado ningún reporte.
+                  No ha registrado publicaciones en múltiples ciudades o zonas metropolitanas en el período reciente.
+                </p>
+              )}
+              {step.label === "Nivel de participación activa" && (
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  Demuestra participación constante en la plataforma con historial positivo y sin incidencias reportadas.
                 </p>
               )}
               {step.label === "Pide depósito anticipado" && (
@@ -196,6 +201,11 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
                   Pide depósito anticipado, hay usuarios que piden depósitos para confirmar su cita, esto no quiere decir que sea un mal usuario, valore usted el resto de factores de confiabilidad antes de quedar con él
                 </p>
               )}
+              {/* {step.label === "Redes sociales verificadas" && (
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  El perfil proporciono sus redes sociales y coinciden con la información de la cuenta
+                </p>
+              )} */}
             </div>
           </div>
         ))}
