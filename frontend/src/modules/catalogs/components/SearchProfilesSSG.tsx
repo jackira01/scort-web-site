@@ -100,7 +100,7 @@ export default function SearchProfilesSSG({
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-          No se encontraron perfiles
+          Aún no se han inscrito modelos en esta zona
         </h3>
         <p className="text-muted-foreground">
           Intenta ajustar tus filtros para ver más resultados.

@@ -38,9 +38,9 @@ export const formSchema = z.object({
   availability: z.array(z.any()).optional(),
 
   // Step 4 - Multimedia
-  photos: z.array(z.any()).optional(),
-  videos: z.array(z.any()).optional(),
-  audios: z.array(z.any()).optional(),
+  photos: z.array(z.union([z.string(), z.instanceof(File)])).optional(),
+  videos: z.array(z.union([z.string(), z.instanceof(File)])).optional(),
+  audios: z.array(z.union([z.string(), z.instanceof(File)])).optional(),
 
   // Step 5 - Finalizar
   selectedUpgrades: z.array(z.string()).optional(),

@@ -332,15 +332,50 @@ class BlogService {
     // Implementar según el formato del Rich Text Editor usado
     // Ejemplo para Editor.js:
     if (content.blocks && Array.isArray(content.blocks)) {
-      return content.blocks
-        .filter((block: any) => block.type === 'paragraph' || block.type === 'header')
-        .map((block: any) => block.data?.text || '')
-        .join(' ')
-        .substring(0, 200) + '...';
+      const textBlocks = content.blocks
+        .filter((block: any) => block.type === 'paragraph' || block.type === 'header' || block.type === 'list')
+        .map((block: any) => {
+          if (block.type === 'list' && block.data?.items) {
+            // Para listas, extraer texto de todos los items
+            return block.data.items
+              .map((item: any) => {
+                const text = typeof item === 'string' ? item : (item.content || item.text || '');
+                return this.stripHtmlTags(text);
+              })
+              .join(' ');
+          }
+          // Para párrafos y headers, extraer y limpiar el texto
+          const text = block.data?.text || '';
+          return this.stripHtmlTags(text);
+        })
+        .filter(text => text.trim().length > 0)
+        .join(' ');
+
+      const cleanText = textBlocks.trim();
+      return cleanText.length > 200 ? cleanText.substring(0, 200) + '...' : cleanText;
     }
 
     // Fallback genérico
-    return JSON.stringify(content).substring(0, 200) + '...';
+    return '';
+  }
+
+  /**
+   * Remover etiquetas HTML del texto
+   */
+  private stripHtmlTags(html: string): string {
+    if (!html || typeof html !== 'string') return '';
+    
+    // Remover etiquetas HTML y decodificar entidades HTML básicas
+    return html
+      .replace(/<[^>]*>/g, '') // Remover todas las etiquetas HTML
+      .replace(/&nbsp;/g, ' ') // Reemplazar espacios no separables
+      .replace(/&amp;/g, '&')   // Decodificar &
+      .replace(/&lt;/g, '<')    // Decodificar <
+      .replace(/&gt;/g, '>')    // Decodificar >
+      .replace(/&quot;/g, '"')  // Decodificar "
+      .replace(/&#39;/g, "'")  // Decodificar '
+      .replace(/\s+/g, ' ')     // Normalizar espacios múltiples
+      .trim();
   }
 }
 

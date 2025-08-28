@@ -239,7 +239,7 @@ export default function BlogsManager() {
   };
 
   const handleToggle = (blogId: string, published: boolean) => {
-    toggleBlogMutation.mutate({ id: blogId, published });
+    toggleBlogMutation.mutate(blogId);
   };
 
   const handlePageChange = (page: number) => {
@@ -271,7 +271,8 @@ export default function BlogsManager() {
         <CardContent className="p-6">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
-            <div className="flex-1">
+            {/* Innecesario, se puede filtrar pero falta configurar correctamente la peticion*/}
+            {/* <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -284,7 +285,7 @@ export default function BlogsManager() {
                   className="pl-10"
                 />
               </div>
-            </div>
+            </div> */}
 
             {/* Status Filter */}
             <Select

@@ -21,6 +21,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import UploadStoryModal from './UploadStoryModal';
 import DeleteProfileModal from './DeleteProfileModal';
+import ManagePlansModal from '@/components/plans/ManagePlansModal';
 import { deleteProfile } from '@/services/user.service';
 import { useUpgradePurchase, useUpgradeValidation } from '@/hooks/use-upgrade-purchase';
 
@@ -91,6 +92,7 @@ export default function AccountProfiles({
   const [selectedProfileForDelete, setSelectedProfileForDelete] =
     useState<ProfileResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [managePlansProfileId, setManagePlansProfileId] = useState<string | null>(null);
 
   // Hooks para manejo de upgrades
   const { mutate: purchaseUpgrade, isLoading: isPurchasing } = useUpgradePurchase();
@@ -101,7 +103,7 @@ export default function AccountProfiles({
     if (!profile) return;
 
     const validation = validateUpgrade(profile, upgradeCode);
-    
+
     if (!validation.canPurchase) {
       toast.error(validation.reason || 'No se puede comprar este upgrade');
       return;
@@ -122,7 +124,7 @@ export default function AccountProfiles({
     );
   };
 
-  
+
 
   const handleDeleteStory = async (profileId: string, storyIndex: number) => {
     try {
@@ -169,16 +171,16 @@ export default function AccountProfiles({
     try {
       setIsDeleting(true);
       toast.loading('Eliminando perfil...');
-      
+
       await deleteProfile(selectedProfileForDelete._id);
-      
+
       toast.dismiss();
       toast.success('Perfil eliminado correctamente');
-      
+
       // Cerrar el modal
       setDeleteModalOpen(false);
       setSelectedProfileForDelete(null);
-      
+
       // Recargar la página para mostrar los cambios
       setTimeout(() => {
         window.location.reload();
@@ -237,11 +239,10 @@ export default function AccountProfiles({
           {profiles.map((profile, index) => (
             <Card
               key={profile._id}
-              className={`group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card animate-in zoom-in-50 ${
-                profile.hasDestacadoUpgrade 
-                  ? 'border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:border-yellow-300 ring-1 ring-yellow-400/50' 
+              className={`group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card animate-in zoom-in-50 ${profile.hasDestacadoUpgrade
+                  ? 'border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:border-yellow-300 ring-1 ring-yellow-400/50'
                   : 'border-border hover:border-purple-500/50'
-              }`}
+                }`}
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="relative">
@@ -425,10 +426,10 @@ export default function AccountProfiles({
                               <Button
                                 size="sm"
                                 variant={profile.hasDestacadoUpgrade ? "default" : "outline"}
-                                className={`p-2 ${profile.hasDestacadoUpgrade 
-                                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white' 
+                                className={`p-2 ${profile.hasDestacadoUpgrade
+                                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white'
                                   : 'hover:bg-yellow-50 dark:hover:bg-yellow-950/20 hover:border-yellow-500'
-                                } transition-all duration-200`}
+                                  } transition-all duration-200`}
                                 onClick={() => handleUpgradePurchase(profile._id, 'DESTACADO')}
                                 disabled={isPurchasing || profile.hasDestacadoUpgrade}
                               >
@@ -467,10 +468,10 @@ export default function AccountProfiles({
                             <Button
                               size="sm"
                               variant={profile.hasImpulsoUpgrade ? "default" : "outline"}
-                              className={`p-2 ${profile.hasImpulsoUpgrade 
-                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white' 
+                              className={`p-2 ${profile.hasImpulsoUpgrade
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
                                 : 'hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500'
-                              } transition-all duration-200`}
+                                } transition-all duration-200`}
                               onClick={() => handleUpgradePurchase(profile._id, 'IMPULSO')}
                               disabled={isPurchasing || profile.hasImpulsoUpgrade}
                             >
@@ -485,6 +486,23 @@ export default function AccountProfiles({
                     </div>
                     {/* Segunda fila de botones */}
                     <div className="flex space-x-1 justify-center">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setManagePlansProfileId(profile._id)}
+                              className="p-2 bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200 transition-all duration-200"
+                            >
+                              <Shield className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Administrar planes</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -526,11 +544,11 @@ export default function AccountProfiles({
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
-                               size="sm"
-                               variant="destructive"
-                               onClick={() => openDeleteModal(profile)}
-                               className="p-2 hover:bg-red-600 transition-all duration-200"
-                             >
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => openDeleteModal(profile)}
+                              className="p-2 hover:bg-red-600 transition-all duration-200"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
@@ -623,6 +641,19 @@ export default function AccountProfiles({
         onConfirm={handleDeleteProfile}
         profile={selectedProfileForDelete}
         isDeleting={isDeleting}
+      />
+
+      {/* Modal para administrar planes */}
+      <ManagePlansModal
+        isOpen={!!managePlansProfileId}
+        onClose={() => setManagePlansProfileId(null)}
+        profileId={managePlansProfileId || ''}
+        profileName={profiles.find(p => p._id === managePlansProfileId)?.name || ''}
+        currentPlan={profiles.find(p => p._id === managePlansProfileId)?.planAssignment}
+        onPlanChange={() => {
+          // Recargar la página para mostrar los cambios
+          setTimeout(() => window.location.reload(), 1000);
+        }}
       />
     </div>
   );

@@ -60,7 +60,7 @@ const HomeProfiles = () => {
           </button>
         )}
       </div>
-      
+
       {/* Renderizar perfiles en el orden jerárquico del backend */}
       <div>
         <CardComponent profiles={profiles} />

@@ -25,7 +25,7 @@ export const checkProfileNameExists = async (name: string) => {
 
 export const createProfile = async (data: CreateProfileDTO) => {
   // Profile creation debug removed
-  
+
   await validateProfileFeatures(data.features);
 
   // Validar límites de perfiles por usuario antes de crear
@@ -53,25 +53,25 @@ export const createProfile = async (data: CreateProfileDTO) => {
   // Asignar plan por defecto si está configurado
   try {
     const defaultPlanConfig = await ConfigParameterService.getValue('system.default_plan');
-    
+
     if (defaultPlanConfig?.enabled && defaultPlanConfig?.planCode) {
       // Buscar el plan por código
-      const defaultPlan = await PlanDefinitionModel.findOne({ 
-        code: defaultPlanConfig.planCode, 
-        isActive: true 
+      const defaultPlan = await PlanDefinitionModel.findOne({
+        code: defaultPlanConfig.planCode,
+        isActive: true
       });
-      
+
       if (defaultPlan && defaultPlan.variants && defaultPlan.variants.length > 0) {
         // Usar la primera variante del plan por defecto
         const defaultVariant = defaultPlan.variants[0];
-        
+
         // Asignar el plan al perfil
         await subscribeProfile(
           profile._id as string,
           defaultPlan.code,
           defaultVariant.days
         );
-        
+
         console.log(`Plan por defecto '${defaultPlan.code}' asignado al perfil ${profile._id}`);
       }
     }
@@ -156,7 +156,7 @@ export const getProfiles = async (page: number = 1, limit: number = 10, fields?:
     if (verification && typeof verification === 'object' && 'verificationStatus' in verification) {
       isVerified = (verification as { verificationStatus: string }).verificationStatus === 'verified';
     }
-    const featured = profile.upgrades?.some(upgrade => 
+    const featured = profile.upgrades?.some(upgrade =>
       (upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT') &&
       new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
     ) || false;
@@ -201,23 +201,23 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
       }
     ]
   })
-  .select({
-    name: 1,
-    age: 1,
-    'location.city.label': 1,
-    'location.department.label': 1,
-    'media.gallery': { $slice: 1 }, // Solo la primera imagen
-    planAssignment: 1,
-    upgrades: 1,
-    lastLogin: 1,
-    createdAt: 1,
-    updatedAt: 1
-  })
-  .populate({
-    path: 'verification',
-    select: 'verificationStatus',
-  })
-  .lean();
+    .select({
+      name: 1,
+      age: 1,
+      'location.city.label': 1,
+      'location.department.label': 1,
+      'media.gallery': { $slice: 1 }, // Solo la primera imagen
+      planAssignment: 1,
+      upgrades: 1,
+      lastLogin: 1,
+      createdAt: 1,
+      updatedAt: 1
+    })
+    .populate({
+      path: 'verification',
+      select: 'verificationStatus',
+    })
+    .lean();
 
   // Obtener definiciones de planes para mapear códigos a niveles y features
   const planDefinitions = await PlanDefinitionModel.find({ active: true }).lean();
@@ -225,7 +225,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
     acc[plan.code] = plan.level;
     return acc;
   }, {} as Record<string, number>);
-  
+
   const planCodeToFeatures = planDefinitions.reduce((acc, plan) => {
     acc[plan.code] = plan.features;
     return acc;
@@ -246,19 +246,19 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
   console.log(`Total profiles found: ${profiles.length}`);
   console.log(`Plan definitions found: ${planDefinitions.length}`);
   console.log('Available plan codes:', Object.keys(planCodeToFeatures));
-  
+
   // Filtrar perfiles que deben mostrarse en home y enriquecer con información de jerarquía
   const filteredProfiles = profiles.filter(profile => {
     let planCode = null;
-    
+
     // Determinar el código del plan desde planAssignment
     if (profile.planAssignment?.planCode) {
       planCode = profile.planAssignment.planCode;
     }
-    
+
     // Debug: Log información del perfil
     console.log(`Profile ${profile.name} - Plan: ${planCode || 'none'} - Expires: ${profile.planAssignment?.expiresAt || 'N/A'}`);
-    
+
     // Si no tiene plan asignado, verificar configuración del plan por defecto
     if (!planCode) {
       // Si hay un plan por defecto configurado, usar sus features
@@ -271,31 +271,31 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
       console.log(`Profile ${profile.name} - No plan assigned and no default plan configured. Hidden from home.`);
       return false;
     }
-    
+
     // Verificar si el plan permite mostrar en home
     const planFeatures = planCodeToFeatures[planCode];
     if (!planFeatures) {
       console.warn(`Plan features not found for plan code: ${planCode}`);
       return false;
     }
-    
+
     const shouldShow = planFeatures.showInHome === true;
     console.log(`Profile ${profile.name} - Plan ${planCode} - showInHome: ${planFeatures.showInHome} - Should show: ${shouldShow}`);
     return shouldShow;
   });
-  
+
   console.log(`Filtered profiles for home: ${filteredProfiles.length}`);
 
   const enrichedProfiles = filteredProfiles.map(profile => {
     // Verificar upgrades activos
-    const activeUpgrades = profile.upgrades?.filter(upgrade => 
+    const activeUpgrades = profile.upgrades?.filter(upgrade =>
       new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
     ) || [];
 
     // Determinar el nivel del plan (1=DIAMANTE=Premium, 5=AMATISTA=Free)
     let planLevel = 5; // Por defecto Free (AMATISTA)
     let planCode = 'GRATIS';
-    
+
     // Obtener información del plan desde planAssignment
     if (profile.planAssignment?.planCode) {
       planLevel = planCodeToLevel[profile.planAssignment.planCode] || 5;
@@ -303,13 +303,13 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
     }
 
     // Verificar si tiene upgrades de boost o highlight
-    let hasBoostUpgrade = activeUpgrades.some(upgrade => 
+    let hasBoostUpgrade = activeUpgrades.some(upgrade =>
       upgrade.code === 'IMPULSO' || upgrade.code === 'BOOST'
     );
-    let hasHighlightUpgrade = activeUpgrades.some(upgrade => 
+    let hasHighlightUpgrade = activeUpgrades.some(upgrade =>
       upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT'
     );
-    
+
     // Si es plan DIAMANTE, incluye DESTACADO automáticamente
     if (planCode === 'DIAMANTE') {
       hasHighlightUpgrade = true;
@@ -339,18 +339,18 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
       if (!(bInfo.hasHighlightUpgrade || bInfo.hasBoostUpgrade)) {
         return -1; // a va primero
       }
-      
+
       // Ambos tienen upgrades, ordenar por prioridad del plan (nivel menor = mayor prioridad)
       if (aInfo.planLevel !== bInfo.planLevel) {
         return aInfo.planLevel - bInfo.planLevel;
       }
-      
+
       // Si hay empate en plan, ordenar por fecha de inicio del upgrade más reciente
       const aLatestUpgrade = Math.max(...aInfo.activeUpgrades.map(u => new Date(u.startAt).getTime()));
       const bLatestUpgrade = Math.max(...bInfo.activeUpgrades.map(u => new Date(u.startAt).getTime()));
       return bLatestUpgrade - aLatestUpgrade;
     }
-    
+
     if (bInfo.hasHighlightUpgrade || bInfo.hasBoostUpgrade) {
       return 1; // b va primero
     }
@@ -411,11 +411,11 @@ export const getProfileById = async (id: string) => {
 
   // Transformar los features al formato requerido
   const transformedProfile = profile.toObject();
-  
+
   // Separar servicios del resto de features
   const services: string[] = [];
   const otherFeatures: any[] = [];
-  
+
   profile.features.forEach((feature: any) => {
     // Verificar que el populate funcionó correctamente
     if (!feature.group_id || typeof feature.group_id === 'string') {
@@ -441,7 +441,7 @@ export const getProfileById = async (id: string) => {
       otherFeatures.push(transformedFeature);
     }
   });
-  
+
   transformedProfile.features = otherFeatures;
   transformedProfile.services = services;
 
@@ -457,15 +457,16 @@ export const updateProfile = async (
     const existingProfile = await ProfileModel.findById(id);
     if (existingProfile && existingProfile.media) {
       // Hacer merge del campo media preservando los datos existentes
+      // Solo usar datos existentes si el campo no está definido en data.media
       data.media = {
-        gallery: data.media.gallery || existingProfile.media.gallery || [],
-        videos: data.media.videos || existingProfile.media.videos || [],
-        audios: data.media.audios || existingProfile.media.audios || [],
-        stories: data.media.stories || existingProfile.media.stories || [],
+        gallery: data.media.gallery !== undefined ? data.media.gallery : (existingProfile.media.gallery || []),
+        videos: data.media.videos !== undefined ? data.media.videos : (existingProfile.media.videos || []),
+        audios: data.media.audios !== undefined ? data.media.audios : (existingProfile.media.audios || []),
+        stories: data.media.stories !== undefined ? data.media.stories : (existingProfile.media.stories || []),
       };
     }
   }
-  
+
   return ProfileModel.findByIdAndUpdate(id, data, { new: true });
 };
 
@@ -536,7 +537,7 @@ export const createMissingVerifications = async () => {
 
 export const getProfilesWithStories = async (page: number = 1, limit: number = 10) => {
   const skip = (page - 1) * limit;
-  
+
   // Filtrar perfiles que tengan al menos una historia en media.stories
   // Solo seleccionar los campos necesarios: _id, name, media
   const query = ProfileModel.find({
@@ -639,16 +640,16 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
     }).lean();
 
     const now = new Date();
-    
+
     // Clasificar perfiles por tipo
     let freeProfilesCount = 0;
     let paidProfilesCount = 0;
 
     for (const profile of userProfiles) {
-      const hasActivePaidPlan = profile.planAssignment && 
+      const hasActivePaidPlan = profile.planAssignment &&
         profile.planAssignment.expiresAt > now &&
         profile.planAssignment.planCode !== 'AMATISTA';
-      
+
       if (hasActivePaidPlan) {
         paidProfilesCount++;
       } else {
@@ -734,26 +735,26 @@ export const getUserProfilesSummary = async (userId: string) => {
     }).lean();
 
     const now = new Date();
-    
+
     // Clasificar perfiles por tipo
     let freeProfilesCount = 0;
     let paidProfilesCount = 0;
     const expiredPaidProfiles = [];
 
     for (const profile of userProfiles) {
-      const hasActivePaidPlan = profile.planAssignment && 
+      const hasActivePaidPlan = profile.planAssignment &&
         profile.planAssignment.expiresAt > now &&
         profile.planAssignment.planCode !== 'AMATISTA';
-      
+
       if (hasActivePaidPlan) {
         paidProfilesCount++;
       } else {
         freeProfilesCount++;
-        
+
         // Verificar si es un perfil con plan vencido
-        if (profile.planAssignment && 
-            profile.planAssignment.expiresAt <= now &&
-            profile.planAssignment.planCode !== 'AMATISTA') {
+        if (profile.planAssignment &&
+          profile.planAssignment.expiresAt <= now &&
+          profile.planAssignment.planCode !== 'AMATISTA') {
           expiredPaidProfiles.push({
             profileId: profile._id,
             profileName: profile.name,
@@ -805,7 +806,7 @@ export const validateProfilePlanUpgrade = async (profileId: string, newPlanCode:
     }
 
     const now = new Date();
-    const currentlyHasPaidPlan = profile.planAssignment && 
+    const currentlyHasPaidPlan = profile.planAssignment &&
       profile.planAssignment.expiresAt > now &&
       profile.planAssignment.planCode !== 'AMATISTA';
 
@@ -816,7 +817,7 @@ export const validateProfilePlanUpgrade = async (profileId: string, newPlanCode:
 
     // Si no tiene plan de pago, verificar límites de perfiles de pago del usuario
     const validation = await validateUserProfileLimits(profile.user.toString(), newPlanCode);
-    
+
     if (!validation.canCreate) {
       return {
         canUpgrade: false,
@@ -856,7 +857,7 @@ export const purchaseUpgrade = async (profileId: string, upgradeCode: string) =>
     const now = new Date();
     const activeUpgrades = profile.upgrades.filter(u => u.endAt > now);
     const activeUpgradeCodes = activeUpgrades.map(u => u.code);
-    
+
     const missingRequirements = upgrade.requires.filter(req => !activeUpgradeCodes.includes(req));
     if (missingRequirements.length > 0) {
       throw new Error(`Upgrades requeridos no activos: ${missingRequirements.join(', ')}`);
@@ -880,13 +881,13 @@ export const purchaseUpgrade = async (profileId: string, upgradeCode: string) =>
         throw error;
       }
       break;
-      
+
     case 'replace':
       if (existingUpgradeIndex !== -1) {
         profile.upgrades.splice(existingUpgradeIndex, 1);
       }
       break;
-      
+
     case 'extend':
       if (existingUpgradeIndex !== -1) {
         const existingUpgrade = profile.upgrades[existingUpgradeIndex];

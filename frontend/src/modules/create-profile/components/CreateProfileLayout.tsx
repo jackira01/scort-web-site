@@ -54,7 +54,7 @@ export function CreateProfileLayout() {
       category: '',
       location: {
         country: 'Colombia',
-        state: '',
+        department: '',
         city: '',
       },
 
@@ -372,32 +372,59 @@ export function CreateProfileLayout() {
       let audioUrls: (string | null)[] = [];
 
       if (data.photos && data.photos.length > 0) {
-        toast.loading('Subiendo fotos...');
-        photoUrls = await uploadMultipleImages(data.photos);
-        toast.dismiss();
-        toast.success(`${photoUrls.length} fotos subidas exitosamente`);
+        // Filtrar solo archivos File, no strings (URLs existentes)
+        const photoFiles = data.photos.filter((photo): photo is File => photo instanceof File);
+        if (photoFiles.length > 0) {
+          toast.loading('Procesando y subiendo fotos...', { id: 'upload-photos' });
+          photoUrls = await uploadMultipleImages(
+            photoFiles,
+            undefined, // Usar texto de marca de agua por defecto
+            (current, total) => {
+              toast.loading(`Procesando foto ${current}/${total}...`, { id: 'upload-photos' });
+            }
+          );
+          toast.dismiss('upload-photos');
+          toast.success(`${photoUrls.length} fotos procesadas y subidas exitosamente`);
+        }
+        // Mantener URLs existentes
+        const existingPhotoUrls = data.photos.filter((photo): photo is string => typeof photo === 'string');
+        photoUrls = [...photoUrls, ...existingPhotoUrls];
       }
 
       if (data.videos && data.videos.length > 0) {
-        toast.loading('Subiendo videos...');
-        videoUrls = await uploadMultipleVideos(data.videos);
-        toast.dismiss();
-        toast.success(`${videoUrls.length} videos subidos exitosamente`);
+        // Filtrar solo archivos File, no strings (URLs existentes)
+        const videoFiles = data.videos.filter((video): video is File => video instanceof File);
+        if (videoFiles.length > 0) {
+          toast.loading('Subiendo videos...');
+          videoUrls = await uploadMultipleVideos(videoFiles);
+          toast.dismiss();
+          toast.success(`${videoUrls.length} videos subidos exitosamente`);
+        }
+        // Mantener URLs existentes
+        const existingVideoUrls = data.videos.filter((video): video is string => typeof video === 'string');
+        videoUrls = [...videoUrls, ...existingVideoUrls];
       }
 
       if (data.audios && data.audios.length > 0) {
-        toast.loading('Subiendo audios...');
-        audioUrls = await uploadMultipleAudios(data.audios);
-        toast.dismiss();
-        toast.success(`${audioUrls.length} audios subidos exitosamente`);
+        // Filtrar solo archivos File, no strings (URLs existentes)
+        const audioFiles = data.audios.filter((audio): audio is File => audio instanceof File);
+        if (audioFiles.length > 0) {
+          toast.loading('Subiendo audios...');
+          audioUrls = await uploadMultipleAudios(audioFiles);
+          toast.dismiss();
+          toast.success(`${audioUrls.length} audios subidos exitosamente`);
+        }
+        // Mantener URLs existentes
+        const existingAudioUrls = data.audios.filter((audio): audio is string => typeof audio === 'string');
+        audioUrls = [...audioUrls, ...existingAudioUrls];
       }
 
-      // Crear datos con URLs de Cloudinary
+      // Crear datos con URLs de Cloudinary (filtrar valores null)
       const dataWithUrls = {
         ...data,
-        photos: photoUrls,
-        videos: videoUrls,
-        audios: audioUrls,
+        photos: photoUrls.filter((url): url is string => url !== null),
+        videos: videoUrls.filter((url): url is string => url !== null),
+        audios: audioUrls.filter((url): url is string => url !== null),
       };
 
       const backendData = transformDataToBackendFormat(dataWithUrls);

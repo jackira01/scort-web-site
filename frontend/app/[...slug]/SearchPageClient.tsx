@@ -23,6 +23,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import SearchProfilesSSG from '@/modules/catalogs/components/SearchProfilesSSG';
 import SponsoredProfilesCarousel from '@/components/sponsored/SponsoredProfilesCarousel';
+import FeaturedProfilesSection from '@/components/featured/FeaturedProfilesSection';
 import AgeFilter from '@/modules/filters/components/AgeFilter';
 import FilterToglles from '@/modules/filters/components/FilterToglles';
 import GenderFilter from '@/modules/filters/components/GenderFilter';
@@ -49,7 +50,7 @@ export default function SearchPageClient({
   const router = useRouter();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filtersOpen, setFiltersOpen] = useState(false);
-  
+
   // Hook para manejar filtros (mantenemos la funcionalidad existente)
   const initialFilters = {
     category: categoria,
@@ -58,27 +59,27 @@ export default function SearchPageClient({
       city: ciudad,
     },
   };
-  
 
-  
+
+
   const {
     filters,
     updateFilter,
     clearFilters,
     activeFiltersCount,
   } = useSearchFilters(initialFilters);
-  
 
-  
 
-  
 
-  
+
+
+
+
   // Función wrapper para limpiar filtros
   const handleClearFilters = () => {
     clearFilters();
   };
-  
+
   // Función wrapper para actualizar filtros
   const handleUpdateFilter = (key: string, value: any) => {
     updateFilter(key, value);
@@ -107,12 +108,12 @@ export default function SearchPageClient({
   // Obtener información de ubicación para mostrar
   const getLocationInfo = () => {
     if (!departamento) return null;
-    
+
     const deptInfo = LOCATIONS[departamento as keyof typeof LOCATIONS];
     if (!deptInfo) return null;
 
     const cityInfo = ciudad ? deptInfo.cities.find(c => c.value === ciudad) : null;
-    
+
     return {
       department: deptInfo.label,
       city: cityInfo?.label,
@@ -157,7 +158,7 @@ export default function SearchPageClient({
                   <span> en {locationInfo.department}</span>
                 )}
               </h1>
-              
+
               {profilesData.pagination.totalProfiles > 0 && (
                 <p className="text-gray-600">
                   {profilesData.pagination.totalProfiles} perfiles encontrados
@@ -169,6 +170,9 @@ export default function SearchPageClient({
       </div>
 
       <div className="container mx-auto px-4 py-6">
+        {/* Sección de perfiles destacados */}
+        <FeaturedProfilesSection className="mb-8" />
+
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar de filtros - Desktop */}
           <div className="hidden lg:block w-80 flex-shrink-0">
@@ -192,37 +196,37 @@ export default function SearchPageClient({
                     selectedCity={ciudad}
                     onLocationChange={handleLocationChange}
                   />
-                  
+
                   <Separator />
-                  
+
                   <CategoryFilter
                     selectedCategory={filters.category}
                     onCategoryChange={(category) => handleUpdateFilter('category', category)}
                   />
-                  
+
                   <Separator />
-                  
+
                   <GenderFilter
                     selectedGender={filters.features?.gender}
                     onGenderChange={(gender) => handleUpdateFilter('gender', gender)}
                   />
-                  
+
                   <Separator />
-                  
+
                   <SexFilter
                     selectedSex={filters.features?.sex}
                     onSexChange={(sex) => handleUpdateFilter('sex', sex)}
                   />
-                  
+
                   <Separator />
-                  
+
                   <AgeFilter
                     ageRange={filters.features?.ageRange}
                     onAgeRangeChange={(range) => handleUpdateFilter('ageRange', range)}
                   />
-                  
+
                   <Separator />
-                  
+
                   <FilterToglles
                     filters={{
                       verified: filters.isVerified,
@@ -248,8 +252,8 @@ export default function SearchPageClient({
                       <Filter className="h-4 w-4 mr-2" />
                       Filtros
                       {activeFiltersCount > 0 && (
-                        <Badge 
-                          variant="secondary" 
+                        <Badge
+                          variant="secondary"
                           className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs bg-purple-100 text-purple-700"
                         >
                           {activeFiltersCount}
@@ -271,52 +275,52 @@ export default function SearchPageClient({
                         </Button>
                       </SheetTitle>
                     </SheetHeader>
-                    
+
                     <div className="mt-6 space-y-6 pb-20 px-1">
                       <LocationFilter
                         selectedDepartment={departamento}
                         selectedCity={ciudad}
                         onLocationChange={handleLocationChange}
                       />
-                      
+
                       <Separator />
-                      
+
                       <CategoryFilter
                         selectedCategory={filters.category}
                         onCategoryChange={(category) => updateFilter('category', category)}
                       />
-                      
+
                       <Separator />
-                      
+
                       <GenderFilter
                         selectedGender={filters.features?.gender}
                         onGenderChange={(gender) => updateFilter('gender', gender)}
                       />
-                      
+
                       <Separator />
-                      
+
                       <SexFilter
                         selectedSex={filters.features?.sex}
                         onSexChange={(sex) => updateFilter('sex', sex)}
                       />
-                      
+
                       <Separator />
-                      
+
                       <AgeFilter
-                         ageRange={filters.features?.ageRange}
-                         onAgeRangeChange={(range) => updateFilter('ageRange', range)}
-                       />
-                       
-                       <Separator />
-                       
-                       <FilterToglles
-                         filters={{
-                           verified: filters.isVerified,
-                           video: filters.hasVideos,
-                           destacado: filters.hasDestacadoUpgrade,
-                         }}
-                         onFilterChange={handleUpdateFilter}
-                       />
+                        ageRange={filters.features?.ageRange}
+                        onAgeRangeChange={(range) => updateFilter('ageRange', range)}
+                      />
+
+                      <Separator />
+
+                      <FilterToglles
+                        filters={{
+                          verified: filters.isVerified,
+                          video: filters.hasVideos,
+                          destacado: filters.hasDestacadoUpgrade,
+                        }}
+                        onFilterChange={handleUpdateFilter}
+                      />
                     </div>
                   </SheetContent>
                 </Sheet>
@@ -346,7 +350,7 @@ export default function SearchPageClient({
               </div>
             </div>
 
-            {/* Carrusel de perfiles destacados */}
+            {/* Carrusel de perfiles patrocinados */}
             <SponsoredProfilesCarousel className="mb-8" />
 
             {/* Componente de perfiles */}

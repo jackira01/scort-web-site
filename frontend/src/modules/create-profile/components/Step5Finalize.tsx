@@ -63,6 +63,7 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
   const formData = watch();
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [selectedVariantIndex, setSelectedVariantIndex] = useState<number>(0);
+  const [hasShownDefaultPlanToast, setHasShownDefaultPlanToast] = useState<boolean>(false);
 
   // Obtener planes disponibles
   const { data: plansResponse, isLoading: plansLoading } = usePlans({
@@ -89,7 +90,7 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
 
   // Cargar plan por defecto al montar el componente
   useEffect(() => {
-    if (defaultConfig?.enabled && defaultConfig.planId && plans.length > 0) {
+    if (defaultConfig?.enabled && defaultConfig.planId && plans.length > 0 && !hasShownDefaultPlanToast) {
       const defaultPlan = plans.find(plan => plan._id === defaultConfig.planId);
       if (defaultPlan) {
         setSelectedPlanId(defaultPlan._id);
@@ -112,9 +113,10 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
         setValue('selectedVariant', defaultPlan.variants[0]);
 
         toast.success(`Plan por defecto "${defaultPlan.name}" seleccionado automáticamente`);
+        setHasShownDefaultPlanToast(true);
       }
     }
-  }, [defaultConfig, plans, setValue]);
+  }, [defaultConfig, plans, setValue, hasShownDefaultPlanToast]);
 
   // Validar límites de archivos cuando cambie el plan
   useEffect(() => {
@@ -231,8 +233,8 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
                 <Card
                   key={index}
                   className={`cursor-pointer transition-all duration-200 ${selectedVariantIndex === index
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
-                      : 'hover:border-purple-300'
+                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
+                    : 'hover:border-purple-300'
                     }`}
                   onClick={() => handleVariantChange(index)}
                 >
@@ -329,8 +331,8 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
                     <h4 className="font-semibold text-foreground mb-3">Beneficios de Visibilidad</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className={`p-3 rounded-lg border-2 ${selectedPlan.features.showInHome
-                          ? 'border-green-200 bg-green-50 dark:bg-green-950/20'
-                          : 'border-gray-200 bg-gray-50 dark:bg-gray-950/20'
+                        ? 'border-green-200 bg-green-50 dark:bg-green-950/20'
+                        : 'border-gray-200 bg-gray-50 dark:bg-gray-950/20'
                         }`}>
                         <div className="flex items-center space-x-2">
                           {selectedPlan.features.showInHome ? (
@@ -350,8 +352,8 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
                         </p>
                       </div>
                       <div className={`p-3 rounded-lg border-2 ${selectedPlan.features.showInFilters
-                          ? 'border-green-200 bg-green-50 dark:bg-green-950/20'
-                          : 'border-gray-200 bg-gray-50 dark:bg-gray-950/20'
+                        ? 'border-green-200 bg-green-50 dark:bg-green-950/20'
+                        : 'border-gray-200 bg-gray-50 dark:bg-gray-950/20'
                         }`}>
                         <div className="flex items-center space-x-2">
                           {selectedPlan.features.showInFilters ? (
@@ -371,8 +373,8 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
                         </p>
                       </div>
                       <div className={`p-3 rounded-lg border-2 ${selectedPlan.features.showInSponsored
-                          ? 'border-green-200 bg-green-50 dark:bg-green-950/20'
-                          : 'border-gray-200 bg-gray-50 dark:bg-gray-950/20'
+                        ? 'border-green-200 bg-green-50 dark:bg-green-950/20'
+                        : 'border-gray-200 bg-gray-50 dark:bg-gray-950/20'
                         }`}>
                         <div className="flex items-center space-x-2">
                           {selectedPlan.features.showInSponsored ? (
@@ -470,8 +472,8 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
                         <span className="text-sm">Fotos subidas:</span>
                         <div className="flex items-center space-x-2">
                           <span className={`text-sm font-medium ${(formData.photos?.length || 0) <= selectedPlan.contentLimits.maxPhotos
-                              ? 'text-green-600'
-                              : 'text-red-600'
+                            ? 'text-green-600'
+                            : 'text-red-600'
                             }`}>
                             {formData.photos?.length || 0} / {selectedPlan.contentLimits.maxPhotos}
                           </span>
@@ -486,8 +488,8 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
                         <span className="text-sm">Videos subidos:</span>
                         <div className="flex items-center space-x-2">
                           <span className={`text-sm font-medium ${(formData.videos?.length || 0) <= selectedPlan.contentLimits.maxVideos
-                              ? 'text-green-600'
-                              : 'text-red-600'
+                            ? 'text-green-600'
+                            : 'text-red-600'
                             }`}>
                             {formData.videos?.length || 0} / {selectedPlan.contentLimits.maxVideos}
                           </span>
@@ -502,8 +504,8 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
                         <span className="text-sm">Audios subidos:</span>
                         <div className="flex items-center space-x-2">
                           <span className={`text-sm font-medium ${(formData.audios?.length || 0) <= selectedPlan.contentLimits.maxAudios
-                              ? 'text-green-600'
-                              : 'text-red-600'
+                            ? 'text-green-600'
+                            : 'text-red-600'
                             }`}>
                             {formData.audios?.length || 0} / {selectedPlan.contentLimits.maxAudios}
                           </span>

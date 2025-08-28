@@ -97,6 +97,7 @@ export interface IProfile {
   isOnline?: boolean;
   level?: number;
   priority?: number;
+  hasDestacadoUpgrade?: boolean;
 }
 
 // Mantener Profile para compatibilidad

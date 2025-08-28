@@ -76,11 +76,9 @@ const SexFilter = ({ selectedSex = [], onSexChange }: SexFilterProps) => {
                 htmlFor={`sex-${variant.value}`}
                 className="text-sm font-medium text-foreground cursor-pointer flex-1"
               >
-                {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
+                {variant.label || variant.value}
               </label>
-              <Badge variant="secondary" className="ml-auto">
-                {countsLoading ? '...' : (sexCounts?.[variant.value] || 0)}
-              </Badge>
+
             </div>
           );
         })}

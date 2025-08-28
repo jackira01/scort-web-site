@@ -1,15 +1,90 @@
 import imageCompression from 'browser-image-compression';
 import axios from 'axios';
+import { applyWatermarkToImage } from './watermark';
 
 const upload_preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "";
 const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_NAME || "";
 
+/**
+ * Normaliza el tamaño de una imagen a un máximo de 1000px manteniendo la proporción
+ */
+export const normalizeImageSize = async (file: File): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          if (!ctx) {
+            reject(new Error('No se pudo obtener el contexto del canvas'));
+            return;
+          }
+
+          // Calcular nuevas dimensiones manteniendo la proporción
+          const maxSize = 1024; // Aumentar a 1024px para mantener mejor resolución
+          let { width, height } = img;
+
+          if (width > maxSize || height > maxSize) {
+            if (width > height) {
+              height = (height * maxSize) / width;
+              width = maxSize;
+            } else {
+              width = (width * maxSize) / height;
+              height = maxSize;
+            }
+          }
+
+          // Configurar el canvas con las nuevas dimensiones
+          canvas.width = width;
+          canvas.height = height;
+
+          // Dibujar la imagen redimensionada
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convertir el canvas a blob y luego a File
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const normalizedFile = new File([blob], file.name, {
+                type: file.type,
+                lastModified: Date.now(),
+              });
+              resolve(normalizedFile);
+            } else {
+              reject(new Error('Error al generar el blob de la imagen normalizada'));
+            }
+          }, file.type, 0.98); // Calidad del 98% para mantener mejor resolución
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      img.onerror = () => {
+        reject(new Error('Error al cargar la imagen para normalización'));
+      };
+
+      img.src = e.target!.result as string;
+    };
+
+    reader.onerror = () => {
+      reject(new Error('Error al leer el archivo para normalización'));
+    };
+
+    reader.readAsDataURL(file);
+  });
+};
+
 
 export const compressImage = async (file: File): Promise<File> => {
   const options = {
-    maxSizeMB: 0.3, // máximo 300KB
-    maxWidthOrHeight: 800, // redimensiona si es más grande
+    maxSizeMB: 0.6, // máximo 600KB
+    maxWidthOrHeight: 1024, // permitir hasta 1024px para mantener la resolución original
     useWebWorker: true,
+    preserveExif: false, // remover metadatos para reducir tamaño
+    initialQuality: 0.9, // calidad inicial más alta
   };
   try {
     return await imageCompression(file, options);
@@ -21,23 +96,47 @@ export const compressImage = async (file: File): Promise<File> => {
 
 export const uploadMultipleImages = async (
   filesArray: File[],
+  watermarkText?: string,
+  onProgress?: (current: number, total: number) => void
 ): Promise<(string | null)[]> => {
   const uploadedUrls: (string | null)[] = [];
-  for (const file of filesArray) {
+
+  for (let i = 0; i < filesArray.length; i++) {
+    const file = filesArray[i];
     try {
-      const compressed = await compressImage(file);
+      // 1. Normalización de tamaño (máximo 1000px)
+      const normalizedFile = await normalizeImageSize(file);
+
+      // 2. Aplicación de marca de agua
+      const watermarkedFile = await applyWatermarkToImage(normalizedFile, watermarkText);
+
+      // 3. Compresión final (máximo 500KB)
+      const compressedFile = await compressImage(watermarkedFile);
+
+      // 4. Subida a Cloudinary
       const formData = new FormData();
-      formData.append('file', compressed);
+      formData.append('file', compressedFile);
       formData.append('upload_preset', upload_preset);
 
       const response = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
         formData,
       );
+
       uploadedUrls.push(response.data.secure_url);
+
+      // Callback de progreso
+      if (onProgress) {
+        onProgress(i + 1, filesArray.length);
+      }
     } catch (error) {
-      // Error al subir archivo
-      uploadedUrls.push(null); // O maneja según tu lógica
+      // Error en cualquier paso del proceso
+      uploadedUrls.push(null);
+
+      // Callback de progreso incluso en error
+      if (onProgress) {
+        onProgress(i + 1, filesArray.length);
+      }
     }
   }
 
