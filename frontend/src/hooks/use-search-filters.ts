@@ -16,6 +16,10 @@ export interface SearchFilters {
     gender?: string;
     sex?: string[];
     age?: string[];
+    ageRange?: {
+      min?: number;
+      max?: number;
+    };
     height?: string[];
     weight?: string[];
     bodyType?: string[];
@@ -43,6 +47,8 @@ export interface SearchFilters {
   // Estados
   isActive?: boolean;
   isVerified?: boolean;
+  hasVideos?: boolean;
+  hasDestacadoUpgrade?: boolean;
 
   // Paginación y ordenamiento
   page?: number;
@@ -163,6 +169,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
       sortBy: 'createdAt',
       sortOrder: 'desc',
       isActive: true,
+      // No establecer isVerified por defecto para mostrar todos los perfiles
     });
   }, []);
 
@@ -203,7 +210,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
 
       
       // Manejar filtros anidados en features
-      if (['gender', 'sex', 'age', 'height', 'weight', 'bodyType', 'ethnicity', 'hairColor', 'eyeColor', 'services'].includes(key)) {
+      if (['gender', 'sex', 'age', 'height', 'weight', 'bodyType', 'ethnicity', 'hairColor', 'eyeColor', 'services', 'ageRange'].includes(key)) {
         newFilters.features = {
           ...prev.features,
           [key]: value,
@@ -269,5 +276,6 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
     clearFilters,
     toFilterQuery,
     getActiveFiltersCount,
+    activeFiltersCount: getActiveFiltersCount(),
   };
 };

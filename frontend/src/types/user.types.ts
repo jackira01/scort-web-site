@@ -51,6 +51,29 @@ export type Profile = {
         stories: string[];
         audios?: string[];
     };
+    // Campos para sistema de planes y upgrades
+    planAssignment?: {
+        planCode: string;
+        variantDays: number;
+        startAt: string | Date;
+        expiresAt: string | Date;
+    };
+    upgrades?: {
+        code: string;
+        startAt: string | Date;
+        endAt: string | Date;
+        purchaseAt: string | Date;
+    }[];
+    activeUpgrades?: {
+        code: string;
+        startAt: string | Date;
+        endAt: string | Date;
+        purchaseAt: string | Date;
+    }[];
+    hasDestacadoUpgrade?: boolean;
+    hasImpulsoUpgrade?: boolean;
+    visible?: boolean;
+    isActive?: boolean;
 }
 
 export interface UserPaginatedResponse {

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as controller from './profile.controller';
+import * as debugController from './profile-debug.controller';
 
 const router = Router();
 
@@ -25,5 +26,10 @@ router.get('/user/:userId/usage-stats', controller.getUserUsageStatsController);
 router.get('/user/:userId/validate-limits', controller.validateUserProfileLimitsController);
 router.get('/user/:userId/profiles-summary', controller.getUserProfilesSummaryController);
 router.get('/:profileId/validate-plan-upgrade', controller.validateProfilePlanUpgradeController);
+router.get('/:profileId/validate-upgrade/:upgradeCode', controller.validateUpgradePurchaseController);
+
+// Rutas de debug para verificar estructura de datos
+router.get('/:profileId/debug-structure', debugController.debugProfileStructureController);
+router.get('/user/:userId/debug-profiles', debugController.debugUserProfilesController);
 
 export default router;

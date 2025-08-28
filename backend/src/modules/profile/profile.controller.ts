@@ -140,7 +140,7 @@ export const purchaseUpgradeController = async (req: Request, res: Response) => 
 
     // Validaciones de negocio
     await validateUpgradePurchase(
-      profile.user.toString(),
+      profile.user._id.toString(),
       id,
       code,
       orderId
@@ -282,6 +282,72 @@ export const validateProfilePlanUpgradeController = async (req: Request, res: Re
     
     const validation = await service.validateProfilePlanUpgrade(profileId, planCode);
     res.json(validation);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An error occurred';
+    res.status(500).json({ message });
+  }
+};
+
+// Endpoint para validar compra de upgrade
+export const validateUpgradePurchaseController = async (req: Request, res: Response) => {
+  try {
+    const { profileId, upgradeCode } = req.params;
+    
+    if (!upgradeCode) {
+      return res.status(400).json({ error: 'upgradeCode es requerido' });
+    }
+
+    const profile = await service.getProfileById(profileId);
+    if (!profile) {
+      return res.status(404).json({ error: 'Perfil no encontrado' });
+    }
+
+    // Verificar que el perfil tiene un plan activo
+    const now = new Date();
+    const hasActivePlan = profile.planAssignment && 
+      new Date(profile.planAssignment.expiresAt) > now;
+    
+    if (!hasActivePlan) {
+      return res.json({
+        canPurchase: false,
+        reason: 'Necesitas un plan activo para comprar upgrades'
+      });
+    }
+
+    // Verificar reglas específicas por tipo de upgrade
+    if (upgradeCode === 'IMPULSO') {
+      // IMPULSO requiere DESTACADO activo
+      const activeUpgrades = profile.upgrades?.filter(u => new Date(u.endAt) > now) || [];
+      const hasDestacado = activeUpgrades.some(u => u.code === 'DESTACADO');
+      
+      if (!hasDestacado) {
+        return res.json({
+          canPurchase: false,
+          reason: 'Necesitas tener "Destacado" activo para comprar "Impulso"'
+        });
+      }
+    }
+
+    // Verificar si es plan DIAMANTE y el upgrade es DESTACADO
+    if (upgradeCode === 'DESTACADO' && profile.planAssignment?.planCode === 'DIAMANTE') {
+      return res.json({
+        canPurchase: false,
+        reason: 'El plan Diamante ya incluye "Destacado" permanente'
+      });
+    }
+
+    // Verificar si ya tiene el upgrade activo
+    const activeUpgrades = profile.upgrades?.filter(u => new Date(u.endAt) > now) || [];
+    const hasUpgradeActive = activeUpgrades.some(u => u.code === upgradeCode);
+    
+    if (hasUpgradeActive) {
+      return res.json({
+        canPurchase: false,
+        reason: `El upgrade ${upgradeCode} ya está activo`
+      });
+    }
+
+    res.json({ canPurchase: true });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'An error occurred';
     res.status(500).json({ message });

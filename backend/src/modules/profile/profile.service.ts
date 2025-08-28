@@ -303,12 +303,17 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
     }
 
     // Verificar si tiene upgrades de boost o highlight
-    const hasBoostUpgrade = activeUpgrades.some(upgrade => 
+    let hasBoostUpgrade = activeUpgrades.some(upgrade => 
       upgrade.code === 'IMPULSO' || upgrade.code === 'BOOST'
     );
-    const hasHighlightUpgrade = activeUpgrades.some(upgrade => 
+    let hasHighlightUpgrade = activeUpgrades.some(upgrade => 
       upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT'
     );
+    
+    // Si es plan DIAMANTE, incluye DESTACADO automáticamente
+    if (planCode === 'DIAMANTE') {
+      hasHighlightUpgrade = true;
+    }
 
     return {
       ...profile,
@@ -372,10 +377,14 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
   // Aplicar paginación
   const paginatedProfiles = sortedProfiles.slice(skip, skip + limit);
 
-  // Limpiar información de jerarquía antes de devolver
+  // Limpiar información de jerarquía antes de devolver y mapear hasDestacadoUpgrade
   const cleanProfiles = paginatedProfiles.map(profile => {
     const { _hierarchyInfo, ...cleanProfile } = profile;
-    return cleanProfile;
+    return {
+      ...cleanProfile,
+      hasDestacadoUpgrade: _hierarchyInfo.hasHighlightUpgrade,
+      hasImpulsoUpgrade: _hierarchyInfo.hasBoostUpgrade
+    };
   });
 
   const total = filteredProfiles.length;
@@ -393,7 +402,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
 
 export const getProfileById = async (id: string) => {
   const profile = await ProfileModel.findById(id)
-    .populate('user')
+    .populate('user', '_id name email')
     .populate('features.group_id');
 
   if (!profile) {

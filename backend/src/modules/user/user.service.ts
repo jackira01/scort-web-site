@@ -46,7 +46,7 @@ export const getUsers = async (filters: any, options: any) => {
 export const getUserProfiles = async (userId: string) => {
   const user = await UserModel.findById(userId).populate({
     path: 'profiles',
-    select: '_id user name age location verification media',
+    select: '_id user name age location verification media planAssignment upgrades visible isActive',
     populate: {
       path: 'verification',
       model: 'ProfileVerification',
@@ -55,17 +55,45 @@ export const getUserProfiles = async (userId: string) => {
   });
   
   const profiles = user?.profiles || [];
+  const now = new Date();
   
-  // Devolver los perfiles con el objeto media completo
-  return profiles.map((profile: any) => ({
-    _id: profile._id,
-    user: profile.user,
-    name: profile.name,
-    age: profile.age,
-    location: profile.location,
-    verification: profile.verification,
-    media: profile.media
-  }));
+  // Devolver los perfiles con información completa incluyendo upgrades activos
+  return profiles.map((profile: any) => {
+    // Filtrar upgrades activos
+    const activeUpgrades = profile.upgrades?.filter((upgrade: any) => 
+      new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
+    ) || [];
+    
+    // Verificar si tiene upgrades específicos activos o incluidos en el plan
+    let hasDestacadoUpgrade = activeUpgrades.some((upgrade: any) => 
+      upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT'
+    );
+    let hasImpulsoUpgrade = activeUpgrades.some((upgrade: any) => 
+      upgrade.code === 'IMPULSO' || upgrade.code === 'BOOST'
+    );
+    
+    // Si es plan DIAMANTE, incluye DESTACADO automáticamente
+    if (profile.planAssignment?.planCode === 'DIAMANTE') {
+      hasDestacadoUpgrade = true;
+    }
+    
+    return {
+      _id: profile._id,
+      user: profile.user,
+      name: profile.name,
+      age: profile.age,
+      location: profile.location,
+      verification: profile.verification,
+      media: profile.media,
+      planAssignment: profile.planAssignment,
+      upgrades: profile.upgrades,
+      activeUpgrades,
+      hasDestacadoUpgrade,
+      hasImpulsoUpgrade,
+      visible: profile.visible,
+      isActive: profile.isActive
+    };
+  });
 }
 
 // Actualizar lastLogin del usuario

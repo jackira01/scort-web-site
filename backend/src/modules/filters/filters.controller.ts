@@ -21,6 +21,8 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
       availability,
       isActive,
       isVerified,
+      hasDestacadoUpgrade,
+      hasVideos,
       page,
       limit,
       sortBy,
@@ -35,6 +37,8 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
     if (category) filters.category = category;
     if (isActive !== undefined) filters.isActive = isActive;
     if (isVerified !== undefined) filters.isVerified = isVerified;
+    if (hasDestacadoUpgrade !== undefined) filters.hasDestacadoUpgrade = hasDestacadoUpgrade;
+    if (hasVideos !== undefined) filters.hasVideos = hasVideos;
 
     // Filtros de ubicación - procesar igual que GET
     if (location) {

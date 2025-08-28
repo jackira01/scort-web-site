@@ -1,9 +1,7 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAttributeGroupByKey } from '@/hooks/use-filter-attribute-groups';
-import { useCategoryFilterCounts } from '@/hooks/use-filter-counts';
 
 interface CategoryFilterProps {
   selectedCategory?: string;
@@ -12,7 +10,6 @@ interface CategoryFilterProps {
 
 const CategoryFilter = ({ selectedCategory, onCategoryChange }: CategoryFilterProps) => {
   const { data: categoryGroup, isLoading, error } = useAttributeGroupByKey('category');
-  const { data: categoryCounts, isLoading: countsLoading } = useCategoryFilterCounts();
 
 
 
@@ -65,12 +62,8 @@ const CategoryFilter = ({ selectedCategory, onCategoryChange }: CategoryFilterPr
                 htmlFor={`category-${variant.value}`}
                 className="text-sm font-medium text-foreground cursor-pointer flex-1"
               >
-                {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
+                {variant.label || variant.value}
               </label>
-
-              <Badge variant="secondary" className="ml-auto">
-                {countsLoading ? '...' : (categoryCounts?.[variant.value] || 0)}
-              </Badge>
             </div>
           );
         })}

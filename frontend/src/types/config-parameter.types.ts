@@ -94,6 +94,22 @@ export interface CountryLocationConfig {
     departments: Record<string, DepartmentData & { cities: Record<string, LocationValue> }>;
 }
 
+// Configuración de ubicación específica
+export interface LocationConfig {
+    country: string;
+    state: string;
+    city: string;
+    address: string;
+    coordinates: {
+        lat: number;
+        lng: number;
+    };
+    timezone: string;
+    currency: string;
+    language: string;
+    isDefault?: boolean;
+}
+
 // Textos
 export interface TextConfig {
     [key: string]: string | TextConfig;

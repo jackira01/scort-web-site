@@ -206,13 +206,13 @@ export async function validatePaidPlanAssignment(
  * Valida que un usuario pueda comprar un upgrade
  * @param userId - ID del usuario
  * @param profileId - ID del perfil
- * @param upgradeId - ID del upgrade
+ * @param upgradeCode - Código del upgrade
  * @param orderId - ID de la orden (opcional, para idempotencia)
  */
 export async function validateUpgradePurchase(
     userId: string,
     profileId: string,
-    upgradeId: string,
+    upgradeCode: string,
     orderId?: string,
 ): Promise<void> {
     // Validar idempotencia si se proporciona orderId
@@ -234,6 +234,42 @@ export async function validateUpgradePurchase(
             'PROFILE_ACCESS_DENIED',
             403,
         );
+    }
+
+    // Verificar reglas específicas por tipo de upgrade
+    if (upgradeCode === 'DESTACADO' && profile.planAssignment?.planCode === 'DIAMANTE') {
+        throw new BusinessValidationError(
+            'El plan Diamante ya incluye "Destacado" permanente',
+            'UPGRADE_ALREADY_INCLUDED',
+            409,
+        );
+    }
+
+    // Verificar si ya tiene el upgrade activo
+    const now = new Date();
+    const activeUpgrades = profile.upgrades?.filter(u => new Date(u.endAt) > now) || [];
+    const hasUpgradeActive = activeUpgrades.some(u => u.code === upgradeCode);
+    
+    if (hasUpgradeActive) {
+        throw new BusinessValidationError(
+            `El upgrade ${upgradeCode} ya está activo`,
+            'UPGRADE_ALREADY_ACTIVE',
+            409,
+        );
+    }
+
+    // Verificar dependencias para IMPULSO
+    if (upgradeCode === 'IMPULSO') {
+        const hasDestacado = activeUpgrades.some(u => u.code === 'DESTACADO') || 
+                            profile.planAssignment?.planCode === 'DIAMANTE';
+        
+        if (!hasDestacado) {
+            throw new BusinessValidationError(
+                'Necesitas tener "Destacado" activo para comprar "Impulso"',
+                'MISSING_UPGRADE_DEPENDENCY',
+                409,
+            );
+        }
     }
 }
 

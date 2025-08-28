@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAttributeGroups } from '@/hooks/use-attribute-groups';
-import { useProfileDetails } from '@/hooks/use-profile-details';
+import { useProfile } from '@/hooks/use-profile';
 import { updateProfile } from '@/services/user.service';
 import {
   uploadMultipleAudios,
@@ -49,7 +49,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
   const { data: session } = useSession();
 
   // Obtener datos del perfil existente
-  const { data: profileDetails, isLoading: isLoadingProfile, error: profileError } = useProfileDetails(profileId);
+  const { data: profileDetails, isLoading: isLoadingProfile, error: profileError } = useProfile(profileId);
   const { data: attributeGroups, isLoading: isLoadingAttributes, error: attributesError } = useAttributeGroups();
 
   const form = useForm<FormData>({

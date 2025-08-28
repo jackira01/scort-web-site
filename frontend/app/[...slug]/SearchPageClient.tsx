@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import SearchProfilesSSG from '@/modules/catalogs/components/SearchProfilesSSG';
+import SponsoredProfilesCarousel from '@/components/sponsored/SponsoredProfilesCarousel';
 import AgeFilter from '@/modules/filters/components/AgeFilter';
 import FilterToglles from '@/modules/filters/components/FilterToglles';
 import GenderFilter from '@/modules/filters/components/GenderFilter';
@@ -226,6 +227,7 @@ export default function SearchPageClient({
                     filters={{
                       verified: filters.isVerified,
                       video: filters.hasVideos,
+                      destacado: filters.hasDestacadoUpgrade,
                     }}
                     onFilterChange={handleUpdateFilter}
                   />
@@ -255,8 +257,8 @@ export default function SearchPageClient({
                       )}
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="w-80">
-                    <SheetHeader>
+                  <SheetContent side="left" className="w-80 overflow-y-auto max-h-screen">
+                    <SheetHeader className="sticky top-0 bg-white z-10 pb-4">
                       <SheetTitle className="flex items-center justify-between">
                         Filtros
                         <Button
@@ -270,7 +272,7 @@ export default function SearchPageClient({
                       </SheetTitle>
                     </SheetHeader>
                     
-                    <div className="mt-6 space-y-6">
+                    <div className="mt-6 space-y-6 pb-20 px-1">
                       <LocationFilter
                         selectedDepartment={departamento}
                         selectedCity={ciudad}
@@ -311,6 +313,7 @@ export default function SearchPageClient({
                          filters={{
                            verified: filters.isVerified,
                            video: filters.hasVideos,
+                           destacado: filters.hasDestacadoUpgrade,
                          }}
                          onFilterChange={handleUpdateFilter}
                        />
@@ -342,6 +345,9 @@ export default function SearchPageClient({
                 </Select>
               </div>
             </div>
+
+            {/* Carrusel de perfiles destacados */}
+            <SponsoredProfilesCarousel className="mb-8" />
 
             {/* Componente de perfiles */}
             <SearchProfilesSSG

@@ -24,7 +24,7 @@ const PLANS_DATA = [
             videos: { min: 5, max: 20 },
             storiesPerDayMax: 10
         },
-        includedUpgrades: [],
+        includedUpgrades: ['DESTACADO'],
         active: true
     },
     {

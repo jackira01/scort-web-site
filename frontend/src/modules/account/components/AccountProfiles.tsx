@@ -6,8 +6,10 @@ import {
   MapPin,
   Plus,
   Shield,
+  Star,
   Trash2,
   Upload,
+  Zap,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -16,9 +18,11 @@ import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import UploadStoryModal from './UploadStoryModal';
 import DeleteProfileModal from './DeleteProfileModal';
 import { deleteProfile } from '@/services/user.service';
+import { useUpgradePurchase, useUpgradeValidation } from '@/hooks/use-upgrade-purchase';
 
 interface ProfileResponse {
   _id: string;
@@ -41,6 +45,28 @@ interface ProfileResponse {
     audios?: string[];
     stories?: { _id: string; link: string; type: 'image' | 'video' }[];
   };
+  planAssignment?: {
+    planCode: string;
+    variantDays: number;
+    startAt: string | Date;
+    expiresAt: string | Date;
+  };
+  upgrades?: Array<{
+    code: string;
+    startAt: string | Date;
+    endAt: string | Date;
+    purchaseAt: string | Date;
+  }>;
+  activeUpgrades?: Array<{
+    code: string;
+    startAt: string | Date;
+    endAt: string | Date;
+    purchaseAt: string | Date;
+  }>;
+  hasDestacadoUpgrade?: boolean;
+  hasImpulsoUpgrade?: boolean;
+  visible?: boolean;
+  isActive?: boolean;
 }
 
 interface ProfileListProps {
@@ -65,6 +91,36 @@ export default function AccountProfiles({
   const [selectedProfileForDelete, setSelectedProfileForDelete] =
     useState<ProfileResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Hooks para manejo de upgrades
+  const { mutate: purchaseUpgrade, isLoading: isPurchasing } = useUpgradePurchase();
+  const { validateUpgrade } = useUpgradeValidation();
+
+  const handleUpgradePurchase = async (profileId: string, upgradeCode: 'DESTACADO' | 'IMPULSO') => {
+    const profile = profiles.find(p => p._id === profileId);
+    if (!profile) return;
+
+    const validation = validateUpgrade(profile, upgradeCode);
+    
+    if (!validation.canPurchase) {
+      toast.error(validation.reason || 'No se puede comprar este upgrade');
+      return;
+    }
+
+    purchaseUpgrade(
+      { profileId, upgradeCode },
+      {
+        onSuccess: () => {
+          toast.success(`Upgrade ${upgradeCode} activado correctamente`);
+          // Recargar para mostrar cambios
+          setTimeout(() => window.location.reload(), 1000);
+        },
+        onError: (error: any) => {
+          toast.error(error.response?.data?.message || 'Error al activar el upgrade');
+        }
+      }
+    );
+  };
 
   
 
@@ -181,7 +237,11 @@ export default function AccountProfiles({
           {profiles.map((profile, index) => (
             <Card
               key={profile._id}
-              className="group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card border-border hover:border-purple-500/50 animate-in zoom-in-50"
+              className={`group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card animate-in zoom-in-50 ${
+                profile.hasDestacadoUpgrade 
+                  ? 'border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:border-yellow-300 ring-1 ring-yellow-400/50' 
+                  : 'border-border hover:border-purple-500/50'
+              }`}
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="relative">
@@ -194,12 +254,18 @@ export default function AccountProfiles({
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="absolute top-3 left-3 flex space-x-2">
-                  {/* {profile.featured && (
+                  {profile.hasDestacadoUpgrade && (
                     <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white animate-pulse">
                       <Star className="h-3 w-3 mr-1" />
                       DESTACADO
                     </Badge>
-                  )} */}
+                  )}
+                  {profile.hasImpulsoUpgrade && (
+                    <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-pulse">
+                      <Zap className="h-3 w-3 mr-1" />
+                      IMPULSO
+                    </Badge>
+                  )}
                 </div>
                 <div className="absolute top-3 right-3 flex space-x-2">
                   {profile.verification?.verificationStatus === 'Activo' && (
@@ -311,65 +377,168 @@ export default function AccountProfiles({
                     </div>
                   )} */}
 
-                  <div className="space-y-2 pt-2">
+                  <div className="space-y-1 pt-2">
                     {/* Primera fila de botones */}
-                    <div className="flex space-x-2">
-                      <Link href={`/cuenta/editar-perfil/${profile._id}`}>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500 transition-all duration-200"
-                        >
-                          <Edit className="h-3 w-3 mr-1" />
-                          Editar
-                        </Button>
-                      </Link>
-                      <Link href={`/cuenta/verificar-perfil/${profile._id}`}>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 hover:bg-green-50 dark:hover:bg-green-950/20 hover:border-green-500 transition-all duration-200"
-                        >
-                          <Shield className="h-3 w-3 mr-1" />
-                          Verificar
-                        </Button>
-                      </Link>
+                    <div className="flex space-x-1 justify-center">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Link href={`/cuenta/editar-perfil/${profile._id}`}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="p-2 hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500 transition-all duration-200"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Editar perfil</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Link href={`/cuenta/verificar-perfil/${profile._id}`}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="p-2 hover:bg-green-50 dark:hover:bg-green-950/20 hover:border-green-500 transition-all duration-200"
+                              >
+                                <Shield className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Verificar perfil</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      {/* Botones de Upgrade */}
+                      {/* Solo mostrar botón de Destacado si NO es plan DIAMANTE */}
+                      {profile.planAssignment?.planCode !== 'DIAMANTE' && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant={profile.hasDestacadoUpgrade ? "default" : "outline"}
+                                className={`p-2 ${profile.hasDestacadoUpgrade 
+                                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white' 
+                                  : 'hover:bg-yellow-50 dark:hover:bg-yellow-950/20 hover:border-yellow-500'
+                                } transition-all duration-200`}
+                                onClick={() => handleUpgradePurchase(profile._id, 'DESTACADO')}
+                                disabled={isPurchasing || profile.hasDestacadoUpgrade}
+                              >
+                                <Star className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{profile.hasDestacadoUpgrade ? 'Destacado Activo' : 'Activar Destacado'}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                      {/* Mostrar indicador de Destacado incluido para DIAMANTE */}
+                      {profile.planAssignment?.planCode === 'DIAMANTE' && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                className="p-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white cursor-default"
+                                disabled
+                              >
+                                <Star className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Destacado incluido en plan Diamante</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant={profile.hasImpulsoUpgrade ? "default" : "outline"}
+                              className={`p-2 ${profile.hasImpulsoUpgrade 
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white' 
+                                : 'hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500'
+                              } transition-all duration-200`}
+                              onClick={() => handleUpgradePurchase(profile._id, 'IMPULSO')}
+                              disabled={isPurchasing || profile.hasImpulsoUpgrade}
+                            >
+                              <Zap className="h-3 w-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{profile.hasImpulsoUpgrade ? 'Impulso Activo' : 'Activar Impulso'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                     {/* Segunda fila de botones */}
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedProfileForStory(profile);
-                          setUploadStoryModalOpen(true);
-                        }}
-                        className="flex-1 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-500 transition-all duration-200"
-                      >
-                        <Upload className="h-3 w-3 mr-1" />
-                        Historia
-                      </Button>
-                      <Link href={`/perfil/${profile._id}`}>
-                        <Button
-                          size="sm"
-                          className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          Ver
-                        </Button>
-                      </Link>
-                    </div>
-                    {/* Tercera fila - Botón de eliminar */}
-                    <div className="flex">
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => openDeleteModal(profile)}
-                        className="w-full hover:bg-red-600 transition-all duration-200"
-                      >
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        Eliminar Perfil
-                      </Button>
+                    <div className="flex space-x-1 justify-center">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedProfileForStory(profile);
+                                setUploadStoryModalOpen(true);
+                              }}
+                              className="p-2 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-500 transition-all duration-200"
+                            >
+                              <Upload className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Subir historia</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Link href={`/perfil/${profile._id}`}>
+                              <Button
+                                size="sm"
+                                className="p-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Ver perfil</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                               size="sm"
+                               variant="destructive"
+                               onClick={() => openDeleteModal(profile)}
+                               className="p-2 hover:bg-red-600 transition-all duration-200"
+                             >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Eliminar perfil</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </div>
                 </div>

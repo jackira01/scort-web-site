@@ -22,6 +22,8 @@ export const getFilteredProfiles = async (
       availability,
       isActive,
       isVerified,
+      hasDestacadoUpgrade,
+      hasVideos,
       page = 1,
       limit = 20,
       // sortBy = 'createdAt',
@@ -70,6 +72,32 @@ export const getFilteredProfiles = async (
     // Filtro por verificación
     if (isVerified !== undefined) {
       query['user.isVerified'] = isVerified;
+    }
+
+    // Filtro por destacado (upgrade activo)
+    if (hasDestacadoUpgrade !== undefined && hasDestacadoUpgrade) {
+      const now = new Date();
+      query.$or = [
+        // Perfiles con upgrade DESTACADO/HIGHLIGHT activo
+        {
+          upgrades: {
+            $elemMatch: {
+              code: { $in: ['DESTACADO', 'HIGHLIGHT'] },
+              startAt: { $lte: now },
+              endAt: { $gt: now }
+            }
+          }
+        },
+        // Perfiles con plan DIAMANTE
+        {
+          'planAssignment.planCode': 'DIAMANTE'
+        }
+      ];
+    }
+
+    // Filtro por videos
+    if (hasVideos !== undefined && hasVideos) {
+      query['media.videos'] = { $exists: true, $not: { $size: 0 } };
     }
 
     // Filtro por características (features)
