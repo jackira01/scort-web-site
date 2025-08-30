@@ -33,15 +33,47 @@ export const getHomeFeed = async (options: HomeFeedOptions = {}): Promise<HomeFe
   const { page = 1, pageSize = 20 } = options;
   const now = new Date();
 
-  // Filtrar perfiles visibles con plan activo
-  const visibleProfiles = await ProfileModel.find({
-    visible: true,
-    isActive: true,
-    'planAssignment.expiresAt': { $gt: now }
-  }).exec();
+  // Usar agregación para filtrar perfiles con usuarios verificados de manera más confiable
+  const verifiedUserProfiles = await ProfileModel.aggregate([
+    {
+      $match: {
+        visible: true,
+        isActive: true,
+        'planAssignment.expiresAt': { $gt: now }
+      }
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'userInfo'
+      }
+    },
+    {
+      $match: {
+        'userInfo.isVerified': true
+      }
+    },
+    {
+      $addFields: {
+        user: { $arrayElemAt: ['$userInfo', 0] }
+      }
+    },
+    {
+      $project: {
+        userInfo: 0
+      }
+    }
+  ]);
+
+  // Convertir los resultados de agregación a documentos de Mongoose
+  const profileDocuments = verifiedUserProfiles.map(profile =>
+    new ProfileModel(profile)
+  );
 
   // Ordenar perfiles usando el motor de visibilidad
-  const sortedProfiles = await sortProfiles(visibleProfiles, now);
+  const sortedProfiles = await sortProfiles(profileDocuments, now);
 
   // Calcular metadata de separadores por nivel
   const levelSeparators: Array<{ level: number; startIndex: number; count: number }> = [];
@@ -149,14 +181,48 @@ export const batchUpdateLastShownAt = async (profileIds: string[]): Promise<void
 export const getHomeFeedStats = async (): Promise<Record<number, number>> => {
   const now = new Date();
 
-  const visibleProfiles = await ProfileModel.find({
-    visible: true,
-    'planAssignment.expiresAt': { $gt: now }
-  }).exec();
+  // Usar agregación para filtrar perfiles con usuarios verificados de manera más confiable
+  const verifiedUserProfiles = await ProfileModel.aggregate([
+    {
+      $match: {
+        visible: true,
+        isActive: true,
+        'planAssignment.expiresAt': { $gt: now }
+      }
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'userInfo'
+      }
+    },
+    {
+      $match: {
+        'userInfo.isVerified': true
+      }
+    },
+    {
+      $addFields: {
+        user: { $arrayElemAt: ['$userInfo', 0] }
+      }
+    },
+    {
+      $project: {
+        userInfo: 0
+      }
+    }
+  ]);
+
+  // Convertir los resultados de agregación a documentos de Mongoose
+  const profileDocuments = verifiedUserProfiles.map(profile =>
+    new ProfileModel(profile)
+  );
 
   const stats: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 
-  for (const profile of visibleProfiles) {
+  for (const profile of profileDocuments) {
     const level = await getEffectiveLevel(profile, now);
     stats[level]++;
   }

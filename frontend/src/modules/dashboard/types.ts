@@ -11,4 +11,5 @@ export interface ProfileVerificationCarouselProps {
     onOpenChange: (open: boolean) => void;
     profileName: string;
     images: VerificationImage[];
+    isUserVerified?: boolean;
 }

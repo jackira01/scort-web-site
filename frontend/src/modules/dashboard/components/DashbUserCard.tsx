@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import EditUserModal from '@/components/EditUserModal';
+import UserDocumentVerificationModal from './UserDocumentVerificationModal';
 import type { User } from '@/types/user.types';
 
 export const DashboardUserCard = ({
@@ -23,6 +24,7 @@ export const DashboardUserCard = ({
   setVerificationCarouselOpen: any
 }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDocumentVerificationModalOpen, setIsDocumentVerificationModalOpen] = useState(false);
   return (
     <>
       <Card
@@ -85,6 +87,15 @@ export const DashboardUserCard = ({
                 <Edit className="h-3 w-3 mr-1" />
                 Editar
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsDocumentVerificationModalOpen(true)}
+                className="hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:border-orange-500 transition-all duration-200"
+              >
+                <Shield className="h-3 w-3 mr-1" />
+                Verificar
+              </Button>
               {!user.isVerified && (
                 <Button
                   size="sm"
@@ -93,10 +104,10 @@ export const DashboardUserCard = ({
                     setSelecteduserForVerification(user);
                     setVerificationCarouselOpen(true);
                   }}
-                  className="hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:border-orange-500 transition-all duration-200"
+                  className="hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-500 transition-all duration-200"
                 >
                   <Shield className="h-3 w-3 mr-1" />
-                  Verificar
+                  Verificar Perfil
                 </Button>
               )}
             </div>
@@ -108,6 +119,12 @@ export const DashboardUserCard = ({
         user={user}
         isOpen={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
+      />
+
+      <UserDocumentVerificationModal
+        user={user}
+        isOpen={isDocumentVerificationModalOpen}
+        onOpenChange={setIsDocumentVerificationModalOpen}
       />
     </>
   );

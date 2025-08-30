@@ -52,7 +52,7 @@ export const DashUserPanel = () => {
           />
         ))}
       </div>
-      
+
       {/* Paginación */}
       {usersData && usersData.totalPages > 1 && (
         <Pagination
@@ -65,7 +65,7 @@ export const DashUserPanel = () => {
           limit={usersData.limit}
         />
       )}
-      
+
       {/* Profile Verification Carousel */}
       {selectedProfileForVerification && (
         <ProfileVerificationCarousel
@@ -76,6 +76,7 @@ export const DashUserPanel = () => {
           images={transformedImages(
             selectedProfileForVerification.verificationDocument,
           )}
+          isUserVerified={selectedProfileForVerification.isVerified}
         />
       )}
     </div>

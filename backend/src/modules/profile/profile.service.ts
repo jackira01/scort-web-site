@@ -158,12 +158,12 @@ export const getProfiles = async (page: number = 1, limit: number = 10, fields?:
       const verification = profile.verification as any;
       const verifiedCount = Object.values(verification).filter(status => status === 'verified').length;
       const totalFields = Object.keys(verification).length;
-      
+
       if (verifiedCount === totalFields && totalFields > 0) {
         isVerified = true;
       }
     }
-    
+
     const featured = profile.upgrades?.some(upgrade =>
       (upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT') &&
       new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
@@ -192,7 +192,11 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
   const skip = (page - 1) * limit;
   const now = new Date();
 
-  // Obtener todos los perfiles activos y visibles
+  console.log('🏠 DEBUG getProfilesForHome - Iniciando consulta');
+  console.log(`   Página: ${page}, Límite: ${limit}, Skip: ${skip}`);
+  console.log(`   Fecha actual: ${now.toISOString()}`);
+
+  // Obtener todos los perfiles activos y visibles CON USUARIOS VERIFICADOS
   // Solo seleccionar campos mínimos necesarios para la vista previa
   const profiles = await ProfileModel.find({
     isActive: true,
@@ -212,6 +216,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
     .select({
       name: 1,
       age: 1,
+      user: 1, // IMPORTANTE: Incluir referencia al usuario
       'location.city.label': 1,
       'location.department.label': 1,
       'media.gallery': { $slice: 1 }, // Solo la primera imagen
@@ -222,11 +227,30 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
       updatedAt: 1
     })
     .populate({
+      path: 'user',
+      model: 'User',
+      select: 'name email isVerified',
+      match: { isVerified: true } // FILTRO CRÍTICO: Solo usuarios verificados
+    })
+    .populate({
       path: 'verification',
       model: 'ProfileVerification',
       select: 'verificationProgress verificationStatus'
     })
     .lean();
+
+  console.log(`📊 DEBUG - Perfiles encontrados antes del filtro: ${profiles.length}`);
+
+  // Filtrar perfiles que NO tienen usuario verificado (populate devuelve null)
+  const profilesWithVerifiedUsers = profiles.filter(profile => {
+    const hasVerifiedUser = profile.user !== null;
+    if (!hasVerifiedUser) {
+      console.log(`❌ DEBUG - Perfil filtrado (usuario no verificado): ${profile.name}`);
+    }
+    return hasVerifiedUser;
+  });
+
+  console.log(`✅ DEBUG - Perfiles con usuarios verificados: ${profilesWithVerifiedUsers.length}`);
 
   // Obtener definiciones de planes para mapear códigos a niveles y features
   const planDefinitions = await PlanDefinitionModel.find({ active: true }).lean();
@@ -252,12 +276,11 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
   }
 
   // Debug: Log información de filtrado
-  console.log(`Total profiles found: ${profiles.length}`);
-  console.log(`Plan definitions found: ${planDefinitions.length}`);
-  console.log('Available plan codes:', Object.keys(planCodeToFeatures));
+  console.log(`📋 DEBUG - Plan definitions found: ${planDefinitions.length}`);
+  console.log('📋 DEBUG - Available plan codes:', Object.keys(planCodeToFeatures));
 
   // Filtrar perfiles que deben mostrarse en home y enriquecer con información de jerarquía
-  const filteredProfiles = profiles.filter(profile => {
+  const filteredProfiles = profilesWithVerifiedUsers.filter(profile => {
     let planCode = null;
 
     // Determinar el código del plan desde planAssignment
@@ -389,16 +412,16 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
   // Limpiar información de jerarquía antes de devolver y mapear hasDestacadoUpgrade
   const cleanProfiles = paginatedProfiles.map(profile => {
     const { _hierarchyInfo, ...cleanProfile } = profile;
-    
+
     // Calcular estado de verificación basado en campos individuales
     let isVerified = false;
     let verificationLevel = 'pending';
-    
+
     if (profile.verification) {
       const verification = profile.verification as any;
       const verifiedCount = Object.values(verification).filter(status => status === 'verified').length;
       const totalFields = Object.keys(verification).length;
-      
+
       if (verifiedCount === totalFields && totalFields > 0) {
         isVerified = true;
         verificationLevel = 'verified';
@@ -406,7 +429,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
         verificationLevel = 'partial';
       }
     }
-    
+
     return {
       ...cleanProfile,
       hasDestacadoUpgrade: _hierarchyInfo.hasHighlightUpgrade,
@@ -420,6 +443,18 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
   });
 
   const total = filteredProfiles.length;
+
+  console.log(`🎯 DEBUG - Resultado final:`);
+  console.log(`   Perfiles después del filtro de planes: ${filteredProfiles.length}`);
+  console.log(`   Perfiles paginados devueltos: ${cleanProfiles.length}`);
+  console.log(`   Total disponible: ${total}`);
+  console.log(`   Páginas totales: ${Math.ceil(total / limit)}`);
+
+  // Debug: Mostrar algunos perfiles de ejemplo
+  cleanProfiles.slice(0, 3).forEach((profile, index) => {
+    const user = profile.user as any;
+    console.log(`   Perfil ${index + 1}: ${profile.name} - Usuario: ${user?.name || 'N/A'} - Verificado: ${user?.isVerified}`);
+  });
 
   return {
     profiles: cleanProfiles,
@@ -658,10 +693,10 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
     }
 
     const accountType = user.accountType || 'common';
-    
+
     // Obtener configuraciones de límites según el tipo de cuenta
     let freeProfilesMax, paidProfilesMax, totalVisibleMax, requiresIndependentVerification;
-    
+
     if (accountType === 'agency') {
       // Para agencias, verificar que la conversión esté aprobada
       if (user.agencyInfo?.conversionStatus !== 'approved') {
@@ -672,7 +707,7 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
           currentCounts: { freeProfilesCount: 0, paidProfilesCount: 0, totalProfiles: 0 }
         };
       }
-      
+
       // Usar límites específicos para agencias
       [freeProfilesMax, paidProfilesMax, totalVisibleMax, requiresIndependentVerification] = await Promise.all([
         ConfigParameterService.getValue('profiles.limits.agency.free_profiles_max'),
@@ -802,10 +837,10 @@ export const getUserProfilesSummary = async (userId: string) => {
     }
 
     const accountType = user.accountType || 'common';
-    
+
     // Obtener configuraciones de límites según el tipo de cuenta
     let freeProfilesMax, paidProfilesMax, totalVisibleMax;
-    
+
     if (accountType === 'agency') {
       // Usar límites específicos para agencias
       [freeProfilesMax, paidProfilesMax, totalVisibleMax] = await Promise.all([
