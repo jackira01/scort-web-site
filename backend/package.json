@@ -11,7 +11,8 @@
     "migrate:revert-planassignment": "ts-node ./scripts/migrate-plan-to-planassignment.ts revert",
     "seed:plans": "set FEATURE_VISIBILITY_ENGINE=true && ts-node ./src/modules/plans/plans.seed.ts",
     "init:default-plan": "ts-node ./scripts/create-default-plan-config.ts",
-    "init:profile-limits": "ts-node ./scripts/create-profile-limits-config.ts"
+    "init:profile-limits": "ts-node ./scripts/create-profile-limits-config.ts",
+    "init:agency-limits": "ts-node ./src/scripts/create-agency-profile-limits-config.ts"
   },
   "keywords": [],
   "author": "",

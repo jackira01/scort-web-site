@@ -46,8 +46,8 @@ export interface IProfile extends Document {
     age: string;
     contact: {
         number: string;
-        whatsapp: boolean;
-        telegram: boolean;
+        whatsapp?: string;
+        telegram?: string;
         changedAt: Date;
     };
     height: string;
@@ -110,8 +110,8 @@ export interface CreateProfileDTO {
     age: string;
     contact: {
         number: string;
-        whatsapp: boolean;
-        telegram: boolean;
+        whatsapp?: string;
+        telegram?: string;
     };
     height: string;
     media?: {
@@ -168,8 +168,8 @@ export interface IProfileInput {
     age: string;
     contact: {
         number: string;
-        whatsapp: boolean;
-        telegram: boolean;
+        whatsapp?: string;
+        telegram?: string;
     };
     height: string;
     media?: {
@@ -195,6 +195,8 @@ export interface IProfileVerification extends Document {
     profile: Types.ObjectId;
     verificationStatus: 'pending' | 'verified' | 'rejected';
     verificationProgress: number;
+    accountType: 'common' | 'agency';
+    requiresIndependentVerification: boolean;
     steps: {
         documentPhotos: {
             documents: string[]

@@ -231,7 +231,11 @@ export const getFilteredProfiles = async (
 
     // Agregar populate para campos que requieren datos completos
     if (!fields || fields.includes('verification')) {
-      profileQuery = profileQuery.populate('verification');
+      profileQuery = profileQuery.populate({
+        path: 'verification',
+        model: 'ProfileVerification',
+        select: 'verificationProgress verificationStatus'
+      });
     }
 
     // Solo hacer populate de features si está explícitamente incluido en los campos seleccionados

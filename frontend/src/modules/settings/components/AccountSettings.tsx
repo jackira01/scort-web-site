@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSession } from 'next-auth/react';
 import { Crown, Gem, Shield, Star, Zap } from 'lucide-react';
+import AgencyConversionCard from './AgencyConversionCard';
 
 // Tipo para el plan actual
 interface CurrentPlan {
@@ -73,23 +74,7 @@ const AccountSettings = () => {
               </span>
               <p className="text-foreground">{user?.email || 'No disponible'}</p>
             </div>
-            <div>
-              <label
-                htmlFor="accountType"
-                className="text-sm font-medium text-muted-foreground"
-              >
-                Tipo de cuenta
-              </label>
-              <input
-                id="accountType"
-                type="text"
-                className="text-foreground bg-transparent border-none p-0 m-0 focus:ring-0"
-                value="Agencia"
-                readOnly
-                tabIndex={-1}
-                aria-readonly="true"
-              />
-            </div>
+
             <Button
               variant="outline"
               className="w-full hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500 transition-all duration-200"
@@ -98,6 +83,10 @@ const AccountSettings = () => {
             </Button>
           </CardContent>
         </Card>
+        
+        {/* Componente de conversión a agencia */}
+        <AgencyConversionCard user={user} />
+        
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-foreground">Seguridad</CardTitle>

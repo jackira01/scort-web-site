@@ -137,7 +137,11 @@ export const getProfiles = async (page: number = 1, limit: number = 10, fields?:
       path: 'user',
       select: 'name email',
     })
-    .populate('verification')
+    .populate({
+      path: 'verification',
+      model: 'ProfileVerification',
+      select: 'verificationProgress verificationStatus'
+    })
     .populate({
       path: 'features.group_id',
       select: 'name label',
@@ -217,7 +221,11 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
       createdAt: 1,
       updatedAt: 1
     })
-    .populate('verification')
+    .populate({
+      path: 'verification',
+      model: 'ProfileVerification',
+      select: 'verificationProgress verificationStatus'
+    })
     .lean();
 
   // Obtener definiciones de planes para mapear códigos a niveles y features
@@ -404,6 +412,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20) =
       hasDestacadoUpgrade: _hierarchyInfo.hasHighlightUpgrade,
       hasImpulsoUpgrade: _hierarchyInfo.hasBoostUpgrade,
       verification: {
+        ...(typeof profile.verification === 'object' && profile.verification !== null ? profile.verification : {}),
         isVerified,
         verificationLevel
       }
@@ -642,17 +651,51 @@ export const subscribeProfile = async (profileId: string, planCode: string, vari
  */
 export const validateUserProfileLimits = async (userId: string, planCode?: string) => {
   try {
-    // Obtener configuraciones de límites
-    const [freeProfilesMax, paidProfilesMax, totalVisibleMax] = await Promise.all([
-      ConfigParameterService.getValue('profiles.limits.free_profiles_max'),
-      ConfigParameterService.getValue('profiles.limits.paid_profiles_max'),
-      ConfigParameterService.getValue('profiles.limits.total_visible_max')
-    ]);
+    // Obtener información del usuario para determinar el tipo de cuenta
+    const user = await UserModel.findById(userId).lean();
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    const accountType = user.accountType || 'common';
+    
+    // Obtener configuraciones de límites según el tipo de cuenta
+    let freeProfilesMax, paidProfilesMax, totalVisibleMax, requiresIndependentVerification;
+    
+    if (accountType === 'agency') {
+      // Para agencias, verificar que la conversión esté aprobada
+      if (user.agencyInfo?.conversionStatus !== 'approved') {
+        return {
+          canCreate: false,
+          reason: 'La conversión a agencia debe estar aprobada para crear perfiles adicionales',
+          limits: { accountType },
+          currentCounts: { freeProfilesCount: 0, paidProfilesCount: 0, totalProfiles: 0 }
+        };
+      }
+      
+      // Usar límites específicos para agencias
+      [freeProfilesMax, paidProfilesMax, totalVisibleMax, requiresIndependentVerification] = await Promise.all([
+        ConfigParameterService.getValue('profiles.limits.agency.free_profiles_max'),
+        ConfigParameterService.getValue('profiles.limits.agency.paid_profiles_max'),
+        ConfigParameterService.getValue('profiles.limits.agency.total_visible_max'),
+        ConfigParameterService.getValue('profiles.limits.agency.independent_verification_required')
+      ]);
+    } else {
+      // Usar límites para usuarios comunes
+      [freeProfilesMax, paidProfilesMax, totalVisibleMax] = await Promise.all([
+        ConfigParameterService.getValue('profiles.limits.free_profiles_max'),
+        ConfigParameterService.getValue('profiles.limits.paid_profiles_max'),
+        ConfigParameterService.getValue('profiles.limits.total_visible_max')
+      ]);
+      requiresIndependentVerification = false;
+    }
 
     const limits = {
-      freeProfilesMax: freeProfilesMax || 3,
-      paidProfilesMax: paidProfilesMax || 10,
-      totalVisibleMax: totalVisibleMax || 13
+      freeProfilesMax: freeProfilesMax || (accountType === 'agency' ? 5 : 3),
+      paidProfilesMax: paidProfilesMax || (accountType === 'agency' ? 50 : 10),
+      totalVisibleMax: totalVisibleMax || (accountType === 'agency' ? 55 : 13),
+      accountType,
+      requiresIndependentVerification: requiresIndependentVerification || false
     };
 
     // Obtener perfiles activos del usuario
@@ -718,10 +761,25 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
       };
     }
 
+    // Validación adicional para agencias: verificar conversión aprobada
+    if (accountType === 'agency') {
+      const agencyInfo = user.agencyInfo;
+      if (!agencyInfo || agencyInfo.conversionStatus !== 'approved') {
+        return {
+          canCreate: false,
+          reason: 'La conversión a cuenta de agencia debe estar aprobada para crear perfiles adicionales',
+          limits,
+          currentCounts: { freeProfilesCount, paidProfilesCount, totalProfiles }
+        };
+      }
+    }
+
     return {
       canCreate: true,
       limits,
-      currentCounts: { freeProfilesCount, paidProfilesCount, totalProfiles }
+      currentCounts: { freeProfilesCount, paidProfilesCount, totalProfiles },
+      accountType,
+      requiresIndependentVerification: accountType === 'agency' && totalProfiles > 0
     };
 
   } catch (error) {
@@ -737,17 +795,38 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
  */
 export const getUserProfilesSummary = async (userId: string) => {
   try {
-    // Obtener configuraciones de límites
-    const [freeProfilesMax, paidProfilesMax, totalVisibleMax] = await Promise.all([
-      ConfigParameterService.getValue('profiles.limits.free_profiles_max'),
-      ConfigParameterService.getValue('profiles.limits.paid_profiles_max'),
-      ConfigParameterService.getValue('profiles.limits.total_visible_max')
-    ]);
+    // Obtener información del usuario para determinar el tipo de cuenta
+    const user = await UserModel.findById(userId).lean();
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    const accountType = user.accountType || 'common';
+    
+    // Obtener configuraciones de límites según el tipo de cuenta
+    let freeProfilesMax, paidProfilesMax, totalVisibleMax;
+    
+    if (accountType === 'agency') {
+      // Usar límites específicos para agencias
+      [freeProfilesMax, paidProfilesMax, totalVisibleMax] = await Promise.all([
+        ConfigParameterService.getValue('profiles.limits.agency.free_profiles_max'),
+        ConfigParameterService.getValue('profiles.limits.agency.paid_profiles_max'),
+        ConfigParameterService.getValue('profiles.limits.agency.total_visible_max')
+      ]);
+    } else {
+      // Usar límites para usuarios comunes
+      [freeProfilesMax, paidProfilesMax, totalVisibleMax] = await Promise.all([
+        ConfigParameterService.getValue('profiles.limits.free_profiles_max'),
+        ConfigParameterService.getValue('profiles.limits.paid_profiles_max'),
+        ConfigParameterService.getValue('profiles.limits.total_visible_max')
+      ]);
+    }
 
     const limits = {
-      freeProfilesMax: freeProfilesMax || 3,
-      paidProfilesMax: paidProfilesMax || 10,
-      totalVisibleMax: totalVisibleMax || 13
+      freeProfilesMax: freeProfilesMax || (accountType === 'agency' ? 5 : 3),
+      paidProfilesMax: paidProfilesMax || (accountType === 'agency' ? 50 : 10),
+      totalVisibleMax: totalVisibleMax || (accountType === 'agency' ? 55 : 13),
+      accountType
     };
 
     // Obtener perfiles activos del usuario

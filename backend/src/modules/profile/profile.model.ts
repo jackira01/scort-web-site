@@ -30,8 +30,8 @@ const profileSchema = new Schema<IProfile>(
     age: { type: String, required: true, },
     contact: {
       number: { type: String, required: true, },
-      whatsapp: { type: Boolean, required: true, default: false },
-      telegram: { type: Boolean, required: true, default: false },
+      whatsapp: { type: String, required: false },
+      telegram: { type: String, required: false },
       changedAt: Date,
     },
     height: { type: String, required: true },

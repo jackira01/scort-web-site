@@ -12,6 +12,7 @@ import filtersRoutes from './modules/filters/filters.routes';
 import plansRoutes from './modules/plans/plans.routes';
 import profileRoutes from './modules/profile/profile.routes';
 import profileVerificationRoutes from './modules/profile-verification/profile-verification.routes';
+import agencyConversionRoutes from './routes/agency-conversion.routes';
 
 import userRoutes from './modules/user/user.routes';
 import { enforceVisibilityForFeeds } from './middlewares/visibility.middleware';
@@ -59,6 +60,7 @@ app.use('/api/filters', filtersRoutes);
 app.use('/api/plans', plansRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/profile-verification', profileVerificationRoutes);
+app.use('/api/agency-conversion', agencyConversionRoutes);
 
 app.use('/api/user', userRoutes);
 

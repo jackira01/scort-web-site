@@ -7,8 +7,18 @@ export const step3Schema = z.object({
       .string()
       .min(1, 'El número de teléfono es requerido')
       .regex(/^[0-9]{10}$/, 'El número debe tener exactamente 10 dígitos'),
-    whatsapp: z.boolean().optional(),
-    telegram: z.boolean().optional(),
+    whatsapp: z
+      .string()
+      .optional()
+      .refine((val) => !val || /^[0-9]{10}$/.test(val), {
+        message: 'WhatsApp debe tener exactamente 10 dígitos'
+      }),
+    telegram: z
+      .string()
+      .optional()
+      .refine((val) => !val || /^[0-9]{10}$/.test(val), {
+        message: 'Telegram debe tener exactamente 10 dígitos'
+      }),
   }),
 
   age: z

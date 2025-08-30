@@ -65,8 +65,8 @@ export function CreateProfileLayout() {
       // Step 3 - Detalles
       contact: {
         number: '',
-        whatsapp: false,
-        telegram: false,
+        whatsapp: '',
+        telegram: '',
       },
       age: '',
       skinColor: '',
@@ -138,14 +138,14 @@ export function CreateProfileLayout() {
         case 3: {
           const contactData = form.getValues('contact') || {
             number: '',
-            whatsapp: false,
-            telegram: false,
+            whatsapp: '',
+            telegram: '',
           };
           const step3Data = {
             contact: {
               number: contactData.number || '',
-              whatsapp: contactData.whatsapp || false,
-              telegram: contactData.telegram || false,
+              whatsapp: contactData.whatsapp || undefined,
+              telegram: contactData.telegram || undefined,
             },
             age: form.getValues('age') || '',
             skinColor: form.getValues('skinColor') || '',

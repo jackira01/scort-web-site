@@ -14,6 +14,82 @@ interface IProfileWithUser extends Omit<IProfile, 'user'> {
 interface IProfileVerificationWithPopulatedProfile extends Omit<IProfileVerification, 'profile'> {
   profile: IProfileWithUser;
 }
+
+// Función para determinar si una agencia requiere verificación independiente
+const shouldRequireIndependentVerification = async (userId: string | Types.ObjectId, currentProfileId: string | Types.ObjectId) => {
+  try {
+    // Contar perfiles existentes del usuario
+    const existingProfilesCount = await ProfileModel.countDocuments({ user: userId });
+    
+    // Si es el primer perfil, no requiere verificación independiente
+    if (existingProfilesCount <= 1) {
+      return false;
+    }
+    
+    // Para perfiles adicionales de agencias, siempre requiere verificación independiente
+    return true;
+  } catch (error) {
+    console.error('Error al verificar necesidad de verificación independiente:', error);
+    return true; // Por seguridad, requerir verificación en caso de error
+  }
+};
+
+// Función para obtener steps por defecto según el tipo de cuenta
+const getDefaultVerificationSteps = (accountType: string, requiresIndependentVerification: boolean, lastLoginVerified: boolean, userLastLoginDate: Date | null) => {
+  const baseSteps = {
+    documentPhotos: {
+      documents: [],
+      isVerified: false
+    },
+    selfieWithPoster: {
+      photo: undefined,
+      isVerified: false
+    },
+    selfieWithDoc: {
+      photo: undefined,
+      isVerified: false
+    },
+    fullBodyPhotos: {
+      photos: [],
+      isVerified: false
+    },
+    video: {
+      videoLink: undefined,
+      isVerified: false
+    },
+    videoCallRequested: {
+      videoLink: undefined,
+      isVerified: false
+    },
+    socialMedia: {
+      accounts: [],
+      isVerified: false
+    },
+    phoneChangeDetected: false,
+    lastLogin: {
+      isVerified: lastLoginVerified,
+      date: userLastLoginDate
+    }
+  };
+
+  // Para usuarios comunes con múltiples perfiles, heredar verificación del usuario
+  if (accountType === 'common' && !requiresIndependentVerification) {
+    return {
+      ...baseSteps,
+      documentPhotos: {
+        documents: [],
+        isVerified: true // Heredar verificación del usuario
+      },
+      selfieWithDoc: {
+        photo: undefined,
+        isVerified: true // Heredar verificación del usuario
+      }
+    };
+  }
+
+  // Para agencias o verificación independiente, mantener valores por defecto
+  return baseSteps;
+};
 import {
   CreateProfileVerificationDTO,
   UpdateProfileVerificationDTO,
@@ -97,58 +173,38 @@ export const createProfileVerification = async (verificationData: CreateProfileV
     // Obtener datos del usuario para inicializar correctamente lastLogin
     let userLastLoginDate = null;
     let lastLoginVerified = true; // Por defecto true para perfiles nuevos
+    let accountType = 'common'; // Por defecto común
+    let requiresIndependentVerification = false;
     
     if (verificationData.profile) {
       // Buscar el perfil y su usuario asociado
       const profile = await ProfileModel.findById(verificationData.profile).populate('user') as IProfileWithUser | null;
       // Verificar que user esté poblado correctamente
-      if (profile && profile.user && profile.user.lastLogin?.date) {
-        userLastLoginDate = profile.user.lastLogin.date;
-        lastLoginVerified = checkLastLoginVerification(userLastLoginDate);
+      if (profile && profile.user) {
+        accountType = profile.user.accountType || 'common';
+        
+        if (profile.user.lastLogin?.date) {
+          userLastLoginDate = profile.user.lastLogin.date;
+          lastLoginVerified = checkLastLoginVerification(userLastLoginDate);
+        }
+        
+        // Para agencias, verificar si requiere verificación independiente
+        if (accountType === 'agency') {
+          const userId = (profile.user as any)._id || (profile.user as any).id;
+          requiresIndependentVerification = await shouldRequireIndependentVerification(userId, verificationData.profile);
+        }
       }
     }
     
-    // Inicializar steps con valores por defecto
-    const defaultSteps = {
-      documentPhotos: {
-        documents: [],
-        isVerified: false
-      },
-      selfieWithPoster: {
-        photo: undefined,
-        isVerified: false
-      },
-      selfieWithDoc: {
-        photo: undefined,
-        isVerified: false
-      },
-      fullBodyPhotos: {
-        photos: [],
-        isVerified: false
-      },
-      video: {
-        videoLink: undefined,
-        isVerified: false
-      },
-      videoCallRequested: {
-        videoLink: undefined,
-        isVerified: false
-      },
-      socialMedia: {
-        accounts: [],
-        isVerified: false
-      },
-      phoneChangeDetected: false,
-      lastLogin: {
-        isVerified: lastLoginVerified,
-        date: userLastLoginDate
-      }
-    };
+    // Inicializar steps con valores por defecto basados en el tipo de cuenta
+    const defaultSteps = getDefaultVerificationSteps(accountType, requiresIndependentVerification, lastLoginVerified, userLastLoginDate);
 
     const verificationWithDefaults = {
       ...verificationData,
       steps: defaultSteps,
-      verificationProgress: 0
+      verificationProgress: 0,
+      accountType,
+      requiresIndependentVerification
     };
 
     const verification = new ProfileVerification(verificationWithDefaults);

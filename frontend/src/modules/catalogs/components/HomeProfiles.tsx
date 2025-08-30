@@ -5,7 +5,7 @@ import { useHomeFeedWithSeparators } from '@/hooks/useFeeds';
 import CardComponent from '@/components/Card/Card';
 
 const HomeProfiles = () => {
-  const { data: feedData, profiles, isLoading, error } = useHomeFeedWithSeparators();
+  const { data: feedData, profiles, isLoading, error, pagination } = useHomeFeedWithSeparators();
 
   if (isLoading) {
     return (
@@ -31,7 +31,7 @@ const HomeProfiles = () => {
     );
   }
 
-  const totalProfiles = feedData?.pagination?.total || 0;
+  const totalProfiles = pagination?.total || 0;
 
   if (!profiles || profiles.length === 0) {
     return (

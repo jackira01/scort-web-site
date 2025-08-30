@@ -22,6 +22,7 @@ import type {
 import { ConfigParameterFilters } from './ConfigParameterFilters';
 import { ConfigParameterForm } from './ConfigParameterForm';
 import { ConfigParameterList } from './ConfigParameterList';
+import { AgencyLimitsManager } from './AgencyLimitsManager';
 import { LocationManager } from './LocationManager';
 import { MembershipManager } from './MembershipManager';
 import { ProfileLimitsManager } from './ProfileLimitsManager';
@@ -34,7 +35,8 @@ type ViewMode =
     | 'locations'
     | 'texts'
     | 'memberships'
-    | 'profile-limits';
+    | 'profile-limits'
+    | 'agency-limits';
 
 interface ConfigManagerProps {
     className?: string;
@@ -190,6 +192,17 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
                     </button>
 
                     <button
+                        onClick={() => setViewMode('agency-limits')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            viewMode === 'agency-limits'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                    >
+                        Límites de Agencias
+                    </button>
+
+                    <button
                         onClick={() => setViewMode('list')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'list'
                                 ? 'bg-blue-100 text-blue-700'
@@ -331,6 +344,13 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
                 return (
                     <div className="p-6">
                         <ProfileLimitsManager />
+                    </div>
+                );
+
+            case 'agency-limits':
+                return (
+                    <div className="p-6">
+                        <AgencyLimitsManager />
                     </div>
                 );
 

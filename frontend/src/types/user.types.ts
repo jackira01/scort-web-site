@@ -13,6 +13,15 @@ export interface BaseUser {
     isVerified?: boolean;
     verification_in_progress?: boolean;
     role?: 'admin' | 'user' | 'guest';
+    accountType?: 'common' | 'agency';
+    agencyInfo?: {
+        businessName?: string;
+        businessDocument?: string;
+        conversionRequestedAt?: Date | string;
+        conversionApprovedAt?: Date | string;
+        conversionApprovedBy?: string;
+        conversionStatus: 'pending' | 'approved' | 'rejected';
+    };
 }
 export interface User extends BaseUser {
     email?: string;
@@ -21,7 +30,15 @@ export interface User extends BaseUser {
     profiles?: Profile[];
     password?: string;
     role: 'admin' | 'user' | 'guest';
-
+    accountType: 'common' | 'agency';
+    agencyInfo?: {
+        businessName?: string;
+        businessDocument?: string;
+        conversionRequestedAt?: Date | string;
+        conversionApprovedAt?: Date | string;
+        conversionApprovedBy?: string;
+        conversionStatus: 'pending' | 'approved' | 'rejected';
+    };
 }
 
 

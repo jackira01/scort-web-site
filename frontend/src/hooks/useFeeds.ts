@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { API_URL } from '@/lib/config';
-import type { 
-  HomeFeedOptions, 
-  HomeFeedResponse, 
+import type {
+  HomeFeedOptions,
+  HomeFeedResponse,
   FeedStatsResponse,
-  HomeFeedProfile 
+  HomeFeedProfile
 } from '@/types/profile.types';
 
 // API functions
@@ -19,9 +19,9 @@ const feedsApi = {
     if (!response.ok) {
       throw new Error(`Error al obtener perfiles: ${response.status}`);
     }
-    
+
     const result = await response.json();
-    
+
     // Adaptar la respuesta del backend al formato esperado por el frontend
     return {
       profiles: result.profiles || [],
@@ -37,12 +37,12 @@ const feedsApi = {
     if (!response.ok) {
       throw new Error(`Error al obtener estadísticas: ${response.status}`);
     }
-    
+
     const result = await response.json();
     if (!result.success) {
       throw new Error(result.message || 'Error en la respuesta del servidor');
     }
-    
+
     return result.data;
   }
 };
@@ -76,7 +76,7 @@ export const useFeaturedProfiles = () => {
 // Hook para obtener perfiles con separadores por nivel
 export const useHomeFeedWithSeparators = (options: HomeFeedOptions = {}) => {
   const { data, ...rest } = useHomeFeed(options);
-  
+
   return {
     ...rest,
     data,

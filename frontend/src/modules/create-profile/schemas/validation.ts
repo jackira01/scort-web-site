@@ -22,10 +22,23 @@ export const formSchema = z.object({
 
   // Step 3 - Detalles
   contact: z.object({
-    number: z.string().optional(),
-    whatsapp: z.boolean().optional(),
-    telegram: z.boolean().optional(),
-  }).optional(),
+    number: z
+      .string()
+      .min(1, 'El número de teléfono es requerido')
+      .regex(/^[0-9]{10}$/, 'El número debe tener exactamente 10 dígitos'),
+    whatsapp: z
+      .string()
+      .optional()
+      .refine((val) => !val || /^[0-9]{10}$/.test(val), {
+        message: 'WhatsApp debe tener exactamente 10 dígitos'
+      }),
+    telegram: z
+      .string()
+      .optional()
+      .refine((val) => !val || /^[0-9]{10}$/.test(val), {
+        message: 'Telegram debe tener exactamente 10 dígitos'
+      }),
+  }),
   age: z.string().optional(),
   skinColor: z.string().optional(),
   sexuality: z.string().optional(),

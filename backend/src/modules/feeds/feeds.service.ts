@@ -38,9 +38,7 @@ export const getHomeFeed = async (options: HomeFeedOptions = {}): Promise<HomeFe
     visible: true,
     isActive: true,
     'planAssignment.expiresAt': { $gt: now }
-  })
-  .populate('verification')
-  .exec();
+  }).exec();
 
   // Ordenar perfiles usando el motor de visibilidad
   const sortedProfiles = await sortProfiles(visibleProfiles, now);
@@ -73,35 +71,7 @@ export const getHomeFeed = async (options: HomeFeedOptions = {}): Promise<HomeFe
   const totalPages = Math.ceil(total / pageSize);
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
-  const paginatedProfilesRaw = sortedProfiles.slice(startIndex, endIndex);
-  
-  // Agregar información de verificación a los perfiles paginados
-  const paginatedProfiles = paginatedProfilesRaw.map(profile => {
-    // Calcular estado de verificación basado en campos individuales
-    let isVerified = false;
-    let verificationLevel = 'pending';
-    
-    if (profile.verification) {
-      const verification = profile.verification as any;
-      const verifiedCount = Object.values(verification).filter(status => status === 'verified').length;
-      const totalFields = Object.keys(verification).length;
-      
-      if (verifiedCount === totalFields && totalFields > 0) {
-        isVerified = true;
-        verificationLevel = 'verified';
-      } else if (verifiedCount > 0) {
-        verificationLevel = 'partial';
-      }
-    }
-    
-    return {
-      ...profile.toObject(),
-      verification: {
-        isVerified,
-        verificationLevel
-      }
-    };
-  });
+  const paginatedProfiles = sortedProfiles.slice(startIndex, endIndex);
 
   // Actualizar lastShownAt para los perfiles servidos (fairness rotation)
   if (paginatedProfiles.length > 0) {
@@ -115,7 +85,7 @@ export const getHomeFeed = async (options: HomeFeedOptions = {}): Promise<HomeFe
       startIndex: Math.max(0, separator.startIndex - startIndex),
       endIndex: separator.startIndex + separator.count - startIndex
     }))
-    .filter(separator => 
+    .filter(separator =>
       separator.endIndex > 0 && separator.startIndex < pageSize
     )
     .map(separator => ({
@@ -149,7 +119,7 @@ export const getHomeFeed = async (options: HomeFeedOptions = {}): Promise<HomeFe
  */
 export const updateLastShownAt = async (profileIds: string[]): Promise<void> => {
   if (profileIds.length === 0) return;
-  
+
   const now = new Date();
   await ProfileModel.updateMany(
     { _id: { $in: profileIds } },
@@ -163,10 +133,10 @@ export const updateLastShownAt = async (profileIds: string[]): Promise<void> => 
  */
 export const batchUpdateLastShownAt = async (profileIds: string[]): Promise<void> => {
   if (profileIds.length === 0) return;
-  
+
   const batchSize = 100; // Procesar en lotes de 100
   const now = new Date();
-  
+
   for (let i = 0; i < profileIds.length; i += batchSize) {
     const batch = profileIds.slice(i, i + batchSize);
     await ProfileModel.updateMany(
@@ -178,14 +148,14 @@ export const batchUpdateLastShownAt = async (profileIds: string[]): Promise<void
 
 export const getHomeFeedStats = async (): Promise<Record<number, number>> => {
   const now = new Date();
-  
+
   const visibleProfiles = await ProfileModel.find({
     visible: true,
     'planAssignment.expiresAt': { $gt: now }
   }).exec();
 
   const stats: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  
+
   for (const profile of visibleProfiles) {
     const level = await getEffectiveLevel(profile, now);
     stats[level]++;

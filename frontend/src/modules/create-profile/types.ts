@@ -24,8 +24,8 @@ export interface FormData {
   // Step 3 - Detalles
   contact: {
     number: string;
-    whatsapp: boolean;
-    telegram: boolean;
+    whatsapp?: string;
+    telegram?: string;
   };
   age: string;
   skinColor: string;

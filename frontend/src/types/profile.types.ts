@@ -50,8 +50,8 @@ export interface IProfile {
   age: string;
   contact: {
     number: string;
-    whatsapp: boolean;
-    telegram: boolean;
+    whatsapp?: string;
+    telegram?: string;
     changedAt: Date | string;
   };
   height: string;

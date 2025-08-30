@@ -9,6 +9,15 @@ const ProfileVerificationSchema = new Schema<IProfileVerification>({
         default: 'pending',
     },
     verificationProgress: { type: Number, required: true, default: 0 },
+    accountType: {
+        type: String,
+        enum: ['common', 'agency'],
+        default: 'common'
+    },
+    requiresIndependentVerification: {
+        type: Boolean,
+        default: false
+    },
     steps: {
         documentPhotos: {
             documents: { type: [String], default: [] }, // required
