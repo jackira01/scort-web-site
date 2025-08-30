@@ -472,6 +472,66 @@ export class PlansController {
             });
         }
     }
+
+    // ==================== OPERACIONES DE PLANES ====================
+
+    async purchasePlan(req: Request, res: Response): Promise<void> {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Errores de validación',
+                    errors: errors.array()
+                });
+                return;
+            }
+
+            const { profileId, planCode, variantDays } = req.body;
+            const result = await plansService.purchasePlan(profileId, planCode, variantDays);
+
+            res.status(200).json({
+                success: true,
+                message: 'Plan comprado exitosamente',
+                data: result
+            });
+        } catch (error: any) {
+            res.status(400).json({
+                success: false,
+                message: error.message || 'Error al comprar el plan',
+                error: error.message
+            });
+        }
+    }
+
+    async renewPlan(req: Request, res: Response): Promise<void> {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Errores de validación',
+                    errors: errors.array()
+                });
+                return;
+            }
+
+            const { profileId, extensionDays } = req.body;
+            const result = await plansService.renewPlan(profileId, extensionDays);
+
+            res.status(200).json({
+                success: true,
+                message: 'Plan renovado exitosamente',
+                data: result
+            });
+        } catch (error: any) {
+            res.status(400).json({
+                success: false,
+                message: error.message || 'Error al renovar el plan',
+                error: error.message
+            });
+        }
+    }
 }
 
 export const plansController = new PlansController();

@@ -32,7 +32,7 @@ import SexFilter from '@/modules/filters/components/SexFilter';
 import LocationFilter from '@/modules/filters/components/LocationFIlter';
 import { useSearchFilters } from '@/hooks/use-search-filters';
 import type { ProfilesResponse } from '@/types/profile.types';
-import { LOCATIONS } from '@/lib/config';
+import { LOCATIONS, API_URL } from '@/lib/config';
 
 interface SearchPageClientProps {
   categoria: string;
@@ -50,6 +50,8 @@ export default function SearchPageClient({
   const router = useRouter();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [currentProfilesData, setCurrentProfilesData] = useState<ProfilesResponse>(profilesData);
+  const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
 
   // Hook para manejar filtros (mantenemos la funcionalidad existente)
   const initialFilters = {
@@ -69,15 +71,69 @@ export default function SearchPageClient({
     activeFiltersCount,
   } = useSearchFilters(initialFilters);
 
+  // Actualizar currentProfilesData cuando cambien los props
+  useEffect(() => {
+    setCurrentProfilesData(profilesData);
+  }, [profilesData]);
 
 
 
 
 
 
-  // Función wrapper para limpiar filtros
-  const handleClearFilters = () => {
+
+  // Función para cargar todos los perfiles verificados
+  const loadAllVerifiedProfiles = async () => {
+    setIsLoadingProfiles(true);
+    try {
+      const requestBody = {
+        page: 1,
+        limit: 20,
+        isActive: true,
+        isVerified: true, // Solo perfiles verificados
+        sortBy: 'createdAt',
+        sortOrder: 'desc' as const
+      };
+
+      const response = await fetch(`${API_URL}/api/filters/profiles`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const responseData = await response.json();
+      
+      if (responseData.success && responseData.data) {
+        const backendData = responseData.data;
+        const newProfilesData: ProfilesResponse = {
+          profiles: backendData.profiles,
+          pagination: {
+            currentPage: backendData.currentPage,
+            totalPages: backendData.totalPages,
+            totalProfiles: backendData.totalCount,
+            hasNextPage: backendData.hasNextPage,
+            hasPrevPage: backendData.hasPrevPage,
+          },
+        };
+        setCurrentProfilesData(newProfilesData);
+      }
+    } catch (error) {
+      console.error('Error loading all verified profiles:', error);
+    } finally {
+      setIsLoadingProfiles(false);
+    }
+  };
+
+  // Función wrapper para limpiar filtros y cargar todos los perfiles verificados
+  const handleClearFilters = async () => {
     clearFilters();
+    await loadAllVerifiedProfiles();
   };
 
   // Función wrapper para actualizar filtros
@@ -159,9 +215,9 @@ export default function SearchPageClient({
                 )}
               </h1>
 
-              {profilesData.pagination.totalProfiles > 0 && (
+              {currentProfilesData.pagination.totalProfiles > 0 && (
                 <p className="text-gray-600">
-                  {profilesData.pagination.totalProfiles} perfiles encontrados
+                  {currentProfilesData.pagination.totalProfiles} perfiles encontrados
                 </p>
               )}
             </div>
@@ -184,9 +240,10 @@ export default function SearchPageClient({
                     variant="ghost"
                     size="sm"
                     onClick={handleClearFilters}
+                    disabled={isLoadingProfiles}
                     className="text-purple-600 hover:text-purple-700"
                   >
-                    Restaurar filtros
+                    {isLoadingProfiles ? 'Cargando...' : 'Restaurar filtros'}
                   </Button>
                 </div>
 
@@ -269,9 +326,10 @@ export default function SearchPageClient({
                           variant="ghost"
                           size="sm"
                           onClick={handleClearFilters}
+                          disabled={isLoadingProfiles}
                           className="text-purple-600 hover:text-purple-700"
                         >
-                          Restaurar filtros
+                          {isLoadingProfiles ? 'Cargando...' : 'Restaurar filtros'}
                         </Button>
                       </SheetTitle>
                     </SheetHeader>
@@ -350,13 +408,11 @@ export default function SearchPageClient({
               </div>
             </div>
 
-            {/* Carrusel de perfiles patrocinados */}
-            <SponsoredProfilesCarousel className="mb-8" />
 
             {/* Componente de perfiles */}
             <SearchProfilesSSG
               viewMode={viewMode}
-              profilesData={profilesData}
+              profilesData={currentProfilesData}
               filters={filters}
               onPageChange={(page) => {
                 // Aquí podrías implementar navegación con parámetros de página

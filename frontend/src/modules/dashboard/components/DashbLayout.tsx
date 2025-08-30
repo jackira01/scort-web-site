@@ -168,7 +168,7 @@ export default function DashboardLayout() {
                                             <div className="flex-1">
                                                 <div className="flex items-center justify-between">
                                                     <span className="font-medium">{item.label}</span>
-                                                    {item.badge && (
+                                                    {/* {item.badge && (
                                                         <Badge
                                                             variant={
                                                                 activeSection === item.id
@@ -182,7 +182,7 @@ export default function DashboardLayout() {
                                                         >
                                                             {item.badge}
                                                         </Badge>
-                                                    )}
+                                                    )} */}
                                                 </div>
                                                 <p
                                                     className={`text-xs mt-1 ${activeSection === item.id

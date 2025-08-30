@@ -200,10 +200,31 @@ export default async function SearchPage({ params }: SearchPageProps) {
       queryParams.append('location[city]', slugToText(ciudad));
     }
 
-    // Fetch con revalidate para ISR
+    // Preparar el body para la petición POST
+    const requestBody: any = {
+      page: parseInt(queryParams.get('page') || '1'),
+      limit: parseInt(queryParams.get('limit') || '20')
+    };
+
+    if (categoria) requestBody.category = categoria;
+    if (departamento) {
+      requestBody.location = { department: slugToText(departamento) };
+      if (ciudad) {
+        requestBody.location.city = slugToText(ciudad);
+      }
+    }
+
+    // Fetch con revalidate para ISR usando POST
     const res = await fetch(
-      `${API_URL}/api/filters/profiles?${queryParams.toString()}`,
-      { next: { revalidate: 3600 } } // 1 hora
+      `${API_URL}/api/filters/profiles`,
+      { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody),
+        next: { revalidate: 3600 } // 1 hora
+      }
     );
 
     if (!res.ok) {

@@ -1055,3 +1055,17 @@ export const purchaseUpgrade = async (profileId: string, upgradeCode: string) =>
 
   return updatedProfile;
 };
+
+/**
+ * Obtiene el número de perfiles activos (con plan vigente) de un usuario
+ */
+export const getActiveProfilesCount = async (userId: string): Promise<number> => {
+  const now = new Date();
+  
+  const activeProfilesCount = await ProfileModel.countDocuments({
+    user_id: userId,
+    'planAssignment.expiresAt': { $gt: now }
+  });
+  
+  return activeProfilesCount;
+};

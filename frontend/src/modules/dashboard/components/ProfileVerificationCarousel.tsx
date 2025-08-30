@@ -55,36 +55,36 @@ export default function ProfileVerificationCarousel({
   const handleUserVerificationToggle = async (checked: boolean) => {
     try {
       console.log(`🔄 [ProfileCarousel] Intentando actualizar verificación de usuario ${userId} a:`, checked);
-
+      
       setIsLoading(true);
       const loadingToast = toast.loading(
         checked ? 'Verificando usuario...' : 'Removiendo verificación...'
       );
-
+      
       // Optimistic update
       setUserVerificationStatus(checked);
-
+      
       // Call the mutation with explicit data structure
-      const result = await updateUserMutation.mutateAsync({
-        userId,
-        data: {
-          isVerified: checked,
-          verification_in_progress: false,
-        },
-      });
+       const result = await updateUserMutation.mutateAsync({
+         userId,
+         data: {
+           isVerified: checked,
+           verification_in_progress: false,
+         },
+       });
 
       console.log('📡 [ProfileCarousel] Respuesta del servidor:', result);
 
       // Verify the update was successful - handle both old and new response formats
       const isVerifiedValue = result?.isVerified ?? result?.data?.isVerified;
       const success = result?.success !== false; // Default to true if success field is not present
-
+      
       if (success && typeof isVerifiedValue === 'boolean') {
         // Update local state to match server response
         setUserVerificationStatus(isVerifiedValue);
-
+        
         console.log(`✅ [ProfileCarousel] Actualización exitosa. Nuevo estado: ${isVerifiedValue}`);
-
+        
         toast.dismiss(loadingToast);
         toast.success(
           isVerifiedValue ? 'Usuario verificado exitosamente' : 'Verificación removida exitosamente'
@@ -96,25 +96,25 @@ export default function ProfileVerificationCarousel({
         toast.dismiss(loadingToast);
         toast.error(result?.message || 'Error: Respuesta inválida del servidor');
       }
-
+      
       setIsLoading(false);
     } catch (error) {
       console.error('❌ [ProfileCarousel] Error updating user verification:', error);
-
+      
       // Revert optimistic update on error
       setUserVerificationStatus(!checked);
       setIsLoading(false);
-
+      
       // Extract error message from different possible error structures
       let errorMessage = 'Error al actualizar el estado de verificación';
-
+      
       if (error && typeof error === 'object') {
         const err = error as any;
-        errorMessage = err?.response?.data?.message ||
-          err?.message ||
-          errorMessage;
+        errorMessage = err?.response?.data?.message || 
+                      err?.message || 
+                      errorMessage;
       }
-
+      
       toast.error(errorMessage);
     }
   };
@@ -122,13 +122,13 @@ export default function ProfileVerificationCarousel({
   const onVerifyProfile = async () => {
     try {
       console.log(`🔄 [ProfileCarousel] Verificando perfil completo para usuario ${userId}`);
-
+      
       setIsLoading(true);
       const loadingToast = toast.loading('Verificando perfil completo...');
-
+      
       // Optimistic update
       setUserVerificationStatus(true);
-
+      
       const result = await updateUserMutation.mutateAsync({
         userId,
         data: {
@@ -136,17 +136,17 @@ export default function ProfileVerificationCarousel({
           isVerified: true,
         },
       });
-
+      
       console.log('📡 [ProfileCarousel] Respuesta del servidor (verificación completa):', result);
-
+      
       // Verify the update was successful
       const isVerifiedValue = result?.isVerified ?? result?.data?.isVerified;
       const success = result?.success !== false;
-
+      
       if (success && typeof isVerifiedValue === 'boolean') {
         setUserVerificationStatus(isVerifiedValue);
         console.log(`✅ [ProfileCarousel] Perfil verificado completamente. Estado: ${isVerifiedValue}`);
-
+        
         toast.dismiss(loadingToast);
         toast.success('Perfil verificado exitosamente');
       } else {
@@ -155,21 +155,21 @@ export default function ProfileVerificationCarousel({
         toast.dismiss(loadingToast);
         toast.error(result?.message || 'Error: Respuesta inválida del servidor');
       }
-
+      
       setIsLoading(false);
     } catch (error) {
       console.error('❌ [ProfileCarousel] Error en verificación completa:', error);
-
+      
       // Revert optimistic update
       setUserVerificationStatus(false);
       setIsLoading(false);
-
+      
       let errorMessage = 'Error al verificar el perfil';
       if (error && typeof error === 'object') {
         const err = error as any;
         errorMessage = err?.response?.data?.message || err?.message || errorMessage;
       }
-
+      
       toast.error(errorMessage);
     }
   };
@@ -200,10 +200,10 @@ export default function ProfileVerificationCarousel({
                     </p>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Badge
+                    <Badge 
                       variant={userVerificationStatus ? 'default' : 'secondary'}
-                      className={userVerificationStatus
-                        ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
+                      className={userVerificationStatus 
+                        ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100' 
                         : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100'
                       }
                     >
@@ -220,7 +220,7 @@ export default function ProfileVerificationCarousel({
                 </div>
               </CardContent>
             </Card>
-
+            
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">
                 No hay imágenes disponibles para verificar este perfil.
@@ -262,10 +262,10 @@ export default function ProfileVerificationCarousel({
                   </p>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <Badge
+                  <Badge 
                     variant={userVerificationStatus ? 'default' : 'secondary'}
-                    className={userVerificationStatus
-                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
+                    className={userVerificationStatus 
+                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100' 
                       : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100'
                     }
                   >

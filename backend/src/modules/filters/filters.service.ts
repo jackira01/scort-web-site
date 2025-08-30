@@ -224,32 +224,90 @@ export const getFilteredProfiles = async (
       : ['_id', 'name', 'age', 'location', 'description', 'verification', 'media', 'isActive', ...requiredFields];
     const selectFields = finalFields.join(' ');
 
-    // Construir consulta base (sin sort/skip/limit: ordenaremos en memoria con el motor de visibilidad)
-    let profileQuery = Profile.find(query)
-      .select(selectFields)
-      .populate('user', 'isVerified');
+    const startTime = Date.now();
 
-    // Agregar populate para campos que requieren datos completos
+    // Usar agregación para filtrar perfiles con usuarios verificados (alineado con homeFeed)
+    const aggregationPipeline: any[] = [
+      {
+        $match: query
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'userInfo'
+        }
+      },
+      {
+        $match: {
+          'userInfo.isVerified': true
+        }
+      },
+      {
+        $addFields: {
+          user: { $arrayElemAt: ['$userInfo', 0] }
+        }
+      },
+      {
+        $project: {
+          userInfo: 0
+        }
+      }
+    ];
+
+    // Agregar lookup para verification si es necesario
     if (!fields || fields.includes('verification')) {
-      profileQuery = profileQuery.populate({
-        path: 'verification',
-        model: 'ProfileVerification',
-        select: 'verificationProgress verificationStatus'
+      aggregationPipeline.push({
+        $lookup: {
+          from: 'profileverifications',
+          localField: 'verification',
+          foreignField: '_id',
+          as: 'verification'
+        }
+      });
+      aggregationPipeline.push({
+        $addFields: {
+          verification: { $arrayElemAt: ['$verification', 0] }
+        }
       });
     }
 
-    // Solo hacer populate de features si está explícitamente incluido en los campos seleccionados
+    // Agregar lookup para features si es necesario
     if (fields && fields.includes('features')) {
-      profileQuery = profileQuery.populate('features.group_id');
+      aggregationPipeline.push({
+        $lookup: {
+          from: 'attributegroups',
+          localField: 'features.group_id',
+          foreignField: '_id',
+          as: 'featureGroups'
+        }
+      });
     }
 
-    const startTime = Date.now();
-
-    // Ejecutar consulta completa para aplicar ordenamiento personalizado
-    const [allProfiles, totalCount] = await Promise.all([
-      profileQuery.lean(),
-      Profile.countDocuments(query),
+    // Ejecutar agregación y contar documentos
+    const [allProfiles, totalCountResult] = await Promise.all([
+      Profile.aggregate(aggregationPipeline),
+      Profile.aggregate([
+        { $match: query },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'user',
+            foreignField: '_id',
+            as: 'userInfo'
+          }
+        },
+        {
+          $match: {
+            'userInfo.isVerified': true
+          }
+        },
+        { $count: 'total' }
+      ])
     ]);
+
+    const totalCount = totalCountResult[0]?.total || 0;
 
     // Ordenar perfiles usando el motor de visibilidad (nivel -> score -> lastShownAt -> createdAt)
     const sortedProfiles = await sortProfiles(allProfiles as any, now);

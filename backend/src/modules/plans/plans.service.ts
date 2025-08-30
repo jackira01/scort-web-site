@@ -1,5 +1,6 @@
 import { PlanDefinitionModel, IPlanDefinition, PlanVariant, PlanFeatures, ContentLimits } from './plan.model';
 import { UpgradeDefinitionModel, IUpgradeDefinition, StackingPolicy, UpgradeEffect } from './upgrade.model';
+import { ProfileModel } from '../profile/profile.model';
 import { Types } from 'mongoose';
 
 // Interfaces para crear/actualizar planes
@@ -351,6 +352,92 @@ export class PlansService {
             upgrade,
             dependencies,
             dependents
+        };
+    }
+
+    // ==================== OPERACIONES DE PLANES ====================
+
+    async purchasePlan(profileId: string, planCode: string, variantDays: number) {
+        // Verificar que el perfil existe
+        const profile = await ProfileModel.findById(profileId);
+        if (!profile) {
+            throw new Error('Perfil no encontrado');
+        }
+
+        // Verificar que el plan existe
+        const plan = await PlanDefinitionModel.findOne({ code: planCode, active: true });
+        if (!plan) {
+            throw new Error('Plan no encontrado o inactivo');
+        }
+
+        // Verificar que la variante existe
+        const variant = plan.variants.find(v => v.days === variantDays);
+        if (!variant) {
+            throw new Error('Variante de plan no encontrada');
+        }
+
+        // Verificar si el perfil ya tiene un plan activo
+        const now = new Date();
+        if (profile.planAssignment && profile.planAssignment.expiresAt > now) {
+            throw new Error('El perfil ya tiene un plan activo. No se puede comprar otro plan hasta que expire el actual.');
+        }
+
+        // Calcular fecha de expiración
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + variantDays);
+
+        // Asignar el plan al perfil
+        profile.planAssignment = {
+            planCode: planCode,
+            variantDays: variantDays,
+            startAt: now,
+            expiresAt: expiresAt
+        };
+
+        await profile.save();
+
+        return {
+            profileId,
+            planCode,
+            variantDays,
+            expiresAt,
+            purchaseAt: now,
+            price: variant.price
+        };
+    }
+
+    async renewPlan(profileId: string, extensionDays: number) {
+        // Verificar que el perfil existe
+        const profile = await ProfileModel.findById(profileId);
+        if (!profile) {
+            throw new Error('Perfil no encontrado');
+        }
+
+        // Verificar que el perfil tiene un plan asignado
+        if (!profile.planAssignment) {
+            throw new Error('El perfil no tiene un plan activo para renovar');
+        }
+
+        const now = new Date();
+        
+        // Si el plan ya expiró, no se puede renovar
+        if (profile.planAssignment.expiresAt <= now) {
+            throw new Error('No se puede renovar un plan expirado. Compra un nuevo plan.');
+        }
+
+        // Extender la fecha de expiración
+        const newExpiresAt = new Date(profile.planAssignment.expiresAt);
+        newExpiresAt.setDate(newExpiresAt.getDate() + extensionDays);
+
+        profile.planAssignment.expiresAt = newExpiresAt;
+        await profile.save();
+
+        return {
+            profileId,
+            planCode: profile.planAssignment.planCode,
+            extensionDays,
+            newExpiresAt,
+            renewedAt: now
         };
     }
 }

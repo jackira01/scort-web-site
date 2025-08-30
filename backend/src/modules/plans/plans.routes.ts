@@ -322,4 +322,19 @@ router.delete('/upgrades/:id',
     plansController.deleteUpgrade.bind(plansController)
 );
 
+// ==================== OPERACIONES DE PLANES ====================
+
+// POST /api/plans/purchase - Comprar un plan
+router.post('/purchase', [
+    body('profileId').isMongoId().withMessage('profileId debe ser un ID válido de MongoDB'),
+    body('planCode').isString().isLength({ min: 2, max: 20 }).withMessage('planCode debe ser un string válido'),
+    body('variantDays').notEmpty().withMessage('variantDays es requerido').isInt({ min: 1 }).withMessage('variantDays debe ser un número entero positivo')
+], plansController.purchasePlan.bind(plansController));
+
+// POST /api/plans/renew - Renovar un plan
+router.post('/renew', [
+    body('profileId').isMongoId().withMessage('profileId debe ser un ID válido de MongoDB'),
+    body('extensionDays').isInt({ min: 1 }).withMessage('extensionDays debe ser un número entero positivo')
+], plansController.renewPlan.bind(plansController));
+
 export default router;

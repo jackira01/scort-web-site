@@ -20,14 +20,13 @@ const nextConfig = {
     ],
     unoptimized: false,
   },
-  // experimental: {
-  //  turbo: {
-  //    resolveAlias: {
-  //      underscore: "lodash",
-  //    },
-  //    resolveExtensions: [".mdx", ".tsx", ".ts", ".jsx", ".js", ".json"],
-  //  },
-  //},
+  // Configuración de Turbopack
+  turbopack: {
+    resolveAlias: {
+      underscore: "lodash",
+    },
+    resolveExtensions: [".mdx", ".tsx", ".ts", ".jsx", ".js", ".json"],
+  },
   // Configuración para ffmpeg.wasm
   webpack: (config, { isServer }) => {
     // Configuración para ffmpeg.wasm

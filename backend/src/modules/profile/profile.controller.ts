@@ -3,6 +3,7 @@ import * as service from './profile.service';
 import {
   subscribeProfile,
   purchaseUpgrade,
+  getActiveProfilesCount,
 } from './profile.service';
 import { 
   validatePaidPlanAssignment,
@@ -271,20 +272,52 @@ export const getUserProfilesSummaryController = async (req: Request, res: Respon
 };
 
 // Endpoint para validar upgrade de plan de un perfil
+export const getProfilePlanInfoController = async (req: Request, res: Response) => {
+  try {
+    const { profileId } = req.params;
+    
+    const profile = await service.getProfileById(profileId);
+    if (!profile) {
+      return res.status(404).json({ error: 'Perfil no encontrado' });
+    }
+
+    // Verificar si tiene un plan activo
+    const now = new Date();
+    const hasActivePlan = profile.planAssignment && 
+      new Date(profile.planAssignment.expiresAt) > now;
+    
+    if (!hasActivePlan) {
+      return res.status(404).json({ error: 'El perfil no tiene un plan activo' });
+    }
+
+    // Devolver información del plan
+    const planInfo = {
+      planCode: profile.planAssignment?.planCode,
+      expiresAt: profile.planAssignment?.expiresAt,
+      isActive: true
+    };
+
+    res.json(planInfo);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An error occurred';
+    res.status(400).json({ message });
+  }
+};
+
 export const validateProfilePlanUpgradeController = async (req: Request, res: Response) => {
   try {
     const { profileId } = req.params;
-    const { planCode } = req.body;
+    const { planCode } = req.query;
     
     if (!planCode) {
       return res.status(400).json({ error: 'planCode es requerido' });
     }
     
-    const validation = await service.validateProfilePlanUpgrade(profileId, planCode);
+    const validation = await service.validateProfilePlanUpgrade(profileId, planCode as string);
     res.json(validation);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'An error occurred';
-    res.status(500).json({ message });
+    res.status(400).json({ message });
   }
 };
 
@@ -348,6 +381,50 @@ export const validateUpgradePurchaseController = async (req: Request, res: Respo
     }
 
     res.json({ canPurchase: true });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An error occurred';
+    res.status(500).json({ message });
+  }
+};
+
+export const validatePlanOperationsController = async (req: Request, res: Response) => {
+  try {
+    const { profileId } = req.params;
+
+    if (!profileId) {
+      res.status(400).json({ message: 'profileId es requerido' });
+      return;
+    }
+
+    // Obtener el perfil
+    const profile = await service.getProfileById(profileId);
+    if (!profile) {
+      res.status(404).json({ message: 'Perfil no encontrado' });
+      return;
+    }
+
+    // Obtener el conteo de perfiles activos del usuario
+    const activeProfilesCount = await getActiveProfilesCount(profile.user.toString());
+
+    // Validaciones básicas
+    const maxActiveProfiles = 10; // Límite estándar
+    const canPurchase = activeProfilesCount < maxActiveProfiles;
+    const canUpgrade = true; // Los upgrades generalmente están permitidos
+    const canRenew = profile.planAssignment && new Date(profile.planAssignment.expiresAt) > new Date();
+
+    let reason = '';
+    if (!canPurchase) {
+      reason = `Has alcanzado el límite máximo de ${maxActiveProfiles} perfiles con plan activo`;
+    }
+
+    res.json({
+      canPurchase,
+      canUpgrade,
+      canRenew,
+      activeProfilesCount,
+      maxActiveProfiles,
+      reason
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'An error occurred';
     res.status(500).json({ message });

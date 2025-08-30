@@ -25,6 +25,8 @@ router.get('/user/:userId/usage-stats', controller.getUserUsageStatsController);
 // Nuevas rutas para límites de perfiles
 router.get('/user/:userId/validate-limits', controller.validateUserProfileLimitsController);
 router.get('/user/:userId/profiles-summary', controller.getUserProfilesSummaryController);
+router.get('/:profileId/plan', controller.getProfilePlanInfoController);
+router.get('/:profileId/plan/validate', controller.validatePlanOperationsController);
 router.get('/:profileId/validate-plan-upgrade', controller.validateProfilePlanUpgradeController);
 router.get('/:profileId/validate-upgrade/:upgradeCode', controller.validateUpgradePurchaseController);
 

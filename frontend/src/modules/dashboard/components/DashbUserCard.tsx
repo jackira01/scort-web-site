@@ -87,7 +87,7 @@ export const DashboardUserCard = ({
                 <Edit className="h-3 w-3 mr-1" />
                 Editar
               </Button>
-              <Button
+              {/* <Button
                 size="sm"
                 variant="outline"
                 onClick={() => setIsDocumentVerificationModalOpen(true)}
@@ -95,21 +95,21 @@ export const DashboardUserCard = ({
               >
                 <Shield className="h-3 w-3 mr-1" />
                 Verificar
+              </Button> */}
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setSelecteduserForVerification(user);
+                  setVerificationCarouselOpen(true);
+                }}
+                className="hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-500 transition-all duration-200"
+              >
+                <Shield className="h-3 w-3 mr-1" />
+                Verificar Perfil
               </Button>
-              {!user.isVerified && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setSelecteduserForVerification(user);
-                    setVerificationCarouselOpen(true);
-                  }}
-                  className="hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-500 transition-all duration-200"
-                >
-                  <Shield className="h-3 w-3 mr-1" />
-                  Verificar Perfil
-                </Button>
-              )}
+
             </div>
           </div>
         </CardContent>

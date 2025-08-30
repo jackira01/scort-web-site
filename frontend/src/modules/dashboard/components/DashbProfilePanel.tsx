@@ -15,7 +15,7 @@ export const DashProfilePanel = () => {
   const [selectedProfileForVerification, setSelectedProfileForVerification] =
     useState<any | null>();
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit] = useState(6);
 
   const {
     data: profilesData,
@@ -56,15 +56,15 @@ export const DashProfilePanel = () => {
       </div>
 
       {/* Paginación */}
-      {profilesData && profilesData.totalPages > 1 && (
+      {profilesData && profilesData.pagination && profilesData.pagination.pages > 1 && (
         <Pagination
-          currentPage={profilesData.currentPage}
-          totalPages={profilesData.totalPages}
-          hasNextPage={profilesData.hasNextPage}
-          hasPrevPage={profilesData.hasPrevPage}
+          currentPage={profilesData.pagination.page}
+          totalPages={profilesData.pagination.pages}
+          hasNextPage={profilesData.pagination.page < profilesData.pagination.pages}
+          hasPrevPage={profilesData.pagination.page > 1}
           onPageChange={setCurrentPage}
-          totalCount={profilesData.totalCount}
-          limit={profilesData.limit}
+          totalCount={profilesData.pagination.total}
+          limit={profilesData.pagination.limit}
         />
       )}
 
