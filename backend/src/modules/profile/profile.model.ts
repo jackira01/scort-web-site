@@ -73,18 +73,20 @@ const profileSchema = new Schema<IProfile>(
 
       },
     ],
-    paymentHistory: [{ type: Schema.Types.ObjectId, ref: 'PaymentHistory' }],
+    paymentHistory: [{ type: Schema.Types.ObjectId, ref: 'Invoice' }],
     lastLogin: Date,
 
     // Nuevos campos para motor de visibilidad
     planAssignment: {
       type: {
-        planCode: { type: String },           // ref lógico a PlanDefinition.code
+        planId: { type: Schema.Types.ObjectId, ref: 'PlanDefinition' }, // ref directo a PlanDefinition._id
+        planCode: { type: String },           // DEPRECATED: mantener para compatibilidad durante migración
         variantDays: { type: Number },        // 7|15|30|180...
         startAt: { type: Date },
         expiresAt: { type: Date },
       },
-      default: null
+      default: null,
+      _id: false  // Evitar que Mongoose genere automáticamente un _id para este subdocumento
     },
     upgrades: [{
       code: { type: String, required: true },               // ref a UpgradeDefinition.code

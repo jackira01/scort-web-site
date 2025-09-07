@@ -10,13 +10,24 @@ import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useAttributeGroups } from '@/hooks/use-attribute-groups';
 import { createProfile } from '@/services/user.service';
 import {
   uploadMultipleAudios,
   uploadMultipleImages,
   uploadMultipleVideos,
+  uploadProcessedImages,
+  uploadMixedImages,
 } from '@/utils/tools';
+import { ProcessedImageResult } from '@/utils/imageProcessor';
 import { FormProvider } from '../context/FormContext';
 import { steps } from '../data';
 import type { FormData } from '../schemas';
@@ -40,6 +51,7 @@ import { Step5Finalize } from './Step5Finalize';
 export function CreateProfileLayout() {
   const [currentStep, setCurrentStep] = useState(1);
   const [uploading, setUploading] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: session } = useSession();
@@ -83,6 +95,7 @@ export function CreateProfileLayout() {
       photos: [],
       videos: [],
       audios: [],
+      processedImages: [],
 
       // Step 5 - Finalizar
       selectedUpgrades: [],
@@ -353,13 +366,19 @@ export function CreateProfileLayout() {
       verification: null,
       availability: formData.availability,
       rates,
-      planAssignment: formData.selectedPlan && formData.selectedVariant ? {
-        planCode: formData.selectedPlan.code,
-        variantDays: formData.selectedVariant.days,
-        startAt: new Date(),
-        expiresAt: new Date(Date.now() + (formData.selectedVariant.days * 24 * 60 * 60 * 1000))
-      } : null,
+      // planAssignment se eliminó - ahora se maneja con purchasedPlan en el nivel superior
     };
+  };
+
+  const handleCreateProfileClick = () => {
+    const formData = form.getValues();
+    const hasPaidPlan = formData.selectedPlan && formData.selectedPlan.planCode !== 'FREE';
+    
+    if (hasPaidPlan) {
+      setShowConfirmModal(true);
+    } else {
+      form.handleSubmit(handleFinalSave)();
+    }
   };
 
   const handleFinalSave = async (data: FormData) => {
@@ -372,21 +391,37 @@ export function CreateProfileLayout() {
       let audioUrls: (string | null)[] = [];
 
       if (data.photos && data.photos.length > 0) {
-        // Filtrar solo archivos File, no strings (URLs existentes)
-        const photoFiles = data.photos.filter((photo): photo is File => photo instanceof File);
-        if (photoFiles.length > 0) {
-          toast.loading('Procesando y subiendo fotos...', { id: 'upload-photos' });
-          photoUrls = await uploadMultipleImages(
-            photoFiles,
-            undefined, // Usar texto de marca de agua por defecto
+        // Si hay imágenes procesadas, usarlas exclusivamente
+        if (data.processedImages && data.processedImages.length > 0) {
+          toast.loading('Subiendo fotos procesadas...', { id: 'upload-photos' });
+          const processedUrls = await uploadProcessedImages(
+            data.processedImages as ProcessedImageResult[],
             (current, total) => {
-              toast.loading(`Procesando foto ${current}/${total}...`, { id: 'upload-photos' });
+              toast.loading(`Subiendo foto procesada ${current}/${total}...`, { id: 'upload-photos' });
             }
           );
+          photoUrls = [...photoUrls, ...processedUrls.filter(url => url !== null)];
           toast.dismiss('upload-photos');
-          toast.success(`${photoUrls.length} fotos procesadas y subidas exitosamente`);
+          toast.success(`${processedUrls.filter(url => url !== null).length} fotos procesadas subidas exitosamente`);
+        } else {
+          // Si no hay imágenes procesadas, usar el flujo original
+          const photoFiles = data.photos.filter((photo): photo is File => photo instanceof File);
+          if (photoFiles.length > 0) {
+            toast.loading('Procesando y subiendo fotos...', { id: 'upload-photos' });
+            const originalUrls = await uploadMultipleImages(
+              photoFiles,
+              undefined, // Usar texto de marca de agua por defecto
+              (current, total) => {
+                toast.loading(`Procesando foto ${current}/${total}...`, { id: 'upload-photos' });
+              }
+            );
+            photoUrls = [...photoUrls, ...originalUrls.filter(url => url !== null)];
+            toast.dismiss('upload-photos');
+            toast.success(`${originalUrls.filter(url => url !== null).length} fotos procesadas y subidas exitosamente`);
+          }
         }
-        // Mantener URLs existentes
+        
+        // Mantener URLs existentes (strings)
         const existingPhotoUrls = data.photos.filter((photo): photo is string => typeof photo === 'string');
         photoUrls = [...photoUrls, ...existingPhotoUrls];
       }
@@ -429,13 +464,18 @@ export function CreateProfileLayout() {
 
       const backendData = transformDataToBackendFormat(dataWithUrls);
 
-      // Frontend debug removed
-      console.log('Object sent to backend for profile creation:', backendData);
+      // Preparar purchasedPlan si se seleccionó un plan de pago
+      const purchasedPlan = data.selectedPlan && data.selectedVariant ? {
+        planCode: data.selectedPlan.code,
+        variantDays: data.selectedVariant.days
+      } : null;
+
+
 
       // Crear el perfil usando el servicio
       const loadingToast = toast.loading('Creando perfil...');
       try {
-        await createProfile(backendData);
+        const response = await createProfile(backendData, purchasedPlan);
         toast.dismiss(loadingToast);
 
         // Invalidar la query de userProfiles para refrescar los datos
@@ -445,14 +485,59 @@ export function CreateProfileLayout() {
           });
         }
 
+        // Debug: Verificar si se creó el profileverification
+        try {
+          const { getProfileVerification } = await import('../../../services/user.service');
+          const verification = await getProfileVerification(response.profile._id);
+          console.log('✅ ProfileVerification creado:', verification);
+        } catch (verificationError) {
+          console.error('❌ Error al obtener ProfileVerification:', verificationError);
+        }
+
         toast.success('Perfil creado exitosamente');
+
+        // Debug: Verificar la respuesta del backend
+        console.log('🔍 Respuesta completa del backend:', response);
+        console.log('💰 paymentRequired:', response.paymentRequired);
+        console.log('📱 whatsAppMessage:', response.whatsAppMessage);
 
         // Redirigir a la página de cuenta
         router.push('/cuenta');
-      } catch (profileError) {
+        
+        // Verificar si se requiere pago y hay mensaje de WhatsApp
+        if (response.paymentRequired && response.whatsAppMessage) {
+          const { companyNumber, message } = response.whatsAppMessage;
+          const whatsappUrl = `https://wa.me/${companyNumber}?text=${encodeURIComponent(message)}`;
+          console.log('🚀 Abriendo WhatsApp:', whatsappUrl);
+          // Abrir WhatsApp después de un pequeño delay para permitir la navegación
+          setTimeout(() => {
+            window.open(whatsappUrl, '_blank');
+          }, 1000);
+        } else {
+          console.log('❌ No se cumplieron las condiciones para WhatsApp');
+          console.log('   - paymentRequired:', response.paymentRequired);
+          console.log('   - whatsAppMessage existe:', !!response.whatsAppMessage);
+        }
+      } catch (profileError: any) {
         toast.dismiss(loadingToast);
-        // Error creating profile
-        toast.error('Error al crear perfil. Contacta con servicio al cliente.');
+        
+        // Manejo específico de errores
+        if (profileError?.response?.status === 409) {
+          const errorMessage = profileError?.response?.data?.message || 'Límite de perfiles excedido';
+          toast.error(errorMessage, {
+            duration: 6000,
+            description: 'Puedes desactivar perfiles existentes desde tu cuenta para crear uno nuevo.'
+          });
+        } else if (profileError?.response?.status === 400) {
+          toast.error('Datos del perfil inválidos. Revisa la información ingresada.');
+        } else if (profileError?.response?.status === 401) {
+          toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+          router.push('/login');
+        } else if (profileError?.response?.status >= 500) {
+          toast.error('Error del servidor. Inténtalo más tarde.');
+        } else {
+          toast.error('Error al crear perfil. Contacta con servicio al cliente.');
+        }
       }
     } catch (error) {
       // Error uploading files
@@ -545,7 +630,7 @@ export function CreateProfileLayout() {
                     <Button
                       className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold px-8"
                       disabled={!acceptTerms || uploading}
-                      onClick={form.handleSubmit(handleFinalSave)}
+                      onClick={handleCreateProfileClick}
                     >
                       {uploading ? (
                         <>
@@ -607,6 +692,39 @@ export function CreateProfileLayout() {
             🟢 NICOLAS ALVAREZ
           </Badge>
         </div>
+
+        {/* Modal de Confirmación */}
+        <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>💎 Crear Perfil Premium</DialogTitle>
+              <DialogDescription>
+                Tienes 24 horas para completar el pago. Tu perfil estará visible si no superas el límite gratuito, de lo contrario permanecerá oculto hasta el pago.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  router.push('/cuenta');
+                }}
+                className="w-full sm:w-auto"
+              >
+                ⏰ Crear más tarde
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  form.handleSubmit(handleFinalSave)();
+                }}
+                className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                🚀 Crear y pagar ahora
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </FormProvider>
   );

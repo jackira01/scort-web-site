@@ -141,7 +141,23 @@ export default async function SearchPage({ params }: SearchPageProps) {
   const { slug } = await params;
   const [categoria, departamento, ciudad] = slug || [];
 
-
+  // Excluir archivos estáticos y rutas del sistema
+  if (!categoria || 
+      categoria.includes('.') || // Archivos con extensión
+      categoria.startsWith('_') || // Archivos del sistema Next.js
+      categoria === 'favicon.ico' ||
+      categoria === 'robots.txt' ||
+      categoria === 'sitemap.xml' ||
+      categoria.endsWith('.js') ||
+      categoria.endsWith('.css') ||
+      categoria.endsWith('.map') ||
+      categoria.endsWith('.ico') ||
+      categoria.endsWith('.png') ||
+      categoria.endsWith('.jpg') ||
+      categoria.endsWith('.svg')
+  ) {
+    notFound();
+  }
 
   // Validar parámetros obligatorios
   if (!categoria) {

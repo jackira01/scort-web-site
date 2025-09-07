@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ProcessedImageResult } from '@/utils/imageProcessor';
 
 // Re-export step1Schema for backward compatibility
 export { step1Schema, type Step1FormData } from './step1';
@@ -54,6 +55,7 @@ export const formSchema = z.object({
   photos: z.array(z.union([z.string(), z.instanceof(File)])).optional(),
   videos: z.array(z.union([z.string(), z.instanceof(File)])).optional(),
   audios: z.array(z.union([z.string(), z.instanceof(File)])).optional(),
+  processedImages: z.array(z.any()).optional(), // Array de ProcessedImageResult
 
   // Step 5 - Finalizar
   selectedUpgrades: z.array(z.string()).optional(),

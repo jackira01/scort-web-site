@@ -12,6 +12,7 @@ import ConfigManager from '@/components/admin/ConfigManager/ConfigManager';
 import PlansManager from '@/components/admin/plans/PlansManager';
 import DefaultPlanManager from '@/components/admin/DefaultPlanManager';
 import BlogsManager from '@/components/admin/blogs/BlogsManager';
+import InvoicesManager from '@/components/admin/invoices/InvoicesManager';
 
 
 export default function DashboardLayout() {
@@ -35,70 +36,7 @@ export default function DashboardLayout() {
                 return <DashProfilePanel />;
 
             case 'facturas':
-                return (
-                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
-                        <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                            Saldo y Facturas
-                        </h1>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <Card className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
-                                <CardContent className="p-6">
-                                    <h3 className="text-lg font-semibold mb-2">Saldo Actual</h3>
-                                    <p className="text-3xl font-bold">$2,450.00</p>
-                                    <p className="text-sm opacity-90 mt-1">
-                                        Disponible para retiro
-                                    </p>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-gradient-to-r from-blue-500 to-cyan-600 text-white">
-                                <CardContent className="p-6">
-                                    <h3 className="text-lg font-semibold mb-2">Este Mes</h3>
-                                    <p className="text-3xl font-bold">$890.00</p>
-                                    <p className="text-sm opacity-90 mt-1">Ingresos generados</p>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-gradient-to-r from-purple-500 to-pink-600 text-white">
-                                <CardContent className="p-6">
-                                    <h3 className="text-lg font-semibold mb-2">Total</h3>
-                                    <p className="text-3xl font-bold">$12,340.00</p>
-                                    <p className="text-sm opacity-90 mt-1">Ingresos totales</p>
-                                </CardContent>
-                            </Card>
-                        </div>
-                        <Card className="bg-card border-border">
-                            <CardHeader>
-                                <CardTitle className="text-foreground">
-                                    Facturas Recientes
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {[1, 2, 3].map((item) => (
-                                        <div
-                                            key={item}
-                                            className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors duration-200"
-                                        >
-                                            <div>
-                                                <p className="font-medium text-foreground">
-                                                    Factura #{String(item).padStart(4, '0')}
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Servicios de plataforma - Diciembre 2024
-                                                </p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-semibold text-foreground">$125.00</p>
-                                                <Badge variant="outline" className="text-xs">
-                                                    Pagado
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                );
+                return <InvoicesManager />;
 
             case 'ajustes':
                 return (

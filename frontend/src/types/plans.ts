@@ -1,16 +1,9 @@
 // Tipos para planes y upgrades basados en la estructura del backend
 
 export interface PlanVariant {
-  price: number;
   days: number;
-  features: string[];
-  contentLimits: {
-    maxPhotos: number;
-    maxVideos: number;
-    maxAudios: number;
-    storiesPerDayMax: number;
-  };
-  includedUpgrades: string[];
+  price: number;
+  durationRank: number;
 }
 
 export interface PlanFeatures {
@@ -19,17 +12,37 @@ export interface PlanFeatures {
   showInSponsored: boolean;
 }
 
+export interface ContentLimits {
+  photos: {
+    min: number;
+    max: number;
+  };
+  videos: {
+    min: number;
+    max: number;
+  };
+  audios: {
+    min: number;
+    max: number;
+  };
+  storiesPerDayMax: number;
+}
+
 export interface Plan {
-  _id?: string;
+  _id: string;
   code: string;
   name: string;
-  description: string;
   level: number;
   variants: PlanVariant[];
-  features?: PlanFeatures;
+  features: PlanFeatures;
+  contentLimits: ContentLimits;
+  includedUpgrades: string[];
+  active: boolean;
   isActive: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+  id: string;
 }
 
 export interface UpgradeEffect {
@@ -58,11 +71,12 @@ export interface Upgrade {
 export interface CreatePlanRequest {
   code: string;
   name: string;
-  description: string;
   level: number;
   variants: PlanVariant[];
-  features?: PlanFeatures;
-  isActive: boolean;
+  features: PlanFeatures;
+  contentLimits: ContentLimits;
+  includedUpgrades: string[];
+  active: boolean;
 }
 
 export interface UpdatePlanRequest extends Partial<CreatePlanRequest> {

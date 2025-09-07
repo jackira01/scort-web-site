@@ -63,7 +63,12 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
   const formData = watch();
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [selectedVariantIndex, setSelectedVariantIndex] = useState<number>(0);
-  const [hasShownDefaultPlanToast, setHasShownDefaultPlanToast] = useState<boolean>(false);
+  const [hasShownDefaultPlanToast, setHasShownDefaultPlanToast] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('defaultPlanToastShown') === 'true';
+    }
+    return false;
+  });
 
   // Obtener planes disponibles
   const { data: plansResponse, isLoading: plansLoading } = usePlans({
@@ -114,6 +119,9 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
 
         toast.success(`Plan por defecto "${defaultPlan.name}" seleccionado automáticamente`);
         setHasShownDefaultPlanToast(true);
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('defaultPlanToastShown', 'true');
+        }
       }
     }
   }, [defaultConfig, plans, setValue, hasShownDefaultPlanToast]);
@@ -302,7 +310,7 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
                     {selectedPlan.level === 3 && <Shield className="h-5 w-5 text-green-500 mr-2" />}
                     {selectedPlan.level === 4 && <Star className="h-5 w-5 text-orange-500 mr-2" />}
                     {selectedPlan.level === 5 && <Zap className="h-5 w-5 text-yellow-500 mr-2" />}
-                    Nivel {selectedPlan.level} - {selectedPlan.name}
+                    {selectedPlan.name}
                   </h4>
                   <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-2">
@@ -312,14 +320,7 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
                       {selectedPlan.level === 4 && "🥇 ORO - Visibilidad estándar con características básicas"}
                       {selectedPlan.level === 5 && "💎 DIAMANTE - Plan básico para comenzar"}
                     </p>
-                    <div className="mt-3 p-3 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                      <p className="text-sm font-medium text-orange-700 dark:text-orange-300 mb-1">
-                        🚀 Upgrade IMPULSO disponible
-                      </p>
-                      <p className="text-xs text-orange-600 dark:text-orange-400">
-                        Mejora temporalmente tu visibilidad con el upgrade IMPULSO para aparecer en las primeras posiciones
-                      </p>
-                    </div>
+
                   </div>
                 </div>
 
@@ -573,8 +574,6 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
             </CardContent>
           </Card>
         )}
-
-
 
         {/* Terms and Conditions */}
         <div className="space-y-4">

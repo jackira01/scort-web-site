@@ -16,6 +16,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -98,6 +99,7 @@ export default function AccountProfiles({
   const [managePlansProfileId, setManagePlansProfileId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const profilesPerPage = 6;
+  const queryClient = useQueryClient();
 
   // Calcular perfiles paginados
   const paginatedProfiles = useMemo(() => {
@@ -697,9 +699,10 @@ export default function AccountProfiles({
         profileName={profiles.find(p => p._id === managePlansProfileId)?.name || ''}
         currentPlan={profiles.find(p => p._id === managePlansProfileId)?.planAssignment}
         onPlanChange={() => {
-          // Recargar la página para mostrar los cambios
-          setTimeout(() => window.location.reload(), 1000);
-        }}
+            // Invalidar queries para actualizar los datos
+            queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
+            queryClient.invalidateQueries({ queryKey: ['profilePlan', managePlansProfileId] });
+          }}
       />
     </div>
   );

@@ -9,6 +9,7 @@ export interface PlanPurchaseRequest {
 export interface PlanUpgradeRequest {
   profileId: string;
   newPlanCode: string;
+  variantDays?: number;
 }
 
 export interface PlanRenewalRequest {
@@ -39,7 +40,7 @@ export interface ProfilePlanInfo {
  */
 export const validatePlanOperations = async (profileId: string): Promise<PlanValidationResponse> => {
   try {
-    const response = await axiosInstance.get(`/profiles/${profileId}/plan/validate`);
+    const response = await axiosInstance.get(`/api/profile/${profileId}/plan/validate`);
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Error al validar operaciones de plan');
@@ -51,7 +52,7 @@ export const validatePlanOperations = async (profileId: string): Promise<PlanVal
  */
 export const getProfilePlanInfo = async (profileId: string): Promise<ProfilePlanInfo | null> => {
   try {
-    const response = await axiosInstance.get(`/profiles/${profileId}/plan`);
+    const response = await axiosInstance.get(`api/profile/${profileId}/plan`);
     return response.data;
   } catch (error: any) {
     if (error.response?.status === 404) {
@@ -77,7 +78,7 @@ export const purchasePlan = async (request: PlanPurchaseRequest) => {
       throw new Error(`No puedes tener más de ${validation.maxActiveProfiles} perfiles con plan pago activos`);
     }
 
-    const response = await axiosInstance.post('/plans/purchase', request);
+    const response = await axiosInstance.post('/api/plans/purchase', request);
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || error.message || 'Error al comprar el plan');
@@ -90,19 +91,29 @@ export const purchasePlan = async (request: PlanPurchaseRequest) => {
 export const renewPlan = async (request: PlanRenewalRequest) => {
   try {
     // Validar que el perfil tenga un plan activo
+    console.log('🔍 Frontend: Validando plan antes de renovar...', { profileId: request.profileId, extensionDays: request.extensionDays });
+
     const planInfo = await getProfilePlanInfo(request.profileId);
+    console.log('🔍 Frontend: Plan info obtenido:', planInfo);
 
     if (!planInfo) {
+      console.error('❌ Frontend: Plan no encontrado:', { profileId: request.profileId });
       throw new Error('El perfil no tiene un plan activo para renovar');
     }
 
     if (!planInfo.isActive) {
+      console.error('❌ Frontend: Plan no activo:', { planInfo });
       throw new Error('No se puede renovar un plan expirado. Compra un nuevo plan.');
     }
 
-    const response = await axiosInstance.post('/plans/renew', request);
+    console.log('✅ Frontend: Plan válido, procediendo con renovación...');
+
+    const response = await axiosInstance.post('/api/plans/renew', request);
+
+    console.log('✅ Frontend: Plan renovado exitosamente:', response.data);
     return response.data;
   } catch (error: any) {
+    console.error('❌ Frontend: Error completo en renewPlan:', error);
     throw new Error(error.response?.data?.message || error.message || 'Error al renovar el plan');
   }
 };
@@ -134,7 +145,10 @@ export const upgradePlan = async (request: PlanUpgradeRequest) => {
       throw new Error('Solo se permiten upgrades a planes superiores. No se pueden hacer downgrades.');
     }
 
-    const response = await axiosInstance.post('/plans/upgrade', request);
+    const response = await axiosInstance.post(`/api/profile/${request.profileId}/upgrade-plan`, {
+      newPlanCode: request.newPlanCode,
+      variantDays: request.variantDays
+    });
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || error.message || 'Error al hacer upgrade del plan');
@@ -146,7 +160,7 @@ export const upgradePlan = async (request: PlanUpgradeRequest) => {
  */
 export const getActiveProfilesCount = async (userId?: string): Promise<number> => {
   try {
-    const response = await axiosInstance.get('/profiles/active-plans-count', {
+    const response = await axiosInstance.get('/api/profile/active-plans-count', {
       params: userId ? { userId } : undefined
     });
     return response.data.count || 0;
@@ -161,10 +175,45 @@ export const getActiveProfilesCount = async (userId?: string): Promise<number> =
  */
 export const getAvailablePlans = async () => {
   try {
-    const response = await axiosInstance.get('/plans/available');
-    return response.data;
+    console.log('🔄 Iniciando petición a backend para obtener planes...');
+    console.log('📍 URL:', `${axiosInstance.defaults.baseURL}/api/plans`);
+
+    const response = await axiosInstance.get('/api/plans', {
+      params: {
+        isActive: true
+      }
+    });
+
+    console.log('✅ Respuesta recibida del backend:', response.data);
+
+    // Validar estructura de respuesta
+    if (!response.data || typeof response.data !== 'object') {
+      throw new Error('Respuesta del backend inválida: no es un objeto');
+    }
+
+    if (!response.data.success) {
+      throw new Error(`Error del backend: ${response.data.message || 'Error desconocido'}`);
+    }
+
+    if (!Array.isArray(response.data.data)) {
+      throw new Error('Respuesta del backend inválida: data no es un array');
+    }
+
+    console.log('📊 Planes procesados:', response.data.data.length);
+    return response.data.data;
+
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'Error al obtener planes disponibles');
+    console.error('❌ Error detallado en getAvailablePlans:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url,
+      method: error.config?.method
+    });
+
+    // Proporcionar mensaje de error más específico
+    const errorMessage = error.response?.data?.message || error.message || 'Error al obtener planes disponibles';
+    throw new Error(errorMessage);
   }
 };
 

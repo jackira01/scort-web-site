@@ -29,8 +29,8 @@ const shouldRequireIndependentVerification = async (userId: string | Types.Objec
     // Para perfiles adicionales de agencias, siempre requiere verificación independiente
     return true;
   } catch (error) {
-    console.error('Error al verificar necesidad de verificación independiente:', error);
-    return true; // Por seguridad, requerir verificación en caso de error
+    // Por seguridad, requerir verificación en caso de error
+    return true;
   }
 };
 
@@ -206,13 +206,15 @@ export const createProfileVerification = async (verificationData: CreateProfileV
       accountType,
       requiresIndependentVerification
     };
-
+    
     const verification = new ProfileVerification(verificationWithDefaults);
     await verification.save();
     
-    return await ProfileVerification.findById(verification._id)
+    const populatedVerification = await ProfileVerification.findById(verification._id)
       .populate('profile', 'name user')
       .lean();
+    
+    return populatedVerification;
   } catch (error) {
     throw new Error(`Error al crear verificación: ${error}`);
   }

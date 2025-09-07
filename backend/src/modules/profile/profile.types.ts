@@ -6,7 +6,8 @@ export interface IStories {
 }
 
 export interface IPlanAssignment {
-    planCode: string;           // ref lógico a PlanDefinition.code
+    planId?: Types.ObjectId;    // ref directo a PlanDefinition._id (PREFERRED)
+    planCode?: string;          // DEPRECATED: ref lógico a PlanDefinition.code (mantener para compatibilidad)
     variantDays: number;        // 7|15|30|180...
     startAt: Date;
     expiresAt: Date;
@@ -127,7 +128,8 @@ export interface CreateProfileDTO {
     
     // Nuevos campos opcionales para motor de visibilidad
     planAssignment?: {
-        planCode: string;
+        planId?: Types.ObjectId;
+        planCode?: string;  // DEPRECATED: mantener para compatibilidad
         variantDays: number;
         startAt: Date;
         expiresAt: Date;

@@ -12,15 +12,30 @@ const VALID_DEPARTMENTS = getAllDepartments().map(dept => dept.value);
 const EXCLUDED_ROUTES = [
   'cuenta', 'perfil', 'autenticacion', 'adminboard', 'api',
   'buscar', 'faq', 'precios', 'terminos', 'terms', 'blog', 'plans',
-  '_next', 'favicon.ico', 'images', 'placeholder-logo.png', 
-  'placeholder-logo.svg', 'placeholder-user.jpg', 'placeholder.jpg', 'placeholder.svg'
+  '_next', 'favicon.ico', 'robots.txt', 'sitemap.xml', 'images', 
+  'placeholder-logo.png', 'placeholder-logo.svg', 'placeholder-user.jpg', 
+  'placeholder.jpg', 'placeholder.svg', 'installHook.js.map', 'installHook'
 ];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Excluir archivos estáticos y rutas especiales inmediatamente
-  if (pathname.includes('.') || pathname.startsWith('/_next/') || pathname.startsWith('/api/')) {
+  if (pathname.includes('.') || 
+      pathname.startsWith('/_next/') || 
+      pathname.startsWith('/api/') ||
+      pathname === '/favicon.ico' ||
+      pathname === '/robots.txt' ||
+      pathname === '/sitemap.xml' ||
+      pathname.includes('installHook') ||
+      pathname.endsWith('.js') ||
+      pathname.endsWith('.css') ||
+      pathname.endsWith('.map') ||
+      pathname.endsWith('.ico') ||
+      pathname.endsWith('.png') ||
+      pathname.endsWith('.jpg') ||
+      pathname.endsWith('.svg')
+  ) {
     return NextResponse.next();
   }
 
@@ -76,6 +91,6 @@ export const config = {
      * - other static assets
      * - specific app routes that have their own pages
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|images|placeholder|autenticacion|cuenta|perfil|adminboard|buscar|faq|precios|terminos|terms|blog|plans|.*\.js\.map$|.*\.css\.map$|.*\.js$|.*\.css$).*)',
+    '/((?!api|_next/static|_next/image|favicon\.ico|robots\.txt|sitemap\.xml|images|placeholder|autenticacion|cuenta|perfil|adminboard|buscar|faq|precios|terminos|terms|blog|plans|.*\.js\.map$|.*\.css\.map$|.*\.js$|.*\.css$|.*\.ico$|.*\.png$|.*\.jpg$|.*\.jpeg$|.*\.svg$|.*\.gif$|.*\.webp$|installHook).*)',
   ],
 };

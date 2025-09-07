@@ -30,7 +30,7 @@ const DEFAULT_MEMBERSHIP: MembershipFormData = {
     displayName: '',
     level: 1,
     price: 0,
-    currency: 'EUR',
+    currency: 'COP',
     duration: 1,
     durationType: 'months',
     features: [],
@@ -42,8 +42,9 @@ const DEFAULT_MEMBERSHIP: MembershipFormData = {
 };
 
 const CURRENCIES = [
+    { code: 'COP', symbol: '$', name: 'Peso Colombiano' },
+    { code: 'USD', symbol: 'US$', name: 'Dólar' },
     { code: 'EUR', symbol: '€', name: 'Euro' },
-    { code: 'USD', symbol: '$', name: 'Dólar' },
     { code: 'GBP', symbol: '£', name: 'Libra' },
     { code: 'JPY', symbol: '¥', name: 'Yen' }
 ];

@@ -1,6 +1,7 @@
 import imageCompression from 'browser-image-compression';
 import axios from 'axios';
 import { applyWatermarkToImage } from './watermark';
+import { ProcessedImageResult } from './imageProcessor';
 
 const upload_preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "";
 const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_NAME || "";
@@ -81,7 +82,7 @@ export const normalizeImageSize = async (file: File): Promise<File> => {
 export const compressImage = async (file: File): Promise<File> => {
   const options = {
     maxSizeMB: 0.6, // máximo 600KB
-    maxWidthOrHeight: 1024, // permitir hasta 1024px para mantener la resolución original
+    maxWidthOrHeight: 1280, // permitir hasta 1280px para mantener la resolución original
     useWebWorker: true,
     preserveExif: false, // remover metadatos para reducir tamaño
     initialQuality: 0.9, // calidad inicial más alta
@@ -136,6 +137,110 @@ export const uploadMultipleImages = async (
       // Callback de progreso incluso en error
       if (onProgress) {
         onProgress(i + 1, filesArray.length);
+      }
+    }
+  }
+
+  return uploadedUrls;
+};
+
+/**
+ * Sube imágenes ya procesadas (recortadas y optimizadas) a Cloudinary
+ * Esta función omite el procesamiento local ya que las imágenes vienen listas
+ */
+export const uploadProcessedImages = async (
+  processedImages: ProcessedImageResult[],
+  onProgress?: (current: number, total: number) => void
+): Promise<(string | null)[]> => {
+  const uploadedUrls: (string | null)[] = [];
+
+  for (let i = 0; i < processedImages.length; i++) {
+    const processedImage = processedImages[i];
+
+    try {
+      const formData = new FormData();
+      formData.append('file', processedImage.file);
+      formData.append('upload_preset', upload_preset);
+      formData.append('resource_type', 'image');
+
+      const response = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
+        formData,
+      );
+
+      uploadedUrls.push(response.data.secure_url);
+
+      // Callback de progreso
+      if (onProgress) {
+        onProgress(i + 1, processedImages.length);
+      }
+    } catch (error) {
+      console.error('Error subiendo imagen procesada:', error);
+      uploadedUrls.push(null);
+
+      // Callback de progreso incluso en error
+      if (onProgress) {
+        onProgress(i + 1, processedImages.length);
+      }
+    }
+  }
+
+  return uploadedUrls;
+};
+
+/**
+ * Función híbrida que maneja tanto archivos File como ProcessedImageResult
+ * Útil para mantener compatibilidad con código existente
+ */
+export const uploadMixedImages = async (
+  items: (File | ProcessedImageResult)[],
+  watermarkText?: string,
+  onProgress?: (current: number, total: number) => void
+): Promise<(string | null)[]> => {
+  const uploadedUrls: (string | null)[] = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+
+    try {
+      let fileToUpload: File;
+
+      // Si es ProcessedImageResult, usar el archivo ya procesado
+      if ('file' in item && 'url' in item && 'compressionRatio' in item) {
+        fileToUpload = (item as ProcessedImageResult).file;
+      } else {
+        // Si es File, procesarlo con el flujo original
+        const file = item as File;
+        const normalizedFile = await normalizeImageSize(file);
+        const watermarkedFile = watermarkText
+          ? await applyWatermarkToImage(normalizedFile, watermarkText)
+          : normalizedFile;
+        fileToUpload = await compressImage(watermarkedFile);
+      }
+
+      const formData = new FormData();
+      formData.append('file', fileToUpload);
+      formData.append('upload_preset', upload_preset);
+      formData.append('resource_type', 'image');
+
+      const response = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
+        formData,
+      );
+
+      uploadedUrls.push(response.data.secure_url);
+
+      // Callback de progreso
+      if (onProgress) {
+        onProgress(i + 1, items.length);
+      }
+    } catch (error) {
+      console.error('Error en uploadMixedImages:', error);
+      uploadedUrls.push(null);
+
+      // Callback de progreso incluso en error
+      if (onProgress) {
+        onProgress(i + 1, items.length);
       }
     }
   }
