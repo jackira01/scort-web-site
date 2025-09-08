@@ -38,7 +38,7 @@ export const getHomeFeed = async (options: HomeFeedOptions = {}): Promise<HomeFe
     {
       $match: {
         visible: true,
-        isActive: true,
+        isDeleted: { $ne: true },
         'planAssignment.expiresAt': { $gt: now }
       }
     },
@@ -186,7 +186,7 @@ export const getHomeFeedStats = async (): Promise<Record<number, number>> => {
     {
       $match: {
         visible: true,
-        isActive: true,
+        isDeleted: { $ne: true },
         'planAssignment.expiresAt': { $gt: now }
       }
     },

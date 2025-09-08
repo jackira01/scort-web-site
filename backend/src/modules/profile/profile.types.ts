@@ -80,6 +80,7 @@ export interface IProfile extends Document {
     upgrades: IProfileUpgrade[];
     lastShownAt?: Date;           // para rotación
     visible: boolean;             // default true mientras no expire plan
+    isDeleted: boolean;           // borrado lógico - true significa eliminado
     
     // Campos de timestamps de Mongoose
     createdAt: Date;
@@ -142,6 +143,7 @@ export interface CreateProfileDTO {
     }[];
     lastShownAt?: Date;
     visible?: boolean;
+    isDeleted?: boolean;
 }
 
 
@@ -191,6 +193,7 @@ export interface IProfileInput {
     upgrades?: IProfileUpgrade[];
     lastShownAt?: Date;
     visible?: boolean;
+    isDeleted?: boolean;
 }
 
 export interface IProfileVerification extends Document {

@@ -194,13 +194,11 @@ export default function AccountProfiles({
       setDeleteModalOpen(false);
       setSelectedProfileForDelete(null);
 
-      // Recargar la página para mostrar los cambios
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // Actualizar solo la lista de perfiles sin recargar toda la página
+      queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
     } catch (error) {
       toast.dismiss();
-      toast.error('Error al eliminar el perfil');
+      toast.error('Error al ocultar el perfil');
     } finally {
       setIsDeleting(false);
     }

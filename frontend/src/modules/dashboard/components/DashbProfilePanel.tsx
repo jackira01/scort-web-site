@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Loader from '@/components/Loader';
 import { Pagination } from '@/components/Pagination';
-import { useAllProfiles } from '@/hooks/use-all-profiles';
+import { useAdminProfiles } from '@/hooks/use-admin-profiles';
 import AdminProfileVerificationCarousel from '@/modules/dashboard/components/AdminProfileVerificationCarousel';
 import type { User } from '@/types/user.types';
 import { transformedImages } from '../utils';
@@ -18,10 +18,13 @@ export const DashProfilePanel = () => {
   const [limit] = useState(6);
 
   const {
-    data: profilesData,
+    data: profilesResponse,
     isLoading,
     error,
-  } = useAllProfiles(currentPage, limit, '_id,name,profileName,age,isActive,media,featured,location,verification,isVerified');
+  } = useAdminProfiles(currentPage, limit, '_id,name,profileName,age,isActive,media,featured,location,verification,isVerified');
+
+  // Extraer los datos de la respuesta del nuevo endpoint
+  const profilesData = profilesResponse?.success ? profilesResponse.data : null;
 
   if (isLoading) {
     return <Loader />;

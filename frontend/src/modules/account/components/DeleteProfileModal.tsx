@@ -57,26 +57,26 @@ export default function DeleteProfileModal({
             Eliminar Perfil
           </DialogTitle>
           <DialogDescription className="text-gray-600 dark:text-gray-400">
-            Esta acción no se puede deshacer. El perfil será eliminado permanentemente.
+            Esta acción eliminará permanentemente tu perfil. No podrás recuperarlo una vez eliminado.
           </DialogDescription>
         </DialogHeader>
         
         <div className="py-4">
           <p className="text-sm text-gray-700 dark:text-gray-300">
-            ¿Estás seguro de que deseas eliminar el perfil{' '}
+            ¿Estás seguro de que deseas eliminar permanentemente el perfil{' '}
             <span className="font-semibold text-gray-900 dark:text-white">
               "{profile?.name}"
             </span>?
           </p>
           <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
             <p className="text-xs text-red-700 dark:text-red-300">
-              • Se eliminarán todas las fotos, videos y contenido asociado
+              • El perfil será eliminado permanentemente
             </p>
             <p className="text-xs text-red-700 dark:text-red-300">
-              • Se perderán todos los datos del perfil
+              • No podrás acceder a él nuevamente
             </p>
             <p className="text-xs text-red-700 dark:text-red-300">
-              • Esta acción es irreversible
+              • Esta acción no se puede deshacer
             </p>
           </div>
         </div>
@@ -94,7 +94,7 @@ export default function DeleteProfileModal({
             variant="destructive"
             onClick={onConfirm}
             disabled={isDeleting}
-            className="flex-1"
+            className="flex-1 bg-red-600 hover:bg-red-700"
           >
             {isDeleting ? 'Eliminando...' : 'Eliminar Perfil'}
           </Button>

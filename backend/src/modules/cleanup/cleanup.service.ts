@@ -1,6 +1,6 @@
 import { ProfileModel } from '../profile/profile.model';
 import type { IProfile } from '../profile/profile.types';
-import { softDeleteProfile } from '../profile/profile.service';
+import { hideProfile } from '../profile/profile.service';
 
 /**
  * Servicio de limpieza automática para perfiles y upgrades expirados
@@ -22,10 +22,10 @@ export const hideExpiredProfiles = async (now: Date = new Date()): Promise<numbe
 
     let processedCount = 0;
 
-    // Usar el método de eliminación lógica para cada perfil
+    // Usar el método de ocultación para cada perfil expirado
     for (const profile of expiredProfiles) {
       try {
-        await softDeleteProfile((profile as any)._id.toString(), 'Perfil desactivado automáticamente por plan expirado');
+        await hideProfile((profile as any)._id.toString(), (profile as any).user.toString());
         processedCount++;
       } catch (error) {
         // Continuar con el siguiente perfil si hay error
@@ -155,10 +155,10 @@ export const getProfileVisibilityStats = async (): Promise<{
 
   try {
     const [visible, hidden, active, softDeleted, withActivePlan, withExpiredPlan, withActiveUpgrades] = await Promise.all([
-      ProfileModel.countDocuments({ visible: true, isActive: true }),
-      ProfileModel.countDocuments({ visible: false, isActive: true }),
+      ProfileModel.countDocuments({ visible: true, isDeleted: { $ne: true } }),
+      ProfileModel.countDocuments({ visible: false, isDeleted: { $ne: true } }),
       ProfileModel.countDocuments({ isActive: true }),
-      ProfileModel.countDocuments({ isActive: false }),
+      ProfileModel.countDocuments({ isDeleted: true }),
       ProfileModel.countDocuments({
         isActive: true,
         'planAssignment.expiresAt': { $gt: now }

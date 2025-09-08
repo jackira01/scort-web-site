@@ -41,6 +41,7 @@ export interface IProfile {
   name: string;
   description?: string;
   isActive: boolean;
+  isDeleted?: boolean;
   location: ProfileLocation;
   features: {
     group_id: string;

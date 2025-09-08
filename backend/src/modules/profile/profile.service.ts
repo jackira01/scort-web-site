@@ -428,7 +428,12 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
 
 export const getProfiles = async (page: number = 1, limit: number = 10, fields?: string): Promise<{ profiles: IProfile[]; pagination: { page: number; limit: number; total: number; pages: number } }> => {
   const skip = (page - 1) * limit;
-  let query = ProfileModel.find({});
+  
+  // Filtrar solo perfiles visibles y no eliminados lógicamente
+  let query = ProfileModel.find({
+    visible: true,
+    isDeleted: { $ne: true }
+  });
 
   if (fields) {
     // Normalizar "fields" para aceptar listas separadas por coma y garantizar dependencias de campos computados
@@ -1102,11 +1107,12 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
       requiresIndependentVerification: requiresIndependentVerification || false
     };
 
-    // Obtener perfiles activos del usuario
+    // Obtener perfiles activos del usuario (excluyendo eliminados lógicamente)
     const userProfiles = await ProfileModel.find({
       user: userId,
       isActive: true,
-      visible: true
+      visible: true,
+      isDeleted: { $ne: true }
     }).lean();
 
     const now = new Date();
@@ -1562,10 +1568,10 @@ export const getActiveProfilesCount = async (userId: string): Promise<number> =>
 };
 
 /**
- * Borrado lógico de perfil (para usuarios)
- * Marca el perfil como inactivo pero mantiene todos los datos
+ * Desactivación visual de perfil (para usuarios normales)
+ * Oculta el perfil públicamente pero mantiene isActive=true para que solo sea visible por administradores
  */
-export const softDeleteProfile = async (profileId: string, userId: string): Promise<{ success: boolean; message: string }> => {
+export const hideProfile = async (profileId: string, userId: string): Promise<{ success: boolean; message: string }> => {
   try {
     const profile = await ProfileModel.findOne({ _id: profileId, user: userId });
 
@@ -1573,18 +1579,46 @@ export const softDeleteProfile = async (profileId: string, userId: string): Prom
       return { success: false, message: 'Perfil no encontrado o no tienes permisos para eliminarlo' };
     }
 
-    if (!profile.isActive) {
-      return { success: false, message: 'El perfil ya está desactivado' };
+    if (!profile.visible) {
+      return { success: false, message: 'El perfil ya está oculto' };
     }
 
-    // Borrado lógico: marcar como inactivo y no visible
-    profile.isActive = false;
+    // Desactivación visual: solo ocultar públicamente, mantener isActive=true
     profile.visible = false;
     await profile.save();
 
-    return { success: true, message: 'Perfil desactivado exitosamente' };
+    return { success: true, message: 'Perfil ocultado exitosamente' };
   } catch (error) {
-    return { success: false, message: 'Error al desactivar el perfil' };
+    return { success: false, message: 'Error al ocultar el perfil' };
+  }
+};
+
+/**
+ * Borrado lógico de perfil (para administradores)
+ * Marca el perfil como inactivo - eliminación lógica real
+ */
+export const softDeleteProfile = async (profileId: string, userId?: string): Promise<{ success: boolean; message: string }> => {
+  try {
+    // Si se proporciona userId, verificar que sea propietario del perfil
+    const query = userId ? { _id: profileId, user: userId } : { _id: profileId };
+    const profile = await ProfileModel.findOne(query);
+
+    if (!profile) {
+      return { success: false, message: userId ? 'Perfil no encontrado o no tienes permisos para eliminarlo' : 'Perfil no encontrado' };
+    }
+
+    if (profile.isDeleted) {
+      return { success: false, message: 'El perfil ya está eliminado lógicamente' };
+    }
+
+    // Borrado lógico: marcar como eliminado
+    profile.isDeleted = true;
+    profile.visible = false; // También ocultar cuando se elimina lógicamente
+    await profile.save();
+
+    return { success: true, message: 'Perfil eliminado lógicamente' };
+  } catch (error) {
+    return { success: false, message: 'Error al eliminar el perfil lógicamente' };
   }
 };
 
@@ -1618,22 +1652,52 @@ export const hardDeleteProfile = async (profileId: string): Promise<{ success: b
 };
 
 /**
- * Restaurar perfil (reactivar después de borrado lógico)
+ * Mostrar perfil oculto (para usuarios normales)
+ * Hace visible un perfil que fue ocultado visualmente
  */
-export const restoreProfile = async (profileId: string, userId: string): Promise<{ success: boolean; message: string }> => {
+export const showProfile = async (profileId: string, userId: string): Promise<{ success: boolean; message: string }> => {
   try {
     const profile = await ProfileModel.findOne({ _id: profileId, user: userId });
 
     if (!profile) {
-      return { success: false, message: 'Perfil no encontrado o no tienes permisos para restaurarlo' };
+      return { success: false, message: 'Perfil no encontrado o no tienes permisos para mostrarlo' };
     }
 
-    if (profile.isActive) {
-      return { success: false, message: 'El perfil ya está activo' };
+    if (profile.isDeleted) {
+      return { success: false, message: 'El perfil está eliminado lógicamente y solo puede ser restaurado por un administrador' };
     }
 
-    // Restaurar perfil
-    profile.isActive = true;
+    if (profile.visible) {
+      return { success: false, message: 'El perfil ya está visible' };
+    }
+
+    // Mostrar perfil: hacer visible públicamente
+    profile.visible = true;
+    await profile.save();
+
+    return { success: true, message: 'Perfil mostrado exitosamente' };
+  } catch (error) {
+    return { success: false, message: 'Error al mostrar el perfil' };
+  }
+};
+
+/**
+ * Restaurar perfil (reactivar después de borrado lógico - solo administradores)
+ */
+export const restoreProfile = async (profileId: string, userId?: string): Promise<{ success: boolean; message: string }> => {
+  try {
+    const profile = await ProfileModel.findById(profileId);
+
+    if (!profile) {
+      return { success: false, message: 'Perfil no encontrado' };
+    }
+
+    if (!profile.isDeleted) {
+      return { success: false, message: 'El perfil no está eliminado' };
+    }
+
+    // Restaurar perfil del borrado lógico
+    profile.isDeleted = false;
     profile.visible = true;
     await profile.save();
 
@@ -1650,13 +1714,13 @@ export const getDeletedProfiles = async (page: number = 1, limit: number = 10): 
   try {
     const skip = (page - 1) * limit;
 
-    const profiles = await ProfileModel.find({ isActive: false })
+    const profiles = await ProfileModel.find({ isDeleted: true })
       .populate('user', 'name email')
       .sort({ updatedAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    const total = await ProfileModel.countDocuments({ isActive: false });
+    const total = await ProfileModel.countDocuments({ isDeleted: true });
 
     return {
       profiles,
@@ -1670,4 +1734,90 @@ export const getDeletedProfiles = async (page: number = 1, limit: number = 10): 
   } catch (error) {
     throw new Error('Error al obtener perfiles eliminados');
   }
+};
+
+/**
+ * Obtener todos los perfiles para el adminboard (incluye activos e inactivos)
+ */
+export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 10, fields?: string): Promise<{ profiles: IProfile[]; pagination: { page: number; limit: number; total: number; pages: number } }> => {
+  const skip = (page - 1) * limit;
+  let query = ProfileModel.find({}); // Sin filtro de isActive para incluir todos
+
+  if (fields) {
+    // Normalizar "fields" para aceptar listas separadas por coma y garantizar dependencias de campos computados
+    const cleaned = fields.split(',').map(f => f.trim()).filter(Boolean);
+
+    // Si se solicita 'featured', asegurar que 'upgrades' esté disponible para calcularlo
+    const needsFeatured = cleaned.includes('featured');
+    const hasUpgrades = cleaned.includes('upgrades') || cleaned.some(f => f.startsWith('upgrades'));
+    if (needsFeatured && !hasUpgrades) {
+      cleaned.push('upgrades.code', 'upgrades.startAt', 'upgrades.endAt');
+    }
+
+    // Si se solicita 'isVerified' o 'verification', asegurar que 'verification' esté seleccionado para poder popular y calcular
+    const needsIsVerified = cleaned.includes('isVerified') || cleaned.includes('verification');
+    if (needsIsVerified && !cleaned.includes('verification')) {
+      cleaned.push('verification');
+    }
+
+    const selectStr = cleaned.join(' ');
+    query = query.select(selectStr) as any;
+  }
+
+  const rawProfiles = await query
+    .populate({
+      path: 'user',
+      select: 'name email',
+    })
+    .populate({
+      path: 'verification',
+      model: 'ProfileVerification',
+      select: 'verificationProgress verificationStatus'
+    })
+    .populate({
+      path: 'features.group_id',
+      select: 'name label',
+    })
+    .sort({ updatedAt: -1 }) // Ordenar por fecha de actualización
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const now = new Date();
+  const profiles = rawProfiles.map(profile => {
+    // Calcular estado de verificación basado en campos individuales
+    let isVerified = false;
+    if (profile.verification) {
+      const verification = profile.verification as any;
+      const verifiedCount = Object.values(verification).filter(status => status === 'verified').length;
+      const totalFields = Object.keys(verification).length;
+
+      if (verifiedCount === totalFields && totalFields > 0) {
+        isVerified = true;
+      }
+    }
+
+    const featured = profile.upgrades?.some(upgrade =>
+      (upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT') &&
+      new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
+    ) || false;
+    
+    return {
+      ...profile,
+      isVerified,
+      featured
+    };
+  });
+
+  const total = await ProfileModel.countDocuments({}); // Contar todos los perfiles
+
+  return {
+    profiles,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+    },
+  };
 };

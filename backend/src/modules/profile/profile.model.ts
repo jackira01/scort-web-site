@@ -96,14 +96,17 @@ const profileSchema = new Schema<IProfile>(
     }],
     lastShownAt: { type: Date },           // para rotación
     visible: { type: Boolean, default: true },             // default true mientras no expire plan
+    isDeleted: { type: Boolean, default: false },          // borrado lógico - true significa eliminado
   },
   { timestamps: true },
 );
 
 // Índices para motor de visibilidad
 profileSchema.index({ visible: 1 });
+profileSchema.index({ isDeleted: 1 });
 profileSchema.index({ 'planAssignment.expiresAt': 1 });
 profileSchema.index({ lastShownAt: 1 });
 profileSchema.index({ visible: 1, 'planAssignment.expiresAt': 1, lastShownAt: 1 }); // Índice compuesto
+profileSchema.index({ isDeleted: 1, visible: 1 }); // Índice compuesto para borrado lógico
 
 export const ProfileModel = mongoose.model<IProfile>('Profile', profileSchema);

@@ -43,10 +43,10 @@ export const getUsers = async (filters: any, options: any) => {
 
 };
 
-export const getUserProfiles = async (userId: string) => {
+export const getUserProfiles = async (userId: string, includeInactive: boolean = false) => {
   const user = await UserModel.findById(userId).populate({
     path: 'profiles',
-    select: '_id user name age location verification media planAssignment upgrades visible isActive',
+    select: '_id user name age location verification media planAssignment upgrades visible isActive isDeleted',
     populate: {
       path: 'verification',
       model: 'ProfileVerification',
@@ -54,7 +54,14 @@ export const getUserProfiles = async (userId: string) => {
     }
   });
   
-  const profiles = user?.profiles || [];
+  let profiles = user?.profiles || [];
+  
+  // Filtrar perfiles eliminados lógicamente (isDeleted: true) para usuarios normales
+  // Solo los administradores pueden ver perfiles con isDeleted: true
+  if (!includeInactive) {
+    profiles = profiles.filter((profile: any) => profile.isDeleted !== true);
+  }
+  
   const now = new Date();
   
   // Devolver los perfiles con información completa incluyendo upgrades activos

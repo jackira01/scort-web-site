@@ -192,7 +192,11 @@ export const updateUserLastLogin = async (req: Request, res: Response) => {
 
 export const getUserProfiles = async (req: Request, res: Response) => {
   const userId = req.params.id;
-  const profiles = await userService.getUserProfiles(userId);
+  
+  // Verificar si el usuario es administrador para incluir perfiles inactivos
+  const includeInactive = (req as any).user?.role === 'admin' || false;
+  
+  const profiles = await userService.getUserProfiles(userId, includeInactive);
   res.json(profiles);
 }
 

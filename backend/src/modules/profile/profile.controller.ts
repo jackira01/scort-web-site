@@ -6,8 +6,10 @@ import {
   purchaseUpgrade,
   getActiveProfilesCount,
   createProfileWithInvoice,
+  hideProfile,
   softDeleteProfile,
   hardDeleteProfile,
+  showProfile,
   restoreProfile,
   getDeletedProfiles
 } from './profile.service';
@@ -149,9 +151,99 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
 };
 
 /**
- * Borrado lógico de perfil (para usuarios)
+ * Ocultar perfil visualmente (para usuarios normales)
+ */
+export const hideProfileController = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id: profileId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+    }
+
+    const result = await hideProfile(profileId, userId);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
+/**
+ * Borrado lógico de perfil (para administradores)
  */
 export const softDeleteProfileController = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id: profileId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+    }
+
+    const result = await softDeleteProfile(profileId, userId);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
+/**
+ * Mostrar perfil oculto (para usuarios normales)
+ */
+export const showProfileController = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id: profileId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+    }
+
+    const result = await showProfile(profileId, userId);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
+/**
+ * Eliminación lógica de perfil (para usuarios normales - solo sus propios perfiles)
+ */
+export const userSoftDeleteProfileController = async (req: AuthRequest, res: Response) => {
   try {
     const { id: profileId } = req.params;
     const userId = req.user?.id;
@@ -186,7 +278,7 @@ export const hardDeleteProfileController = async (req: AuthRequest, res: Respons
     const { id: profileId } = req.params;
 
     // Verificar que el usuario sea administrador
-    if (!req.user?.isAdmin) {
+    if (req.user?.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Acceso denegado. Solo administradores pueden eliminar perfiles permanentemente'
@@ -244,7 +336,7 @@ export const restoreProfileController = async (req: AuthRequest, res: Response) 
 export const getDeletedProfilesController = async (req: AuthRequest, res: Response) => {
   try {
     // Verificar que el usuario sea administrador
-    if (!req.user?.isAdmin) {
+    if (req.user?.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Acceso denegado. Solo administradores pueden ver perfiles eliminados'
@@ -287,6 +379,38 @@ export const getProfilesForHome = async (req: AuthRequest, res: Response) => {
   } catch (error: any) {
     console.error('Error getting profiles for home:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+/**
+ * Obtener todos los perfiles para el adminboard (incluye activos e inactivos)
+ */
+export const getAllProfilesForAdmin = async (req: AuthRequest, res: Response) => {
+  try {
+    // Verificar que el usuario sea administrador
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Acceso denegado. Solo administradores pueden ver todos los perfiles'
+      });
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const fields = req.query.fields as string;
+
+    const result = await service.getAllProfilesForAdmin(page, limit, fields);
+
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (error: any) {
+    console.error('Error getting all profiles for admin:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
   }
 };
 

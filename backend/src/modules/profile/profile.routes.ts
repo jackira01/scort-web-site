@@ -12,6 +12,7 @@ const router = Router();
 router.post('/', controller.createProfile);
 router.get('/', controller.getProfiles);
 router.get('/home', controller.getProfilesForHome);
+router.get('/admin/all', authMiddleware, adminMiddleware, controller.getAllProfilesForAdmin);
 router.post('/list', controller.getProfilesPost);
 router.get('/stories', controller.getProfilesWithStories);
 router.get('/verify-profile-name', controller.verifyProfileName);
@@ -44,7 +45,13 @@ router.get('/user/:userId/debug-profiles', debugController.debugUserProfilesCont
 /* ===========================
    📌 Rutas de eliminación y restauración
 =========================== */
-router.patch('/:id/soft-delete', authMiddleware, controller.softDeleteProfileController);
+// Para usuarios normales: ocultar/mostrar perfiles y eliminación lógica
+router.patch('/:id/hide', authMiddleware, controller.hideProfileController);
+router.patch('/:id/show', authMiddleware, controller.showProfileController);
+router.patch('/:id/delete', authMiddleware, controller.userSoftDeleteProfileController);
+
+// Para administradores: borrado lógico/físico y restauración
+router.patch('/:id/soft-delete', authMiddleware, adminMiddleware, controller.softDeleteProfileController);
 router.delete('/:id/hard-delete', authMiddleware, adminMiddleware, controller.hardDeleteProfileController);
 router.patch('/:id/restore', authMiddleware, adminMiddleware, controller.restoreProfileController);
 router.get('/deleted', authMiddleware, adminMiddleware, controller.getDeletedProfilesController);

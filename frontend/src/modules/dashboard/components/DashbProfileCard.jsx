@@ -6,19 +6,46 @@ import {
   MapPin,
   Shield,
   Star,
+  Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { hardDeleteProfile } from '@/services/user.service';
+import { toast } from 'sonner';
 export const DashbProfileCard = ({
   profile,
   index,
   setSelectedProfileForVerification,
   setVerificationCarouselOpen,
 }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleHardDelete = async () => {
+    if (!confirm('¿Estás seguro de que quieres eliminar permanentemente este perfil? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await hardDeleteProfile(profile._id);
+      toast.success('Perfil eliminado permanentemente');
+      
+      // Invalidar las queries para actualizar la lista
+      queryClient.invalidateQueries({ queryKey: ['adminProfiles'] });
+    } catch (error) {
+      console.error('Error al eliminar perfil:', error);
+      toast.error('Error al eliminar el perfil');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
   return (
     <Card
       className="group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card border-border hover:border-purple-500/50 animate-in zoom-in-50"
@@ -107,6 +134,16 @@ export const DashbProfileCard = ({
             >
               <Shield className="h-3 w-3 mr-1" />
               Verificar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleHardDelete}
+              disabled={isDeleting}
+              className="hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-500 transition-all duration-200 text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              {isDeleting ? 'Eliminando...' : 'Eliminar'}
             </Button>
           </div>
         </div>

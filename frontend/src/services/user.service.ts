@@ -75,12 +75,25 @@ export const updateUserLastLogin = async (userId: string) => {
     return response.data;
 }
 
-export const deleteProfile = async (profileId: string) => {
-    const response = await axios.delete(`${API_URL}/api/profile/${profileId}`);
+// Ocultar perfil visualmente (para usuarios normales)
+export const hideProfile = async (profileId: string) => {
+    const response = await axios.patch(`${API_URL}/api/profile/${profileId}/hide`);
     return response.data;
 }
 
-// Borrado lógico de perfil (para usuarios)
+// Mostrar perfil oculto (para usuarios normales)
+export const showProfile = async (profileId: string) => {
+    const response = await axios.patch(`${API_URL}/api/profile/${profileId}/show`);
+    return response.data;
+}
+
+// Eliminar perfil (borrado lógico para usuarios normales)
+export const deleteProfile = async (profileId: string) => {
+    const response = await axios.patch(`${API_URL}/api/profile/${profileId}/delete`);
+    return response.data;
+}
+
+// Borrado lógico de perfil (para administradores)
 export const softDeleteProfile = async (profileId: string) => {
     const response = await axios.patch(`${API_URL}/api/profile/${profileId}/soft-delete`);
     return response.data;
@@ -92,7 +105,7 @@ export const hardDeleteProfile = async (profileId: string) => {
     return response.data;
 }
 
-// Restaurar perfil (reactivar después de borrado lógico)
+// Restaurar perfil (reactivar después de borrado lógico - solo administradores)
 export const restoreProfile = async (profileId: string) => {
     const response = await axios.patch(`${API_URL}/api/profile/${profileId}/restore`);
     return response.data;

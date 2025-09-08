@@ -36,13 +36,13 @@ export const getFilteredProfiles = async (
     // Construir query de MongoDB
     const query: any = {};
 
-    // Alinear con home feed: solo perfiles visibles, activos y con plan activo
+    // Alinear con home feed: solo perfiles visibles, no eliminados y con plan activo
     const now = new Date();
     query.visible = true;
-    query.isActive = true;
+    query.isDeleted = { $ne: true };
     query['planAssignment.expiresAt'] = { $gt: now };
 
-    // Solo agregar filtro isActive si está definido
+    // Solo agregar filtro isActive si está definido (para activación/desactivación)
     if (isActive !== undefined) {
       query.isActive = isActive;
     }
@@ -382,7 +382,7 @@ export const getFilterOptions = async (): Promise<FilterOptions> => {
     const [locations, attributeGroups, priceRange] = await Promise.all([
       // Obtener ubicaciones únicas
       Profile.aggregate([
-        { $match: { isActive: true } },
+        { $match: { isDeleted: { $ne: true } } },
         {
           $group: {
             _id: null,
@@ -398,7 +398,7 @@ export const getFilterOptions = async (): Promise<FilterOptions> => {
 
       // Obtener rango de precios
       Profile.aggregate([
-        { $match: { isActive: true } },
+        { $match: { isDeleted: { $ne: true } } },
         { $unwind: '$rates' },
         {
           $group: {

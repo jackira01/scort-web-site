@@ -35,10 +35,10 @@ export interface ProcessedImageResult {
 // Configuración de marca de agua
 const WATERMARK_CONFIG = {
   text: '© ScortWeb',
-  fontSize: 16,
+  fontSize: 17,
   fontFamily: 'Arial',
-  color: 'rgba(255, 255, 255, 0.3)',
-  padding: 20,
+  color: 'rgba(255, 255, 255, 0.2)',
+  padding: 15,
 };
 
 /**
@@ -158,13 +158,13 @@ export const processCroppedImageCentralized = async (
     } else {
       // Crop con rotación - usar método simplificado
       ctx.save();
-      
+
       // Mover al centro del canvas de destino
       ctx.translate(canvas.width / 2, canvas.height / 2);
-      
+
       // Aplicar rotación
       ctx.rotate(rotRad);
-      
+
       // Dibujar la imagen centrada y recortada
       ctx.drawImage(
         image,
@@ -177,7 +177,7 @@ export const processCroppedImageCentralized = async (
         canvas.width,
         canvas.height
       );
-      
+
       ctx.restore();
     }
 
@@ -185,12 +185,12 @@ export const processCroppedImageCentralized = async (
     if (applyWatermark) {
       // Guardar el estado antes de aplicar marca de agua
       ctx.save();
-      
+
       // Resetear transformaciones para aplicar marca de agua sin afectar el crop
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      
+
       applyWatermarkToContext(ctx, canvas, watermarkText);
-      
+
       // Restaurar el estado
       ctx.restore();
     }
@@ -231,17 +231,17 @@ export const processCroppedImageCentralized = async (
     const finalDimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
       const img = new Image();
       const url = URL.createObjectURL(finalFile);
-      
+
       img.onload = () => {
         URL.revokeObjectURL(url);
         resolve({ width: img.width, height: img.height });
       };
-      
+
       img.onerror = () => {
         URL.revokeObjectURL(url);
         reject(new Error('Error al obtener dimensiones finales'));
       };
-      
+
       img.src = url;
     });
 
