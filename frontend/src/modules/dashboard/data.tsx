@@ -1,4 +1,4 @@
-import { Receipt, Settings, User, Cog, CreditCard, Zap, UserCheck, FileText } from "lucide-react";
+import { Receipt, Settings, User, Cog, CreditCard, Zap, UserCheck, FileText, Mail, Tags } from "lucide-react";
 
 export const userProfiles = [
     {
@@ -147,12 +147,21 @@ export const sidebarItems = [
         active: false,
     },
     {
-        id: 'ajustes',
-        label: 'Ajustes',
-        icon: Settings,
+        id: 'grupos-atributos',
+        label: 'Grupos de Atributos',
+        icon: Tags,
         badge: null,
         description:
-            'Detalles generales',
+            'Gestiona grupos de atributos y categorías del sistema',
+        active: false,
+    },
+    {
+        id: 'envio-correos',
+        label: 'Envío de correos',
+        icon: Mail,
+        badge: null,
+        description:
+            'Envía correos individuales y masivos a usuarios registrados',
         active: false,
     },
     {

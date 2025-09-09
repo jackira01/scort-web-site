@@ -301,7 +301,7 @@ const FAQPage = () => {
                       </AccordionTrigger>
                       <AccordionContent>
                         <div className="pt-4 pb-2">
-                          <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
+                          <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{faq.answer}</p>
                         </div>
                       </AccordionContent>
                     </AccordionItem>
@@ -311,8 +311,8 @@ const FAQPage = () => {
             ) : (
               <div className="text-center py-12">
                 <HelpCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron resultados</h3>
-                <p className="text-gray-600 mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No se encontraron resultados</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
                   No encontramos preguntas que coincidan con tu búsqueda.
                 </p>
                 <Button 
@@ -330,7 +330,7 @@ const FAQPage = () => {
         </Card>
 
         {/* Contact Support */}
-        <Card className="mt-12 bg-gradient-to-r from-green-50 to-emerald-50">
+        <Card className="mt-12 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
           <CardHeader>
             <CardTitle className="text-2xl text-center flex items-center justify-center space-x-2">
               <MessageCircle className="h-6 w-6" />
@@ -338,14 +338,14 @@ const FAQPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-gray-700 mb-6">
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
               Nuestro equipo de soporte está aquí para ayudarte con cualquier pregunta adicional.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="p-4">
                 <MessageCircle className="h-8 w-8 text-blue-500 mx-auto mb-2" />
                 <h4 className="font-semibold mb-2">Chat en Vivo</h4>
-                <p className="text-sm text-gray-600 mb-3">Disponible 24/7</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Disponible 24/7</p>
                 <Button size="sm" className="w-full">
                   Iniciar Chat
                 </Button>
@@ -354,7 +354,7 @@ const FAQPage = () => {
               <Card className="p-4">
                 <Mail className="h-8 w-8 text-green-500 mx-auto mb-2" />
                 <h4 className="font-semibold mb-2">Email</h4>
-                <p className="text-sm text-gray-600 mb-3">Respuesta en 24h</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Respuesta en 24h</p>
                 <Button size="sm" variant="outline" className="w-full">
                   Enviar Email
                 </Button>
@@ -363,7 +363,7 @@ const FAQPage = () => {
               <Card className="p-4">
                 <Clock className="h-8 w-8 text-purple-500 mx-auto mb-2" />
                 <h4 className="font-semibold mb-2">Centro de Ayuda</h4>
-                <p className="text-sm text-gray-600 mb-3">Guías detalladas</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Guías detalladas</p>
                 <Button size="sm" variant="outline" className="w-full">
                   Ver Guías
                 </Button>

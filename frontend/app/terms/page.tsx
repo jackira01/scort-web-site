@@ -154,7 +154,7 @@ const TermsPage = () => {
             <Card key={section.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-3 text-xl">
-                  <div className="p-2 bg-blue-100 rounded-lg">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                     {section.icon}
                   </div>
                   <span>{section.title}</span>
@@ -163,7 +163,7 @@ const TermsPage = () => {
               <CardContent>
                 <div className="space-y-4">
                   {section.content.map((paragraph, pIndex) => (
-                    <p key={pIndex} className="text-gray-700 leading-relaxed">
+                    <p key={pIndex} className="text-gray-700 dark:text-gray-300 leading-relaxed">
                       {paragraph}
                     </p>
                   ))}
@@ -174,12 +174,12 @@ const TermsPage = () => {
         </div>
 
         {/* Contact Information */}
-        <Card className="mt-12 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <Card className="mt-12 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
           <CardHeader>
             <CardTitle className="text-2xl text-center">¿Tienes Preguntas?</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-gray-700 mb-6">
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
               Si tienes alguna pregunta sobre estos Términos y Condiciones, no dudes en contactarnos.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -194,7 +194,7 @@ const TermsPage = () => {
         </Card>
 
         {/* Footer Note */}
-        <div className="text-center mt-8 text-sm text-gray-500">
+        <div className="text-center mt-8 text-sm text-gray-500 dark:text-gray-400">
           <p>
             Estos términos y condiciones son efectivos a partir del {lastUpdated} y se aplican a todos los usuarios de nuestros servicios.
           </p>

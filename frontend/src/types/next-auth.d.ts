@@ -12,5 +12,6 @@ declare module "next-auth" {
             isVerified: boolean;
             verification_in_progress?: boolean;
         };
+        accessToken?: string; // JWT token personalizado
     }
 }

@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { uploadMultipleImages, uploadMultipleVideos } from '@/utils/tools';
+import axios from '@/lib/axios';
 
 const verificationSchema = z.object({
   documentPhotos: z.object({
@@ -89,19 +90,8 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
   const updateVerificationMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile-verification/${verificationId}/steps`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al actualizar la verificación');
-      }
-
-      return response.json();
+      const response = await axios.patch(`/api/profile-verification/${verificationId}/steps`, data);
+      return response.data;
     },
     onSuccess: () => {
       toast.success('Verificación actualizada exitosamente');

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { API_URL } from '@/lib/config';
+import axios from '@/lib/axios';
 import type {
   HomeFeedOptions,
   HomeFeedResponse,
@@ -15,12 +15,8 @@ const feedsApi = {
     params.append('page', page.toString());
     params.append('limit', pageSize.toString());
 
-    const response = await fetch(`${API_URL}/api/profile/home?${params}`);
-    if (!response.ok) {
-      throw new Error(`Error al obtener perfiles: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const response = await axios.get(`/api/profile/home?${params}`);
+    const result = response.data;
 
     // Adaptar la respuesta del backend al formato esperado por el frontend
     return {
@@ -33,12 +29,8 @@ const feedsApi = {
   },
 
   getFeedStats: async (): Promise<FeedStatsResponse> => {
-    const response = await fetch(`${API_URL}/api/feeds/stats`);
-    if (!response.ok) {
-      throw new Error(`Error al obtener estadísticas: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const response = await axios.get('/api/feeds/stats');
+    const result = response.data;
     if (!result.success) {
       throw new Error(result.message || 'Error en la respuesta del servidor');
     }
@@ -53,7 +45,7 @@ export const useHomeFeed = (options: HomeFeedOptions = {}) => {
     queryKey: ['homeFeed', options],
     queryFn: () => feedsApi.getHomeFeed(options),
     staleTime: 2 * 60 * 1000, // 2 minutos
-    cacheTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos
     refetchOnWindowFocus: false,
   });
 };
@@ -63,7 +55,7 @@ export const useFeedStats = () => {
     queryKey: ['feedStats'],
     queryFn: feedsApi.getFeedStats,
     staleTime: 5 * 60 * 1000, // 5 minutos
-    cacheTime: 10 * 60 * 1000, // 10 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
     refetchOnWindowFocus: false,
   });
 };
@@ -80,8 +72,8 @@ export const useHomeFeedWithSeparators = (options: HomeFeedOptions = {}) => {
   return {
     ...rest,
     data,
-    profiles: data?.profiles || [],
-    levelSeparators: data?.metadata?.levelSeparators || [],
-    pagination: data?.pagination
+    profiles: (data as HomeFeedResponse)?.profiles || [],
+    levelSeparators: (data as HomeFeedResponse)?.metadata?.levelSeparators || [],
+    pagination: (data as HomeFeedResponse)?.pagination || { page: 1, pageSize: 12, total: 0, totalPages: 0 }
   };
 };

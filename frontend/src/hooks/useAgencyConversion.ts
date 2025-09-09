@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { API_URL } from '@/lib/config';
+import axios from '@/lib/axios';
 import toast from 'react-hot-toast';
 
 export interface AgencyConversionRequest {
@@ -16,41 +16,14 @@ export interface ProfileCreationCheck {
 
 // Función para solicitar conversión a agencia
 const requestAgencyConversion = async (data: AgencyConversionRequest) => {
-  const response = await fetch(`${API_URL}/api/agency-conversion/request`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      // TODO: Agregar token de autenticación
-      // 'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Error al solicitar conversión');
-  }
-
-  return response.json();
+  const response = await axios.post('/api/agency-conversion/request', data);
+  return response.data;
 };
 
 // Función para verificar si puede crear perfiles adicionales
 const checkProfileCreation = async (): Promise<ProfileCreationCheck> => {
-  const response = await fetch(`${API_URL}/api/agency-conversion/check-profile-creation`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      // TODO: Agregar token de autenticación
-      // 'Authorization': `Bearer ${token}`
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Error al verificar creación de perfiles');
-  }
-
-  return response.json();
+  const response = await axios.get('/api/agency-conversion/check-profile-creation');
+  return response.data;
 };
 
 // Hook para solicitar conversión a agencia
@@ -145,56 +118,22 @@ export interface ConversionStats {
 }
 
 // Funciones para administradores
-export const getAgencyConversions = async (filter: 'pending' | 'all' = 'all'): Promise<PendingConversion[]> => {
-  const response = await fetch(`/api/agency-conversion/${filter === 'pending' ? 'pending' : 'history'}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Error al obtener conversiones de agencia');
-  }
-
-  return response.json();
+export const getAgencyConversions = async (filter: 'pending' | 'all' = 'all'): Promise<AgencyConversionRequest[]> => {
+  const response = await axios.get(`/api/agency-conversion/${filter === 'pending' ? 'pending' : 'history'}`);
+  return response.data;
 };
 
 export const getConversionStats = async (): Promise<ConversionStats> => {
-  const response = await fetch(`${API_URL}/api/agency-conversion/stats`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      // TODO: Agregar token de autenticación de admin
-      // 'Authorization': `Bearer ${adminToken}`
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Error al obtener estadísticas de conversión');
-  }
-
-  return response.json();
+  const response = await axios.get('/api/agency-conversion/stats');
+  return response.data;
 };
 
 export const processConversion = async (data: { userId: string; action: 'approve' | 'reject'; reason?: string }): Promise<void> => {
-  const response = await fetch('/api/agency-conversion/process', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      userId: data.userId,
-      approved: data.action === 'approve',
-      rejectionReason: data.reason
-    }),
+  await axios.post('/api/agency-conversion/process', {
+    userId: data.userId,
+    approved: data.action === 'approve',
+    rejectionReason: data.reason
   });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Error al procesar conversión');
-  }
 };
 
 // Hooks para administradores

@@ -19,7 +19,7 @@ interface BlogDetailPageProps {
 }
 
 const BlogDetailSkeleton = () => (
-  <div className="min-h-screen bg-gray-50">
+  <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <Skeleton className="h-8 w-32 mb-6" />
       <Skeleton className="h-12 w-3/4 mb-4" />
@@ -39,7 +39,7 @@ const BlogDetailSkeleton = () => (
 export default function BlogDetailPage({ params }: BlogDetailPageProps) {
   const { slug } = use(params);
   const { data: blog, isLoading, error } = useBlog(slug);
-  const { data: relatedBlogs } = useRelatedBlogs(blog?._id, { limit: 3 });
+  const { data: relatedBlogs } = useRelatedBlogs(blog?._id || '', 3);
 
   if (isLoading) {
     return <BlogDetailSkeleton />;
@@ -55,9 +55,9 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Navigation */}
-      <nav className="bg-white border-b sticky top-0 z-10">
+      <nav className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link
             href="/blog"
@@ -76,11 +76,11 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
           <article className="flex-1 lg:w-[70%]">
             {/* Header */}
             <header className="mb-8">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6 leading-tight">
                 {blog.title}
               </h1>
 
-              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-6">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-6">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   <span>{formattedDate}</span>
@@ -108,7 +108,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
 
             {/* Content */}
             <div className="mb-12">
-              <BlogRenderer content={blog.content} />
+              <BlogRenderer content={blog.content || { blocks: [] }} />
             </div>
           </article>
 
@@ -116,8 +116,8 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
           <aside className="lg:w-[30%] lg:sticky lg:top-24 lg:self-start">
             {/* Related Blogs */}
             {relatedBlogs && relatedBlogs.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">
                   Artículos relacionados
                 </h2>
 
@@ -135,20 +135,20 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
                               sizes="72px"
                             />
                           ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-                              <div className="text-xs font-bold text-gray-400">Blog</div>
+                            <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 flex items-center justify-center">
+                              <div className="text-xs font-bold text-gray-400 dark:text-gray-500">Blog</div>
                             </div>
                           )}
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-gray-900 text-md line-clamp-2 group-hover:text-blue-600 transition-colors mb-1">
+                          <h3 className="font-medium text-gray-900 dark:text-gray-100 text-md line-clamp-2 group-hover:text-blue-600 transition-colors mb-1">
                             <Link href={`/blog/${relatedBlog.slug}`}>
                               {relatedBlog.title}
                             </Link>
                           </h3>
 
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                             <Calendar className="w-3 h-3" />
                             <span>{blogService.formatDate(relatedBlog.createdAt)}</span>
                           </div>
@@ -158,7 +158,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
                   ))}
                 </div>
 
-                <div className="mt-6 pt-4 border-t">
+                <div className="mt-6 pt-4 border-t dark:border-gray-700">
                   <Link href="/blog">
                     <Button variant="outline" size="sm" className="w-full">
                       Ver todos los artículos

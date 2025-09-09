@@ -1,4 +1,4 @@
-import { Receipt, Settings, User } from 'lucide-react';
+import { Receipt, Settings, User, Tags } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 const sidebarItems = [
@@ -15,9 +15,9 @@ const sidebarItems = [
     description: 'Revisa tu historial completo de transacciones y pagos.',
   },
   {
-    id: 'ajustes',
-    label: 'Ajustes',
-    icon: Settings,
+        id: 'grupos-atributos',
+        label: 'Grupos de Atributos',
+        icon: Tags,
     description: 'Configura tu cuenta, privacidad y preferencias.',
   },
 ];

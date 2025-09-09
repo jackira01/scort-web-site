@@ -1,12 +1,34 @@
 import { Response, NextFunction } from 'express';
 import UserModel from '../modules/user/User.model';
 import { AuthRequest } from '../types/auth.types';
+import { JWTService } from '../services/jwt.service';
 
 export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    // For now, this is a basic implementation
-    // In a real application, you would validate the session/token from NextAuth
-    const userId = req.header('X-User-ID');
+    const jwtService = new JWTService();
+    let userId: string | null = null;
+
+    // Intentar obtener userId desde Authorization Bearer token
+    const authHeader = req.header('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = jwtService.extractTokenFromHeader(authHeader);
+        if (token) {
+          const payload = jwtService.verifyToken(token);
+          if (payload) {
+            userId = payload.userId;
+          }
+        }
+      } catch (jwtError) {
+        // Si el JWT es inválido, intentar con X-User-ID como fallback
+        console.warn('JWT token inválido, intentando con X-User-ID:', jwtError);
+      }
+    }
+
+    // Fallback a X-User-ID si no hay Bearer token válido
+     if (!userId) {
+       userId = req.header('X-User-ID') || null;
+     }
     
     if (!userId) {
       return res.status(401).json({ message: 'Usuario no autenticado' });
@@ -37,3 +59,6 @@ export const devAuthMiddleware = (req: AuthRequest, res: Response, next: NextFun
   req.user = { id: '507f1f77bcf86cd799439011', _id: '507f1f77bcf86cd799439011', role: 'admin' };
   next();
 };
+
+// Alias for compatibility
+export const authenticateToken = authMiddleware;

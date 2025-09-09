@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { blogService } from '../services/blog.service';
 import { toast } from './use-toast';
+import { OutputData } from '@editorjs/editorjs';
 
 export interface Blog {
   _id: string;
   title: string;
   slug: string;
-  content: object;
+  content: OutputData;
   coverImage?: string;
   published: boolean;
   createdAt: string;
@@ -25,7 +26,7 @@ export interface BlogFilters {
 export interface CreateBlogData {
   title: string;
   slug?: string;
-  content: object;
+  content: OutputData;
   coverImage?: string;
   published?: boolean;
 }

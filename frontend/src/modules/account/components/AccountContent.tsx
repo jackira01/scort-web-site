@@ -45,9 +45,9 @@ export default function AccountContent({ activeSection }: Props) {
     return <PaymentHistory />;
   }
 
-  if (activeSection === 'ajustes') {
-    return <AccountSettings />;
-  }
+  if (activeSection === 'grupos-atributos') {
+        return <AccountSettings />;
+    }
 
   return null;
 }

@@ -29,7 +29,7 @@ export const useCountry = (): UseQueryResult<CountryData | null> => {
         queryKey: QUERY_KEYS.country,
         queryFn: () => LocationHierarchyService.getCountry(),
         staleTime: 5 * 60 * 1000, // 5 minutos
-        cacheTime: 10 * 60 * 1000, // 10 minutos
+        gcTime: 10 * 60 * 1000, // 10 minutos
     });
 };
 
@@ -41,7 +41,7 @@ export const useDepartments = (): UseQueryResult<DepartmentData[]> => {
         queryKey: QUERY_KEYS.departments,
         queryFn: () => LocationHierarchyService.getDepartments(),
         staleTime: 5 * 60 * 1000,
-        cacheTime: 10 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
     });
 };
 
@@ -57,7 +57,7 @@ export const useCitiesByDepartment = (
             LocationHierarchyService.getCitiesByDepartment(departmentNormalized),
         enabled: !!departmentNormalized,
         staleTime: 5 * 60 * 1000,
-        cacheTime: 10 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
     });
 };
 
@@ -73,7 +73,7 @@ export const useSearchLocations = (
         queryFn: () => LocationHierarchyService.searchLocations(searchTerm),
         enabled: enabled && searchTerm.length >= 2,
         staleTime: 2 * 60 * 1000, // 2 minutos para búsquedas
-        cacheTime: 5 * 60 * 1000,
+        gcTime: 5 * 60 * 1000,
     });
 };
 
@@ -85,7 +85,7 @@ export const useHierarchicalOptions = () => {
         queryKey: QUERY_KEYS.hierarchicalOptions,
         queryFn: () => LocationHierarchyService.getHierarchicalOptions(),
         staleTime: 10 * 60 * 1000, // 10 minutos
-        cacheTime: 15 * 60 * 1000,
+        gcTime: 15 * 60 * 1000,
     });
 };
 
@@ -97,7 +97,7 @@ export const useLocationStats = () => {
         queryKey: QUERY_KEYS.locationStats,
         queryFn: () => LocationHierarchyService.getLocationStats(),
         staleTime: 10 * 60 * 1000,
-        cacheTime: 15 * 60 * 1000,
+        gcTime: 15 * 60 * 1000,
     });
 };
 
@@ -112,7 +112,7 @@ export const useLocationByKey = (
         queryFn: () => LocationHierarchyService.getLocationByKey(key),
         enabled: !!key,
         staleTime: 5 * 60 * 1000,
-        cacheTime: 10 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
     });
 };
 

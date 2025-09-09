@@ -13,9 +13,13 @@ import plansRoutes from './modules/plans/plans.routes';
 import profileRoutes from './modules/profile/profile.routes';
 import profileVerificationRoutes from './modules/profile-verification/profile-verification.routes';
 import agencyConversionRoutes from './routes/agency-conversion.routes';
+import authRoutes from './routes/auth';
+import emailRoutes from './routes/email.routes';
+import { emailInboxRoutes } from './modules/email-inbox';
 import invoiceRoutes from './modules/payments/invoice.routes';
 
 import userRoutes from './modules/user/user.routes';
+import adminEmailRoutes from './routes/admin/emails';
 import { enforceVisibilityForFeeds } from './middlewares/visibility.middleware';
 
 dotenv.config();
@@ -64,8 +68,12 @@ app.use('/api/plans', plansRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/profile-verification', profileVerificationRoutes);
 app.use('/api/agency-conversion', agencyConversionRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/email', emailRoutes);
+app.use('/api/email-inbox', emailInboxRoutes);
 app.use('/api/invoices', invoiceRoutes);
 
 app.use('/api/user', userRoutes);
+app.use('/api/admin/emails', adminEmailRoutes);
 
 export default app;

@@ -1,10 +1,27 @@
 import type { Request, Response } from 'express';
 import UserModel from './User.model';
 import * as userService from './user.service';
+import { sendWelcomeEmail } from '../../utils/welcome-email.util';
 
 export const CreateUserController = async (req: Request, res: Response) => {
-  const user = await userService.createUser(req.body);
-  res.status(201).json(user);
+  try {
+    const user = await userService.createUser(req.body);
+    
+    // Enviar correo de bienvenida
+    if (user.email) {
+      try {
+        await sendWelcomeEmail(user.email, user.name);
+      } catch (emailError) {
+        console.error('Error enviando correo de bienvenida:', emailError);
+        // No fallar el registro por error de email
+      }
+    }
+    
+    res.status(201).json(user);
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
 };
 
 export const getUserById = async (req: Request, res: Response) => {
@@ -48,9 +65,23 @@ export const authGoogleUserController = async (req: Request, res: Response) => {
 
   // Buscar usuario por email
   let user = await userService.findUserByEmail(email);
+  let isNewUser = false;
+  
   if (!user) {
     user = await userService.createUser({ email, name });
+    isNewUser = true;
   }
+  
+  // Enviar correo de bienvenida para nuevos usuarios
+  if (isNewUser) {
+    try {
+      await sendWelcomeEmail(user.email, name);
+    } catch (emailError) {
+      console.error('Error enviando correo de bienvenida:', emailError);
+      // No fallar el registro por error de email
+    }
+  }
+  
   return res.json({
     _id: user._id,
     isVerified: user.isVerified,

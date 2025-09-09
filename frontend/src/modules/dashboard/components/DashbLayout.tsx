@@ -13,6 +13,7 @@ import PlansManager from '@/components/admin/plans/PlansManager';
 import DefaultPlanManager from '@/components/admin/DefaultPlanManager';
 import BlogsManager from '@/components/admin/blogs/BlogsManager';
 import InvoicesManager from '@/components/admin/invoices/InvoicesManager';
+import EmailManager from '@/components/admin/emails/EmailManager';
 
 
 export default function DashboardLayout() {
@@ -38,10 +39,17 @@ export default function DashboardLayout() {
             case 'facturas':
                 return <InvoicesManager />;
 
-            case 'ajustes':
+            case 'grupos-atributos':
                 return (
                     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
                         <AttributeGroupsAdmin />
+                    </div>
+                );
+
+            case 'envio-correos':
+                return (
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                        <EmailManager />
                     </div>
                 );
 

@@ -17,8 +17,11 @@ axiosInstance.interceptors.request.use(
         // Obtener la sesión actual
         const session = await getSession();
         
-        // Si hay una sesión activa, agregar el User ID a las cabeceras
-        if (session?.user?._id) {
+        // Si hay una sesión activa y un JWT token, usar Authorization Bearer
+        if (session?.accessToken) {
+          config.headers['Authorization'] = `Bearer ${session.accessToken}`;
+        } else if (session?.user?._id) {
+          // Fallback a X-User-ID si no hay JWT token
           config.headers['X-User-ID'] = session.user._id;
         }
         
