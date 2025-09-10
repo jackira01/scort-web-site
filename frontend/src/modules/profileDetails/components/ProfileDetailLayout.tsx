@@ -52,7 +52,7 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
     name: profile.name,
     age: parseInt(profile.age),
     location: `${profile.location?.country?.label || profile.location?.country || ''}, ${profile.location?.department?.label || profile.location?.department || ''}, ${profile.location?.city?.label || profile.location?.city || ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ','),
-    category: 'ESCORT',
+    category: profile.features?.find((feature: any) => feature.groupName === 'Categoría')?.value || 'ESCORT',
     verified: profile.verification?.verificationStatus === 'verified',
     online: true,
     description: profile.description,

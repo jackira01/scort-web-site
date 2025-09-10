@@ -2,13 +2,18 @@
 import path from "path";
 
 const nextConfig = {
-
   eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Configuración para forzar renderizado estático
+  experimental: {
+    staticWorkerRequestDeduping: true,
+  },
+  // Configuración para manejo de errores dinámicos
+  // output: 'standalone', // Comentado porque no es compatible con pnpm run start
   images: {
     remotePatterns: [
       {

@@ -16,6 +16,7 @@ const generateCustomJWT = async (userId, role) => {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [Google],
+  trustHost: true, // Permite hosts locales como localhost:3000
   callbacks: {
     async jwt({ token, user, account }) {
       if (account && account.provider === 'google') {

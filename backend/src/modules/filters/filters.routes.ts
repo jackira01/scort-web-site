@@ -83,6 +83,6 @@ router.get('/options', controller.getFilterOptions);
  *   totalCount: number
  * }
  */
-router.post('/profiles/count', controller.getProfilesCountPost);
+
 
 export default router;

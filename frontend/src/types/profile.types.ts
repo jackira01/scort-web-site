@@ -152,12 +152,7 @@ export interface FilterQuery {
   fields?: string[];
 }
 
-export interface FilterCounts {
-  categories?: Record<string, number>;
-  genders?: Record<string, number>;
-  sex?: Record<string, number>;
-  locations?: Record<string, number>;
-}
+
 
 export interface ProfilesResponse {
   profiles: Profile[];
@@ -168,7 +163,7 @@ export interface ProfilesResponse {
     hasNextPage: boolean;
     hasPrevPage: boolean;
   };
-  filterCounts?: FilterCounts;
+
 }
 
 export interface ProfileCardData {

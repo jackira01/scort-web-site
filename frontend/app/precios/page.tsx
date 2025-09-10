@@ -205,11 +205,10 @@ export default function PricingPage() {
           {plans.map((plan, index) => (
             <Card
               key={plan.id}
-              className={`relative overflow-hidden transition-all duration-500 hover:shadow-2xl animate-in zoom-in-50 ${
-                plan.popular
+              className={`relative overflow-hidden transition-all duration-500 hover:shadow-2xl animate-in zoom-in-50 ${plan.popular
                   ? 'border-purple-500 shadow-lg shadow-purple-500/25 scale-105'
                   : 'hover:border-purple-300'
-              }`}
+                }`}
               style={{ animationDelay: `${index * 200}ms` }}
             >
               {plan.popular && (
@@ -223,11 +222,10 @@ export default function PricingPage() {
               >
                 <div className="flex justify-center mb-4">
                   <div
-                    className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                      plan.popular
+                    className={`w-16 h-16 rounded-full flex items-center justify-center ${plan.popular
                         ? 'bg-gradient-to-r from-purple-600 to-pink-600'
                         : 'bg-muted'
-                    }`}
+                      }`}
                   >
                     <plan.icon
                       className={`h-8 w-8 ${plan.popular ? 'text-white' : 'text-muted-foreground'}`}
@@ -277,11 +275,10 @@ export default function PricingPage() {
                 </div>
 
                 <Button
-                  className={`w-full mt-6 ${
-                    plan.popular
+                  className={`w-full mt-6 ${plan.popular
                       ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white'
                       : 'bg-muted hover:bg-muted/80 text-foreground'
-                  } transition-all duration-200 hover:scale-105`}
+                    } transition-all duration-200 hover:scale-105`}
                 >
                   Elegir {plan.name}
                   <ArrowRight className="h-4 w-4 ml-2" />
@@ -368,13 +365,6 @@ export default function PricingPage() {
             </Button>
           </div>
         </div>
-      </div>
-
-      {/* Footer Badge */}
-      <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-500">
-        <Badge className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-700 dark:to-slate-800 text-white px-3 py-1 shadow-lg hover:scale-105 transition-transform duration-200">
-          🟢 NICOLAS ALVAREZ
-        </Badge>
       </div>
     </div>
   );

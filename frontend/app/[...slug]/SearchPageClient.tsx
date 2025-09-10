@@ -22,7 +22,6 @@ import {
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import SearchProfilesSSG from '@/modules/catalogs/components/SearchProfilesSSG';
-import SponsoredProfilesCarousel from '@/components/sponsored/SponsoredProfilesCarousel';
 import FeaturedProfilesSection from '@/components/featured/FeaturedProfilesSection';
 import AgeFilter from '@/modules/filters/components/AgeFilter';
 import FilterToglles from '@/modules/filters/components/FilterToglles';
@@ -31,8 +30,9 @@ import CategoryFilter from '@/modules/filters/components/CategoryFilter';
 import SexFilter from '@/modules/filters/components/SexFilter';
 import LocationFilter from '@/modules/filters/components/LocationFIlter';
 import { useSearchFilters } from '@/hooks/use-search-filters';
+import { useFilteredProfiles } from '@/hooks/use-filtered-profiles';
 import type { ProfilesResponse } from '@/types/profile.types';
-import { LOCATIONS, API_URL } from '@/lib/config';
+import { LOCATIONS } from '@/lib/config';
 
 interface SearchPageClientProps {
   categoria: string;
@@ -50,8 +50,6 @@ export default function SearchPageClient({
   const router = useRouter();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [currentProfilesData, setCurrentProfilesData] = useState<ProfilesResponse>(profilesData);
-  const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
 
   // Hook para manejar filtros (mantenemos la funcionalidad existente)
   const initialFilters = {
@@ -68,72 +66,72 @@ export default function SearchPageClient({
     filters,
     updateFilter,
     clearFilters,
-    activeFiltersCount,
   } = useSearchFilters(initialFilters);
 
-  // Actualizar currentProfilesData cuando cambien los props
-  useEffect(() => {
-    setCurrentProfilesData(profilesData);
-  }, [profilesData]);
-
-
-
-
-
-
-
-  // Función para cargar todos los perfiles verificados
-  const loadAllVerifiedProfiles = async () => {
-    setIsLoadingProfiles(true);
-    try {
-      const requestBody = {
-        page: 1,
-        limit: 20,
-        isActive: true,
-        isVerified: true, // Solo perfiles verificados
-        sortBy: 'createdAt',
-        sortOrder: 'desc' as const
-      };
-
-      const response = await fetch(`${API_URL}/api/filters/profiles`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const responseData = await response.json();
-      
-      if (responseData.success && responseData.data) {
-        const backendData = responseData.data;
-        const newProfilesData: ProfilesResponse = {
-          profiles: backendData.profiles,
-          pagination: {
-            currentPage: backendData.currentPage,
-            totalPages: backendData.totalPages,
-            totalProfiles: backendData.totalCount,
-            hasNextPage: backendData.hasNextPage,
-            hasPrevPage: backendData.hasPrevPage,
-          },
-        };
-        setCurrentProfilesData(newProfilesData);
-      }
-    } catch (error) {
-      console.error('Error loading all verified profiles:', error);
-    } finally {
-      setIsLoadingProfiles(false);
-    }
+  // Construir filtros solo con valores definidos
+  const queryFilters = {
+    ...(filters.category && { category: filters.category }),
+    ...(filters.location?.department && { location: filters.location }),
+    ...(filters.features?.age && { age: filters.features.age }),
+    ...(filters.features?.gender && { gender: filters.features.gender }),
+    ...(filters.features?.sex && { sex: filters.features.sex }),
+    isActive: true,
+    sortBy: 'createdAt',
+    sortOrder: 'desc' as const,
+    page: 1,
+    limit: 20
   };
 
-  // Función wrapper para limpiar filtros y cargar todos los perfiles verificados
+  // Determinar si los filtros han cambiado desde los iniciales
+  const hasFiltersChanged = Boolean(
+    filters.features?.age || 
+    filters.features?.gender || 
+    filters.features?.sex || 
+    (filters.location?.department !== departamento) ||
+    (filters.location?.city !== ciudad) ||
+    (filters.category !== categoria)
+  );
+
+  // Usar useQuery para manejar los datos filtrados
+  const {
+    data: currentProfilesData = profilesData,
+    isLoading: isLoadingProfiles,
+    error,
+    refetch
+  } = useFilteredProfiles(
+    queryFilters,
+    {
+      initialData: profilesData,
+      staleTime: hasFiltersChanged ? 0 : 5 * 60 * 1000, // Si los filtros cambiaron, no usar cache
+      enabled: hasFiltersChanged, // Solo hacer fetch si los filtros cambiaron
+      refetchOnMount: hasFiltersChanged // Solo refetch si los filtros cambiaron
+    }
+  );
+
+  // Log para debugging
+  useEffect(() => {
+    console.log('🔍 [DEBUG] SearchPageClient - Initial params:', { categoria, departamento, ciudad });
+    console.log('🔍 [DEBUG] SearchPageClient - Filters:', filters);
+    console.log('🔍 [DEBUG] SearchPageClient - QueryFilters:', queryFilters);
+    console.log('🔍 [DEBUG] SearchPageClient - HasFiltersChanged:', hasFiltersChanged);
+    console.log('🔍 [DEBUG] SearchPageClient - ProfilesData (SSR):', profilesData);
+    console.log('🔍 [DEBUG] SearchPageClient - CurrentProfilesData:', currentProfilesData);
+    console.log('🔍 [DEBUG] SearchPageClient - Profiles count:', currentProfilesData?.profiles?.length);
+    console.log('🔍 [DEBUG] SearchPageClient - IsLoading:', isLoadingProfiles);
+    if (error) console.error('🔍 [DEBUG] SearchPageClient - Error:', error);
+  }, [categoria, departamento, ciudad, filters, queryFilters, hasFiltersChanged, profilesData, currentProfilesData, isLoadingProfiles, error]);
+
+
+
+
+
+
+
+  // Función wrapper para limpiar filtros y refrescar datos
   const handleClearFilters = async () => {
     clearFilters();
-    await loadAllVerifiedProfiles();
+    // El refetch se ejecutará automáticamente cuando cambien los filtros
+    await refetch();
   };
 
   // Función wrapper para actualizar filtros
@@ -266,6 +264,7 @@ export default function SearchPageClient({
                   <GenderFilter
                     selectedGender={filters.features?.gender}
                     onGenderChange={(gender) => handleUpdateFilter('gender', gender)}
+                    category={categoria}
                   />
 
                   <Separator />
@@ -273,6 +272,7 @@ export default function SearchPageClient({
                   <SexFilter
                     selectedSex={filters.features?.sex}
                     onSexChange={(sex) => handleUpdateFilter('sex', sex)}
+                    category={categoria}
                   />
 
                   <Separator />
@@ -308,14 +308,7 @@ export default function SearchPageClient({
                     <Button variant="outline" size="sm" className="relative">
                       <Filter className="h-4 w-4 mr-2" />
                       Filtros
-                      {activeFiltersCount > 0 && (
-                        <Badge
-                          variant="secondary"
-                          className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs bg-purple-100 text-purple-700"
-                        >
-                          {activeFiltersCount}
-                        </Badge>
-                      )}
+
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="left" className="w-80 overflow-y-auto max-h-screen">
@@ -353,6 +346,7 @@ export default function SearchPageClient({
                       <GenderFilter
                         selectedGender={filters.features?.gender}
                         onGenderChange={(gender) => updateFilter('gender', gender)}
+                        category={categoria}
                       />
 
                       <Separator />
@@ -360,6 +354,7 @@ export default function SearchPageClient({
                       <SexFilter
                         selectedSex={filters.features?.sex}
                         onSexChange={(sex) => updateFilter('sex', sex)}
+                        category={categoria}
                       />
 
                       <Separator />

@@ -36,11 +36,12 @@ export const getFilteredProfiles = async (
     // Construir query de MongoDB
     const query: any = {};
 
-    // Alinear con home feed: solo perfiles visibles, no eliminados y con plan activo
+    // Alinear con home feed: solo perfiles visibles, no eliminados
     const now = new Date();
     query.visible = true;
     query.isDeleted = { $ne: true };
-    query['planAssignment.expiresAt'] = { $gt: now };
+    // Temporalmente comentado para debugging - permitir perfiles sin plan activo
+    // query['planAssignment.expiresAt'] = { $gt: now };
 
     // Solo agregar filtro isActive si está definido (para activación/desactivación)
     if (isActive !== undefined) {
@@ -48,12 +49,14 @@ export const getFilteredProfiles = async (
     }
 
     // Filtro por categoría (se maneja como feature)
+    console.log('🔍 DEBUG - Category filter:', category);
     if (category) {
       // Agregar la categoría a las features para procesarla junto con las demás
       if (!features) {
         features = {};
       }
       features.category = category;
+      console.log('🔍 DEBUG - Features after adding category:', features);
     }
 
     // Filtro por ubicación
@@ -101,22 +104,29 @@ export const getFilteredProfiles = async (
     }
 
     // Filtro por características (features)
+    console.log('🔍 DEBUG - Features object:', features);
     if (features && Object.keys(features).length > 0) {
+      console.log('🔍 DEBUG - Processing features with keys:', Object.keys(features));
       const featureConditions: any[] = [];
 
       // Primero necesitamos obtener los IDs de los grupos por sus keys
       const groupKeys = Object.keys(features);
+      console.log('🔍 DEBUG - Features keys:', groupKeys);
       const attributeGroups = await AttributeGroup.find({
         key: { $in: groupKeys },
       });
+      console.log('🔍 DEBUG - Found attribute groups:', attributeGroups.map(g => ({ key: g.key, _id: g._id })));
       const groupKeyToId = new Map();
       attributeGroups.forEach((group) => {
         groupKeyToId.set(group.key, group._id);
       });
+      console.log('🔍 DEBUG - Group key to ID map:', Array.from(groupKeyToId.entries()));
 
       for (const [groupKey, value] of Object.entries(features)) {
         const groupId = groupKeyToId.get(groupKey);
+        console.log(`🔍 DEBUG - Processing feature: ${groupKey} = ${value}, groupId: ${groupId}`);
         if (!groupId) {
+          console.log(`⚠️ WARNING - No groupId found for feature key: ${groupKey}`);
           continue;
         }
 
@@ -226,6 +236,9 @@ export const getFilteredProfiles = async (
 
     const startTime = Date.now();
 
+    // Debug: Log para verificar la query
+    console.log('🔍 DEBUG getFilteredProfiles - Query inicial:', JSON.stringify(query, null, 2));
+
     // Usar agregación para filtrar perfiles con usuarios verificados (alineado con homeFeed)
     const aggregationPipeline: any[] = [
       {
@@ -240,10 +253,10 @@ export const getFilteredProfiles = async (
         }
       },
       {
-        $match: {
-          'userInfo.isVerified': true
-        }
-      },
+      $match: {
+        'userInfo.isVerified': true
+      }
+    },
       {
         $addFields: {
           user: { $arrayElemAt: ['$userInfo', 0] }
@@ -255,6 +268,8 @@ export const getFilteredProfiles = async (
         }
       }
     ];
+
+    console.log('🔍 DEBUG getFilteredProfiles - Pipeline de agregación:', JSON.stringify(aggregationPipeline, null, 2));
 
     // Agregar lookup para verification si es necesario
     if (!fields || fields.includes('verification')) {
@@ -285,11 +300,13 @@ export const getFilteredProfiles = async (
       });
     }
 
-    // Ejecutar agregación y contar documentos
+    // Ejecutar agregación para obtener perfiles
     const [allProfiles, totalCountResult] = await Promise.all([
       Profile.aggregate(aggregationPipeline),
       Profile.aggregate([
-        { $match: query },
+        {
+          $match: query
+        },
         {
           $lookup: {
             from: 'users',
@@ -306,6 +323,9 @@ export const getFilteredProfiles = async (
         { $count: 'total' }
       ])
     ]);
+
+    console.log('🔍 DEBUG getFilteredProfiles - Perfiles encontrados:', allProfiles.length);
+    console.log('🔍 DEBUG getFilteredProfiles - Total count result:', totalCountResult);
 
     const totalCount = totalCountResult[0]?.total || 0;
 

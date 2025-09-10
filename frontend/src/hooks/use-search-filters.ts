@@ -184,21 +184,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
     return query;
   }, [filters]);
 
-  // Obtener conteo de filtros activos
-  const getActiveFiltersCount = useCallback(() => {
-    let count = 0;
 
-    if (filters.category) count++;
-    if (filters.location?.department || filters.location?.city) count++;
-    if (filters.features?.gender) count++;
-    if (filters.features?.sex && filters.features.sex.length > 0) count++;
-    if (filters.features?.age && filters.features.age.length > 0) count++;
-    if (filters.features?.ageRange?.min || filters.features?.ageRange?.max) count++;
-    if (filters.priceRange?.min || filters.priceRange?.max) count++;
-    if (filters.isVerified !== undefined) count++;
-
-    return count;
-  }, [filters]);
 
   // Método genérico para actualizar filtros
   const updateFilter = useCallback((key: string, value: any) => {
@@ -275,7 +261,6 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
     updateSorting,
     clearFilters,
     toFilterQuery,
-    getActiveFiltersCount,
-    activeFiltersCount: getActiveFiltersCount(),
+
   };
 };

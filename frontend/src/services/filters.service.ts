@@ -1,5 +1,5 @@
 import axios from '@/lib/axios';
-import type { FilterQuery, ProfilesResponse, FilterCounts } from '@/types/profile.types';
+import type { FilterQuery, ProfilesResponse } from '@/types/profile.types';
 import { API_URL } from '@/lib/config';
 
 // Función GET eliminada - solo se usa POST para filtros de perfiles
@@ -10,12 +10,10 @@ import { API_URL } from '@/lib/config';
  */
 export const getFilteredProfilesPost = async (
   filters: FilterQuery,
-  includeCounts: boolean = false,
 ): Promise<ProfilesResponse> => {
   const postUrl = `${API_URL}/api/filters/profiles`;
 
-  // Agregar parámetro para solicitar conteos si se especifica
-  const requestBody = includeCounts ? { ...filters, includeCounts } : filters;
+  const requestBody = filters;
 
   try {
     const response = await fetch(postUrl, {
@@ -35,16 +33,7 @@ export const getFilteredProfilesPost = async (
     if (responseData.success && responseData.data) {
       const backendData = responseData.data;
 
-      // Procesar conteos si están incluidos
-      let filterCounts: FilterCounts | undefined;
-      if (includeCounts && backendData.filterCounts) {
-        filterCounts = {
-          categories: backendData.filterCounts.categories || {},
-          genders: backendData.filterCounts.genders || {},
-          sex: backendData.filterCounts.sex || {},
-          locations: backendData.filterCounts.locations || {},
-        };
-      }
+
 
       const transformedData: ProfilesResponse = {
         profiles: backendData.profiles,
@@ -55,7 +44,6 @@ export const getFilteredProfilesPost = async (
           hasNextPage: backendData.hasNextPage,
           hasPrevPage: backendData.hasPrevPage,
         },
-        filterCounts,
       };
 
       return transformedData;
@@ -113,15 +101,5 @@ export const getFilterOptions = async () => {
 
 /**
  * Obtiene solo los conteos de filtros sin perfiles (más eficiente para filtros)
+ * @param filters - Filtros opcionales para aplicar a los conteos (ej: categoría)
  */
-export const getFilterCounts = async (): Promise<FilterCounts> => {
-  try {
-    // Usar filtros vacíos para obtener conteos generales
-    const emptyFilters: FilterQuery = { limit: 0 }; // limit 0 para no traer perfiles
-    const response = await getFilteredProfilesPost(emptyFilters, true);
-    return response.filterCounts || {};
-  } catch (error) {
-    console.error('Error getting filter counts:', error);
-    return {};
-  }
-};

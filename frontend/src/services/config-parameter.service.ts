@@ -29,20 +29,21 @@ export class ConfigParameterService {
      * Obtener parámetros con filtros y paginación
      */
     static async getAll(query: ConfigParameterQuery = {}) {
-        const params = new URLSearchParams();
+        const queryParts: string[] = [];
         
         Object.entries(query).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
                 if (Array.isArray(value)) {
-                    params.append(key, value.join(','));
+                    queryParts.push(`${key}=${encodeURIComponent(value.join(','))}`);
                 } else {
-                    params.append(key, String(value));
+                    queryParts.push(`${key}=${encodeURIComponent(String(value))}`);
                 }
             }
         });
 
+        const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
         const response = await axios.get<ConfigParametersApiResponse>(
-            `${API_BASE_URL}?${params.toString()}`
+            `${API_BASE_URL}${queryString}`
         );
         return response.data.data;
     }
@@ -87,9 +88,10 @@ export class ConfigParameterService {
             return response.data.data;
         } catch (error) {
             console.error('[DEBUG] ConfigParameterService.getByKey error:', error);
-            if (error.response) {
-                console.error('[DEBUG] Error response status:', error.response.status);
-                console.error('[DEBUG] Error response data:', error.response.data);
+            if (error && typeof error === 'object' && 'response' in error) {
+                const axiosError = error as any;
+                console.error('[DEBUG] Error response status:', axiosError.response?.status);
+                console.error('[DEBUG] Error response data:', axiosError.response?.data);
             }
             throw error;
         }

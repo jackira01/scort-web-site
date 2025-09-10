@@ -11,11 +11,9 @@ import type {
 const feedsApi = {
   getHomeFeed: async (options: HomeFeedOptions = {}): Promise<HomeFeedResponse> => {
     const { page = 1, pageSize = 20 } = options;
-    const params = new URLSearchParams();
-    params.append('page', page.toString());
-    params.append('limit', pageSize.toString());
+    const queryString = `page=${page}&limit=${pageSize}`;
 
-    const response = await axios.get(`/api/profile/home?${params}`);
+    const response = await axios.get(`/api/profile/home?${queryString}`);
     const result = response.data;
 
     // Adaptar la respuesta del backend al formato esperado por el frontend

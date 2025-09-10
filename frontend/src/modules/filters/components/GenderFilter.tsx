@@ -1,18 +1,16 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAttributeGroupByKey } from '@/hooks/use-filter-attribute-groups';
-import { useGenderFilterCounts } from '@/hooks/use-filter-counts';
 
 interface GenderFilterProps {
   selectedGender?: string;
   onGenderChange?: (gender: string) => void;
+  category?: string;
 }
 
-const GenderFilter = ({ selectedGender, onGenderChange }: GenderFilterProps) => {
+const GenderFilter = ({ selectedGender, onGenderChange, category }: GenderFilterProps) => {
   const { data: genderGroup, isLoading, error } = useAttributeGroupByKey('gender');
-  const { data: genderCounts, isLoading: countsLoading } = useGenderFilterCounts();
 
   if (isLoading) {
     return (
@@ -63,7 +61,7 @@ const GenderFilter = ({ selectedGender, onGenderChange }: GenderFilterProps) => 
                 htmlFor={`gender-${variant.value}`}
                 className="text-sm font-medium text-foreground cursor-pointer flex-1"
               >
-                {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
+                {variant.label}
               </label>
             </div>
           );

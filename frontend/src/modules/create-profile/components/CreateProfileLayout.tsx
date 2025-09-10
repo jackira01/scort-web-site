@@ -373,7 +373,7 @@ export function CreateProfileLayout() {
   const handleCreateProfileClick = () => {
     const formData = form.getValues();
     const hasPaidPlan = formData.selectedPlan && formData.selectedPlan.planCode !== 'FREE';
-    
+
     if (hasPaidPlan) {
       setShowConfirmModal(true);
     } else {
@@ -420,7 +420,7 @@ export function CreateProfileLayout() {
             toast.success(`${originalUrls.filter(url => url !== null).length} fotos procesadas y subidas exitosamente`);
           }
         }
-        
+
         // Mantener URLs existentes (strings)
         const existingPhotoUrls = data.photos.filter((photo): photo is string => typeof photo === 'string');
         photoUrls = [...photoUrls, ...existingPhotoUrls];
@@ -503,7 +503,7 @@ export function CreateProfileLayout() {
 
         // Redirigir a la página de cuenta
         router.push('/cuenta');
-        
+
         // Verificar si se requiere pago y hay mensaje de WhatsApp
         if (response.paymentRequired && response.whatsAppMessage) {
           const { companyNumber, message } = response.whatsAppMessage;
@@ -520,7 +520,7 @@ export function CreateProfileLayout() {
         }
       } catch (profileError: any) {
         toast.dismiss(loadingToast);
-        
+
         // Manejo específico de errores
         if (profileError?.response?.status === 409) {
           const errorMessage = profileError?.response?.data?.message || 'Límite de perfiles excedido';
@@ -684,13 +684,6 @@ export function CreateProfileLayout() {
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Footer Badge */}
-        <div className="fixed bottom-20 right-4 z-50">
-          <Badge className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-700 dark:to-slate-800 text-white px-3 py-1 shadow-lg">
-            🟢 NICOLAS ALVAREZ
-          </Badge>
         </div>
 
         {/* Modal de Confirmación */}

@@ -25,6 +25,12 @@ export default function SearchProfilesSSG({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Debug: Log inicial
+  console.log('🔍 [DEBUG] SearchProfilesSSG - Component initialized with:');
+  console.log('🔍 [DEBUG] SearchProfilesSSG - InitialData:', initialData);
+  console.log('🔍 [DEBUG] SearchProfilesSSG - InitialData profiles count:', initialData?.profiles?.length);
+  console.log('🔍 [DEBUG] SearchProfilesSSG - Filters:', filters);
+
   // Función para refrescar datos cuando cambian los filtros
   const refreshData = async (newFilters: FilterQuery) => {
     setIsLoading(true);
@@ -44,22 +50,40 @@ export default function SearchProfilesSSG({
 
   // Efecto para refrescar datos cuando cambian los filtros
   useEffect(() => {
-    // Solo refrescar si los filtros han cambiado significativamente
-    const hasFiltersChanged = 
-      filters.category !== initialData.profiles[0]?.category ||
-      filters.location?.department !== undefined ||
-      filters.location?.city !== undefined ||
-      filters.features?.gender !== undefined ||
-      filters.features?.age !== undefined ||
-      filters.priceRange?.min !== undefined ||
-      filters.priceRange?.max !== undefined ||
-      filters.sortBy !== 'createdAt' ||
-      filters.sortOrder !== 'desc';
+    console.log('🔍 [DEBUG] SearchProfilesSSG - Filters received:', filters);
+    
+    // Solo refrescar si hay filtros activos aplicados (no en la carga inicial)
+    const hasActiveFilters = 
+      (filters.category !== undefined && filters.category !== '') ||
+      (filters.location?.department !== undefined && filters.location?.department !== '') ||
+      (filters.location?.city !== undefined && filters.location?.city !== '') ||
+      (filters.features?.gender !== undefined && filters.features?.gender !== '') ||
+      (filters.features?.age !== undefined && filters.features.age.length > 0) ||
+      (filters.features?.height !== undefined && filters.features.height.length > 0) ||
+      (filters.features?.weight !== undefined && filters.features.weight.length > 0) ||
+      (filters.features?.bodyType !== undefined && filters.features.bodyType.length > 0) ||
+      (filters.features?.ethnicity !== undefined && filters.features.ethnicity.length > 0) ||
+      (filters.features?.hairColor !== undefined && filters.features.hairColor.length > 0) ||
+      (filters.features?.eyeColor !== undefined && filters.features.eyeColor.length > 0) ||
+      (filters.features?.services !== undefined && filters.features.services.length > 0) ||
+      (filters.priceRange?.min !== undefined) ||
+      (filters.priceRange?.max !== undefined) ||
+      filters.isVerified === true ||
+      (filters.sortBy && filters.sortBy !== 'createdAt') ||
+      (filters.sortOrder && filters.sortOrder !== 'desc');
 
-    if (hasFiltersChanged) {
+    console.log('🔍 [DEBUG] SearchProfilesSSG - HasActiveFilters:', hasActiveFilters);
+    
+    // Ejecutar refreshData si hay filtros activos, independientemente de los datos iniciales
+    if (hasActiveFilters) {
+      console.log('🔍 [DEBUG] SearchProfilesSSG - Calling refreshData with filters');
       refreshData(filters);
+    } else {
+      console.log('🔍 [DEBUG] SearchProfilesSSG - No active filters, using initial data');
+      // Si no hay filtros activos, usar los datos iniciales
+      setProfilesData(initialData);
     }
-  }, [filters]);
+  }, [filters, initialData]);
 
   const handlePageChange = async (page: number) => {
     const newFilters = { ...filters, page };
@@ -96,7 +120,12 @@ export default function SearchProfilesSSG({
 
   const { profiles, pagination } = profilesData;
 
-  if (profiles.length === 0) {
+  // Debug: Log para verificar los datos
+  console.log('SearchProfilesSSG - profilesData:', profilesData);
+  console.log('SearchProfilesSSG - profiles:', profiles);
+  console.log('SearchProfilesSSG - profiles.length:', profiles?.length);
+
+  if (!profiles || profiles.length === 0) {
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-semibold text-muted-foreground mb-2">

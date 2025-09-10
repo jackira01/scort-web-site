@@ -22,11 +22,12 @@ const transformBackendPlanToFrontend = (backendPlan: any): Plan => {
     _id: backendPlan._id,
     code: backendPlan.code,
     name: backendPlan.name,
-    description: backendPlan.description || '',
     level: backendPlan.level,
-    isActive: backendPlan.active,
-    createdAt: backendPlan.createdAt,
-    updatedAt: backendPlan.updatedAt,
+    variants: backendPlan.variants?.map((variant: any, index: number) => ({
+      price: variant.price,
+      days: variant.days,
+      durationRank: variant.durationRank || index + 1
+    })) || [],
     features: backendPlan.features ? {
       showInHome: backendPlan.features.showInHome || false,
       showInFilters: backendPlan.features.showInFilters || false,
@@ -36,32 +37,48 @@ const transformBackendPlanToFrontend = (backendPlan: any): Plan => {
       showInFilters: false,
       showInSponsored: false
     },
-    variants: backendPlan.variants?.map((variant: any, index: number) => ({
-      price: variant.price,
-      days: variant.days,
-      features: backendPlan.features ? Object.keys(backendPlan.features).filter(key => backendPlan.features[key]) : [],
-      contentLimits: {
-        maxPhotos: backendPlan.contentLimits?.photos?.max || 0,
-        maxVideos: backendPlan.contentLimits?.videos?.max || 0,
-        maxAudios: backendPlan.contentLimits?.audios?.max || 0,
-        storiesPerDayMax: backendPlan.contentLimits?.storiesPerDayMax || 0,
+    contentLimits: backendPlan.contentLimits ? {
+      photos: {
+        min: backendPlan.contentLimits.photos?.min || 0,
+        max: backendPlan.contentLimits.photos?.max || 0
       },
-      includedUpgrades: backendPlan.includedUpgrades || []
-    })) || []
+      videos: {
+        min: backendPlan.contentLimits.videos?.min || 0,
+        max: backendPlan.contentLimits.videos?.max || 0
+      },
+      audios: {
+        min: backendPlan.contentLimits.audios?.min || 0,
+        max: backendPlan.contentLimits.audios?.max || 0
+      },
+      storiesPerDayMax: backendPlan.contentLimits.storiesPerDayMax || 0
+    } : {
+      photos: { min: 0, max: 0 },
+      videos: { min: 0, max: 0 },
+      audios: { min: 0, max: 0 },
+      storiesPerDayMax: 0
+    },
+    includedUpgrades: backendPlan.includedUpgrades || [],
+    active: backendPlan.active || false,
+    isActive: backendPlan.active || false,
+    createdAt: backendPlan.createdAt,
+    updatedAt: backendPlan.updatedAt,
+    __v: backendPlan.__v || 0,
+    id: backendPlan.id || backendPlan._id
   };
 };
 
 // Funciones de API para Planes
 const plansApi = {
   getAll: async (filters: PlansFilters & PaginationParams = {}): Promise<PlansResponse> => {
-    const params = new URLSearchParams();
-    if (filters.page) params.append('page', filters.page.toString());
-    if (filters.limit) params.append('limit', filters.limit.toString());
-    if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
-    if (filters.level) params.append('level', filters.level.toString());
-    if (filters.search) params.append('search', filters.search);
+    const queryParts: string[] = [];
+    if (filters.page) queryParts.push(`page=${filters.page}`);
+    if (filters.limit) queryParts.push(`limit=${filters.limit}`);
+    if (filters.isActive !== undefined) queryParts.push(`isActive=${filters.isActive}`);
+    if (filters.level) queryParts.push(`level=${filters.level}`);
+    if (filters.search) queryParts.push(`search=${encodeURIComponent(filters.search)}`);
 
-    const response = await fetch(`${API_BASE_URL}/api/plans?${params}`);
+    const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+    const response = await fetch(`${API_BASE_URL}/api/plans${queryString}`);
     if (!response.ok) throw new Error('Error al obtener planes');
     const result = await response.json();
     
@@ -107,7 +124,7 @@ const plansApi = {
       code: data.code,
       name: data.name,
       level: data.level,
-      active: data.isActive,
+      active: data.active,
       // Tomar variants pero solo con days, price y durationRank
       variants: data.variants?.map((variant, index) => ({
         days: variant.days,
@@ -120,27 +137,13 @@ const plansApi = {
         showInFilters: false,
         showInSponsored: false
       },
-      contentLimits: data.variants?.[0] ? {
-        photos: {
-          min: 0,
-          max: data.variants[0].contentLimits.maxPhotos
-        },
-        videos: {
-          min: 0,
-          max: data.variants[0].contentLimits.maxVideos
-        },
-        audios: {
-          min: 0,
-          max: data.variants[0].contentLimits.maxAudios
-        },
-        storiesPerDayMax: data.variants[0].contentLimits.storiesPerDayMax
-      } : {
+      contentLimits: data.contentLimits || {
         photos: { min: 0, max: 0 },
         videos: { min: 0, max: 0 },
         audios: { min: 0, max: 0 },
         storiesPerDayMax: 0
       },
-      includedUpgrades: data.variants?.[0]?.includedUpgrades || []
+      includedUpgrades: data.includedUpgrades || []
     };
 
     const response = await fetch(`${API_BASE_URL}/api/plans`, {
@@ -165,7 +168,7 @@ const plansApi = {
       code: data.code,
       name: data.name,
       level: data.level,
-      active: data.isActive,
+      active: data.active,
       // Tomar variants pero solo con days, price y durationRank
       variants: data.variants?.map((variant, index) => ({
         days: variant.days,
@@ -178,27 +181,13 @@ const plansApi = {
         showInFilters: false,
         showInSponsored: false
       },
-      contentLimits: data.variants?.[0] ? {
-        photos: {
-          min: 0,
-          max: data.variants[0].contentLimits.maxPhotos
-        },
-        videos: {
-          min: 0,
-          max: data.variants[0].contentLimits.maxVideos
-        },
-        audios: {
-          min: 0,
-          max: data.variants[0].contentLimits.maxAudios
-        },
-        storiesPerDayMax: data.variants[0].contentLimits.storiesPerDayMax
-      } : {
+      contentLimits: data.contentLimits || {
         photos: { min: 0, max: 0 },
         videos: { min: 0, max: 0 },
         audios: { min: 0, max: 0 },
         storiesPerDayMax: 0
       },
-      includedUpgrades: data.variants?.[0]?.includedUpgrades || []
+      includedUpgrades: data.includedUpgrades || []
     };
 
 
@@ -231,13 +220,14 @@ const plansApi = {
 // Funciones de API para Upgrades
 const upgradesApi = {
   getAll: async (filters: UpgradesFilters & PaginationParams = {}): Promise<UpgradesResponse> => {
-    const params = new URLSearchParams();
-    if (filters.page) params.append('page', filters.page.toString());
-    if (filters.limit) params.append('limit', filters.limit.toString());
-    if (filters.active !== undefined) params.append('active', filters.active.toString());
-    if (filters.search) params.append('search', filters.search);
+    const queryParts: string[] = [];
+    if (filters.page) queryParts.push(`page=${filters.page}`);
+    if (filters.limit) queryParts.push(`limit=${filters.limit}`);
+    if (filters.active !== undefined) queryParts.push(`active=${filters.active}`);
+    if (filters.search) queryParts.push(`search=${encodeURIComponent(filters.search)}`);
 
-    const response = await fetch(`${API_BASE_URL}/api/plans/upgrades?${params}`);
+    const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+    const response = await fetch(`${API_BASE_URL}/api/plans/upgrades${queryString}`);
     if (!response.ok) throw new Error('Error al obtener upgrades');
     const result = await response.json();
     

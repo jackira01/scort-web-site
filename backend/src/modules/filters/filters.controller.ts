@@ -10,7 +10,7 @@ import type { FilterQuery } from './filters.types';
  */
 export const getFilteredProfilesPost = async (req: Request, res: Response) => {
   try {
-
+    console.log('🔍 DEBUG Controller - Request body received:', JSON.stringify(req.body, null, 2));
     
     // Procesar el body de la misma manera que GET procesa query params
     const {
@@ -167,39 +167,6 @@ export const getFilterOptions = async (req: Request, res: Response) => {
     });
   } catch (error: unknown) {
     // Error in getFilterOptions controller
-    res.status(500).json({
-      success: false,
-      message: 'Error interno del servidor',
-      error: process.env.NODE_ENV === 'development' ? error : undefined
-    });
-  }
-};
-
-/**
- * POST /api/filters/profiles/count
- * Obtiene el conteo de perfiles que coinciden con los filtros sin paginación
- */
-export const getProfilesCountPost = async (req: Request, res: Response) => {
-  try {
-    // Usar los mismos filtros del body pero sin paginación
-    const filters: FilterQuery = { ...req.body };
-    delete filters.page;
-    delete filters.limit;
-
-    // Establecer un límite alto para obtener el conteo total
-    filters.limit = 999999;
-
-    const result = await service.getFilteredProfiles(filters);
-
-    res.status(200).json({
-      success: true,
-      data: {
-        totalCount: result.totalCount
-      },
-      message: 'Conteo de perfiles obtenido exitosamente'
-    });
-  } catch (error: unknown) {
-    // Error in getProfilesCountPost controller
     res.status(500).json({
       success: false,
       message: 'Error interno del servidor',
