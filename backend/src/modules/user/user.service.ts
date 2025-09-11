@@ -3,7 +3,7 @@ import UserModel from './User.model';
 import ProfileVerification from '../profile-verification/profile-verification.model';
 import { checkLastLoginVerification } from '../profile-verification/verification-progress.utils';
 
-export const createUser = (data: any) => UserModel.create(data);
+export const createUser = (data: Record<string, any>) => UserModel.create(data);
 export const findUserByEmail = async (email: string) => {
   return UserModel.findOne({ email });
 };
@@ -30,17 +30,15 @@ export const getUserById = async (id: string) => {
     
     return await UserModel.findById(id);
   } catch (error) {
-    console.error('Error en getUserById service:', error);
     throw error;
   }
 };
 
-export const updateUser = (id: string, data: any) =>
+export const updateUser = (id: string, data: Record<string, any>) =>
   UserModel.findByIdAndUpdate(id, data, { new: true });
 
-export const getUsers = async (filters: any, options: any) => {
+export const getUsers = async (filters: Record<string, any>, options: Record<string, any>) => {
   return await UserModel.paginate(filters, options);
-
 };
 
 export const getUserProfiles = async (userId: string, includeInactive: boolean = false) => {

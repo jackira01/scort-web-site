@@ -108,10 +108,7 @@ const generateWhatsAppMessage = async (
     ]);
 
     if (!companyName || !companyWhatsApp) {
-      console.warn('⚠️ [WHATSAPP] Parámetros de empresa no configurados:', {
-        companyName: !!companyName,
-        companyWhatsApp: !!companyWhatsApp
-      });
+      // Parámetros de empresa no configurados
       return null;
     }
 
@@ -128,7 +125,7 @@ const generateWhatsAppMessage = async (
       message
     };
   } catch (error) {
-    console.error('❌ [WHATSAPP] Error al generar mensaje de WhatsApp:', error);
+    // Error al generar mensaje de WhatsApp
     return null;
   }
 };
@@ -293,7 +290,7 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
 
   // Si el usuario superó el límite de perfiles gratuitos y no compró un plan, ocultar el perfil
   if (!limitsValidation.canCreate && (!planCode || planCode === defaultPlanCode)) {
-    console.log('⚠️ [PROFILE SERVICE] Usuario superó límite de perfiles gratuitos, perfil será invisible hasta pago');
+    // Usuario superó límite de perfiles gratuitos, perfil será invisible hasta pago
     shouldBeVisible = false;
   }
 
@@ -301,27 +298,27 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
 
   // Si se especifica un plan de pago, generar factura pero mantener el perfil con plan por defecto
   if (planCode && planDays && planCode !== defaultPlanCode) {
-    console.log('🟡 [PROFILE SERVICE] Procesando plan de pago:', { planCode, planDays });
+    // Procesando plan de pago
     try {
       // Validar que el plan existe y obtener el precio
-      console.log('🟡 [PROFILE SERVICE] Buscando definición del plan:', planCode);
+      // Buscando definición del plan
       const plan = await PlanDefinitionModel.findOne({ code: planCode });
       if (!plan) {
-        console.error('❌ [PROFILE SERVICE] Plan no encontrado:', planCode);
+        // Plan no encontrado
         throw new Error(`Plan con código ${planCode} no encontrado`);
       }
-      console.log('✅ [PROFILE SERVICE] Plan encontrado:', { name: plan.name, variants: plan.variants.length });
+      // Plan encontrado
 
       const variant = plan.variants.find(v => v.days === planDays);
       if (!variant) {
-        console.error('❌ [PROFILE SERVICE] Variante no encontrada:', { planCode, planDays });
+        // Variante no encontrada
         throw new Error(`Variante de ${planDays} días no encontrada para el plan ${planCode}`);
       }
-      console.log('✅ [PROFILE SERVICE] Variante encontrada:', { days: variant.days, price: variant.price });
+      // Variante encontrada
 
       // Solo generar factura si el plan tiene costo
       if (variant.price > 0) {
-        console.log('💰 [PROFILE SERVICE] Plan de pago detectado, generando factura...');
+        // Plan de pago detectado, generando factura
         invoice = await invoiceService.generateInvoice({
           profileId: (profile._id as Types.ObjectId).toString(),
           userId: profile.user.toString(),
@@ -330,15 +327,10 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
           notes: `Factura generada automáticamente para nuevo perfil ${profile.name || profile._id}`
         });
 
-        console.log('✅ [PROFILE SERVICE] Factura generada exitosamente:', {
-          invoiceId: invoice._id,
-          totalAmount: invoice.totalAmount,
-          expiresAt: invoice.expiresAt,
-          profileId: profile._id
-        });
+        // Factura generada exitosamente
 
         // Actualizar el historial de pagos del perfil con la nueva factura
-        console.log('💳 [PROFILE SERVICE] Actualizando historial de pagos del perfil...');
+        // Actualizando historial de pagos del perfil
         await ProfileModel.findByIdAndUpdate(
           profile._id,
           {
@@ -347,19 +339,15 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
             visible: shouldBeVisible  // Visible solo si no superó límites gratuitos
           }
         );
-        console.log('✅ [PROFILE SERVICE] Historial de pagos actualizado con factura:', invoice._id);
+        // Historial de pagos actualizado con factura
 
         // NUEVO FLUJO: Mantener perfil activo con plan por defecto hasta confirmación de pago
         // Solo ocultar si el usuario superó límites de perfiles gratuitos
-        console.log('🟡 [PROFILE SERVICE] Configurando visibilidad del perfil según límites...');
-        console.log('✅ [PROFILE SERVICE] Perfil configurado:', {
-          isActive: true,
-          visible: shouldBeVisible,
-          reason: shouldBeVisible ? 'Dentro de límites' : 'Superó límites gratuitos'
-        });
+        // Configurando visibilidad del perfil según límites
+        // Perfil configurado
       } else {
         // Plan gratuito, mantener el plan por defecto ya asignado
-        console.log('🆓 [PROFILE SERVICE] Plan gratuito detectado, manteniendo plan por defecto actual');
+        // Plan gratuito detectado, manteniendo plan por defecto actual
 
         // Generar mensaje de WhatsApp para plan gratuito
         const whatsAppMessage = await generateWhatsAppMessage(
@@ -371,17 +359,12 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      console.error('❌ [PROFILE SERVICE] Error al procesar plan para nuevo perfil:', {
-        error: errorMessage,
-        planCode,
-        planDays,
-        profileId: profile._id
-      });
+      // Error al procesar plan para nuevo perfil
       // Si falla la facturación, el perfil se mantiene con plan por defecto
     }
   } else {
     // No se especificó plan de pago (purchasedPlan vacío), mantener plan por defecto
-    console.log('🆓 [PROFILE SERVICE] No se especificó plan de pago, manteniendo plan por defecto');
+    // No se especificó plan de pago, manteniendo plan por defecto
 
     // Asegurar que el perfil tenga la visibilidad correcta según límites
     await ProfileModel.findByIdAndUpdate(
@@ -392,37 +375,20 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
       }
     );
 
-    console.log('✅ [PROFILE SERVICE] Perfil configurado con plan gratuito:', {
-      isActive: true,
-      visible: shouldBeVisible,
-      reason: shouldBeVisible ? 'Dentro de límites gratuitos' : 'Superó límites gratuitos'
-    });
+    // Perfil configurado con plan gratuito
   }
 
   // Generar mensaje de WhatsApp
-  console.log('📱 [PROFILE SERVICE] Generando mensaje de WhatsApp...');
+  // Generando mensaje de WhatsApp
   const whatsAppMessage = await generateWhatsAppMessage(
     profile.user.toString(),
     (profile._id as Types.ObjectId).toString(),
     invoice?._id?.toString()
   );
 
-  if (whatsAppMessage) {
-    console.log('✅ [PROFILE SERVICE] Mensaje de WhatsApp generado exitosamente:', {
-      company: whatsAppMessage.company,
-      companyNumber: whatsAppMessage.companyNumber,
-      hasInvoice: !!invoice
-    });
-  } else {
-    console.log('⚠️ [PROFILE SERVICE] No se pudo generar el mensaje de WhatsApp');
-  }
+  // Mensaje de WhatsApp procesado
 
-  console.log('🏁 [PROFILE SERVICE] Finalizando createProfileWithInvoice:', {
-    profileId: profile._id,
-    hasInvoice: !!invoice,
-    invoiceId: invoice?._id,
-    hasWhatsAppMessage: !!whatsAppMessage
-  });
+  // Finalizando createProfileWithInvoice
   return { profile, invoice, whatsAppMessage };
 };
 
@@ -516,9 +482,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
   const skip = (page - 1) * limit;
   const now = new Date();
 
-  console.log('🏠 DEBUG getProfilesForHome - Iniciando consulta');
-  console.log(`   Página: ${page}, Límite: ${limit}, Skip: ${skip}`);
-  console.log(`   Fecha actual: ${now.toISOString()}`);
+  // DEBUG getProfilesForHome - Iniciando consulta
 
   // Obtener todos los perfiles activos y visibles CON USUARIOS VERIFICADOS
   // Solo seleccionar campos mínimos necesarios para la vista previa
@@ -563,18 +527,18 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
     })
     .lean();
 
-  console.log(`📊 DEBUG - Perfiles encontrados antes del filtro: ${profiles.length}`);
+  // Perfiles encontrados antes del filtro
 
   // Filtrar perfiles que NO tienen usuario verificado (populate devuelve null)
   const profilesWithVerifiedUsers = profiles.filter(profile => {
     const hasVerifiedUser = profile.user !== null;
     if (!hasVerifiedUser) {
-      console.log(`❌ DEBUG - Perfil filtrado (usuario no verificado): ${profile.name}`);
+      // Perfil filtrado (usuario no verificado)
     }
     return hasVerifiedUser;
   });
 
-  console.log(`✅ DEBUG - Perfiles con usuarios verificados: ${profilesWithVerifiedUsers.length}`);
+  // Perfiles con usuarios verificados
 
   // Obtener definiciones de planes para mapear códigos a niveles y features
   const planDefinitions = await PlanDefinitionModel.find({ active: true }).lean();
@@ -596,12 +560,11 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
       defaultPlanFeatures = planCodeToFeatures[defaultPlanConfig.planCode];
     }
   } catch (error) {
-    console.error('Error al obtener configuración del plan por defecto:', error);
+    // Error al obtener configuración del plan por defecto
   }
 
   // Debug: Log información de filtrado
-  console.log(`📋 DEBUG - Plan definitions found: ${planDefinitions.length}`);
-  console.log('📋 DEBUG - Available plan codes:', Object.keys(planCodeToFeatures));
+  // Plan definitions found y available plan codes
 
   // Filtrar perfiles que deben mostrarse en home y enriquecer con información de jerarquía
   const filteredProfiles = profilesWithVerifiedUsers.filter(profile => {
@@ -613,34 +576,34 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
     }
 
     // Debug: Log información del perfil
-    console.log(`Profile ${profile.name} - Plan: ${planCode || 'none'} - Expires: ${profile.planAssignment?.expiresAt || 'N/A'}`);
+    // Profile plan info
 
     // Si no tiene plan asignado, verificar configuración del plan por defecto
     if (!planCode) {
       // Si hay un plan por defecto configurado, usar sus features
       if (defaultPlanFeatures) {
         const shouldShow = defaultPlanFeatures.showInHome === true;
-        console.log(`Profile ${profile.name} - No plan assigned, using default plan features. Show in home: ${shouldShow}`);
+        // No plan assigned, using default plan features
         return shouldShow;
       }
       // Si no hay plan por defecto configurado, no mostrar en home por seguridad
-      console.log(`Profile ${profile.name} - No plan assigned and no default plan configured. Hidden from home.`);
+      // No plan assigned and no default plan configured
       return false;
     }
 
     // Verificar si el plan permite mostrar en home
     const planFeatures = planCodeToFeatures[planCode];
     if (!planFeatures) {
-      console.warn(`Plan features not found for plan code: ${planCode}`);
+      // Plan features not found for plan code
       return false;
     }
 
     const shouldShow = planFeatures.showInHome === true;
-    console.log(`Profile ${profile.name} - Plan ${planCode} - showInHome: ${planFeatures.showInHome} - Should show: ${shouldShow}`);
+    // Plan showInHome validation
     return shouldShow;
   });
 
-  console.log(`Filtered profiles for home: ${filteredProfiles.length}`);
+  // Filtered profiles for home
 
   const enrichedProfiles = filteredProfiles.map(profile => {
     // Verificar upgrades activos
@@ -768,16 +731,12 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
 
   const total = filteredProfiles.length;
 
-  console.log(`🎯 DEBUG - Resultado final:`);
-  console.log(`   Perfiles después del filtro de planes: ${filteredProfiles.length}`);
-  console.log(`   Perfiles paginados devueltos: ${cleanProfiles.length}`);
-  console.log(`   Total disponible: ${total}`);
-  console.log(`   Páginas totales: ${Math.ceil(total / limit)}`);
+  // DEBUG - Resultado final
 
   // Debug: Mostrar algunos perfiles de ejemplo
   cleanProfiles.slice(0, 3).forEach((profile, index) => {
     const user = profile.user as any;
-    console.log(`   Perfil ${index + 1}: ${profile.name} - Usuario: ${user?.name || 'N/A'} - Verificado: ${user?.isVerified}`);
+    // DEBUG - Perfil info
   });
 
   return {
@@ -995,7 +954,7 @@ export const subscribeProfile = async (profileId: string, planCode: string, vari
         notes: `Factura generada automáticamente para suscripción de perfil ${profile.name || profileId}`
       });
 
-      console.log(`Factura generada automáticamente: ${invoice._id} para perfil ${profileId}`);
+      // Factura generada automáticamente
 
       // NUEVO FLUJO: Desactivar perfil hasta que se pague la factura
       // NO asignar el plan todavía, mantener el plan actual
@@ -1005,11 +964,11 @@ export const subscribeProfile = async (profileId: string, planCode: string, vari
         { new: true }
       );
 
-      console.log('🟡 [PROFILE SERVICE] Perfil desactivado hasta confirmación de pago - plan actual mantenido');
+      // Perfil desactivado hasta confirmación de pago
 
       return { profile: updatedProfile, invoice };
     } catch (error) {
-      console.error('Error al generar factura automática:', error);
+      // Error al generar factura automática
       // No fallar la suscripción si falla la generación de factura
     }
   }
@@ -1196,7 +1155,7 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
     };
 
   } catch (error) {
-    console.error('Error al validar límites de perfiles:', error);
+    // Error al validar límites de perfiles
     throw new Error('Error interno al validar límites de perfiles');
   }
 };
@@ -1308,7 +1267,7 @@ export const getUserProfilesSummary = async (userId: string): Promise<{ freeProf
     };
 
   } catch (error) {
-    console.error('Error al obtener resumen de perfiles:', error);
+    // Error al obtener resumen de perfiles
     throw new Error('Error interno al obtener resumen de perfiles');
   }
 };
@@ -1362,7 +1321,7 @@ export const validateProfilePlanUpgrade = async (profileId: string, newPlanCode:
     return { canUpgrade: true };
 
   } catch (error) {
-    console.error('Error al validar upgrade de plan:', error);
+    // Error al validar upgrade de plan
     throw new Error('Error interno al validar upgrade de plan');
   }
 };
@@ -1436,7 +1395,7 @@ export const purchaseUpgrade = async (profileId: string, upgradeCode: string, us
 
     await profile.save();
 
-    console.log(`💰 Factura generada para upgrade ${upgradeCode} en perfil ${profileId}`);
+    // Factura generada para upgrade
 
     // Retornar información de la compra pendiente
     return {
@@ -1448,7 +1407,7 @@ export const purchaseUpgrade = async (profileId: string, upgradeCode: string, us
     };
 
   } catch (error) {
-    console.error('❌ Error creando factura para upgrade:', error);
+    // Error creando factura para upgrade
     throw new Error('Error al generar factura para el upgrade');
   }
 };

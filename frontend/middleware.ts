@@ -47,7 +47,6 @@ export function middleware(request: NextRequest) {
 
     // Excluir rutas que no son de búsqueda/filtrado
     if (EXCLUDED_ROUTES.includes(categoria)) {
-      console.log(`[MIDDLEWARE] Excluding route: ${categoria}`);
       return NextResponse.next();
     }
 

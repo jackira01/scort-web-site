@@ -36,13 +36,7 @@ export class WhatsAppService {
     profile: IProfile,
     user: IUser
   ): InvoiceWhatsAppData {
-    console.log('📱 [WHATSAPP SERVICE] Generando datos para WhatsApp:', {
-      invoiceId: invoice._id,
-      profileName: profile.name,
-      userName: user.name,
-      totalAmount: invoice.totalAmount,
-      itemsCount: invoice.items.length
-    });
+    // Generando datos para WhatsApp
     
     const whatsappData = {
       invoiceId: (invoice._id as Types.ObjectId).toString(),
@@ -59,12 +53,7 @@ export class WhatsAppService {
       expiresAt: invoice.expiresAt
     };
     
-    console.log('✅ [WHATSAPP SERVICE] Datos de WhatsApp generados:', {
-      invoiceId: whatsappData.invoiceId,
-      profileName: whatsappData.profileName,
-      totalAmount: whatsappData.totalAmount,
-      expiresAt: whatsappData.expiresAt
-    });
+    // Datos de WhatsApp generados
     
     return whatsappData;
   }
@@ -115,15 +104,12 @@ export class WhatsAppService {
     user: IUser,
     phoneNumber?: string
   ): WhatsAppMessageData {
-    console.log('📱 [WHATSAPP SERVICE] Generando mensaje completo de WhatsApp:', {
-      invoiceId: invoice._id,
-      targetPhone: phoneNumber || this.WHATSAPP_BUSINESS_NUMBER
-    });
+    // Generando mensaje completo de WhatsApp
     
     const invoiceData = this.generateInvoiceWhatsAppData(invoice, profile, user);
-    console.log('📱 [WHATSAPP SERVICE] Generando mensaje de compra...');
+    // Generando mensaje de compra
     const message = this.generatePurchaseMessage(invoiceData);
-    console.log('📱 [WHATSAPP SERVICE] Generando URL de WhatsApp...');
+    // Generando URL de WhatsApp
     const url = this.generateWhatsAppURL(message, phoneNumber);
 
     const result = {
@@ -132,11 +118,7 @@ export class WhatsAppService {
       url
     };
     
-    console.log('✅ [WHATSAPP SERVICE] Mensaje de WhatsApp completo generado:', {
-      messageLength: message.length,
-      phoneNumber: result.phoneNumber,
-      urlLength: url.length
-    });
+    // Mensaje de WhatsApp completo generado
 
     return result;
   }

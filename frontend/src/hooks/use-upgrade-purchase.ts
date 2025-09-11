@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseUpgrade } from '@/services/upgrade.service';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 
 export const useUpgradePurchase = () => {
   const queryClient = useQueryClient();

@@ -28,45 +28,30 @@ class InvoiceService {
   async generateInvoice(data: CreateInvoiceData): Promise<IInvoice> {
     const { profileId, userId, planCode, planDays, upgradeCodes = [], notes } = data;
 
-    console.log('🟠 [INVOICE SERVICE] Iniciando generación de factura:', {
-      profileId,
-      userId,
-      planCode,
-      planDays,
-      upgradeCodes,
-      notes
-    });
+    // Iniciando generación de factura
 
     // Validar IDs
     if (!mongoose.Types.ObjectId.isValid(profileId)) {
-      console.error('❌ [INVOICE SERVICE] ID de perfil inválido:', profileId);
       throw new Error('ID de perfil inválido');
     }
     if (!mongoose.Types.ObjectId.isValid(userId)) {
-      console.error('❌ [INVOICE SERVICE] ID de usuario inválido:', userId);
       throw new Error('ID de usuario inválido');
     }
-    console.log('✅ [INVOICE SERVICE] IDs validados correctamente');
 
     const items: InvoiceItem[] = [];
     let totalAmount = 0;
 
     // Agregar plan si se especifica
     if (planCode && planDays) {
-      console.log('🟠 [INVOICE SERVICE] Procesando plan para factura:', { planCode, planDays });
       const plan = await PlanDefinitionModel.findByCode(planCode);
       if (!plan) {
-        console.error('❌ [INVOICE SERVICE] Plan no encontrado:', planCode);
         throw new Error(`Plan con código ${planCode} no encontrado`);
       }
-      console.log('✅ [INVOICE SERVICE] Plan encontrado:', { name: plan.name, code: plan.code });
 
       const variant = plan.variants.find((v: any) => v.days === planDays);
       if (!variant) {
-        console.error('❌ [INVOICE SERVICE] Variante no encontrada:', { planCode, planDays });
         throw new Error(`Variante de ${planDays} días no encontrada para el plan ${planCode}`);
       }
-      console.log('✅ [INVOICE SERVICE] Variante encontrada:', { days: variant.days, price: variant.price });
 
       const planItem: InvoiceItem = {
         type: 'plan' as const,
@@ -79,7 +64,7 @@ class InvoiceService {
       items.push(planItem);
       totalAmount += variant.price;
 
-      console.log('✅ [INVOICE SERVICE] Item de plan agregado:', planItem);
+      // Item de plan agregado
     }
 
     // Agregar upgrades si se especifican
@@ -107,20 +92,16 @@ class InvoiceService {
     }
 
     if (items.length === 0) {
-      console.error('❌ [INVOICE SERVICE] No se pueden crear facturas sin items');
+      // No se pueden crear facturas sin items
       throw new Error('No se pueden crear facturas sin items');
     }
 
-    console.log('🟠 [INVOICE SERVICE] Resumen de items procesados:', {
-      totalItems: items.length,
-      totalAmount,
-      items: items.map(item => ({ type: item.type, code: item.code, price: item.price }))
-    });
+    // Resumen de items procesados
 
     // Crear fecha de expiración (24 horas desde ahora)
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
-    console.log('🟠 [INVOICE SERVICE] Fecha de expiración calculada:', expiresAt);
+    // Fecha de expiración calculada
 
     const invoiceData = {
       profileId: new mongoose.Types.ObjectId(profileId),
@@ -132,24 +113,12 @@ class InvoiceService {
       notes
     };
 
-    console.log('🟠 [INVOICE SERVICE] Creando factura con datos:', {
-      profileId,
-      userId,
-      status: invoiceData.status,
-      totalAmount: invoiceData.totalAmount,
-      expiresAt: invoiceData.expiresAt,
-      itemsCount: invoiceData.items.length
-    });
+    // Creando factura con datos
 
     const invoice = new Invoice(invoiceData);
     const savedInvoice = await invoice.save();
 
-    console.log('✅ [INVOICE SERVICE] Factura creada y guardada exitosamente:', {
-      invoiceId: savedInvoice._id,
-      totalAmount: savedInvoice.totalAmount,
-      status: savedInvoice.status,
-      expiresAt: savedInvoice.expiresAt
-    });
+    // Factura creada y guardada exitosamente
 
     return savedInvoice;
   }
@@ -341,19 +310,19 @@ class InvoiceService {
     try {
       if (newStatus === 'paid' && oldStatus !== 'paid') {
         // Factura marcada como pagada - aplicar el plan comprado
-        console.log(`💰 [INVOICE SERVICE] Factura ${invoiceId} marcada como pagada, procesando planAssignment...`);
+        // Factura marcada como pagada, procesando planAssignment
         const PaymentProcessorService = await import('./payment-processor.service');
         const result = await PaymentProcessorService.PaymentProcessorService.processInvoicePayment(invoiceId);
-        console.log(`✅ [INVOICE SERVICE] PlanAssignment procesado:`, result.message);
+        // PlanAssignment procesado
       } else if (['cancelled', 'expired'].includes(newStatus) && oldStatus === 'pending') {
         // Factura cancelada o expirada - mantener plan actual (no hacer cambios)
-        console.log(`🚫 [INVOICE SERVICE] Factura ${invoiceId} ${newStatus}, manteniendo plan actual del perfil`);
+        // Factura con nuevo status, manteniendo plan actual del perfil
       } else if (newStatus === 'pending' && ['cancelled', 'expired'].includes(oldStatus)) {
         // Factura reactivada desde cancelada/expirada - no hacer cambios automáticos
-        console.log(`🔄 [INVOICE SERVICE] Factura ${invoiceId} reactivada a pendiente desde ${oldStatus}`);
+        // Factura reactivada a pendiente
       }
     } catch (error) {
-      console.error(`❌ [INVOICE SERVICE] Error procesando planAssignment para factura ${invoiceId}:`, error);
+      // Error procesando planAssignment para factura
       // No lanzar error para no afectar la actualización del estado de la factura
       // El administrador puede intentar nuevamente o procesar manualmente
     }

@@ -10,7 +10,7 @@ import type { FilterQuery } from './filters.types';
  */
 export const getFilteredProfilesPost = async (req: Request, res: Response) => {
   try {
-    console.log('🔍 DEBUG Controller - Request body received:', JSON.stringify(req.body, null, 2));
+    // DEBUG Controller - Request body received
     
     // Procesar el body de la misma manera que GET procesa query params
     const {

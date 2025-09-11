@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoiceService } from '@/services/invoice.service';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 
 export const useUpdateInvoiceStatus = () => {
   const queryClient = useQueryClient();

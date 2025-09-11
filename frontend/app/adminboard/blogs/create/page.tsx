@@ -14,7 +14,7 @@ import { Switch } from '../../../../src/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../src/components/ui/card';
 import { Badge } from '../../../../src/components/ui/badge';
 import { Separator } from '../../../../src/components/ui/separator';
-import { toast } from '../../../../src/hooks/use-toast';
+import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 
 const BlogEditor = dynamic(() => import('../../../../src/components/blog/BlogEditor'), {

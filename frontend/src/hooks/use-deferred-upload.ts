@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { toast } from './use-toast';
+import toast from 'react-hot-toast';
 
 interface PendingFile {
   id: string;
@@ -107,11 +107,7 @@ export const useDeferredUpload = () => {
     const uploadedUrls: { [key: string]: string } = {};
     
     try {
-      toast({
-        title: 'Subiendo archivos',
-        description: `Subiendo ${pendingFiles.length} archivo(s)...`,
-        variant: 'default'
-      });
+      toast.loading(`Subiendo ${pendingFiles.length} archivo(s)...`);
       
       for (const pendingFile of pendingFiles) {
         const result = await uploadSingleFile(pendingFile.file, folder);
@@ -123,11 +119,7 @@ export const useDeferredUpload = () => {
         }
       }
       
-      toast({
-        title: 'Archivos subidos',
-        description: `${pendingFiles.length} archivo(s) subido(s) exitosamente`,
-        variant: 'default'
-      });
+      toast.success(`${pendingFiles.length} archivo(s) subido(s) exitosamente`);
       
       // Limpiar archivos pendientes después de subir
       clearPendingFiles();
@@ -135,11 +127,7 @@ export const useDeferredUpload = () => {
       return uploadedUrls;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error al subir archivos';
-      toast({
-        title: 'Error al subir archivos',
-        description: errorMessage,
-        variant: 'destructive'
-      });
+      toast.error(`Error al subir archivos: ${errorMessage}`);
       throw error;
     } finally {
       setIsUploading(false);

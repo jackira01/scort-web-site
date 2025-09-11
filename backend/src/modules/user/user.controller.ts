@@ -12,14 +12,14 @@ export const CreateUserController = async (req: Request, res: Response) => {
       try {
         await sendWelcomeEmail(user.email, user.name);
       } catch (emailError) {
-        console.error('Error enviando correo de bienvenida:', emailError);
+        // Error enviando correo de bienvenida
         // No fallar el registro por error de email
       }
     }
     
     res.status(201).json(user);
   } catch (error) {
-    console.error('Error creating user:', error);
+    // Error creating user
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
@@ -49,7 +49,7 @@ export const getUserById = async (req: Request, res: Response) => {
       role: user.role,
     });
   } catch (error) {
-    console.error('Error al obtener usuario por ID:', error);
+    // Error al obtener usuario por ID
     res.status(500).json({
       mensaje: 'Error interno del servidor al obtener usuario',
       error: error instanceof Error ? error.message : 'Error desconocido'
@@ -77,7 +77,7 @@ export const authGoogleUserController = async (req: Request, res: Response) => {
     try {
       await sendWelcomeEmail(user.email, name);
     } catch (emailError) {
-      console.error('Error enviando correo de bienvenida:', emailError);
+      // Error enviando correo de bienvenida
       // No fallar el registro por error de email
     }
   }
@@ -117,7 +117,7 @@ export const updateUser = async (req: Request, res: Response) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    console.log(`🔄 Actualizando usuario ${id} con datos:`, updateData);
+    // Actualizando usuario con datos
 
     // Validar que el ID sea válido
     if (!id) {
@@ -144,11 +144,7 @@ export const updateUser = async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`✅ Usuario actualizado exitosamente:`, {
-      id: user._id,
-      isVerified: user.isVerified,
-      updatedFields: Object.keys(updateData)
-    });
+    // Usuario actualizado exitosamente
 
     res.json({
       success: true,
@@ -162,7 +158,7 @@ export const updateUser = async (req: Request, res: Response) => {
       verificationDocument: user.verificationDocument
     });
   } catch (error) {
-    console.error('❌ Error al actualizar usuario:', error);
+    // Error al actualizar usuario
     res.status(500).json({
       success: false,
       message: 'Error interno del servidor al actualizar usuario',

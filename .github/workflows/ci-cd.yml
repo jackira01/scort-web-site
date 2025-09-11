@@ -1,0 +1,215 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '10.13.1'
+
+jobs:
+  # Job de testing y linting
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: ${{ env.PNPM_VERSION }}
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Install backend dependencies
+      run: cd backend && pnpm install --frozen-lockfile
+
+    - name: Install frontend dependencies
+      run: cd frontend && pnpm install --frozen-lockfile
+
+    - name: Run linting
+      run: pnpm run lint
+
+    - name: Build backend
+      run: pnpm run build:backend
+
+    - name: Build frontend
+      run: pnpm run build:frontend
+      env:
+        NEXT_PUBLIC_API_URL: http://localhost:5000
+        NEXT_PUBLIC_ENV: production
+
+  # Job de build y deploy para staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: ${{ env.PNPM_VERSION }}
+
+    - name: Build Docker images
+      run: |
+        docker build -t scort-backend:staging ./backend
+        docker build -t scort-frontend:staging ./frontend
+
+    - name: Deploy to staging server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.STAGING_HOST }}
+        username: ${{ secrets.STAGING_USER }}
+        key: ${{ secrets.STAGING_SSH_KEY }}
+        script: |
+          cd /var/www/scort-web-site-staging
+          git pull origin develop
+          docker-compose -f docker-compose.staging.yml down
+          docker-compose -f docker-compose.staging.yml up -d --build
+          docker system prune -f
+
+  # Job de deploy para producción
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: ${{ env.PNPM_VERSION }}
+
+    - name: Build and tag Docker images
+      run: |
+        docker build -t scort-backend:${{ github.sha }} ./backend
+        docker build -t scort-frontend:${{ github.sha }} ./frontend
+        docker tag scort-backend:${{ github.sha }} scort-backend:latest
+        docker tag scort-frontend:${{ github.sha }} scort-frontend:latest
+
+    - name: Deploy to production server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.PRODUCTION_HOST }}
+        username: ${{ secrets.PRODUCTION_USER }}
+        key: ${{ secrets.PRODUCTION_SSH_KEY }}
+        script: |
+          cd /var/www/scort-web-site
+          git pull origin main
+          
+          # Backup de la base de datos
+          docker exec scort-mongodb-prod mongodump --out /backup/$(date +%Y%m%d_%H%M%S)
+          
+          # Deploy con zero-downtime
+          docker-compose -f docker-compose.prod.yml pull
+          docker-compose -f docker-compose.prod.yml up -d --no-deps backend
+          sleep 30
+          docker-compose -f docker-compose.prod.yml up -d --no-deps frontend
+          
+          # Limpiar imágenes antiguas
+          docker system prune -f
+          
+          # Verificar que los servicios estén funcionando
+          curl -f http://localhost:5000/api/health || exit 1
+          curl -f http://localhost:3000/api/health || exit 1
+
+  # Job de notificaciones
+  notify:
+    name: Notify Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+    
+    steps:
+    - name: Notify success
+      if: needs.deploy-production.result == 'success' || needs.deploy-staging.result == 'success'
+      run: |
+        echo "Deployment successful!"
+        # Aquí puedes agregar notificaciones a Slack, Discord, etc.
+    
+    - name: Notify failure
+      if: needs.deploy-production.result == 'failure' || needs.deploy-staging.result == 'failure'
+      run: |
+        echo "Deployment failed!"
+        # Aquí puedes agregar notificaciones de error
+
+  # Job de security scanning
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Job de performance testing
+  performance:
+    name: Performance Test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        npm install -g lighthouse
+        npm install -g @lhci/cli
+
+    - name: Run Lighthouse CI
+      run: |
+        lhci autorun
+      env:
+        LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

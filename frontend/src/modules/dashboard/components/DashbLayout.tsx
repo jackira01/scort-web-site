@@ -14,6 +14,7 @@ import DefaultPlanManager from '@/components/admin/DefaultPlanManager';
 import BlogsManager from '@/components/admin/blogs/BlogsManager';
 import InvoicesManager from '@/components/admin/invoices/InvoicesManager';
 import EmailManager from '@/components/admin/emails/EmailManager';
+import NewsManager from '@/components/admin/news/NewsManager';
 
 
 export default function DashboardLayout() {
@@ -78,6 +79,13 @@ export default function DashboardLayout() {
                 return (
                     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
                         <BlogsManager />
+                    </div>
+                );
+
+            case 'noticias':
+                return (
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                        <NewsManager />
                     </div>
                 );
 

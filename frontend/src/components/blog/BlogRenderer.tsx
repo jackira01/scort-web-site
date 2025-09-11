@@ -180,7 +180,7 @@ const BlogRenderer: React.FC<BlogRendererProps> = ({ content, className = "" }) 
       </div>
     );
   } catch (error) {
-    console.error('Error al renderizar el contenido del blog:', error);
+    // Error al renderizar el contenido del blog
     
     return (
       <Card className={`w-full ${className}`}>

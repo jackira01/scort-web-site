@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { blogService } from '../services/blog.service';
-import { toast } from './use-toast';
+import toast from 'react-hot-toast';
 import { OutputData } from '@editorjs/editorjs';
 
 export interface Blog {
@@ -143,18 +143,10 @@ export const useCreateBlog = () => {
       queryClient.setQueryData(blogKeys.detail(newBlog._id), newBlog);
       queryClient.setQueryData(blogKeys.detail(newBlog.slug), newBlog);
 
-      toast({
-        title: 'Blog creado',
-        description: 'El blog se ha creado exitosamente.',
-        variant: 'default',
-      });
+      toast.success('El blog se ha creado exitosamente.');
     },
     onError: (error: any) => {
-      toast({
-        title: 'Error al crear blog',
-        description: error.message || 'Ocurrió un error inesperado.',
-        variant: 'destructive',
-      });
+      toast.error(error.message || 'Error al crear blog. Ocurrió un error inesperado.');
     },
   });
 };
@@ -179,18 +171,10 @@ export const useUpdateBlog = () => {
       // Invalidar blogs relacionados
       queryClient.invalidateQueries({ queryKey: blogKeys.related(updatedBlog._id) });
 
-      toast({
-        title: 'Blog actualizado',
-        description: 'El blog se ha actualizado exitosamente.',
-        variant: 'default',
-      });
+      toast.success('El blog se ha actualizado exitosamente.');
     },
     onError: (error: any) => {
-      toast({
-        title: 'Error al actualizar blog',
-        description: error.message || 'Ocurrió un error inesperado.',
-        variant: 'destructive',
-      });
+      toast.error(error.message || 'Error al actualizar blog. Ocurrió un error inesperado.');
     },
   });
 };
@@ -212,18 +196,10 @@ export const useToggleBlog = () => {
       queryClient.setQueryData(blogKeys.detail(updatedBlog.slug), updatedBlog);
 
       const status = updatedBlog.published ? 'publicado' : 'despublicado';
-      toast({
-        title: `Blog ${status}`,
-        description: `El blog se ha ${status} exitosamente.`,
-        variant: 'default',
-      });
+      toast.success(`El blog se ha ${status} exitosamente.`);
     },
     onError: (error: any) => {
-      toast({
-        title: 'Error al cambiar estado',
-        description: error.message || 'Ocurrió un error inesperado.',
-        variant: 'destructive',
-      });
+      toast.error(error.message || 'Error al cambiar estado. Ocurrió un error inesperado.');
     },
   });
 };
@@ -246,18 +222,10 @@ export const useDeleteBlog = () => {
       // Invalidar blogs relacionados
       queryClient.invalidateQueries({ queryKey: blogKeys.related(deletedId) });
 
-      toast({
-        title: 'Blog eliminado',
-        description: 'El blog se ha eliminado exitosamente.',
-        variant: 'default',
-      });
+      toast.success('El blog se ha eliminado exitosamente.');
     },
     onError: (error: any) => {
-      toast({
-        title: 'Error al eliminar blog',
-        description: error.message || 'Ocurrió un error inesperado.',
-        variant: 'destructive',
-      });
+      toast.error(error.message || 'Error al eliminar blog. Ocurrió un error inesperado.');
     },
   });
 };

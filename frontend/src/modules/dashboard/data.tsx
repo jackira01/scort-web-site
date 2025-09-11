@@ -1,4 +1,4 @@
-import { Receipt, Settings, User, Cog, CreditCard, Zap, UserCheck, FileText, Mail, Tags } from "lucide-react";
+import { Receipt, Settings, User, Cog, CreditCard, Zap, UserCheck, FileText, Mail, Tags, Newspaper } from "lucide-react";
 
 export const userProfiles = [
     {
@@ -198,6 +198,15 @@ export const sidebarItems = [
         badge: null,
         description:
             'Gestiona artículos del blog: crear, editar, publicar y administrar contenido',
+        active: false,
+    },
+    {
+        id: 'noticias',
+        label: 'Tablero de Noticias',
+        icon: Newspaper,
+        badge: null,
+        description:
+            'Gestiona noticias y actualizaciones del sistema: crear, editar y publicar patch notes',
         active: false,
     },
 ];

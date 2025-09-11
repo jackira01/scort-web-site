@@ -28,7 +28,6 @@ export const getHomeFeedController = async (req: Request, res: Response): Promis
       data: feedData
     });
   } catch (error) {
-    console.error('Error in getHomeFeedController:', error);
     res.status(500).json({ 
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -52,7 +51,6 @@ export const getFeedStatsController = async (req: Request, res: Response): Promi
       }
     });
   } catch (error) {
-    console.error('Error in getFeedStatsController:', error);
     res.status(500).json({ 
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'

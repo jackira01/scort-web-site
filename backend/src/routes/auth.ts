@@ -27,7 +27,6 @@ router.post('/generate-token', async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('Error generating JWT token:', error);
     res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

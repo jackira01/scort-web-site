@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { invoiceService, type Invoice } from '@/services/invoice.service';
-import { useToast } from '@/hooks/use-toast';
+import toast from 'react-hot-toast';
 
 export interface UsePendingInvoicesReturn {
   pendingInvoices: Invoice[];

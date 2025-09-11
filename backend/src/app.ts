@@ -1,11 +1,14 @@
 import cors, { type CorsOptions } from 'cors';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import express from 'express';
 import morgan from 'morgan';
+import { securityMiddleware, generalRateLimit, authRateLimit, publicApiRateLimit } from './middlewares/security.middleware';
 import { connectDB } from './config/db';
 import attributeGroupRoutes from './modules/attribute-group/attribute-group.routes';
 import blogRoutes from './modules/blog/blog.routes';
 import cleanupRoutes from './modules/cleanup/cleanup.routes';
+import newsRoutes from './modules/news/news.routes';
 import { configParameterRoutes } from './modules/config-parameter/config-parameter.routes';
 import feedsRoutes from './modules/feeds/feeds.routes';
 import filtersRoutes from './modules/filters/filters.routes';
@@ -51,8 +54,41 @@ if (ENVIROMENT === 'development') {
 
 
 
-app.use(express.json());
-app.use(morgan('dev')); // esto sí muestra logs en consola
+// Compresión gzip para mejorar rendimiento
+app.use(compression({
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
+  threshold: 1024, // Solo comprimir respuestas > 1KB
+  level: 6, // Nivel de compresión balanceado
+}));
+
+// Aplicar middlewares de seguridad
+app.use(securityMiddleware);
+
+// Rate limiting general
+app.use(generalRateLimit);
+
+// Optimizar parsing de JSON con límites apropiados
+app.use(express.json({ 
+  limit: '10mb',
+  type: ['application/json', 'text/plain']
+}));
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: '10mb',
+  parameterLimit: 1000 // Limitar número de parámetros
+}));
+
+// Configurar logging según el entorno
+if (process.env.NODE_ENV === 'production') {
+  app.use(morgan('combined')); // Formato estándar para producción
+} else {
+  app.use(morgan('dev')); // Formato detallado para desarrollo
+}
 
 
 app.get('/ping', (req, res) => {
@@ -61,14 +97,15 @@ app.get('/ping', (req, res) => {
 app.use('/api/attribute-groups', attributeGroupRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/cleanup', cleanupRoutes);
+app.use('/api/news', newsRoutes);
 app.use('/api/config-parameters', configParameterRoutes);
-app.use('/api/feeds', enforceVisibilityForFeeds, feedsRoutes);
+app.use('/api/feeds', publicApiRateLimit, enforceVisibilityForFeeds, feedsRoutes);
 app.use('/api/filters', filtersRoutes);
 app.use('/api/plans', plansRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/profile-verification', profileVerificationRoutes);
 app.use('/api/agency-conversion', agencyConversionRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRateLimit, authRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/email-inbox', emailInboxRoutes);
 app.use('/api/invoices', invoiceRoutes);

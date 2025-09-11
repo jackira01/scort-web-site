@@ -303,13 +303,7 @@ export default function ManagePlansModal({
     setIsProcessing(true);
 
     try {
-      console.log('🔍 Frontend Modal: Iniciando acción de plan:', {
-        action,
-        profileId,
-        profileName,
-        planCode,
-        currentPlan
-      });
+      // Iniciando acción de plan
 
       let result;
       let message = '';
@@ -330,16 +324,7 @@ export default function ManagePlansModal({
         case 'renew':
           // Debug: Verificar estado del plan antes de renovar
           const planToUse = profilePlanInfo || currentPlan;
-          console.log('🔍 Frontend Modal: Intentando renovar plan...', {
-            profileId,
-            currentPlan,
-            profilePlanInfo,
-            planToUse,
-            isPlanActive: isPlanActive(),
-            daysRemaining: getDaysRemaining(),
-            expiresAt: planToUse?.expiresAt,
-            now: new Date().toISOString()
-          });
+          // Intentando renovar plan
           
           const renewSelectedVariant = getSelectedVariant(planCode, currentPlanData);
           const renewRequest: PlanRenewalRequest = {
@@ -363,7 +348,6 @@ export default function ManagePlansModal({
           break;
       }
 
-      console.log('✅ Frontend Modal: Acción completada exitosamente');
       toast.success(message);
       
       // Refrescar datos del plan del perfil
@@ -373,12 +357,6 @@ export default function ManagePlansModal({
       onClose();
     } catch (error: any) {
       const errorMessage = error.message || 'Error al procesar la solicitud';
-      console.error('❌ Frontend Modal: Error en handlePlanAction:', {
-        error,
-        message: errorMessage,
-        action,
-        profileId
-      });
       toast.error(errorMessage);
     } finally {
       setIsProcessing(false);

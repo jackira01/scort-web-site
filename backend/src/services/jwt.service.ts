@@ -39,7 +39,6 @@ class JWTService {
             } as jwt.VerifyOptions) as JWTPayload;
             return decoded;
         } catch (error) {
-            console.error('JWT verification failed:', error);
             return null;
         }
     }
@@ -57,7 +56,7 @@ class JWTService {
     /**
      * Genera un token para un usuario con datos completos
      */
-    generateUserToken(user: any): string {
+    generateUserToken(user: Record<string, any>): string {
         const payload: JWTPayload = {
             userId: user._id.toString(),
             role: user.role,

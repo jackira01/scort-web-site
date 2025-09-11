@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
+import toast from 'react-hot-toast';
 import { invoiceService, type Invoice, type InvoiceFilters } from '@/services/invoice.service';
 import { useSession } from 'next-auth/react';
 import { PayInvoicesModal } from './PayInvoicesModal';

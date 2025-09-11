@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Send, Users, Search, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 import axios from '@/lib/axios';
 
 interface User {
@@ -162,7 +162,13 @@ export default function EmailManager() {
                 
                 // Mostrar información adicional si hubo errores parciales
                 if (result.failed > 0) {
-                    toast.warning(`${result.failed} correo(s) no pudieron ser enviados`);
+                    toast(`${result.failed} correo(s) no pudieron ser enviados`, {
+                        icon: '⚠️',
+                        style: {
+                            background: '#fbbf24',
+                            color: '#92400e'
+                        }
+                    });
                 }
             } else {
                 toast.error(result.message || 'Error al enviar correo');

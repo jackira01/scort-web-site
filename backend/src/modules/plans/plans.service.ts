@@ -78,7 +78,7 @@ const generateWhatsAppMessage = async (
         ]);
 
         if (!companyName || !companyWhatsApp) {
-            console.warn('⚠️ Configuración de empresa incompleta para WhatsApp');
+            // Configuración de empresa incompleta para WhatsApp
             return null;
         }
 
@@ -97,7 +97,7 @@ const generateWhatsAppMessage = async (
             message
         };
     } catch (error) {
-        console.error('❌ Error generando mensaje de WhatsApp:', error);
+        // Error generando mensaje de WhatsApp
         return null;
     }
 };
@@ -475,7 +475,7 @@ export class PlansService {
                 await profile.save();
 
             } catch (error) {
-                console.error('❌ Error creando factura para compra de plan:', error);
+                // Error creando factura para compra de plan
                 throw new Error('Error al generar factura para el plan');
             }
         } else {
@@ -520,7 +520,7 @@ export class PlansService {
         invoiceId?: string;
         whatsAppMessage?: WhatsAppMessage | null;
     }> {
-        console.log(`🔄 Renovando plan para perfil ${profileId}`);
+        // Renovando plan para perfil
 
         // Verificar que el perfil existe
         const profile = await ProfileModel.findById(profileId);
@@ -546,14 +546,14 @@ export class PlansService {
             throw new Error('El perfil no tiene un plan activo del tipo especificado para renovar');
         }
 
-        console.log(`📅 Plan actual expira: ${profile.planAssignment.expiresAt}`);
+        // Plan actual expira
 
         // Extender la fecha de expiración desde la fecha actual de expiración
         const currentExpiresAt = profile.planAssignment.expiresAt;
         const newExpiresAt = new Date(currentExpiresAt);
         newExpiresAt.setDate(newExpiresAt.getDate() + variantDays);
 
-        console.log(`📅 Nueva fecha de expiración: ${newExpiresAt}`);
+        // Nueva fecha de expiración
 
         // Generar factura si el plan tiene precio
         let invoiceId: string | undefined;
@@ -577,10 +577,10 @@ export class PlansService {
                 // NO actualizar las fechas hasta que se pague - mantener plan actual activo
                 await profile.save();
 
-                console.log(`💰 Factura generada para renovación de plan ${profileId}`);
+                // Factura generada para renovación de plan
 
             } catch (error) {
-                console.error('❌ Error creando factura para renovación de plan:', error);
+                // Error creando factura para renovación de plan
                 throw new Error('Error al generar factura para la renovación del plan');
             }
         } else {
@@ -588,7 +588,7 @@ export class PlansService {
             profile.planAssignment.expiresAt = newExpiresAt;
             profile.planAssignment.variantDays = variantDays;
             await profile.save();
-            console.log(`✅ Plan renovado exitosamente para perfil ${profileId}`);
+            // Plan renovado exitosamente para perfil
         }
 
         // Generar mensaje de WhatsApp

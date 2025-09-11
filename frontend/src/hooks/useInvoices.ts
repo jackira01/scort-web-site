@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 
 interface InvoiceItem {
   description: string;

@@ -91,29 +91,29 @@ export const purchasePlan = async (request: PlanPurchaseRequest) => {
 export const renewPlan = async (request: PlanRenewalRequest) => {
   try {
     // Validar que el perfil tenga un plan activo
-    console.log('🔍 Frontend: Validando plan antes de renovar...', { profileId: request.profileId, extensionDays: request.extensionDays });
+    // Frontend: Validando plan antes de renovar
 
     const planInfo = await getProfilePlanInfo(request.profileId);
-    console.log('🔍 Frontend: Plan info obtenido:', planInfo);
+    // Frontend: Plan info obtenido
 
     if (!planInfo) {
-      console.error('❌ Frontend: Plan no encontrado:', { profileId: request.profileId });
+      // Frontend: Plan no encontrado
       throw new Error('El perfil no tiene un plan activo para renovar');
     }
 
     if (!planInfo.isActive) {
-      console.error('❌ Frontend: Plan no activo:', { planInfo });
+      // Frontend: Plan no activo
       throw new Error('No se puede renovar un plan expirado. Compra un nuevo plan.');
     }
 
-    console.log('✅ Frontend: Plan válido, procediendo con renovación...');
+    // Frontend: Plan válido, procediendo con renovación
 
     const response = await axiosInstance.post('/api/plans/renew', request);
 
-    console.log('✅ Frontend: Plan renovado exitosamente:', response.data);
+    // Frontend: Plan renovado exitosamente
     return response.data;
   } catch (error: any) {
-    console.error('❌ Frontend: Error completo en renewPlan:', error);
+    // Frontend: Error completo en renewPlan
     throw new Error(error.response?.data?.message || error.message || 'Error al renovar el plan');
   }
 };
@@ -165,7 +165,7 @@ export const getActiveProfilesCount = async (userId?: string): Promise<number> =
     });
     return response.data.count || 0;
   } catch (error: any) {
-    console.error('Error al obtener conteo de perfiles activos:', error);
+    // Error al obtener conteo de perfiles activos
     return 0;
   }
 };
@@ -175,8 +175,7 @@ export const getActiveProfilesCount = async (userId?: string): Promise<number> =
  */
 export const getAvailablePlans = async () => {
   try {
-    console.log('🔄 Iniciando petición a backend para obtener planes...');
-    console.log('📍 URL:', `${axiosInstance.defaults.baseURL}/api/plans`);
+    // Iniciando petición a backend para obtener planes
 
     const response = await axiosInstance.get('/api/plans', {
       params: {
@@ -184,7 +183,7 @@ export const getAvailablePlans = async () => {
       }
     });
 
-    console.log('✅ Respuesta recibida del backend:', response.data);
+    // Respuesta recibida del backend
 
     // Validar estructura de respuesta
     if (!response.data || typeof response.data !== 'object') {
@@ -199,17 +198,11 @@ export const getAvailablePlans = async () => {
       throw new Error('Respuesta del backend inválida: data no es un array');
     }
 
-    console.log('📊 Planes procesados:', response.data.data.length);
+    // Planes procesados
     return response.data.data;
 
   } catch (error: any) {
-    console.error('❌ Error detallado en getAvailablePlans:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      url: error.config?.url,
-      method: error.config?.method
-    });
+    // Error detallado en getAvailablePlans
 
     // Proporcionar mensaje de error más específico
     const errorMessage = error.response?.data?.message || error.message || 'Error al obtener planes disponibles';

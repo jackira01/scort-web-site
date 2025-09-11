@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { hardDeleteProfile } from '@/services/user.service';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 export const DashbProfileCard = ({
   profile,
   index,

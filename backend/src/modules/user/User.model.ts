@@ -55,6 +55,13 @@ const userSchema = new Schema<IUserDocument>({
 
 });
 
+// Índices optimizados
+userSchema.index({ email: 1 }, { unique: true }); // Ya existe pero lo hacemos explícito
+userSchema.index({ isVerified: 1 }); // Para filtros de verificación
+userSchema.index({ role: 1 }); // Para filtros por rol
+userSchema.index({ accountType: 1 }); // Para filtros por tipo de cuenta
+userSchema.index({ 'lastLogin.date': -1 }); // Para ordenar por último login
+
 userSchema.plugin(mongoosePaginate);
 
 const UserModel = mongoose.model<IUserDocument, PaginateModel<IUserDocument>>('User', userSchema);

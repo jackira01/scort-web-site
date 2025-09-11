@@ -1,6 +1,7 @@
 import { ProfileModel } from '../profile/profile.model';
 import type { IProfile } from '../profile/profile.types';
 import { hideProfile } from '../profile/profile.service';
+import { logger } from '../../utils/logger';
 
 /**
  * Servicio de limpieza automática para perfiles y upgrades expirados
@@ -81,7 +82,7 @@ export const cleanupExpiredUpgrades = async (
         }
       }
 
-      console.log(`[Cleanup] Moved expired upgrades to history for ${updatedCount} profiles at ${now.toISOString()}`);
+      logger.info(`Moved expired upgrades to history for ${updatedCount} profiles`, { timestamp: now.toISOString() });
       return updatedCount;
     } else {
       // Opción 2: Eliminar completamente los upgrades expirados
@@ -96,11 +97,12 @@ export const cleanupExpiredUpgrades = async (
         }
       );
 
-      console.log(`[Cleanup] Removed expired upgrades from ${result.modifiedCount} profiles at ${now.toISOString()}`);
+      logger.info(`Removed expired upgrades from ${result.modifiedCount} profiles`, { timestamp: now.toISOString() });
       return result.modifiedCount;
     }
   } catch (error) {
-    console.error('[Cleanup] Error cleaning up expired upgrades:', error);
+    const err = error as Error;
+    logger.error('Error cleaning up expired upgrades', { error: err.message, stack: err.stack });
     throw error;
   }
 };

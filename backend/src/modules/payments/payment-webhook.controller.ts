@@ -21,7 +21,7 @@ export class PaymentWebhookController {
         });
       }
 
-      console.log(`🔔 Webhook de pago recibido para factura ${invoiceId}`);
+      // Webhook de pago recibido
 
       // Verificar que la factura existe
       const invoice = await InvoiceModel.findById(invoiceId);
@@ -49,20 +49,20 @@ export class PaymentWebhookController {
 
       await invoice.save();
 
-      console.log(`✅ Factura ${invoiceId} marcada como pagada`);
+      // Factura marcada como pagada
 
       // Procesar el pago y actualizar el perfil
       const result = await PaymentProcessorService.processInvoicePayment(invoiceId);
 
       if (!result.success) {
-        console.error(`❌ Error procesando pago: ${result.message}`);
+        // Error procesando pago
         return res.status(500).json({
           error: 'Error procesando el pago',
           details: result.message
         });
       }
 
-      console.log(`🎉 Pago procesado exitosamente para factura ${invoiceId}`);
+      // Pago procesado exitosamente
 
       return res.status(200).json({
         success: true,
@@ -80,7 +80,7 @@ export class PaymentWebhookController {
       });
 
     } catch (error) {
-      console.error('❌ Error en webhook de pago:', error);
+      // Error en webhook de pago
       return res.status(500).json({
         error: 'Error interno del servidor',
         details: error instanceof Error ? error.message : 'Error desconocido'
@@ -101,7 +101,7 @@ export class PaymentWebhookController {
         });
       }
 
-      console.log(`❌ Cancelación de pago recibida para factura ${invoiceId}`);
+      // Cancelación de pago recibida
 
       // Verificar que la factura existe
       const invoice = await InvoiceModel.findById(invoiceId);
@@ -128,13 +128,13 @@ export class PaymentWebhookController {
 
       await invoice.save();
 
-      console.log(`❌ Factura ${invoiceId} marcada como cancelada`);
+      // Factura marcada como cancelada
 
       // Procesar la cancelación
       const result = await PaymentProcessorService.processInvoiceCancellation(invoiceId);
 
       if (!result.success) {
-        console.error(`❌ Error procesando cancelación: ${result.message}`);
+        // Error procesando cancelación
         return res.status(500).json({
           error: 'Error procesando la cancelación',
           details: result.message
@@ -153,7 +153,7 @@ export class PaymentWebhookController {
       });
 
     } catch (error) {
-      console.error('❌ Error en cancelación de pago:', error);
+      // Error en cancelación de pago
       return res.status(500).json({
         error: 'Error interno del servidor',
         details: error instanceof Error ? error.message : 'Error desconocido'
@@ -194,7 +194,7 @@ export class PaymentWebhookController {
       });
 
     } catch (error) {
-      console.error('❌ Error obteniendo estado de factura:', error);
+      // Error obteniendo estado de factura
       return res.status(500).json({
         error: 'Error interno del servidor',
         details: error instanceof Error ? error.message : 'Error desconocido'

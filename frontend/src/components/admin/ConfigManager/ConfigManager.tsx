@@ -340,7 +340,7 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
                 );
 
             case 'profile-limits':
-                console.log('[DEBUG] ConfigManager: Rendering profile-limits section');
+                // Rendering profile-limits section
                 return (
                     <div className="p-6">
                         <ProfileLimitsManager />

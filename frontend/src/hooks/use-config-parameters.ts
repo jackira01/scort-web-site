@@ -145,10 +145,10 @@ export function useConfigParameterByKey(
     activeOnly: boolean = true,
     options?: { enabled?: boolean },
 ): UseConfigParameterResult {
-    console.log('[DEBUG] useConfigParameterByKey called with:', { key, activeOnly, options });
+    // DEBUG useConfigParameterByKey called
 
     const queryKey = configParameterKeys.byKey(key);
-    console.log('[DEBUG] Query key generated:', queryKey);
+    // DEBUG Query key generated
 
     const {
         data: parameter,
@@ -158,13 +158,13 @@ export function useConfigParameterByKey(
     } = useQuery({
         queryKey,
         queryFn: async () => {
-            console.log('[DEBUG] Query function executing for key:', key);
+            // DEBUG Query function executing
             try {
                 const result = await ConfigParameterService.getByKey(key, activeOnly);
-                console.log('[DEBUG] ConfigParameterService.getByKey result:', result);
+                // DEBUG ConfigParameterService.getByKey result
                 return result;
             } catch (err) {
-                console.error('[DEBUG] ConfigParameterService.getByKey error:', err);
+                // DEBUG ConfigParameterService.getByKey error
                 throw err;
             }
         },
@@ -172,7 +172,7 @@ export function useConfigParameterByKey(
         staleTime: 10 * 60 * 1000, // 10 minutos para valores por key
     });
 
-    console.log('[DEBUG] useQuery result:', { parameter, loading, error });
+    // DEBUG useQuery result
 
     const result = {
         parameter: parameter || null,
@@ -181,7 +181,7 @@ export function useConfigParameterByKey(
         refetch,
     };
 
-    console.log('[DEBUG] Final hook result:', result);
+    // DEBUG Final hook result
     return result;
 }
 

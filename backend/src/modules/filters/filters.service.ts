@@ -2,6 +2,8 @@ import { AttributeGroupModel as AttributeGroup } from '../attribute-group/attrib
 import { ProfileModel as Profile } from '../profile/profile.model';
 import { sortProfiles } from '../visibility/visibility.service';
 import { updateLastShownAt } from '../feeds/feeds.service';
+import { cacheService, CACHE_TTL, CACHE_KEYS } from '../../services/cache.service';
+import { logger } from '../../utils/logger';
 import type {
   FilterOptions,
   FilterQuery,
@@ -31,6 +33,19 @@ export const getFilteredProfiles = async (
       fields,
     } = filters;
 
+    // Generar clave de caché basada en los filtros
+    const cacheKey = cacheService.generateKey(
+      CACHE_KEYS.FILTERS,
+      JSON.stringify(filters)
+    );
+
+    // Intentar obtener del caché primero
+    const cachedResult = await cacheService.get<FilterResponse>(cacheKey);
+    if (cachedResult) {
+      logger.info(`Cache hit para filtros: ${cacheKey}`);
+      return cachedResult;
+    }
+
     let features = filters.features;
 
     // Construir query de MongoDB
@@ -49,14 +64,14 @@ export const getFilteredProfiles = async (
     }
 
     // Filtro por categoría (se maneja como feature)
-    console.log('🔍 DEBUG - Category filter:', category);
+    // DEBUG - Category filter
     if (category) {
       // Agregar la categoría a las features para procesarla junto con las demás
       if (!features) {
         features = {};
       }
       features.category = category;
-      console.log('🔍 DEBUG - Features after adding category:', features);
+      // DEBUG - Features after adding category
     }
 
     // Filtro por ubicación
@@ -104,29 +119,29 @@ export const getFilteredProfiles = async (
     }
 
     // Filtro por características (features)
-    console.log('🔍 DEBUG - Features object:', features);
+    // DEBUG - Features object
     if (features && Object.keys(features).length > 0) {
-      console.log('🔍 DEBUG - Processing features with keys:', Object.keys(features));
+      // DEBUG - Processing features with keys
       const featureConditions: any[] = [];
 
       // Primero necesitamos obtener los IDs de los grupos por sus keys
       const groupKeys = Object.keys(features);
-      console.log('🔍 DEBUG - Features keys:', groupKeys);
+      // DEBUG - Features keys
       const attributeGroups = await AttributeGroup.find({
         key: { $in: groupKeys },
       });
-      console.log('🔍 DEBUG - Found attribute groups:', attributeGroups.map(g => ({ key: g.key, _id: g._id })));
+      // DEBUG - Found attribute groups
       const groupKeyToId = new Map();
       attributeGroups.forEach((group) => {
         groupKeyToId.set(group.key, group._id);
       });
-      console.log('🔍 DEBUG - Group key to ID map:', Array.from(groupKeyToId.entries()));
+      // DEBUG - Group key to ID map
 
       for (const [groupKey, value] of Object.entries(features)) {
         const groupId = groupKeyToId.get(groupKey);
-        console.log(`🔍 DEBUG - Processing feature: ${groupKey} = ${value}, groupId: ${groupId}`);
+        // DEBUG - Processing feature
         if (!groupId) {
-          console.log(`⚠️ WARNING - No groupId found for feature key: ${groupKey}`);
+          // WARNING - No groupId found for feature key
           continue;
         }
 
@@ -237,7 +252,7 @@ export const getFilteredProfiles = async (
     const startTime = Date.now();
 
     // Debug: Log para verificar la query
-    console.log('🔍 DEBUG getFilteredProfiles - Query inicial:', JSON.stringify(query, null, 2));
+    // DEBUG getFilteredProfiles - Query inicial
 
     // Usar agregación para filtrar perfiles con usuarios verificados (alineado con homeFeed)
     const aggregationPipeline: any[] = [
@@ -269,7 +284,7 @@ export const getFilteredProfiles = async (
       }
     ];
 
-    console.log('🔍 DEBUG getFilteredProfiles - Pipeline de agregación:', JSON.stringify(aggregationPipeline, null, 2));
+    // DEBUG getFilteredProfiles - Pipeline de agregación
 
     // Agregar lookup para verification si es necesario
     if (!fields || fields.includes('verification')) {
@@ -324,8 +339,7 @@ export const getFilteredProfiles = async (
       ])
     ]);
 
-    console.log('🔍 DEBUG getFilteredProfiles - Perfiles encontrados:', allProfiles.length);
-    console.log('🔍 DEBUG getFilteredProfiles - Total count result:', totalCountResult);
+    // DEBUG getFilteredProfiles - Perfiles encontrados y total count result
 
     const totalCount = totalCountResult[0]?.total || 0;
 
@@ -384,10 +398,16 @@ export const getFilteredProfiles = async (
       };
     });
 
-    return {
+    const result = {
       ...paginationInfo,
       profiles: profilesWithVerification,
     };
+
+    // Guardar resultado en caché (5 minutos para consultas de filtros)
+    await cacheService.set(cacheKey, result, CACHE_TTL.MEDIUM);
+    logger.info(`Resultado guardado en caché: ${cacheKey}`);
+
+    return result;
   } catch (error) {
     // Error in getFilteredProfiles
     throw error;
@@ -399,6 +419,13 @@ export const getFilteredProfiles = async (
  */
 export const getFilterOptions = async (): Promise<FilterOptions> => {
   try {
+    // Intentar obtener del caché primero
+    const cacheKey = cacheService.generateKey(CACHE_KEYS.FILTERS, 'options');
+    const cachedOptions = await cacheService.get<FilterOptions>(cacheKey);
+    if (cachedOptions) {
+      logger.info('Cache hit para opciones de filtros');
+      return cachedOptions;
+    }
     const [locations, attributeGroups, priceRange] = await Promise.all([
       // Obtener ubicaciones únicas
       Profile.aggregate([
@@ -454,7 +481,7 @@ export const getFilterOptions = async (): Promise<FilterOptions> => {
         }));
     });
 
-    return {
+    const result = {
       categories: categoryGroup
         ? categoryGroup.variants
           .filter((variant: any) => variant.active)
@@ -475,6 +502,12 @@ export const getFilterOptions = async (): Promise<FilterOptions> => {
         max: priceRange[0]?.maxPrice || 0,
       },
     };
+
+    // Guardar en caché por 30 minutos (las opciones cambian poco)
+    await cacheService.set(cacheKey, result, CACHE_TTL.LONG);
+    logger.info('Opciones de filtros guardadas en caché');
+
+    return result;
   } catch (error) {
     // Error in getFilterOptions
     throw error;

@@ -23,14 +23,11 @@ import {
 
 export const createProfile = async (req: AuthRequest, res: Response) => {
   try {
-    console.log('🔴 [BACKEND] Raw req.body:', JSON.stringify(req.body, null, 2));
-    console.log('🔴 [BACKEND] req.body type:', typeof req.body);
-    console.log('🔴 [BACKEND] req.body keys:', Object.keys(req.body));
+    // Raw request body processing
 
     const { profileData, purchasedPlan } = req.body;
 
-    console.log("🔴 [BACKEND] Destructured profileData:", profileData);
-    console.log("🔴 [BACKEND] Destructured purchasedPlan:", purchasedPlan);
+    // Destructured data processing
 
 
     // Validar que se proporcionen los datos del perfil
@@ -41,20 +38,7 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // DEBUG: Log de datos recibidos
-    console.log('🔵 [PROFILE CONTROLLER] Datos recibidos para crear perfil:', {
-      profileData: {
-        userId: profileData.userId || profileData.user,
-        name: profileData.name,
-        hasProfileData: !!profileData
-      },
-      purchasedPlan: purchasedPlan ? {
-        planCode: purchasedPlan.planCode,
-        planDays: purchasedPlan.planDays || purchasedPlan.variantDays,
-        hasPurchasedPlan: true
-      } : { hasPurchasedPlan: false },
-      bodyKeys: Object.keys(req.body)
-    });
+    // Datos recibidos para crear perfil
 
     // Extraer información del plan comprado si existe
     let planCode = null;
@@ -80,19 +64,19 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
 
       // Si se especifica un plan pago, validar límites
       if (planCode !== 'GRATIS' && planCode !== defaultPlanCode) {
-        console.log('🔵 [PROFILE CONTROLLER] Validando plan de pago:', { planCode, planDays });
+        // Validando plan de pago
         await validatePaidPlanAssignment(
           profileData.userId || profileData.user,
           planCode,
           undefined,
           purchasedPlan.orderId
         );
-        console.log('✅ [PROFILE CONTROLLER] Validación de plan completada');
+        // Validación de plan completada
       }
     }
 
     // Usar la nueva función que maneja facturación automática
-    console.log('🔵 [PROFILE CONTROLLER] Iniciando creación de perfil con facturación automática');
+    // Iniciando creación de perfil con facturación automática
     const result = await createProfileWithInvoice({
       ...profileData,
       planCode: planCode,
@@ -106,12 +90,7 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
 
     // Respuesta diferenciada según si se generó factura
     if (result.invoice) {
-      console.log('💰 [PROFILE CONTROLLER] Perfil creado con factura pendiente:', {
-        profileId: result.profile._id,
-        invoiceId: result.invoice._id,
-        totalAmount: result.invoice.totalAmount,
-        expiresAt: result.invoice.expiresAt
-      });
+      // Perfil creado con factura pendiente
       res.status(201).json({
         success: true,
         message: 'Perfil creado exitosamente. Se ha generado una factura pendiente.',
@@ -125,9 +104,7 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
         expiresAt: result.invoice.expiresAt
       });
     } else {
-      console.log('✅ [PROFILE CONTROLLER] Perfil creado sin factura (plan gratuito):', {
-        profileId: result.profile._id
-      });
+      // Perfil creado sin factura (plan gratuito)
       res.status(201).json({
         success: true,
         message: 'Perfil creado exitosamente.',
@@ -639,18 +616,7 @@ export const getProfilePlanInfoController = async (req: AuthRequest, res: Respon
     const expiresAt = profile.planAssignment ? new Date(profile.planAssignment.expiresAt) : null;
     const hasActivePlan = profile.planAssignment && expiresAt && expiresAt > now;
 
-    // Debug logging para investigar el problema
-    console.log('🔍 Debug getProfilePlanInfo:', {
-      profileId,
-      profileName: profile.name,
-      hasPlanAssignment: !!profile.planAssignment,
-      planCode: profile.planAssignment?.planCode,
-      expiresAt: expiresAt?.toISOString(),
-      now: now.toISOString(),
-      hasActivePlan,
-      diffMs: expiresAt ? expiresAt.getTime() - now.getTime() : null,
-      diffDays: expiresAt ? Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null
-    });
+    // Debug getProfilePlanInfo
 
     if (!hasActivePlan) {
       return res.status(404).json({ error: 'El perfil no tiene un plan activo' });
@@ -669,11 +635,11 @@ export const getProfilePlanInfoController = async (req: AuthRequest, res: Respon
       daysRemaining
     };
 
-    console.log('✅ Plan info devuelto:', planInfo);
+    // Plan info devuelto
     res.json(planInfo);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'An error occurred';
-    console.error('❌ Error en getProfilePlanInfo:', message);
+    // Error en getProfilePlanInfo
     res.status(400).json({ message });
   }
 };
@@ -811,13 +777,7 @@ export const upgradePlanController = async (req: AuthRequest, res: Response) => 
     const { id: profileId } = req.params; // Usar 'id' en lugar de 'profileId' para coincidir con la ruta
     const { newPlanCode, variantDays } = req.body;
 
-    console.log('🔍 Backend Controller: Upgrade request received:', {
-      profileId,
-      newPlanCode,
-      variantDays,
-      body: req.body,
-      params: req.params
-    });
+    // Backend Controller: Upgrade request received
 
     if (!profileId) {
       return res.status(400).json({
@@ -835,11 +795,7 @@ export const upgradePlanController = async (req: AuthRequest, res: Response) => 
 
     const updatedProfile = await service.upgradePlan(profileId, newPlanCode, variantDays);
 
-    console.log('✅ Backend Controller: Upgrade successful:', {
-      profileId,
-      newPlanCode,
-      updatedPlan: updatedProfile?.planAssignment
-    });
+    // Backend Controller: Upgrade successful
 
     res.json({
       success: true,
@@ -847,12 +803,7 @@ export const upgradePlanController = async (req: AuthRequest, res: Response) => 
       profile: updatedProfile
     });
   } catch (error: any) {
-    console.error('❌ Backend Controller: Error al hacer upgrade de plan:', {
-      error: error.message,
-      stack: error.stack,
-      profileId: req.params.id,
-      newPlanCode: req.body.newPlanCode
-    });
+    // Backend Controller: Error al hacer upgrade de plan
     res.status(400).json({
       success: false,
       error: error.message || 'Error al hacer upgrade del plan'

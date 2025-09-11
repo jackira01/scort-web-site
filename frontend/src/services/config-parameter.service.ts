@@ -63,35 +63,29 @@ export class ConfigParameterService {
         const params = activeOnly ? '?activeOnly=true' : '?activeOnly=false';
         const url = `${API_BASE_URL}/key/${key}${params}`;
         
-        console.log('[DEBUG] ConfigParameterService.getByKey called with:', { key, activeOnly });
-        console.log('[DEBUG] API URL:', url);
-        console.log('[DEBUG] API_BASE_URL:', API_BASE_URL);
+        // DEBUG ConfigParameterService.getByKey called
         
         try {
             const response = await axios.get<ConfigParameterApiResponse>(url);
-            console.log('[DEBUG] API Response status:', response.status);
-            console.log('[DEBUG] API Response headers:', response.headers);
-            console.log('[DEBUG] API Response data:', response.data);
+            // DEBUG API Response info
             
             if (!response.data) {
-                console.error('[DEBUG] Response.data is undefined!');
+                // Response.data is undefined
                 throw new Error('Response data is undefined');
             }
             
             if (!response.data.data) {
-                console.error('[DEBUG] Response.data.data is undefined!');
-                console.error('[DEBUG] Full response.data structure:', JSON.stringify(response.data, null, 2));
+                // Response.data.data is undefined
                 throw new Error('Response data.data is undefined');
             }
             
-            console.log('[DEBUG] Returning parameter:', response.data.data);
+            // DEBUG Returning parameter
             return response.data.data;
         } catch (error) {
-            console.error('[DEBUG] ConfigParameterService.getByKey error:', error);
+            // ConfigParameterService.getByKey error
             if (error && typeof error === 'object' && 'response' in error) {
                 const axiosError = error as any;
-                console.error('[DEBUG] Error response status:', axiosError.response?.status);
-                console.error('[DEBUG] Error response data:', axiosError.response?.data);
+                // Error response info
             }
             throw error;
         }

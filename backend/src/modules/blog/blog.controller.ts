@@ -35,7 +35,7 @@ export class BlogController {
         data: blog
       });
     } catch (error: any) {
-      console.error('Error al crear blog:', error);
+      // Error al crear blog
       res.status(500).json({
         success: false,
         message: error.message || 'Error interno del servidor'
@@ -78,7 +78,7 @@ export class BlogController {
         }
       });
     } catch (error: any) {
-      console.error('Error al obtener blogs:', error);
+      // Error al obtener blogs
       res.status(500).json({
         success: false,
         message: error.message || 'Error interno del servidor'
@@ -127,7 +127,7 @@ export class BlogController {
         data: blog
       });
     } catch (error: any) {
-      console.error('Error al obtener blog:', error);
+      // Error al obtener blog
       res.status(500).json({
         success: false,
         message: error.message || 'Error interno del servidor'
@@ -186,7 +186,7 @@ export class BlogController {
         data: blog
       });
     } catch (error: any) {
-      console.error('Error al actualizar blog:', error);
+      // Error al actualizar blog
       res.status(500).json({
         success: false,
         message: error.message || 'Error interno del servidor'
@@ -225,7 +225,7 @@ export class BlogController {
         data: blog
       });
     } catch (error: any) {
-      console.error('Error al cambiar estado del blog:', error);
+      // Error al cambiar estado del blog
       res.status(500).json({
         success: false,
         message: error.message || 'Error interno del servidor'
@@ -263,7 +263,7 @@ export class BlogController {
         message: 'Blog eliminado exitosamente'
       });
     } catch (error: any) {
-      console.error('Error al eliminar blog:', error);
+      // Error al eliminar blog
       res.status(500).json({
         success: false,
         message: error.message || 'Error interno del servidor'
@@ -295,7 +295,7 @@ export class BlogController {
         data: relatedBlogs
       });
     } catch (error: any) {
-      console.error('Error al obtener blogs relacionados:', error);
+      // Error al obtener blogs relacionados
       res.status(500).json({
         success: false,
         message: error.message || 'Error interno del servidor'
@@ -328,7 +328,7 @@ export class BlogController {
         searchTerm: term
       });
     } catch (error: any) {
-      console.error('Error al buscar blogs:', error);
+      // Error al buscar blogs
       res.status(500).json({
         success: false,
         message: error.message || 'Error interno del servidor'

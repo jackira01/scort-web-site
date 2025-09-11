@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { FileText, Download, Eye } from 'lucide-react';
 import { useUpdateUser } from '@/hooks/use-user';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 import type { User } from '@/types/user.types';
 
 interface UserDocumentVerificationModalProps {

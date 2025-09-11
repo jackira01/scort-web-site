@@ -94,7 +94,7 @@ export const debugProfileStructureController = async (req: Request, res: Respons
     });
 
   } catch (error: any) {
-    console.error('Error en debug de estructura de perfil:', error);
+    // Error en debug de estructura de perfil
     res.status(500).json({ 
       error: 'Error interno del servidor',
       details: error.message 
@@ -148,7 +148,7 @@ export const debugUserProfilesController = async (req: Request, res: Response) =
     });
 
   } catch (error: any) {
-    console.error('Error en debug de perfiles de usuario:', error);
+    // Error en debug de perfiles de usuario
     res.status(500).json({ 
       error: 'Error interno del servidor',
       details: error.message 

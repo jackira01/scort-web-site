@@ -1,0 +1,59 @@
+services:
+  # Backend Service en Render
+  - type: web
+    name: scort-backend
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: cd backend && pnpm install && pnpm run build:prod
+    startCommand: cd backend && pnpm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGO_URI
+        fromDatabase:
+          name: scort-mongodb
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://scort-web-site.vercel.app
+      - key: MAILJET_API_KEY
+        sync: false
+      - key: MAILJET_SECRET_KEY
+        sync: false
+    autoDeploy: true
+    rootDir: ./backend
+
+  # Base de datos MongoDB
+  - type: pserv
+    name: scort-mongodb
+    env: docker
+    region: oregon
+    plan: starter
+    dockerfilePath: ./mongodb.Dockerfile
+    envVars:
+      - key: MONGO_INITDB_ROOT_USERNAME
+        value: admin
+      - key: MONGO_INITDB_ROOT_PASSWORD
+        generateValue: true
+      - key: MONGO_INITDB_DATABASE
+        value: scort-web-site
+
+databases:
+  - name: scort-mongodb
+    databaseName: scort-web-site
+    user: scort-app
+    region: oregon
+    plan: starter
+    ipAllowList: []
+
+# Variables de entorno globales
+envVars:
+  - key: NODE_ENV
+    value: production
+  - key: TZ
+    value: UTC

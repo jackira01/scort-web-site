@@ -15,7 +15,6 @@ export const runCleanupController = async (req: Request, res: Response): Promise
       message: 'Manual cleanup completed successfully'
     });
   } catch (error) {
-    console.error('Error in runCleanupController:', error);
     res.status(500).json({
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -36,7 +35,6 @@ export const getCleanupStatusController = (req: Request, res: Response): void =>
       data: status
     });
   } catch (error) {
-    console.error('Error in getCleanupStatusController:', error);
     res.status(500).json({
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -57,7 +55,6 @@ export const getVisibilityStatsController = async (req: Request, res: Response):
       data: stats
     });
   } catch (error) {
-    console.error('Error in getVisibilityStatsController:', error);
     res.status(500).json({
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'

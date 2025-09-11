@@ -33,7 +33,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../../../src/com
 import { Badge } from '../../../../../src/components/ui/badge';
 import { Separator } from '../../../../../src/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../../../src/components/ui/alert-dialog';
-import { toast } from '../../../../../src/hooks/use-toast';
+import toast from 'react-hot-toast';
 
 interface BlogFormData {
   title: string;

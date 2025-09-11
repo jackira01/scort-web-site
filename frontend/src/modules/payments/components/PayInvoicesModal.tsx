@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
+import toast from 'react-hot-toast';
 import { usePendingInvoices } from '@/hooks/use-pending-invoices';
 import type { Invoice } from '@/services/invoice.service';
 
@@ -26,7 +26,6 @@ interface PayInvoicesModalProps {
 }
 
 export function PayInvoicesModal({ open, onOpenChange, invoices }: PayInvoicesModalProps) {
-  const { toast } = useToast();
   const { getWhatsAppData, markAsPaid } = usePendingInvoices();
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');

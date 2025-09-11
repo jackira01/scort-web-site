@@ -42,7 +42,6 @@ class AgencyConversionController {
         }
       });
     } catch (error) {
-      console.error('Error en requestConversion:', error);
       res.status(400).json({ 
         error: error instanceof Error ? error.message : 'Error interno del servidor' 
       });
@@ -99,7 +98,6 @@ class AgencyConversionController {
         }
       });
     } catch (error) {
-      console.error('Error en processConversion:', error);
       res.status(400).json({ 
         error: error instanceof Error ? error.message : 'Error interno del servidor' 
       });
@@ -124,7 +122,6 @@ class AgencyConversionController {
         count: pendingConversions.length
       });
     } catch (error) {
-      console.error('Error en getPendingConversions:', error);
       res.status(500).json({ 
         error: error instanceof Error ? error.message : 'Error interno del servidor' 
       });
@@ -150,7 +147,6 @@ class AgencyConversionController {
         count: history.length
       });
     } catch (error) {
-      console.error('Error en getConversionHistory:', error);
       res.status(500).json({ 
         error: error instanceof Error ? error.message : 'Error interno del servidor' 
       });
@@ -172,7 +168,6 @@ class AgencyConversionController {
 
       res.status(200).json(result);
     } catch (error) {
-      console.error('Error en checkProfileCreation:', error);
       res.status(500).json({ 
         error: error instanceof Error ? error.message : 'Error interno del servidor' 
       });
@@ -194,7 +189,6 @@ class AgencyConversionController {
 
       res.status(200).json(stats);
     } catch (error) {
-      console.error('Error en getConversionStats:', error);
       res.status(500).json({ 
         error: error instanceof Error ? error.message : 'Error interno del servidor' 
       });

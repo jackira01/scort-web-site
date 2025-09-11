@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useImperativeHandle, forwardRef, useState } f
 import EditorJS, { OutputData } from "@editorjs/editorjs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import toast from 'react-hot-toast';
 
 // Importaciones dinámicas para evitar errores de tipos
 const Header = require("@editorjs/header");
@@ -63,7 +63,7 @@ const BlogEditor = forwardRef<BlogEditorRef, BlogEditorProps>((
       // Verificar que el elemento DOM existe antes de inicializar
       const holderElement = document.getElementById(editorId.current);
       if (!holderElement) {
-        console.error('Editor holder element not found:', editorId.current);
+        // Editor holder element not found
         return;
       }
 
@@ -113,11 +113,7 @@ const BlogEditor = forwardRef<BlogEditorRef, BlogEditorProps>((
                   // Si hay sistema de subida diferida, usarlo
                   if (deferredUpload) {
                     const { id, preview } = deferredUpload.addPendingFile(file, 'image');
-                    toast({
-                      title: 'Imagen agregada',
-                      description: 'Se subirá al guardar el blog.',
-                      variant: 'default'
-                    });
+                    toast.success('Imagen agregada - Se subirá al guardar el blog.');
                     
                     return {
                       success: 1,
@@ -170,12 +166,8 @@ const BlogEditor = forwardRef<BlogEditorRef, BlogEditorProps>((
                     },
                   };
                 } catch (error) {
-                  console.error('Error al subir imagen:', error);
-                  toast({
-                    title: 'Error al subir imagen',
-                    description: error instanceof Error ? error.message : 'Error al subir la imagen',
-                    variant: 'destructive'
-                  });
+                  // Error al subir imagen
+                  toast.error(`Error al subir imagen: ${error instanceof Error ? error.message : 'Error al subir la imagen'}`);
                   return {
                     success: 0,
                     message: error instanceof Error ? error.message : 'Error al subir la imagen'
@@ -236,7 +228,7 @@ const BlogEditor = forwardRef<BlogEditorRef, BlogEditorProps>((
   useEffect(() => {
     if (editorRef.current && initialData && isReady) {
       // Solo actualizar si el editor está listo y hay datos iniciales
-      editorRef.current.render(initialData).catch(console.error);
+      editorRef.current.render(initialData).catch(() => {});
     }
   }, [initialData, isReady]);
 

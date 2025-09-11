@@ -5,7 +5,6 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { SessionProvider } from 'next-auth/react';
 import { type PropsWithChildren, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { Toaster as ShadcnToaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 
 const enviroment = process.env.NODE_ENV;
@@ -16,11 +15,26 @@ export default function QueryProvider({ children }: PropsWithChildren) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Configuración global para todas las queries
-            staleTime: 1 * 60 * 1000, // 1 minuto
+            // Configuración optimizada para rendimiento
+            staleTime: 5 * 60 * 1000, // 5 minutos - datos frescos por más tiempo
+            gcTime: 10 * 60 * 1000, // 10 minutos - mantener en caché más tiempo
+            retry: (failureCount, error: any) => {
+              // No reintentar en errores 4xx (cliente)
+              if (error?.response?.status >= 400 && error?.response?.status < 500) {
+                return false;
+              }
+              // Máximo 2 reintentos para otros errores
+              return failureCount < 2;
+            },
+            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+            refetchOnWindowFocus: false, // Evitar refetch innecesarios
+            refetchOnMount: 'always', // Siempre refrescar al montar
+            refetchOnReconnect: 'always', // Refrescar al reconectar
+            networkMode: 'online', // Solo ejecutar cuando hay conexión
+          },
+          mutations: {
             retry: 1,
-            refetchOnWindowFocus: true, // Refrescar cuando la ventana recibe foco
-            refetchOnMount: true, // Refrescar cuando el componente se monta
+            networkMode: 'online',
           },
         },
       }),
@@ -48,7 +62,6 @@ export function Providers({ children }: PropsWithChildren) {
       >
         <SessionProvider>
           <Toaster position="top-right" />
-          <ShadcnToaster />
           {children}
         </SessionProvider>
       </ThemeProvider>

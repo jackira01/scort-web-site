@@ -109,4 +109,26 @@ profileSchema.index({ lastShownAt: 1 });
 profileSchema.index({ visible: 1, 'planAssignment.expiresAt': 1, lastShownAt: 1 }); // Índice compuesto
 profileSchema.index({ isDeleted: 1, visible: 1 }); // Índice compuesto para borrado lógico
 
+// Índices optimizados para filtros
+profileSchema.index({ user: 1 }); // Para lookup con users
+profileSchema.index({ 'location.country.value': 1 });
+profileSchema.index({ 'location.department.value': 1 });
+profileSchema.index({ 'location.city.value': 1 });
+profileSchema.index({ 'features.group_id': 1, 'features.value': 1 }); // Para filtros de características
+profileSchema.index({ 'rates.price': 1 }); // Para filtros de precio
+profileSchema.index({ 'media.videos': 1 }); // Para filtro hasVideos
+profileSchema.index({ 'upgrades.code': 1, 'upgrades.startAt': 1, 'upgrades.endAt': 1 }); // Para upgrades activos
+profileSchema.index({ 'planAssignment.planCode': 1 }); // Para filtros por plan
+
+// Índice compuesto para consultas frecuentes de filtros
+profileSchema.index({ 
+  visible: 1, 
+  isDeleted: 1, 
+  'planAssignment.expiresAt': 1,
+  'location.country.value': 1 
+});
+
+// Índice para ordenamiento por createdAt
+profileSchema.index({ createdAt: -1 });
+
 export const ProfileModel = mongoose.model<IProfile>('Profile', profileSchema);

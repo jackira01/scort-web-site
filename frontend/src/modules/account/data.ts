@@ -1,4 +1,4 @@
-import { Receipt, Settings, User, Tags } from 'lucide-react';
+import { Receipt, Settings, User, Tags, Newspaper } from 'lucide-react';
 
 export const sidebarItems = [
   {
@@ -18,5 +18,11 @@ export const sidebarItems = [
     label: 'Grupos de Atributos',
     icon: Tags,
     description: 'Gestiona grupos de atributos y categorías del sistema',
+  },
+  {
+    id: 'tablero-noticias',
+    label: 'Tablero de Noticias',
+    icon: Newspaper,
+    description: 'Consulta las últimas actualizaciones y cambios del sistema',
   },
 ];

@@ -22,47 +22,26 @@ export function ProfileLimitsManager() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Hooks para obtener valores actuales
-  console.log('[DEBUG] ProfileLimitsManager: Initializing hooks');
+  // Initializing hooks
   const { parameter: freeProfilesData, loading: loadingFree, error: errorFree } = useConfigParameterByKey('profiles.limits.free_profiles_max');
   const { parameter: paidProfilesData, loading: loadingPaid, error: errorPaid } = useConfigParameterByKey('profiles.limits.paid_profiles_max');
   const { parameter: totalVisibleData, loading: loadingTotal, error: errorTotal } = useConfigParameterByKey('profiles.limits.total_visible_max');
   
-  console.log('[DEBUG] ProfileLimitsManager: Hook results:', {
-    freeProfilesData,
-    paidProfilesData,
-    totalVisibleData,
-    loadingFree,
-    loadingPaid,
-    loadingTotal,
-    errorFree,
-    errorPaid,
-    errorTotal
-  });
+  // Hook results initialized
 
   const updateParameter = useUpdateConfigParameter();
 
   // Cargar configuraciones actuales
   useEffect(() => {
-    console.log('[DEBUG] ProfileLimitsManager useEffect triggered:', {
-      loadingFree,
-      loadingPaid,
-      loadingTotal,
-      freeProfilesData,
-      paidProfilesData,
-      totalVisibleData
-    });
+    // ProfileLimitsManager useEffect triggered
     
     if (!loadingFree && !loadingPaid && !loadingTotal) {
-      console.log('[DEBUG] All loading completed, setting config');
       const newConfig = {
         freeProfilesMax: freeProfilesData?.value || 3,
         paidProfilesMax: paidProfilesData?.value || 10,
         totalVisibleMax: totalVisibleData?.value || 13
       };
-      console.log('[DEBUG] New config to set:', newConfig);
       setConfig(newConfig);
-    } else {
-      console.log('[DEBUG] Still loading, skipping config update');
     }
   }, [freeProfilesData, paidProfilesData, totalVisibleData, loadingFree, loadingPaid, loadingTotal]);
 
@@ -154,20 +133,20 @@ export function ProfileLimitsManager() {
               }
             });
           } else {
-            console.error('Invalid parameter data structure:', paramData);
+            // Invalid parameter data structure
             throw new Error(`No se pudo obtener el ID del parámetro ${update.key}`);
           }
         } else {
-          console.error('Failed to fetch parameter:', update.key, existingParam.status);
+          // Failed to fetch parameter
           throw new Error(`No se pudo encontrar el parámetro ${update.key}`);
         }
       }
 
       setErrors({});
       // Mostrar mensaje de éxito (podrías usar un toast aquí)
-      console.log('Configuraciones actualizadas exitosamente');
+      // Configuraciones actualizadas exitosamente
     } catch (error) {
-      console.error('Error al guardar configuraciones:', error);
+      // Error al guardar configuraciones
       setErrors({ general: 'Error al guardar las configuraciones' });
     } finally {
       setSaving(false);
