@@ -30,15 +30,13 @@ export const purchaseUpgrade = async (profileId: string, upgradeCode: string): P
       profile: response.data
     };
   } catch (error: any) {
-    console.error('Error al comprar upgrade:', error);
-    
     if (error.response?.data?.message) {
       return {
         success: false,
         message: error.response.data.message
       };
     }
-    
+
     return {
       success: false,
       message: 'Error al procesar la compra del upgrade'
@@ -55,7 +53,6 @@ export const getAvailableUpgrades = async () => {
     const response = await axios.get(`${API_URL}/api/upgrades`);
     return response.data;
   } catch (error) {
-    console.error('Error al obtener upgrades disponibles:', error);
     throw error;
   }
 };
@@ -71,7 +68,6 @@ export const validateUpgradePurchase = async (profileId: string, upgradeCode: st
     const response = await axios.get(`${API_URL}/api/profile/${profileId}/validate-upgrade/${upgradeCode}`);
     return response.data;
   } catch (error) {
-    console.error('Error al validar compra de upgrade:', error);
     throw error;
   }
 };

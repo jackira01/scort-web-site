@@ -105,10 +105,10 @@ const PlansPage = () => {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-200 mb-4">
             Elige tu Plan Perfecto
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto dark:text-gray-200">
             Descubre nuestros planes diseñados para potenciar tu presencia y conectar con más personas.
             Cada plan incluye características únicas para diferentes necesidades.
           </p>
@@ -120,23 +120,15 @@ const PlansPage = () => {
             const mainVariant = plan.variants?.[0];
             const isPopular = plan.features?.showInHome;
             const isSponsored = plan.features?.showInSponsored;
-            
+
             return (
-              <Card 
-                key={plan._id} 
-                className={`relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-105 ${
-                  isPopular ? 'ring-2 ring-purple-500 shadow-xl' : 'shadow-lg'
-                }`}
+              <Card
+                key={plan._id}
+                className={`relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-105 ${isPopular ? 'ring-2 ring-purple-500 shadow-xl' : 'shadow-lg'
+                  }`}
               >
-                {/* Popular Badge */}
-                {isPopular && (
-                  <div className="absolute top-4 right-4 z-10">
-                    <Badge className="bg-purple-500 text-white font-semibold px-3 py-1">
-                      Popular
-                    </Badge>
-                  </div>
-                )}
-                
+
+
                 {/* Sponsored Badge */}
                 {isSponsored && (
                   <div className="absolute top-4 left-4 z-10">
@@ -153,11 +145,9 @@ const PlansPage = () => {
                       {getPlanIcon(plan.level)}
                       <h3 className="text-2xl font-bold">{plan.name}</h3>
                     </div>
-                    <Badge className={`${getPlanBadgeColor(plan.level)} font-semibold`}>
-                      Nivel {plan.level}
-                    </Badge>
+
                   </div>
-                  
+
                   {mainVariant && (
                     <div className="text-center">
                       <div className="text-4xl font-bold mb-2">
@@ -171,50 +161,45 @@ const PlansPage = () => {
                 </div>
 
                 <CardContent className="p-6">
-                  {/* Description */}
-                  {plan.description && (
-                    <p className="text-gray-600 mb-6">{plan.description}</p>
-                  )}
-
                   {/* Features */}
                   {mainVariant && (
                     <div className="space-y-4 mb-6">
-                      <h4 className="font-semibold text-gray-900 mb-3">Características incluidas:</h4>
-                      
+                      <h4 className="font-semibold text-gray-900 dark:text-gray-200 mb-3">Características incluidas:</h4>
+
                       {/* Content Limits */}
                       <div className="space-y-2">
-                        {mainVariant.contentLimits.maxPhotos > 0 && (
+                        {plan.contentLimits && plan.contentLimits.photos && plan.contentLimits.photos.max > 0 && (
                           <div className="flex items-center space-x-2">
                             <Check className="h-4 w-4 text-green-500" />
-                            <span className="text-sm text-gray-700">
-                              Hasta {mainVariant.contentLimits.maxPhotos} fotos
+                            <span className="text-sm text-gray-700 dark:text-gray-200">
+                              Hasta {plan.contentLimits.photos.max} fotos
                             </span>
                           </div>
                         )}
-                        
-                        {mainVariant.contentLimits.maxVideos > 0 && (
+
+                        {plan.contentLimits && plan.contentLimits.videos && plan.contentLimits.videos.max > 0 && (
                           <div className="flex items-center space-x-2">
                             <Check className="h-4 w-4 text-green-500" />
-                            <span className="text-sm text-gray-700">
-                              Hasta {mainVariant.contentLimits.maxVideos} videos
+                            <span className="text-sm text-gray-700 dark:text-gray-200">
+                              Hasta {plan.contentLimits.videos.max} videos
                             </span>
                           </div>
                         )}
-                        
-                        {mainVariant.contentLimits.maxAudios > 0 && (
+
+                        {plan.contentLimits && plan.contentLimits.audios && plan.contentLimits.audios.max > 0 && (
                           <div className="flex items-center space-x-2">
                             <Check className="h-4 w-4 text-green-500" />
-                            <span className="text-sm text-gray-700">
-                              Hasta {mainVariant.contentLimits.maxAudios} audios
+                            <span className="text-sm text-gray-700 dark:text-gray-200">
+                              Hasta {plan.contentLimits.audios.max} audios
                             </span>
                           </div>
                         )}
-                        
-                        {mainVariant.contentLimits.storiesPerDayMax > 0 && (
+
+                        {plan.contentLimits && plan.contentLimits.storiesPerDayMax > 0 && (
                           <div className="flex items-center space-x-2">
                             <Check className="h-4 w-4 text-green-500" />
-                            <span className="text-sm text-gray-700">
-                              {mainVariant.contentLimits.storiesPerDayMax} historias por día
+                            <span className="text-sm text-gray-700 dark:text-gray-200">
+                              {plan.contentLimits.storiesPerDayMax} historias por día
                             </span>
                           </div>
                         )}
@@ -226,24 +211,24 @@ const PlansPage = () => {
                           {plan.features.showInFilters && (
                             <div className="flex items-center space-x-2">
                               <Check className="h-4 w-4 text-green-500" />
-                              <span className="text-sm text-gray-700">Aparece en filtros</span>
+                              <span className="text-sm text-gray-700 dark:text-gray-200">Aparece en filtros</span>
                             </div>
                           )}
-                          
+
                           {plan.features.showInHome && (
                             <div className="flex items-center space-x-2">
                               <Check className="h-4 w-4 text-green-500" />
-                              <span className="text-sm text-gray-700">Destacado en inicio</span>
+                              <span className="text-sm text-gray-700 dark:text-gray-200">Destacado en inicio</span>
                             </div>
                           )}
                         </div>
                       )}
 
                       {/* Included Upgrades */}
-                      {mainVariant.includedUpgrades && mainVariant.includedUpgrades.length > 0 && (
+                      {plan.includedUpgrades && plan.includedUpgrades.length > 0 && (
                         <div className="space-y-2">
                           <h5 className="font-medium text-gray-800">Upgrades incluidos:</h5>
-                          {mainVariant.includedUpgrades.map((upgrade, index) => (
+                          {plan.includedUpgrades.map((upgrade, index) => (
                             <div key={index} className="flex items-center space-x-2">
                               <Check className="h-4 w-4 text-green-500" />
                               <span className="text-sm text-gray-700">{upgrade}</span>
@@ -257,12 +242,12 @@ const PlansPage = () => {
                   {/* All Variants */}
                   {plan.variants && plan.variants.length > 1 && (
                     <div className="mb-6">
-                      <h4 className="font-semibold text-gray-900 mb-3">Opciones de duración:</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-gray-200 mb-3">Opciones de duración:</h4>
                       <div className="space-y-2">
                         {plan.variants.map((variant, index) => (
                           <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                            <span className="text-sm font-medium">{formatDays(variant.days)}</span>
-                            <span className="text-sm font-bold text-gray-900">
+                            <span className="text-sm font-medium text-gray-800">{formatDays(variant.days)}</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-200">
                               {formatPrice(variant.price)}
                             </span>
                           </div>
@@ -272,7 +257,7 @@ const PlansPage = () => {
                   )}
 
                   {/* CTA Button */}
-                  <Button 
+                  <Button
                     className={`w-full bg-gradient-to-r ${getPlanColor(plan.level)} hover:opacity-90 transition-all duration-300 group`}
                     size="lg"
                   >

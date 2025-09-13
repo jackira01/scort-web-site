@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { 
-  sendSingleEmailController, 
-  sendBulkEmailsController, 
-  testEmailConfigController 
+import {
+  sendSingleEmailController,
+  sendBulkEmailsController,
+  testEmailConfigController,
+  sendContactFormController
 } from '../controllers/email.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { adminMiddleware } from '../middlewares/admin.middleware';
@@ -29,5 +30,12 @@ router.post('/send-bulk', authMiddleware, adminMiddleware, sendBulkEmailsControl
  * @access Private (requiere autenticación de administrador)
  */
 router.post('/test', authMiddleware, adminMiddleware, testEmailConfigController);
+
+/**
+ * @route POST /api/email/contact
+ * @desc Enviar mensaje desde formulario de contacto
+ * @access Public (no requiere autenticación)
+ */
+router.post('/contact', sendContactFormController);
 
 export default router;

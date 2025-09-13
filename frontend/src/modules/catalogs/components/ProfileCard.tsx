@@ -160,14 +160,14 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
               <h3 className="font-semibold text-base lg:text-lg mb-2">
                 {profile.name}
               </h3>
-              <div className="flex items-center space-x-4 text-xs lg:text-sm mb-3">
+              <div className="flex flex-col space-y-1 text-xs lg:text-sm mb-3">
                 <span className="flex items-center">
                   <Calendar className="h-3 w-3 mr-1" />
                   Edad {profile.age}
                 </span>
                 <span className="flex items-center">
                   <MapPin className="h-3 w-3 mr-1" />
-                  {formatLocation(profile.location)}
+                  Ciudad: {typeof profile.location?.city === 'object' ? profile.location?.city?.label : profile.location?.city || 'No disponible'}
                 </span>
               </div>
               <p className="text-white/90 text-xs lg:text-sm mb-4 line-clamp-3">

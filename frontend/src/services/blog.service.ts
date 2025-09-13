@@ -96,7 +96,6 @@ class BlogService {
         limit: data.pagination?.limit || 10,
       };
     } catch (error: any) {
-      console.error('Error en getBlogs:', error);
       throw new Error(error.message || 'Error al obtener los blogs');
     }
   }
@@ -115,7 +114,6 @@ class BlogService {
 
       return await this.handleResponse<Blog>(response);
     } catch (error: any) {
-      console.error('Error en getBlogByIdOrSlug:', error);
       throw new Error(error.message || 'Error al obtener el blog');
     }
   }
@@ -134,7 +132,6 @@ class BlogService {
 
       return await this.handleResponse<Blog[]>(response);
     } catch (error: any) {
-      console.error('Error en getRelatedBlogs:', error);
       throw new Error(error.message || 'Error al obtener blogs relacionados');
     }
   }
@@ -153,7 +150,6 @@ class BlogService {
 
       return await this.handleResponse<Blog[]>(response);
     } catch (error: any) {
-      console.error('Error en searchBlogs:', error);
       throw new Error(error.message || 'Error al buscar blogs');
     }
   }
@@ -175,7 +171,6 @@ class BlogService {
 
       return await this.handleResponse<Blog>(response);
     } catch (error: any) {
-      console.error('Error en createBlog:', error);
       throw new Error(error.message || 'Error al crear el blog');
     }
   }
@@ -193,7 +188,6 @@ class BlogService {
 
       return await this.handleResponse<Blog>(response);
     } catch (error: any) {
-      console.error('Error en updateBlog:', error);
       throw new Error(error.message || 'Error al actualizar el blog');
     }
   }
@@ -210,7 +204,6 @@ class BlogService {
 
       return await this.handleResponse<Blog>(response);
     } catch (error: any) {
-      console.error('Error en toggleBlogStatus:', error);
       throw new Error(error.message || 'Error al cambiar el estado del blog');
     }
   }
@@ -227,7 +220,6 @@ class BlogService {
 
       await this.handleResponse<void>(response);
     } catch (error: any) {
-      console.error('Error en deleteBlog:', error);
       throw new Error(error.message || 'Error al eliminar el blog');
     }
   }
@@ -265,7 +257,6 @@ class BlogService {
         limit: data.pagination?.limit || 10,
       };
     } catch (error: any) {
-      console.error('Error en getAllBlogsForAdmin:', error);
       throw new Error(error.message || 'Error al obtener blogs para administración');
     }
   }
@@ -282,7 +273,6 @@ class BlogService {
 
       return await this.handleResponse<Blog>(response);
     } catch (error: any) {
-      console.error('Error en getBlogForAdmin:', error);
       throw new Error(error.message || 'Error al obtener el blog para administración');
     }
   }
@@ -364,7 +354,7 @@ class BlogService {
    */
   private stripHtmlTags(html: string): string {
     if (!html || typeof html !== 'string') return '';
-    
+
     // Remover etiquetas HTML y decodificar entidades HTML básicas
     return html
       .replace(/<[^>]*>/g, '') // Remover todas las etiquetas HTML

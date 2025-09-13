@@ -34,7 +34,6 @@ export function usePendingInvoices(): UsePendingInvoicesReturn {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al cargar facturas pendientes';
       setError(errorMessage);
-      console.error('Error fetching pending invoices:', err);
     } finally {
       setLoading(false);
     }

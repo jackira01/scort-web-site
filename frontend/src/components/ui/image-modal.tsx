@@ -94,7 +94,7 @@ export const ImageModal = ({
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            console.error('Error al descargar la imagen:', error);
+            // Error downloading image
         }
     };
 
@@ -265,8 +265,8 @@ export const ImageModal = ({
                                         key={index}
                                         onClick={() => onIndexChange(index)}
                                         className={`relative flex-shrink-0 w-12 h-12 rounded overflow-hidden transition-all ${index === currentIndex
-                                                ? 'ring-2 ring-white'
-                                                : 'opacity-70 hover:opacity-100'
+                                            ? 'ring-2 ring-white'
+                                            : 'opacity-70 hover:opacity-100'
                                             }`}
                                     >
                                         <Image

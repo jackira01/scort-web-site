@@ -85,6 +85,14 @@ const HeaderComponent = () => {
                 Términos
               </Button>
             </Link>
+            <Link href="/contactanos">
+              <Button
+                variant="ghost"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+              >
+                Contactanos
+              </Button>
+            </Link>
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -189,6 +197,15 @@ const HeaderComponent = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Términos
+              </Button>
+            </Link>
+            <Link href="/contactanos">
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Contactanos
               </Button>
             </Link>
             <DropdownMenu>

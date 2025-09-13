@@ -19,14 +19,26 @@ import NewsManager from '@/components/admin/news/NewsManager';
 
 export default function DashboardLayout() {
     const [activeSection, setActiveSection] = useState('usuarios');
+    const [mounted, setMounted] = useState(false);
     const searchParams = useSearchParams();
 
     useEffect(() => {
-        const section = searchParams.get('section');
-        if (section) {
-            setActiveSection(section);
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (mounted) {
+            const section = searchParams.get('section');
+            if (section) {
+                setActiveSection(section);
+            }
         }
-    }, [searchParams]);
+    }, [searchParams, mounted]);
+
+    // Evitar hidratación mismatch
+    if (!mounted) {
+        return null;
+    }
 
 
     const renderContent = () => {
@@ -119,7 +131,7 @@ export default function DashboardLayout() {
                                             <item.icon
                                                 className={`h-5 w-5 ${activeSection === item.id ? 'text-white' : 'group-hover:text-purple-600'} transition-colors duration-200`}
                                             />
-                                            <div className="flex-1">
+                                            <div className="flex-1 relative group">
                                                 <div className="flex items-center justify-between">
                                                     <span className="font-medium">{item.label}</span>
                                                     {/* {item.badge && (
@@ -138,14 +150,12 @@ export default function DashboardLayout() {
                                                         </Badge>
                                                     )} */}
                                                 </div>
-                                                <p
-                                                    className={`text-xs mt-1 ${activeSection === item.id
-                                                        ? 'text-white/80'
-                                                        : 'text-muted-foreground'
-                                                        }`}
-                                                >
+
+                                                {/* Tooltip con descripción que aparece en hover */}
+                                                <div className="absolute left-0 top-full mt-2 w-64 p-3 bg-gray-900 dark:bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                                                    <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 dark:bg-gray-800 rotate-45"></div>
                                                     {item.description}
-                                                </p>
+                                                </div>
                                             </div>
                                         </button>
                                     ))}

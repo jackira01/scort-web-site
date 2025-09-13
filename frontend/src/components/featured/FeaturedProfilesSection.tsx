@@ -58,7 +58,6 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
 
         setFeaturedProfiles(response.profiles);
       } catch (err) {
-        console.error('Error loading featured profiles:', err);
         setError('Error al cargar perfiles destacados');
       } finally {
         setIsLoading(false);
@@ -84,7 +83,7 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
 
   if (isLoading) {
     return (
-      <div className={`bg-white border border-gray-200 rounded-lg p-6 ${className}`}>
+      <div className={`border border-gray-200 rounded-lg p-6 ${className}`}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <Star className="h-5 w-5 text-yellow-500" />
@@ -109,7 +108,7 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
   }
 
   return (
-    <div className={`bg-white border border-gray-200 rounded-lg p-6 ${className}`}>
+    <div className={`border border-gray-200 rounded-lg p-6 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">

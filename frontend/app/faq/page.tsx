@@ -226,9 +226,6 @@ const FAQPage = () => {
                   return (
                     <div key={faq.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                        <Badge className={`${category?.color} flex-shrink-0 w-fit`}>
-                          {category?.name}
-                        </Badge>
                         <span className="font-medium text-gray-900 text-sm sm:text-base break-words">{faq.question}</span>
                       </div>
                       <Button 
@@ -290,9 +287,6 @@ const FAQPage = () => {
                     <AccordionItem key={faq.id} value={`faq-${faq.id}`} id={`faq-${faq.id}`}>
                       <AccordionTrigger className="text-left hover:no-underline">
                         <div className="flex items-center space-x-3">
-                          <Badge className={category?.color}>
-                            {category?.name}
-                          </Badge>
                           <span className="font-medium">{faq.question}</span>
                           {faq.popular && (
                             <Star className="h-4 w-4 text-yellow-500 fill-current" />

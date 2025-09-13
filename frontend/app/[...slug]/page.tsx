@@ -236,7 +236,7 @@ export default async function SearchPage({ params }: SearchPageProps) {
       }
     }
 
-    console.log('🔍 [DEBUG] Request body to backend:', JSON.stringify(requestBody, null, 2));
+
 
     // Fetch con revalidate para ISR usando POST
     const res = await fetch(
@@ -257,14 +257,12 @@ export default async function SearchPage({ params }: SearchPageProps) {
 
     const responseData = await res.json();
     
-    console.log('🔍 [DEBUG] Response from backend:', responseData);
-    console.log('🔍 [DEBUG] Response success:', responseData.success);
-    console.log('🔍 [DEBUG] Response data:', responseData.data);
+
     
     // Transformar la estructura para que coincida con ProfilesResponse
     if (responseData.success && responseData.data) {
       const backendData = responseData.data;
-      console.log('🔍 [DEBUG] Backend profiles count:', backendData.profiles?.length);
+
       profilesData = {
         profiles: backendData.profiles,
         pagination: {
@@ -276,7 +274,7 @@ export default async function SearchPage({ params }: SearchPageProps) {
         },
       };
       
-      console.log('🔍 [DEBUG] Final profilesData:', profilesData);
+
     } else {
       console.log('❌ [ERROR] Backend response not successful:', responseData);
       throw new Error(responseData.message || 'Error en la respuesta del servidor');

@@ -84,9 +84,9 @@ export default function SearchPageClient({
 
   // Determinar si los filtros han cambiado desde los iniciales
   const hasFiltersChanged = Boolean(
-    filters.features?.age || 
-    filters.features?.gender || 
-    filters.features?.sex || 
+    filters.features?.age ||
+    filters.features?.gender ||
+    filters.features?.sex ||
     (filters.location?.department !== departamento) ||
     (filters.location?.city !== ciudad) ||
     (filters.category !== categoria)
@@ -108,18 +108,7 @@ export default function SearchPageClient({
     }
   );
 
-  // Log para debugging
-  useEffect(() => {
-    console.log('🔍 [DEBUG] SearchPageClient - Initial params:', { categoria, departamento, ciudad });
-    console.log('🔍 [DEBUG] SearchPageClient - Filters:', filters);
-    console.log('🔍 [DEBUG] SearchPageClient - QueryFilters:', queryFilters);
-    console.log('🔍 [DEBUG] SearchPageClient - HasFiltersChanged:', hasFiltersChanged);
-    console.log('🔍 [DEBUG] SearchPageClient - ProfilesData (SSR):', profilesData);
-    console.log('🔍 [DEBUG] SearchPageClient - CurrentProfilesData:', currentProfilesData);
-    console.log('🔍 [DEBUG] SearchPageClient - Profiles count:', currentProfilesData?.profiles?.length);
-    console.log('🔍 [DEBUG] SearchPageClient - IsLoading:', isLoadingProfiles);
-    if (error) console.error('🔍 [DEBUG] SearchPageClient - Error:', error);
-  }, [categoria, departamento, ciudad, filters, queryFilters, hasFiltersChanged, profilesData, currentProfilesData, isLoadingProfiles, error]);
+
 
 
 
@@ -179,7 +168,7 @@ export default function SearchPageClient({
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50">
       {/* Header con información de ubicación */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-purple-100 sticky top-0 z-40">
+      <div className="backdrop-blur-sm border-b border-purple-100 sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col gap-4">
             {/* Breadcrumb */}
@@ -204,7 +193,7 @@ export default function SearchPageClient({
             {/* Título principal */}
             <div className="flex flex-col gap-2">
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                <span className="capitalize">{categoria}</span>
+                <span className="capitalize font-medium text-gray-800 dark:text-gray-200">{categoria}</span>
                 {locationInfo?.city && locationInfo?.department && (
                   <span> en {locationInfo.city}, {locationInfo.department}</span>
                 )}

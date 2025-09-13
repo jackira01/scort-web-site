@@ -44,22 +44,14 @@ const HomeProfiles = () => {
   }
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Scorts populares
-          </h2>
-          <p className="text-gray-600 dark:text-gray-300 mt-1">
-            {totalProfiles > 0 ? `${totalProfiles} personas destacadas` : 'Personas destacadas'}
-          </p>
-        </div>
-        {totalProfiles > 12 && (
+      {totalProfiles > 12 && (
+        <div className="flex justify-end mb-6">
           <button className="flex items-center gap-2 text-pink-600 hover:text-pink-700 font-medium">
             Ver más
             <ArrowRight className="w-4 h-4" />
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Renderizar perfiles en el orden jerárquico del backend */}
       <div>

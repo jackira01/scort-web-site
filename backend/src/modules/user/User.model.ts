@@ -44,7 +44,7 @@ const userSchema = new Schema<IUserDocument>({
     conversionRequestedAt: { type: Date },
     conversionApprovedAt: { type: Date },
     conversionApprovedBy: { type: Schema.Types.ObjectId, ref: 'User' },
-    conversionStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+    conversionStatus: { type: String, enum: ['pending', 'approved', 'rejected'] },
     reason: { type: String },
     rejectionReason: { type: String },
   },

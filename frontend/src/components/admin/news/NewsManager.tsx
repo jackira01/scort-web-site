@@ -87,7 +87,7 @@ const NewsManager = () => {
         setSelectedNews(null);
         refetch();
       } catch (error) {
-        console.error('Error al eliminar noticia:', error);
+        // Error handled by mutation
       }
     }
   };
@@ -97,7 +97,7 @@ const NewsManager = () => {
       await toggleStatusMutation.mutateAsync(news._id);
       refetch();
     } catch (error) {
-      console.error('Error al cambiar estado:', error);
+      // Error handled by mutation
     }
   };
 

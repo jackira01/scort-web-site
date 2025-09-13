@@ -17,7 +17,6 @@ const AgencyConversionsPage: React.FC = () => {
     try {
       await processConversion.mutateAsync({ userId, action, reason });
     } catch (error) {
-      console.error('Error al procesar conversión:', error);
       throw error;
     }
   };

@@ -4,11 +4,8 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { AlertTriangle, Building2, FileText, Info, Shield } from 'lucide-react';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertTriangle, Building2, Info } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import type { User } from '@/types/user.types';
@@ -19,43 +16,38 @@ interface AgencyConversionCardProps {
 }
 
 const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
-  const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
-    businessName: '',
-    businessDocument: '',
-    reason: ''
-  });
-  
+  const [showWarningModal, setShowWarningModal] = useState(false);
+
   const requestConversion = useRequestAgencyConversion();
 
   const isCommonUser = user.accountType === 'common';
   const isAgency = user.accountType === 'agency';
-  const hasPendingRequest = user.agencyInfo?.conversionStatus === 'pending';
-  const isApproved = user.agencyInfo?.conversionStatus === 'approved';
-  const isRejected = user.agencyInfo?.conversionStatus === 'rejected';
+  const hasAgencyInfo = user.agencyInfo !== undefined;
+  const hasPendingRequest = hasAgencyInfo && user.agencyInfo?.conversionStatus === 'pending';
+  const isApproved = hasAgencyInfo && user.agencyInfo?.conversionStatus === 'approved';
+  const isRejected = hasAgencyInfo && user.agencyInfo?.conversionStatus === 'rejected';
 
-  const handleSubmitConversion = async () => {
-    if (!formData.businessName.trim() || !formData.businessDocument.trim()) {
-      toast.error('Por favor completa todos los campos requeridos');
-      return;
-    }
-
+  const handleAcceptConversion = async () => {
+    // Datos básicos para la conversión - el servicio solo envía notificación por correo
     const conversionData: AgencyConversionRequest = {
-      businessName: formData.businessName,
-      businessDocument: formData.businessDocument,
-      reason: formData.reason || undefined
+      businessName: user.name || 'Empresa',
+      businessDocument: 'Pendiente de verificación',
+      reason: 'Solicitud de conversión a cuenta de agencia'
     };
 
     requestConversion.mutate(conversionData, {
       onSuccess: () => {
-        setShowModal(false);
-        setFormData({ businessName: '', businessDocument: '', reason: '' });
+        setShowWarningModal(false);
+        toast.success('Solicitud enviada correctamente. Recibirás una notificación por correo.');
+      },
+      onError: () => {
+        toast.error('Error al enviar la solicitud. Inténtalo nuevamente.');
       }
     });
   };
 
   const getStatusBadge = () => {
-    if (isCommonUser && !hasPendingRequest) {
+    if (isCommonUser && !hasAgencyInfo) {
       return (
         <Badge variant="outline" className="text-blue-600">
           Usuario Común
@@ -83,10 +75,16 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
         </Badge>
       );
     }
+    // Caso por defecto para usuarios comunes con agencyInfo vacío
+    return (
+      <Badge variant="outline" className="text-blue-600">
+        Usuario Común
+      </Badge>
+    );
   };
 
   const getDescription = () => {
-    if (isCommonUser && !hasPendingRequest) {
+    if (isCommonUser && !hasAgencyInfo) {
       return 'Como usuario común, todos tus perfiles comparten la misma verificación de identidad.';
     }
     if (hasPendingRequest) {
@@ -98,6 +96,8 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
     if (isRejected) {
       return 'Tu solicitud fue rechazada. Puedes enviar una nueva solicitud con información actualizada.';
     }
+    // Caso por defecto para usuarios comunes con agencyInfo vacío
+    return 'Como usuario común, todos tus perfiles comparten la misma verificación de identidad.';
   };
 
   return (
@@ -114,7 +114,7 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
             <span className="text-foreground">Estado actual</span>
             {getStatusBadge()}
           </div>
-          
+
           <div className="text-sm text-muted-foreground">
             {getDescription()}
           </div>
@@ -146,12 +146,12 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
           </div>
 
           {/* Botón de acción */}
-          {(isCommonUser && !hasPendingRequest) || isRejected ? (
+          {(isCommonUser && (!hasAgencyInfo || !user.agencyInfo?.conversionStatus)) || isRejected ? (
             <Button
-              onClick={() => setShowModal(true)}
+              onClick={() => setShowWarningModal(true)}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
             >
-              Cambiar a Cuenta de Agencia
+              Solicitar conversión
             </Button>
           ) : hasPendingRequest ? (
             <Button
@@ -165,78 +165,36 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
         </CardContent>
       </Card>
 
-      {/* Modal de conversión */}
-      <Dialog open={showModal} onOpenChange={setShowModal}>
+      {/* Modal de advertencia */}
+      <Dialog open={showWarningModal} onOpenChange={setShowWarningModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Convertir a Cuenta de Agencia
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              Confirmación de Conversión
             </DialogTitle>
-            <DialogDescription>
-              Para convertir tu cuenta a agencia, necesitamos algunos datos adicionales.
-            </DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                <div className="text-xs text-amber-800 dark:text-amber-200">
-                  <p className="font-medium mb-1">Importante:</p>
-                  <p>Como agencia, cada perfil requerirá verificación independiente con documentos de identidad de diferentes personas.</p>
-                </div>
-              </div>
-            </div>
 
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="businessName">Nombre del Negocio *</Label>
-                <Input
-                  id="businessName"
-                  value={formData.businessName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, businessName: e.target.value }))}
-                  placeholder="Ej: Agencia de Modelos XYZ"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="businessDocument">Documento del Negocio *</Label>
-                <Input
-                  id="businessDocument"
-                  value={formData.businessDocument}
-                  onChange={(e) => setFormData(prev => ({ ...prev, businessDocument: e.target.value }))}
-                  placeholder="NIT, RUT o documento legal"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="reason">Motivo de la conversión (opcional)</Label>
-                <Textarea
-                  id="reason"
-                  value={formData.reason}
-                  onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
-                  placeholder="Explica brevemente por qué necesitas una cuenta de agencia"
-                  rows={3}
-                />
-              </div>
-            </div>
+          <div className="py-4">
+            <p className="text-foreground">
+              Al aceptar, tu cuenta cambiará a tipo Agencia. Esta acción es irreversible. ¿Deseas continuar?
+            </p>
           </div>
 
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setShowModal(false)}
+              onClick={() => setShowWarningModal(false)}
               disabled={requestConversion.isLoading}
             >
               Cancelar
             </Button>
             <Button
-              onClick={handleSubmitConversion}
+              onClick={handleAcceptConversion}
               disabled={requestConversion.isLoading}
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
             >
-              {requestConversion.isLoading ? 'Enviando...' : 'Enviar Solicitud'}
+              {requestConversion.isLoading ? 'Procesando...' : 'Aceptar'}
             </Button>
           </DialogFooter>
         </DialogContent>

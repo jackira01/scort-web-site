@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Send, Users, Search, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from '@/lib/axios';
+import { useAllEmailUsers, useSearchEmailUsers } from '@/hooks/use-email-users';
 
 interface User {
     id: string;
@@ -33,91 +34,51 @@ export default function EmailManager() {
     const { data: session } = useSession();
     const [activeTab, setActiveTab] = useState('individual');
     const [searchTerm, setSearchTerm] = useState('');
-    const [searchResults, setSearchResults] = useState<User[]>([]);
     const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
-    const [allUsers, setAllUsers] = useState<User[]>([]);
+    const [isSending, setIsSending] = useState(false);
     const [emailData, setEmailData] = useState<EmailData>({
         subject: '',
         content: '',
         recipients: []
     });
-    const [isLoading, setIsLoading] = useState(false);
-    const [isSearching, setIsSearching] = useState(false);
 
-    // Cargar todos los usuarios para envío masivo
+    // Usar hooks de React Query
+    const { data: allUsers = [], isLoading: isLoadingUsers, error: allUsersError } = useAllEmailUsers();
+    const { data: searchResults = [], isLoading: isSearching, error: searchError } = useSearchEmailUsers(searchTerm);
+
+    // Actualizar recipients cuando cambian los usuarios para envío masivo
     useEffect(() => {
-        if (activeTab === 'masivo') {
-            fetchAllUsers();
-        }
-    }, [activeTab]);
-
-    const fetchAllUsers = async () => {
-        try {
-            setIsLoading(true);
-            const headers: HeadersInit = {};
-            
-            // Agregar header de autenticación si hay sesión
-            if (session?.accessToken) {
-                headers['Authorization'] = `Bearer ${session.accessToken}`;
-            } else if (session?.user?._id) {
-                headers['X-User-ID'] = session.user._id;
-            }
-            
-            const response = await axios.get('/api/admin/emails/all-emails');
-            const users = response.data;
-            setAllUsers(users);
+        if (activeTab === 'masivo' && allUsers.length > 0) {
             setEmailData(prev => ({
                 ...prev,
-                recipients: users.map((user: User) => user.email)
+                recipients: allUsers.map((user: User) => user.email)
             }));
-        } catch (error) {
-            console.error('Error fetching users:', error);
+        }
+    }, [activeTab, allUsers]);
+
+    // Mostrar errores si ocurren
+    useEffect(() => {
+        if (allUsersError) {
+            // Error handled by query
             toast.error('Error al cargar usuarios');
-        } finally {
-            setIsLoading(false);
         }
-    };
+    }, [allUsersError]);
 
-    const searchUsers = async (term: string) => {
-        if (!term.trim()) {
-            setSearchResults([]);
-            return;
-        }
-
-        try {
-            setIsSearching(true);
-            const headers: HeadersInit = {};
-            
-            // Agregar header de autenticación si hay sesión
-            if (session?.user?._id) {
-                headers['X-User-ID'] = session.user._id;
-            }
-            
-            const response = await axios.get(`/api/admin/emails/users/search?q=${encodeURIComponent(term)}`);
-            const users = response.data;
-            setSearchResults(users);
-        } catch (error) {
-            console.error('Error searching users:', error);
+    useEffect(() => {
+        if (searchError) {
+            // Error handled by query
             toast.error('Error en la búsqueda');
-        } finally {
-            setIsSearching(false);
         }
-    };
+    }, [searchError]);
 
     const handleSearch = () => {
-        if (searchTerm.trim()) {
-            searchUsers(searchTerm.trim());
-        } else {
-            setSearchResults([]);
-        }
+        // La búsqueda se maneja automáticamente por el hook useSearchEmailUsers
+        // cuando cambia searchTerm
     };
 
     const handleSearchInputChange = (value: string) => {
         setSearchTerm(value);
-        // Limpiar resultados si el campo está vacío
-        if (!value.trim()) {
-            setSearchResults([]);
-        }
+        // Los resultados se limpian automáticamente por el hook cuando searchTerm está vacío
     };
 
     const addUserToSelection = (user: User) => {
@@ -152,14 +113,14 @@ export default function EmailManager() {
         }
 
         try {
-            setIsLoading(true);
-            
+            setIsSending(true);
+
             const response = await axios.post('/api/admin/emails/send', emailData);
             const result = response.data;
-            
+
             if (result.success) {
                 toast.success(result.message);
-                
+
                 // Mostrar información adicional si hubo errores parciales
                 if (result.failed > 0) {
                     toast(`${result.failed} correo(s) no pudieron ser enviados`, {
@@ -173,19 +134,17 @@ export default function EmailManager() {
             } else {
                 toast.error(result.message || 'Error al enviar correo');
             }
-            
+
             // Reset form solo si fue exitoso
             if (result.success && result.failed === 0) {
                 setEmailData({ subject: '', content: '', recipients: [] });
                 setSelectedUsers([]);
                 setSearchTerm('');
-                setSearchResults([]);
             }
         } catch (error) {
-            console.error('Error sending email:', error);
             toast.error('Error al enviar el correo');
         } finally {
-            setIsLoading(false);
+            setIsSending(false);
         }
     };
 
@@ -303,7 +262,7 @@ export default function EmailManager() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            {isLoading ? (
+                            {isLoadingUsers ? (
                                 <div className="flex items-center justify-center py-8">
                                     <Loader2 className="h-6 w-6 animate-spin mr-2" />
                                     Cargando usuarios...
@@ -359,15 +318,15 @@ export default function EmailManager() {
                         </div>
                         <Button
                             onClick={sendEmail}
-                            disabled={isLoading || emailData.recipients.length === 0}
+                            disabled={isSending || emailData.recipients.length === 0}
                             className="flex items-center gap-2"
                         >
-                            {isLoading ? (
+                            {isSending ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                                 <Send className="h-4 w-4" />
                             )}
-                            {isLoading ? 'Enviando...' : 'Enviar correo'}
+                            {isSending ? 'Enviando...' : 'Enviar correo'}
                         </Button>
                     </div>
                 </CardContent>

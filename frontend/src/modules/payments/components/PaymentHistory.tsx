@@ -93,7 +93,7 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
 
   if (error) {
     return (
-      <div className={`space-y-6 ${className}`}>
+      <div className={`space-y-6 ${className} `}>
         <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
           Historial de Facturas
         </h1>

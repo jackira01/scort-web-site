@@ -63,10 +63,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
   // Cargar límites del plan por defecto
   useEffect(() => {
     if (defaultConfig?.enabled && defaultConfig.planId && plans.length > 0) {
-      console.log('defaultConfig', defaultConfig);
       const defaultPlan = plans.find(plan => plan._id === defaultConfig.planId);
-      console.log('plans', plans);
-      console.log('defaultPlan', defaultPlan);
 
       if (defaultPlan && defaultPlan.variants) {
         setContentLimits({
@@ -187,7 +184,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
       const newProcessedImages = new Map(processedImages);
       newProcessedImages.delete(index);
       setProcessedImages(newProcessedImages);
-      
+
       // Actualizar las imágenes procesadas en el formulario
       const processedImagesArray = Array.from(newProcessedImages.values());
       setValue('processedImages', processedImagesArray);
@@ -243,7 +240,6 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
         `Imagen procesada: ${Math.round(processedResult.compressionRatio)}% de compresión aplicada`
       );
     } catch (error) {
-      console.error('Error procesando imagen:', error);
       toast.error('Error al procesar la imagen');
     } finally {
       setIsProcessingImage(false);

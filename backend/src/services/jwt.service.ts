@@ -37,6 +37,7 @@ class JWTService {
                 issuer: 'scort-backend',
                 audience: 'scort-frontend'
             } as jwt.VerifyOptions) as JWTPayload;
+
             return decoded;
         } catch (error) {
             return null;
@@ -50,7 +51,9 @@ class JWTService {
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return null;
         }
-        return authHeader.substring(7); // Remove 'Bearer ' prefix
+
+        const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+        return token;
     }
 
     /**

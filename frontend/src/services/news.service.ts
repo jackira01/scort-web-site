@@ -85,14 +85,14 @@ class NewsService {
     try {
       const queryString = this.buildQueryString(filters);
       const url = queryString ? `${this.baseUrl}?${queryString}` : this.baseUrl;
-      
+
       const response = await fetch(url);
       const result = await response.json();
-      
+
       if (!result.success) {
         throw new Error(result.message || 'Error al obtener noticias');
       }
-      
+
       return {
         news: result.data,
         total: result.pagination?.total || 0,
@@ -100,7 +100,6 @@ class NewsService {
         totalPages: result.pagination?.totalPages || 1
       };
     } catch (error: any) {
-      console.error('Error al obtener noticias:', error);
       throw error;
     }
   }
@@ -113,7 +112,6 @@ class NewsService {
       const response = await fetch(`${this.baseUrl}/${id}`);
       return await this.handleResponse<News>(response);
     } catch (error: any) {
-      console.error('Error al obtener noticia:', error);
       throw error;
     }
   }
@@ -126,7 +124,6 @@ class NewsService {
       const response = await fetch(`${this.baseUrl}/latest?limit=${limit}`);
       return await this.handleResponse<News[]>(response);
     } catch (error: any) {
-      console.error('Error al obtener últimas noticias:', error);
       throw error;
     }
   }
@@ -140,11 +137,10 @@ class NewsService {
         q: searchTerm,
         limit: limit.toString()
       });
-      
+
       const response = await fetch(`${this.baseUrl}/search?${params}`);
       return await this.handleResponse<News[]>(response);
     } catch (error: any) {
-      console.error('Error en búsqueda de noticias:', error);
       throw error;
     }
   }
@@ -161,10 +157,9 @@ class NewsService {
         headers: this.getAuthHeaders(),
         body: JSON.stringify(data)
       });
-      
+
       return await this.handleResponse<News>(response);
     } catch (error: any) {
-      console.error('Error al crear noticia:', error);
       throw error;
     }
   }
@@ -179,10 +174,9 @@ class NewsService {
         headers: this.getAuthHeaders(),
         body: JSON.stringify(data)
       });
-      
+
       return await this.handleResponse<News>(response);
     } catch (error: any) {
-      console.error('Error al actualizar noticia:', error);
       throw error;
     }
   }
@@ -196,10 +190,9 @@ class NewsService {
         method: 'PATCH',
         headers: this.getAuthHeaders()
       });
-      
+
       return await this.handleResponse<News>(response);
     } catch (error: any) {
-      console.error('Error al cambiar estado de noticia:', error);
       throw error;
     }
   }
@@ -213,7 +206,7 @@ class NewsService {
         method: 'DELETE',
         headers: this.getAuthHeaders()
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({
           message: `Error ${response.status}: ${response.statusText}`
@@ -221,7 +214,6 @@ class NewsService {
         throw new Error(errorData.message || 'Error al eliminar noticia');
       }
     } catch (error: any) {
-      console.error('Error al eliminar noticia:', error);
       throw error;
     }
   }
@@ -238,17 +230,17 @@ class NewsService {
     try {
       const queryString = this.buildQueryString(filters);
       const url = queryString ? `${this.baseUrl}/admin/all?${queryString}` : `${this.baseUrl}/admin/all`;
-      
+
       const response = await fetch(url, {
         headers: this.getAuthHeaders()
       });
-      
+
       const result = await response.json();
-      
+
       if (!result.success) {
         throw new Error(result.message || 'Error al obtener noticias para admin');
       }
-      
+
       return {
         news: result.data,
         total: result.pagination?.total || 0,
@@ -256,7 +248,6 @@ class NewsService {
         totalPages: result.pagination?.totalPages || 1
       };
     } catch (error: any) {
-      console.error('Error al obtener noticias para admin:', error);
       throw error;
     }
   }
@@ -269,10 +260,9 @@ class NewsService {
       const response = await fetch(`${this.baseUrl}/admin/${id}`, {
         headers: this.getAuthHeaders()
       });
-      
+
       return await this.handleResponse<News>(response);
     } catch (error: any) {
-      console.error('Error al obtener noticia para admin:', error);
       throw error;
     }
   }
@@ -301,9 +291,9 @@ class NewsService {
    * Validar contenido de noticia
    */
   validateNewsContent(content: string[]): boolean {
-    return Array.isArray(content) && 
-           content.length > 0 && 
-           content.every(item => typeof item === 'string' && item.trim().length > 0);
+    return Array.isArray(content) &&
+      content.length > 0 &&
+      content.every(item => typeof item === 'string' && item.trim().length > 0);
   }
 
   /**

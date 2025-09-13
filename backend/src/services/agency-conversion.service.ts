@@ -1,6 +1,8 @@
 import { IUser } from '../modules/user/User.model';
 import User from '../modules/user/User.model';
 import { Types } from 'mongoose';
+import EmailService from './email.service';
+import { ConfigParameterService } from '../modules/config-parameter/config-parameter.service';
 
 export interface AgencyConversionRequest {
   businessName: string;
@@ -48,6 +50,15 @@ class AgencyConversionService {
     };
 
     await user.save();
+
+    // Enviar notificación por correo a la empresa
+    try {
+      await this.sendConversionNotificationEmail(user, conversionData);
+    } catch (emailError) {
+      console.error('Error enviando notificación por correo:', emailError);
+      // No fallar la operación si el correo falla
+    }
+
     return user;
   }
 
@@ -99,9 +110,9 @@ class AgencyConversionService {
     return User.find({
       'agencyInfo.conversionStatus': { $in: ['approved', 'rejected'] }
     })
-    .select('name email agencyInfo accountType createdAt')
-    .sort({ 'agencyInfo.conversionApprovedAt': -1 })
-    .limit(limit);
+      .select('name email agencyInfo accountType createdAt')
+      .sort({ 'agencyInfo.conversionApprovedAt': -1 })
+      .limit(limit);
   }
 
   /**
@@ -163,6 +174,90 @@ class AgencyConversionService {
       rejected,
       totalAgencies
     };
+  }
+
+  /**
+   * Enviar notificación por correo sobre solicitud de conversión
+   */
+  private async sendConversionNotificationEmail(
+    user: IUser,
+    conversionData: AgencyConversionRequest
+  ): Promise<void> {
+    const emailService = new EmailService();
+    const companyEmail = await ConfigParameterService.getValue('company.email');
+    const companyName = await ConfigParameterService.getValue('company.name') || 'Soporte';
+
+    if (!companyEmail) {
+      throw new Error('Email de la empresa no configurado');
+    }
+
+    const emailContent = {
+      subject: `Nueva solicitud de conversión a agencia - ${user.name}`,
+      textPart: `
+Nueva solicitud de conversión a cuenta de agencia:
+
+Usuario: ${user.name}
+Email: ${user.email}
+Empresa: ${conversionData.businessName}
+Documento: ${conversionData.businessDocument}
+Razón: ${conversionData.reason || 'No especificada'}
+Fecha: ${new Date().toLocaleString('es-ES')}
+
+Por favor, revisa esta solicitud en el panel de administración.
+      `,
+      htmlPart: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #333; margin-bottom: 20px; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
+              🏢 Nueva Solicitud de Conversión a Agencia
+            </h2>
+            
+            <div style="margin: 20px 0;">
+              <h3 style="color: #555; margin-bottom: 15px;">Información del Usuario:</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr style="background-color: #f8f9fa;">
+                  <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Nombre:</td>
+                  <td style="padding: 10px; border: 1px solid #dee2e6;">${user.name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Email:</td>
+                  <td style="padding: 10px; border: 1px solid #dee2e6;">${user.email}</td>
+                </tr>
+                <tr style="background-color: #f8f9fa;">
+                  <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Empresa:</td>
+                  <td style="padding: 10px; border: 1px solid #dee2e6;">${conversionData.businessName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Documento:</td>
+                  <td style="padding: 10px; border: 1px solid #dee2e6;">${conversionData.businessDocument}</td>
+                </tr>
+                <tr style="background-color: #f8f9fa;">
+                  <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Razón:</td>
+                  <td style="padding: 10px; border: 1px solid #dee2e6;">${conversionData.reason || 'No especificada'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Fecha:</td>
+                  <td style="padding: 10px; border: 1px solid #dee2e6;">${new Date().toLocaleString('es-ES')}</td>
+                </tr>
+              </table>
+            </div>
+            
+            <div style="margin: 30px 0; padding: 20px; background-color: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px;">
+              <p style="margin: 0; color: #1565c0; font-weight: bold;">📋 Acción Requerida:</p>
+              <p style="margin: 10px 0 0 0; color: #333;">Por favor, revisa esta solicitud en el panel de administración para aprobar o rechazar la conversión.</p>
+            </div>
+            
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #dee2e6;">
+            <p style="color: #6c757d; font-size: 12px; margin: 0;">Este correo fue generado automáticamente por el sistema de ${companyName}.</p>
+          </div>
+        </div>
+      `
+    };
+
+    await emailService.sendSingleEmail({
+      to: { email: companyEmail, name: companyName },
+      content: emailContent
+    });
   }
 }
 

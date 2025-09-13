@@ -25,11 +25,7 @@ export default function SearchProfilesSSG({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Debug: Log inicial
-  console.log('🔍 [DEBUG] SearchProfilesSSG - Component initialized with:');
-  console.log('🔍 [DEBUG] SearchProfilesSSG - InitialData:', initialData);
-  console.log('🔍 [DEBUG] SearchProfilesSSG - InitialData profiles count:', initialData?.profiles?.length);
-  console.log('🔍 [DEBUG] SearchProfilesSSG - Filters:', filters);
+
 
   // Función para refrescar datos cuando cambian los filtros
   const refreshData = async (newFilters: FilterQuery) => {
@@ -50,7 +46,7 @@ export default function SearchProfilesSSG({
 
   // Efecto para refrescar datos cuando cambian los filtros
   useEffect(() => {
-    console.log('🔍 [DEBUG] SearchProfilesSSG - Filters received:', filters);
+
     
     // Solo refrescar si hay filtros activos aplicados (no en la carga inicial)
     const hasActiveFilters = 
@@ -72,14 +68,14 @@ export default function SearchProfilesSSG({
       (filters.sortBy && filters.sortBy !== 'createdAt') ||
       (filters.sortOrder && filters.sortOrder !== 'desc');
 
-    console.log('🔍 [DEBUG] SearchProfilesSSG - HasActiveFilters:', hasActiveFilters);
+
     
     // Ejecutar refreshData si hay filtros activos, independientemente de los datos iniciales
     if (hasActiveFilters) {
-      console.log('🔍 [DEBUG] SearchProfilesSSG - Calling refreshData with filters');
+
       refreshData(filters);
     } else {
-      console.log('🔍 [DEBUG] SearchProfilesSSG - No active filters, using initial data');
+
       // Si no hay filtros activos, usar los datos iniciales
       setProfilesData(initialData);
     }
@@ -120,10 +116,7 @@ export default function SearchProfilesSSG({
 
   const { profiles, pagination } = profilesData;
 
-  // Debug: Log para verificar los datos
-  console.log('SearchProfilesSSG - profilesData:', profilesData);
-  console.log('SearchProfilesSSG - profiles:', profiles);
-  console.log('SearchProfilesSSG - profiles.length:', profiles?.length);
+
 
   if (!profiles || profiles.length === 0) {
     return (

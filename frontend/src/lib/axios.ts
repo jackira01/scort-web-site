@@ -20,13 +20,30 @@ const axiosInstance = axios.create({
 
 // Interceptor para agregar cabeceras de autenticación
 axiosInstance.interceptors.request.use(
-  (config) => {
-    // Para desarrollo, usar un ID de desarrollo por defecto
-    // La autenticación real se maneja en los componentes del cliente
-    if (process.env.NODE_ENV === 'development') {
-      config.headers['X-User-ID'] = '507f1f77bcf86cd799439011';
+  async (config) => {
+    // Intentar obtener la sesión de NextAuth.js
+    try {
+      // Importar dinámicamente para evitar problemas de SSR
+      const { getSession } = await import('next-auth/react');
+      const session = await getSession();
+
+      if (session?.accessToken) {
+        // Usar el token JWT personalizado de NextAuth.js
+        config.headers['Authorization'] = `Bearer ${session.accessToken}`;
+      } else if (session?.user?._id) {
+        // Fallback: usar X-User-ID si no hay accessToken
+        config.headers['X-User-ID'] = session.user._id;
+      } else if (process.env.NODE_ENV === 'development') {
+        // Para desarrollo sin sesión, usar un ID de desarrollo por defecto
+        config.headers['X-User-ID'] = '507f1f77bcf86cd799439011';
+      }
+    } catch (error) {
+      // Si falla la obtención de la sesión, usar fallback para desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        config.headers['X-User-ID'] = '507f1f77bcf86cd799439011';
+      }
     }
-    
+
     return config;
   },
   (error) => {
@@ -49,38 +66,31 @@ axiosInstance.interceptors.response.use(
       // Error del servidor (4xx, 5xx)
       const status = error.response.status;
       const message = error.response.data?.message || error.message;
-      
+
       switch (status) {
         case 401:
           // Token expirado o no válido
-          console.warn('Token de autenticación inválido');
           break;
         case 403:
-          console.warn('Acceso denegado');
           break;
         case 404:
-          console.warn('Recurso no encontrado');
           break;
         case 429:
-          console.warn('Demasiadas peticiones, reintentando...');
           break;
         case 500:
         case 502:
         case 503:
         case 504:
-          console.error('Error del servidor:', message);
           break;
         default:
-          console.error('Error de respuesta:', message);
+          break;
       }
     } else if (error.request) {
       // Error de red
-      console.error('Error de conexión:', error.message);
     } else {
       // Error de configuración
-      console.error('Error de configuración:', error.message);
     }
-    
+
     return Promise.reject(error);
   }
 );

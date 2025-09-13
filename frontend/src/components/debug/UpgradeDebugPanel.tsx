@@ -53,7 +53,6 @@ const UpgradeDebugPanel: React.FC = () => {
         toast.error('Error al obtener información de debug');
       }
     } catch (error: any) {
-      console.error('Error:', error);
       toast.error(error.response?.data?.error || 'Error al obtener información de debug');
     } finally {
       setLoading(false);
@@ -76,7 +75,6 @@ const UpgradeDebugPanel: React.FC = () => {
         toast.error('Error al obtener perfiles de usuario');
       }
     } catch (error: any) {
-      console.error('Error:', error);
       toast.error(error.response?.data?.error || 'Error al obtener perfiles de usuario');
     } finally {
       setLoading(false);
@@ -94,7 +92,7 @@ const UpgradeDebugPanel: React.FC = () => {
       const response = await axios.post(`/api/profile/${profileId}/purchase-upgrade`, {
         upgradeCode
       });
-      
+
       if (response.data.success) {
         toast.success(`Upgrade ${upgradeCode} comprado exitosamente`);
         // Refrescar la información de debug
@@ -103,7 +101,6 @@ const UpgradeDebugPanel: React.FC = () => {
         toast.error(response.data.message || 'Error al comprar upgrade');
       }
     } catch (error: any) {
-      console.error('Error:', error);
       toast.error(error.response?.data?.error || 'Error al comprar upgrade');
     } finally {
       setLoading(false);
@@ -126,15 +123,15 @@ const UpgradeDebugPanel: React.FC = () => {
                 onChange={(e) => setProfileId(e.target.value)}
                 placeholder="Ingresa el ID del perfil"
               />
-              <Button 
-                onClick={debugProfileStructure} 
+              <Button
+                onClick={debugProfileStructure}
                 disabled={loading}
                 className="w-full"
               >
                 {loading ? 'Cargando...' : 'Debug Perfil'}
               </Button>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="userId">ID del Usuario</Label>
               <Input
@@ -143,8 +140,8 @@ const UpgradeDebugPanel: React.FC = () => {
                 onChange={(e) => setUserId(e.target.value)}
                 placeholder="Ingresa el ID del usuario"
               />
-              <Button 
-                onClick={debugUserProfiles} 
+              <Button
+                onClick={debugUserProfiles}
                 disabled={loading}
                 className="w-full"
               >
@@ -168,7 +165,7 @@ const UpgradeDebugPanel: React.FC = () => {
                   {JSON.stringify(debugInfo.planAssignment, null, 2)}
                 </pre>
               </div>
-              
+
               <div>
                 <h4 className="font-semibold mb-2">Plan Info</h4>
                 <pre className="bg-gray-100 p-2 rounded text-sm overflow-auto">
@@ -213,14 +210,14 @@ const UpgradeDebugPanel: React.FC = () => {
             <div>
               <h4 className="font-semibold mb-2">Probar Compra de Upgrades</h4>
               <div className="flex gap-2">
-                <Button 
+                <Button
                   onClick={() => testUpgradePurchase('DESTACADO')}
                   disabled={loading || !debugInfo.validationChecks.canPurchaseDestacado}
                   variant="outline"
                 >
                   Comprar Destacado
                 </Button>
-                <Button 
+                <Button
                   onClick={() => testUpgradePurchase('IMPULSO')}
                   disabled={loading || !debugInfo.validationChecks.canPurchaseImpulso}
                   variant="outline"

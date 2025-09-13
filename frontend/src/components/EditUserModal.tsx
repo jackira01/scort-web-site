@@ -41,6 +41,7 @@ interface EditUserFormData {
   name: string;
   email: string;
   role: 'admin' | 'user' | 'guest';
+  accountType: 'common' | 'agency';
 }
 
 export default function EditUserModal({ user, isOpen, onOpenChange }: EditUserModalProps) {
@@ -52,6 +53,7 @@ export default function EditUserModal({ user, isOpen, onOpenChange }: EditUserMo
       name: user?.name || '',
       email: user?.email || '',
       role: user?.role || 'user',
+      accountType: user?.accountType || 'common',
     },
   });
 
@@ -62,6 +64,7 @@ export default function EditUserModal({ user, isOpen, onOpenChange }: EditUserMo
         name: user.name,
         email: user.email,
         role: user.role,
+        accountType: user.accountType || 'common',
       });
     }
   }, [user, form]);
@@ -77,6 +80,7 @@ export default function EditUserModal({ user, isOpen, onOpenChange }: EditUserMo
           name: data.name,
           email: data.email,
           role: data.role,
+          accountType: data.accountType,
         },
       });
 
@@ -139,13 +143,35 @@ export default function EditUserModal({ user, isOpen, onOpenChange }: EditUserMo
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un rol" />
+                        <SelectValue placeholder="Seleccionar rol" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="user">Usuario</SelectItem>
                       <SelectItem value="admin">Administrador</SelectItem>
+                      <SelectItem value="user">Usuario</SelectItem>
                       <SelectItem value="guest">Invitado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="accountType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Cuenta</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar tipo de cuenta" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="common">Común</SelectItem>
+                      <SelectItem value="agency">Agencia</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

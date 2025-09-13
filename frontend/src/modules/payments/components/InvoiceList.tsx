@@ -54,7 +54,6 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
       setInvoices(response.invoices);
       setTotalPages(response.totalPages);
     } catch (error) {
-      console.error('Error fetching invoices:', error);
       toast({
         title: 'Error',
         description: 'No se pudieron cargar las facturas.',
@@ -184,7 +183,7 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label htmlFor="startDate">Fecha desde</Label>
                 <Input
@@ -194,7 +193,7 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
                   onChange={(e) => handleFilterChange('startDate', e.target.value)}
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="endDate">Fecha hasta</Label>
                 <Input
@@ -204,7 +203,7 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
                   onChange={(e) => handleFilterChange('endDate', e.target.value)}
                 />
               </div>
-              
+
               <div className="flex items-end">
                 <Button
                   variant="outline"
@@ -250,7 +249,7 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
                         </Badge>
                       )}
                     </div>
-                    
+
                     <div>
                       <p className="font-medium text-lg">
                         ${invoice.totalAmount.toLocaleString()}
@@ -262,7 +261,7 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
                         }).join(', ')}
                       </p>
                     </div>
-                    
+
                     <div className="text-xs text-muted-foreground">
                       <p>Creada: {formatDate(invoice.createdAt)}</p>
                       {invoice.status === 'pending' && (
@@ -273,7 +272,7 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     {invoice.status === 'pending' && (
                       <Button
@@ -285,7 +284,7 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
                         Pagar
                       </Button>
                     )}
-                    
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm">
@@ -324,11 +323,11 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
           >
             Anterior
           </Button>
-          
+
           <span className="text-sm text-muted-foreground">
             Página {currentPage} de {totalPages}
           </span>
-          
+
           <Button
             variant="outline"
             size="sm"

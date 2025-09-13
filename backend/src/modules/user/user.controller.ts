@@ -6,7 +6,7 @@ import { sendWelcomeEmail } from '../../utils/welcome-email.util';
 export const CreateUserController = async (req: Request, res: Response) => {
   try {
     const user = await userService.createUser(req.body);
-    
+
     // Enviar correo de bienvenida
     if (user.email) {
       try {
@@ -16,7 +16,7 @@ export const CreateUserController = async (req: Request, res: Response) => {
         // No fallar el registro por error de email
       }
     }
-    
+
     res.status(201).json(user);
   } catch (error) {
     // Error creating user
@@ -47,6 +47,8 @@ export const getUserById = async (req: Request, res: Response) => {
       isVerified: user.isVerified,
       verification_in_progress: user.verification_in_progress,
       role: user.role,
+      accountType: user.accountType,
+      agencyInfo: user.agencyInfo,
     });
   } catch (error) {
     // Error al obtener usuario por ID
@@ -66,12 +68,12 @@ export const authGoogleUserController = async (req: Request, res: Response) => {
   // Buscar usuario por email
   let user = await userService.findUserByEmail(email);
   let isNewUser = false;
-  
+
   if (!user) {
     user = await userService.createUser({ email, name });
     isNewUser = true;
   }
-  
+
   // Enviar correo de bienvenida para nuevos usuarios
   if (isNewUser) {
     try {
@@ -81,7 +83,7 @@ export const authGoogleUserController = async (req: Request, res: Response) => {
       // No fallar el registro por error de email
     }
   }
-  
+
   return res.json({
     _id: user._id,
     isVerified: user.isVerified,
@@ -155,6 +157,7 @@ export const updateUser = async (req: Request, res: Response) => {
       isVerified: user.isVerified,
       verification_in_progress: user.verification_in_progress,
       role: user.role,
+      accountType: user.accountType,
       verificationDocument: user.verificationDocument
     });
   } catch (error) {
@@ -219,10 +222,10 @@ export const updateUserLastLogin = async (req: Request, res: Response) => {
 
 export const getUserProfiles = async (req: Request, res: Response) => {
   const userId = req.params.id;
-  
+
   // Verificar si el usuario es administrador para incluir perfiles inactivos
   const includeInactive = (req as any).user?.role === 'admin' || false;
-  
+
   const profiles = await userService.getUserProfiles(userId, includeInactive);
   res.json(profiles);
 }

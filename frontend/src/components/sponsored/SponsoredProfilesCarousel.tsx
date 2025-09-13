@@ -48,7 +48,7 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
       try {
         setIsLoading(true);
         setError(null);
-        
+
         // Por ahora obtenemos perfiles random - en el futuro se filtrarán por sponsored
         const response = await getProfilesForCards({
           limit: 8, // Obtener más perfiles para el carrusel
@@ -56,11 +56,10 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
           sortBy: 'createdAt',
           sortOrder: 'desc'
         });
-        
+
         setSponsoredProfiles(response.profiles);
       } catch (err) {
-        console.error('Error loading sponsored profiles:', err);
-        setError('Error al cargar perfiles destacados');
+        setError('Error al cargar perfiles patrocinados');
       } finally {
         setIsLoading(false);
       }
@@ -126,7 +125,7 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
             Sponsored
           </Badge>
         </div>
-        
+
         {/* Navigation buttons */}
         {sponsoredProfiles.length > visibleCount && (
           <div className="flex gap-2">
@@ -152,15 +151,15 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
 
       {/* Carousel */}
       <div className="relative overflow-hidden">
-        <div 
+        <div
           className="flex transition-transform duration-300 ease-in-out gap-4"
           style={{
             transform: `translateX(-${currentIndex * (100 / visibleCount)}%)`
           }}
         >
           {sponsoredProfiles.map((profile) => (
-            <div 
-              key={profile._id} 
+            <div
+              key={profile._id}
               className="flex-shrink-0"
               style={{ width: `${100 / visibleCount}%` }}
             >
@@ -171,8 +170,8 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
                       {/* Avatar */}
                       <div className="relative">
                         <Avatar className="h-12 w-12 border-2 border-purple-200">
-                          <AvatarImage 
-                            src={profile.media?.gallery?.[0]} 
+                          <AvatarImage
+                            src={profile.media?.gallery?.[0]}
                             alt={profile.name}
                           />
                           <AvatarFallback className="bg-purple-100 text-purple-700">
@@ -184,7 +183,7 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
                           <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                         </div>
                       </div>
-                      
+
                       {/* Profile info */}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-gray-900 truncate">
@@ -223,11 +222,10 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                Math.floor(currentIndex / visibleCount) === index
+              className={`w-2 h-2 rounded-full transition-colors ${Math.floor(currentIndex / visibleCount) === index
                   ? 'bg-purple-600'
                   : 'bg-purple-300'
-              }`}
+                }`}
             />
           ))}
         </div>

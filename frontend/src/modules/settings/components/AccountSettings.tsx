@@ -2,8 +2,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSession } from 'next-auth/react';
-import { Crown, Gem, Shield, Star, Zap } from 'lucide-react';
+import { Gem, Star, Zap, Crown, Shield } from 'lucide-react';
 import AgencyConversionCard from './AgencyConversionCard';
+import { useUser } from '@/hooks/use-user';
 
 // Tipo para el plan actual
 interface CurrentPlan {
@@ -13,9 +14,8 @@ interface CurrentPlan {
 }
 
 const AccountSettings = () => {
-  const { data: session } = useSession();
-  const user = session?.user;
-  
+  const { data: user } = useUser();
+
   // Función para obtener información del plan
   const getPlanInfo = (level: number) => {
     switch (level) {
@@ -33,11 +33,11 @@ const AccountSettings = () => {
         return { name: 'BÁSICO', icon: <Zap className="h-4 w-4 text-gray-500" />, color: 'text-gray-600' };
     }
   };
-  
+
   // Temporal: usar datos básicos hasta que se implemente la integración completa con perfiles
   const currentPlan: CurrentPlan | null = null; // user?.profile?.planAssignment?.plan;
   const planInfo = currentPlan ? getPlanInfo(currentPlan.level) : getPlanInfo(0);
-  
+
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <h1 className="text-2xl lg:text-3xl font-bold  bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -74,19 +74,14 @@ const AccountSettings = () => {
               </span>
               <p className="text-foreground">{user?.email || 'No disponible'}</p>
             </div>
-
-            <Button
-              variant="outline"
-              className="w-full hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500 transition-all duration-200"
-            >
-              Editar Información
-            </Button>
           </CardContent>
         </Card>
-        
+
         {/* Componente de conversión a agencia */}
-        <AgencyConversionCard user={user} />
-        
+        {user && <AgencyConversionCard user={user} />}
+
+        {/* Secciones comentadas según requerimientos */}
+        {/* 
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-foreground">Seguridad</CardTitle>
@@ -151,12 +146,6 @@ const AccountSettings = () => {
                 <p className={`font-semibold ${planInfo.color}`}>
                   {currentPlan?.name || planInfo.name}
                 </p>
-                {/* Temporal: comentado hasta implementar integración completa con perfiles */}
-                {/* {user?.profile?.planAssignment?.activeUpgrades?.some(upgrade => upgrade.code === 'IMPULSO') && (
-                  <Badge variant="secondary" className="bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300">
-                    🚀 IMPULSO
-                  </Badge>
-                )} */}
               </div>
             </div>
             <div>
@@ -173,6 +162,7 @@ const AccountSettings = () => {
             </Button>
           </CardContent>
         </Card>
+        */}
       </div>
     </div>
   );

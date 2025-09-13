@@ -467,14 +467,21 @@ export const getProfiles = async (page: number = 1, limit: number = 10, fields?:
 
   const total = await ProfileModel.countDocuments({});
 
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = page < totalPages;
+  const hasPrevPage = page > 1;
+  const nextPage = hasNextPage ? page + 1 : null;
+  const prevPage = hasPrevPage ? page - 1 : null;
+  const pagingCounter = (page - 1) * limit + 1;
+
   return {
     profiles,
     pagination: {
       page,
       limit,
       total,
-      pages: Math.ceil(total / limit),
-    },
+      pages: totalPages
+    }
   };
 };
 
@@ -1698,7 +1705,7 @@ export const getDeletedProfiles = async (page: number = 1, limit: number = 10): 
 /**
  * Obtener todos los perfiles para el adminboard (incluye activos e inactivos)
  */
-export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 10, fields?: string): Promise<{ profiles: IProfile[]; pagination: { page: number; limit: number; total: number; pages: number } }> => {
+export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 10, fields?: string): Promise<{ docs: IProfile[]; totalDocs: number; limit: number; page: number; totalPages: number; hasNextPage: boolean; hasPrevPage: boolean; nextPage: number | null; prevPage: number | null; pagingCounter: number }> => {
   const skip = (page - 1) * limit;
   let query = ProfileModel.find({}); // Sin filtro de isActive para incluir todos
 
@@ -1770,13 +1777,23 @@ export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 1
 
   const total = await ProfileModel.countDocuments({}); // Contar todos los perfiles
 
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = page < totalPages;
+  const hasPrevPage = page > 1;
+  const nextPage = hasNextPage ? page + 1 : null;
+  const prevPage = hasPrevPage ? page - 1 : null;
+  const pagingCounter = (page - 1) * limit + 1;
+
   return {
-    profiles,
-    pagination: {
-      page,
-      limit,
-      total,
-      pages: Math.ceil(total / limit),
-    },
+    docs: profiles,
+    totalDocs: total,
+    limit,
+    page,
+    totalPages,
+    hasNextPage,
+    hasPrevPage,
+    nextPage,
+    prevPage,
+    pagingCounter,
   };
 };

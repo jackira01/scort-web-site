@@ -260,7 +260,6 @@ export const processCroppedImageCentralized = async (
       originalFileName
     };
   } catch (error) {
-    console.error('Error en procesamiento centralizado:', error);
     throw new Error('Error al procesar la imagen de forma centralizada');
   }
 };

@@ -145,6 +145,7 @@ export interface FilterQuery {
   };
   isActive?: boolean;
   isVerified?: boolean;
+  featured?: boolean;
   page?: number;
   limit?: number;
   sortBy?: string;

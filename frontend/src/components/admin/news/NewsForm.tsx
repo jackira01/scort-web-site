@@ -126,7 +126,7 @@ const NewsForm = ({ isOpen, onClose, onSuccess, mode, news }: NewsFormProps) => 
 
       onSuccess();
     } catch (error) {
-      console.error('Error al guardar noticia:', error);
+      // Error handled by mutation
     }
   };
 
@@ -142,7 +142,7 @@ const NewsForm = ({ isOpen, onClose, onSuccess, mode, news }: NewsFormProps) => 
     const newContent = [...formData.content];
     newContent[index] = value;
     setFormData(prev => ({ ...prev, content: newContent }));
-    
+
     // Clear errors
     if (errors.content) {
       setErrors(prev => ({ ...prev, content: '' }));
@@ -212,7 +212,7 @@ const NewsForm = ({ isOpen, onClose, onSuccess, mode, news }: NewsFormProps) => 
                 Agregar elemento
               </Button>
             </div>
-            
+
             {errors.content && (
               <p className="text-sm text-destructive">{errors.content}</p>
             )}
@@ -262,7 +262,7 @@ const NewsForm = ({ isOpen, onClose, onSuccess, mode, news }: NewsFormProps) => 
             <div className="space-y-1">
               <Label>Estado de publicación</Label>
               <p className="text-sm text-muted-foreground">
-                {formData.published 
+                {formData.published
                   ? 'La noticia será visible para todos los usuarios'
                   : 'La noticia se guardará como borrador'
                 }
@@ -280,8 +280,8 @@ const NewsForm = ({ isOpen, onClose, onSuccess, mode, news }: NewsFormProps) => 
               Cancelar
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading 
-                ? (mode === 'create' ? 'Creando...' : 'Guardando...') 
+              {isLoading
+                ? (mode === 'create' ? 'Creando...' : 'Guardando...')
                 : (mode === 'create' ? 'Crear Noticia' : 'Guardar Cambios')
               }
             </Button>

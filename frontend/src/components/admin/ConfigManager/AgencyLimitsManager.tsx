@@ -25,7 +25,7 @@ export function AgencyLimitsManager() {
   const { parameter: paidProfilesData, loading: loadingPaid } = useConfigParameterByKey('profiles.limits.agency.paid_profiles_max');
   const { parameter: totalVisibleData, loading: loadingTotal } = useConfigParameterByKey('profiles.limits.agency.total_visible_max');
   const { parameter: independentVerificationData, loading: loadingVerification } = useConfigParameterByKey('profiles.limits.agency.independent_verification_required');
-  
+
   const updateParameter = useUpdateConfigParameter();
 
   // Cargar configuraciones actuales
@@ -76,9 +76,9 @@ export function AgencyLimitsManager() {
   const handleInputChange = (field: keyof AgencyLimitsConfig, value: string | boolean) => {
     const processedValue = typeof value === 'string' ? (parseInt(value) || 0) : value;
     const newConfig = { ...config, [field]: processedValue };
-    
+
     setConfig(newConfig);
-    
+
     // Validar en tiempo real solo para campos numéricos
     if (typeof processedValue === 'number') {
       const newErrors = validateConfig(newConfig);
@@ -126,7 +126,7 @@ export function AgencyLimitsManager() {
       for (const update of updates) {
         // Buscar el parámetro existente por clave
         const existingParam = await fetch(`/api/config-parameters/key/${update.key}`);
-        
+
         if (existingParam.ok) {
           const paramData = await existingParam.json();
           if (paramData.success && paramData.data && paramData.data._id) {
@@ -140,19 +140,15 @@ export function AgencyLimitsManager() {
               }
             });
           } else {
-            console.error('Invalid parameter data structure:', paramData);
             throw new Error(`No se pudo obtener el ID del parámetro ${update.key}`);
           }
         } else {
-          console.error('Failed to fetch parameter:', update.key, existingParam.status);
           throw new Error(`No se pudo encontrar el parámetro ${update.key}`);
         }
       }
 
       setErrors({});
-      console.log('Configuraciones de agencias actualizadas exitosamente');
     } catch (error) {
-      console.error('Error al guardar configuraciones de agencias:', error);
       setErrors({ general: 'Error al guardar las configuraciones' });
     } finally {
       setSaving(false);
@@ -170,7 +166,7 @@ export function AgencyLimitsManager() {
   };
 
   const isLoading = loadingFree || loadingPaid || loadingTotal || loadingVerification || loading;
-  const hasChanges = 
+  const hasChanges =
     config.freeProfilesMax !== (freeProfilesData?.value || 5) ||
     config.paidProfilesMax !== (paidProfilesData?.value || 50) ||
     config.totalVisibleMax !== (totalVisibleData?.value || 55) ||
@@ -190,7 +186,7 @@ export function AgencyLimitsManager() {
               Configura los límites específicos para cuentas de agencia
             </p>
           </div>
-          
+
           <div className="flex items-center space-x-3">
             <button
               onClick={handleReset}
@@ -200,7 +196,7 @@ export function AgencyLimitsManager() {
               <RefreshCw className="w-4 h-4" />
               <span>Restablecer</span>
             </button>
-            
+
             <button
               onClick={handleSave}
               disabled={isLoading || !hasChanges || Object.keys(errors).length > 0}
@@ -241,9 +237,8 @@ export function AgencyLimitsManager() {
               max="20"
               value={config.freeProfilesMax}
               onChange={(e) => handleInputChange('freeProfilesMax', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                errors.freeProfilesMax ? 'border-red-300' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${errors.freeProfilesMax ? 'border-red-300' : 'border-gray-300'
+                }`}
               placeholder="Ej: 5"
             />
             {errors.freeProfilesMax && (
@@ -268,9 +263,8 @@ export function AgencyLimitsManager() {
               max="200"
               value={config.paidProfilesMax}
               onChange={(e) => handleInputChange('paidProfilesMax', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                errors.paidProfilesMax ? 'border-red-300' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${errors.paidProfilesMax ? 'border-red-300' : 'border-gray-300'
+                }`}
               placeholder="Ej: 50"
             />
             {errors.paidProfilesMax && (
@@ -295,9 +289,8 @@ export function AgencyLimitsManager() {
               max="300"
               value={config.totalVisibleMax}
               onChange={(e) => handleInputChange('totalVisibleMax', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                errors.totalVisibleMax ? 'border-red-300' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${errors.totalVisibleMax ? 'border-red-300' : 'border-gray-300'
+                }`}
               placeholder="Ej: 55"
             />
             {errors.totalVisibleMax && (

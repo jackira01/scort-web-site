@@ -62,7 +62,7 @@ export function ImageCropModal({
 
     try {
       setIsProcessing(true);
-      
+
       // Calcular opciones óptimas de procesamiento
       const processingOptions = calculateOptimalProcessingOptions({
         width: croppedAreaPixels.width,
@@ -80,11 +80,11 @@ export function ImageCropModal({
 
       // Convertir el File a Blob para mantener compatibilidad
       const blob = new Blob([await processedResult.file.arrayBuffer()], { type: processedResult.file.type });
-      
+
       onCropComplete(blob, processedResult.url);
       onClose();
     } catch (error) {
-      console.error('Error al recortar la imagen:', error);
+      // Error handling
     } finally {
       setIsProcessing(false);
     }

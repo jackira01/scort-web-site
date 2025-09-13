@@ -30,7 +30,6 @@ export const useUpdateInvoiceStatus = () => {
       toast.success('Estado de factura actualizado correctamente');
     },
     onError: (error: any) => {
-      console.error('Error updating invoice status:', error);
       toast.error(error.response?.data?.message || 'Error al actualizar el estado de la factura');
     }
   });

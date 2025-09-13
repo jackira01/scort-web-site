@@ -40,8 +40,8 @@ const BlogCard = ({ blog }: BlogCardProps) => {
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-              <div className="text-4xl font-bold text-gray-400">Blog</div>
+            <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 flex items-center justify-center">
+              <div className="text-4xl font-bold text-gray-400 dark:text-gray-200">Blog</div>
             </div>
           )}
         </div>
@@ -53,11 +53,11 @@ const BlogCard = ({ blog }: BlogCardProps) => {
           <span>{formattedDate}</span>
         </div>
 
-        <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
           {blog.title}
         </h2>
 
-        <p className="text-gray-600 line-clamp-3 mb-4">
+        <p className="text-gray-600 dark:text-gray-400 line-clamp-3 mb-4">
           {excerpt}
         </p>
       </CardContent>
@@ -96,13 +96,13 @@ const BlogSkeleton = () => (
 
 const EmptyState = () => (
   <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-    <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-      <Search className="w-12 h-12 text-gray-400" />
+    <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6">
+      <Search className="w-12 h-12 text-gray-400 dark:text-gray-500" />
     </div>
-    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+    <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
       No se encontraron blogs
     </h3>
-    <p className="text-gray-600 max-w-md">
+    <p className="text-gray-600 dark:text-gray-400 max-w-md">
       No hay blogs publicados en este momento. Vuelve pronto para ver nuevo contenido.
     </p>
   </div>
@@ -133,15 +133,15 @@ export default function BlogPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-white border-b">
+      <section className="border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-200 mb-6">
               Blog
             </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 dark:text-gray-200">
               Descubre artículos, noticias y contenido interesante en nuestro blog.
               Mantente al día con las últimas tendencias y novedades.
             </p>
@@ -164,11 +164,11 @@ export default function BlogPage() {
       </section>
 
       {/* Filters */}
-      <section className="bg-white border-b">
+      <section className="border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-700">Ordenar por:</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Ordenar por:</span>
               <select
                 value={`${sortBy}-${sortOrder}`}
                 onChange={(e) => {
@@ -177,7 +177,7 @@ export default function BlogPage() {
                   setSortOrder(order as 'asc' | 'desc');
                   setCurrentPage(1);
                 }}
-                className="text-sm border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="createdAt-desc">Más recientes</option>
                 <option value="createdAt-asc">Más antiguos</option>
@@ -187,7 +187,7 @@ export default function BlogPage() {
             </div>
 
             {data && (
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
                 {data.total} blog{data.total !== 1 ? 's' : ''} encontrado{data.total !== 1 ? 's' : ''}
               </div>
             )}

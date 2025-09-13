@@ -67,7 +67,7 @@ const getPlanDisplayInfo = (code: string) => {
       popular: true,
     },
   };
-  
+
   return planStyles[code] || {
     color: 'bg-gray-100 text-gray-800 border-gray-200',
     icon: <Star className="h-4 w-4" />,
@@ -99,7 +99,7 @@ const formatDuration = (days: number) => {
 // Función para generar features descriptivas basadas en el plan
 const getPlanFeatures = (plan: Plan): string[] => {
   const features: string[] = [];
-  
+
   // Features basadas en contentLimits
   if (plan.contentLimits) {
     if (plan.contentLimits.photos && plan.contentLimits.photos.max > 0) {
@@ -115,7 +115,7 @@ const getPlanFeatures = (plan: Plan): string[] => {
       features.push(`${plan.contentLimits.storiesPerDayMax} historias por día`);
     }
   }
-  
+
   // Features basadas en las propiedades del plan
   if (plan.features && plan.features.showInHome) {
     features.push('Aparece en página principal');
@@ -126,12 +126,12 @@ const getPlanFeatures = (plan: Plan): string[] => {
   if (plan.features && plan.features.showInSponsored) {
     features.push('Contenido patrocinado');
   }
-  
+
   // Features basadas en upgrades incluidos
   if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
     features.push(`${plan.includedUpgrades.length} upgrades incluidos`);
   }
-  
+
   // Features basadas en el nivel del plan
   const levelFeatures: Record<number, string[]> = {
     1: ['Máxima visibilidad', 'Prioridad premium'],
@@ -140,10 +140,10 @@ const getPlanFeatures = (plan: Plan): string[] => {
     4: ['Visibilidad estándar', 'Funciones básicas'],
     5: ['Plan gratuito', 'Funciones limitadas']
   };
-  
+
   const levelSpecificFeatures = levelFeatures[plan.level] || [];
   features.push(...levelSpecificFeatures);
-  
+
   return features;
 };
 
@@ -160,21 +160,21 @@ export default function ManagePlansModal({
   const [selectedVariants, setSelectedVariants] = useState<Record<string, number>>({});
 
   // Usar React Query hooks para obtener datos
-  const { 
-    data: availablePlans = [], 
-    isLoading: isLoadingPlans, 
-    error: plansError 
+  const {
+    data: availablePlans = [],
+    isLoading: isLoadingPlans,
+    error: plansError
   } = useAvailablePlans();
-  
-  const { 
-    data: profilePlanInfo, 
-    isLoading: isLoadingProfilePlan, 
+
+  const {
+    data: profilePlanInfo,
+    isLoading: isLoadingProfilePlan,
     error: profilePlanError,
-    refetch: refetchProfilePlan 
+    refetch: refetchProfilePlan
   } = useProfilePlan(profileId);
 
   // Procesar planes disponibles con información de display
-  const processedPlans = availablePlans.map(plan => {
+  const processedPlans = availablePlans.map((plan: Plan) => {
     const displayInfo = getPlanDisplayInfo(plan.code);
     return {
       ...plan,
@@ -187,7 +187,7 @@ export default function ManagePlansModal({
   // Manejar errores de carga de planes
   useEffect(() => {
     if (plansError) {
-      console.error('❌ Error loading available plans:', plansError);
+      // Error handled by query
       const errorMessage = plansError.message || 'Error desconocido al cargar planes';
       toast.error(`Error al obtener planes disponibles: ${errorMessage}`);
     }
@@ -196,7 +196,7 @@ export default function ManagePlansModal({
   // Manejar errores de carga de información del plan del perfil
   useEffect(() => {
     if (profilePlanError) {
-      console.error('❌ Error loading profile plan info:', profilePlanError);
+      // Error handled by query
       // No mostrar error si es 404 (perfil sin plan)
       if (profilePlanError.message && !profilePlanError.message.includes('404')) {
         toast.error('Error al obtener información del plan del perfil');
@@ -230,11 +230,11 @@ export default function ManagePlansModal({
         id: 'default'
       };
     }
-    
+
     // Usar profilePlanInfo si está disponible, sino usar currentPlan como fallback
     const planToUse = profilePlanInfo || currentPlan;
     if (!planToUse) return processedPlans[0]; // Amatista por defecto
-    return processedPlans.find(plan => plan.code === planToUse.planCode) || processedPlans[0];
+    return processedPlans.find((plan: Plan) => plan.code === planToUse.planCode) || processedPlans[0];
   };
 
   const currentPlanData = getCurrentPlan();
@@ -276,7 +276,7 @@ export default function ManagePlansModal({
     const selectedDays = selectedVariants[planCode];
     if (!selectedDays) {
       // Si no hay variante seleccionada, usar la más corta por defecto
-      return plan.variants.reduce((shortest, current) => 
+      return plan.variants.reduce((shortest, current) =>
         current.days < shortest.days ? current : shortest
       );
     }
@@ -310,7 +310,7 @@ export default function ManagePlansModal({
 
       switch (action) {
         case 'purchase':
-          const selectedPlan = processedPlans.find(p => p.code === planCode);
+          const selectedPlan = processedPlans.find((p: Plan) => p.code === planCode);
           const selectedVariant = selectedPlan ? getSelectedVariant(planCode, selectedPlan) : null;
           const purchaseRequest: PlanPurchaseRequest = {
             profileId,
@@ -318,14 +318,14 @@ export default function ManagePlansModal({
             variantDays: selectedVariant?.days || 30,
           };
           result = await purchasePlan(purchaseRequest);
-          message = `Plan ${processedPlans.find(p => p.code === planCode)?.name} comprado exitosamente`;
+          message = `Plan ${processedPlans.find((p: Plan) => p.code === planCode)?.name} comprado exitosamente`;
           break;
 
         case 'renew':
           // Debug: Verificar estado del plan antes de renovar
           const planToUse = profilePlanInfo || currentPlan;
           // Intentando renovar plan
-          
+
           const renewSelectedVariant = getSelectedVariant(planCode, currentPlanData);
           const renewRequest: PlanRenewalRequest = {
             profileId,
@@ -336,7 +336,7 @@ export default function ManagePlansModal({
           break;
 
         case 'upgrade':
-          const targetUpgradePlan = processedPlans.find(p => p.code === planCode);
+          const targetUpgradePlan = processedPlans.find((p: Plan) => p.code === planCode);
           const upgradeSelectedVariant = targetUpgradePlan ? getSelectedVariant(planCode, targetUpgradePlan) : null;
           const upgradeRequest: PlanUpgradeRequest = {
             profileId,
@@ -344,15 +344,15 @@ export default function ManagePlansModal({
             variantDays: upgradeSelectedVariant?.days
           };
           result = await upgradePlan(upgradeRequest);
-          message = `Upgrade a ${processedPlans.find(p => p.code === planCode)?.name} realizado exitosamente`;
+          message = `Upgrade a ${processedPlans.find((p: Plan) => p.code === planCode)?.name} realizado exitosamente`;
           break;
       }
 
       toast.success(message);
-      
+
       // Refrescar datos del plan del perfil
       refetchProfilePlan();
-      
+
       onPlanChange?.();
       onClose();
     } catch (error: any) {
@@ -459,11 +459,10 @@ export default function ManagePlansModal({
                                       ...prev,
                                       [currentPlanData.code]: variant.days
                                     }))}
-                                    className={`p-2 text-xs rounded border transition-colors ${
-                                      isSelected
-                                        ? 'border-purple-500 bg-purple-50 text-purple-700'
-                                        : 'border-gray-200 hover:border-gray-300'
-                                    }`}
+                                    className={`p-2 text-xs rounded border transition-colors ${isSelected
+                                      ? 'border-purple-500 bg-purple-50 text-purple-700'
+                                      : 'border-gray-200 hover:border-gray-300'
+                                      }`}
                                   >
                                     <div className="flex justify-between items-center">
                                       <span>{formatDuration(variant.days)}</span>
@@ -477,7 +476,7 @@ export default function ManagePlansModal({
                           </div>
                         </div>
                       )}
-                      
+
                       <Button
                         onClick={() => handlePlanAction('renew', currentPlanData.code)}
                         disabled={isProcessing}
@@ -505,6 +504,14 @@ export default function ManagePlansModal({
 
           <Separator />
 
+          {/* Aviso importante sobre reemplazo de planes */}
+          <Alert className="border-amber-200 bg-amber-50">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Importante:</strong> Al realizar una compra o mejora de plan, el nuevo plan reemplazará inmediatamente el plan activo actual, independientemente de los días restantes de vigencia.
+            </AlertDescription>
+          </Alert>
+
           {/* Planes disponibles */}
           <div>
             <h3 className="text-lg font-semibold mb-3">Planes Disponibles</h3>
@@ -514,121 +521,121 @@ export default function ManagePlansModal({
                 <span className="ml-2 text-muted-foreground">Cargando planes...</span>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {availablePlans.map((plan) => {
-                const planDisplayInfo = getPlanDisplayInfo(plan.code);
-                const isCurrentPlan = plan.code === currentPlanData.code;
-                const canUpgrade = canUpgradeTo(plan.code);
-                const canPurchase = !isPlanActive() && plan.code !== 'AMATISTA';
-                const lowestPrice = getLowestPrice(plan.variants);
-                const shortestDuration = getShortestDuration(plan.variants);
-                const selectedVariant = getSelectedVariant(plan.code, plan);
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {availablePlans.map((plan: Plan) => {
+                  const planDisplayInfo = getPlanDisplayInfo(plan.code);
+                  const isCurrentPlan = plan.code === currentPlanData.code;
+                  const canUpgrade = canUpgradeTo(plan.code);
+                  const canPurchase = !isPlanActive() && plan.code !== 'AMATISTA';
+                  const lowestPrice = getLowestPrice(plan.variants);
+                  const shortestDuration = getShortestDuration(plan.variants);
+                  const selectedVariant = getSelectedVariant(plan.code, plan);
 
-                return (
-                  <Card
-                    key={plan.code}
-                    className={`relative transition-all duration-200 ${isCurrentPlan ? 'ring-2 ring-purple-500' : 'hover:shadow-md'
-                      } ${planDisplayInfo.popular ? 'border-purple-300' : ''}`}
-                  >
-                    {planDisplayInfo.popular && (
-                      <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
-                        <Badge className="bg-purple-600 text-white">
-                          Más Popular
-                        </Badge>
-                      </div>
-                    )}
-
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center gap-2">
-                        {planDisplayInfo.icon}
-                        <CardTitle className="text-base">{plan.name}</CardTitle>
-                      </div>
-                      <div className="text-2xl font-bold">
-                        {selectedVariant.price === 0 ? 'Gratis' : formatPrice(selectedVariant.price)}
-                        <span className="text-sm font-normal text-muted-foreground">
-                          /{formatDuration(selectedVariant.days)}
-                        </span>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent>
-                      {/* Selector de variantes */}
-                      {plan.variants.length > 1 && (
-                        <div className="mb-4">
-                          <p className="text-sm font-medium mb-2">Duración:</p>
-                          <div className="grid grid-cols-1 gap-2">
-                            {plan.variants
-                              .sort((a, b) => a.days - b.days)
-                              .map((variant) => (
-                              <button
-                                key={variant.days}
-                                onClick={() => setSelectedVariants(prev => ({
-                                  ...prev,
-                                  [plan.code]: variant.days
-                                }))}
-                                className={`p-2 text-xs rounded border transition-colors ${
-                                  selectedVariant.days === variant.days
-                                    ? 'border-purple-500 bg-purple-50 text-purple-700'
-                                    : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                              >
-                                <div className="flex justify-between items-center">
-                                  <span>{formatDuration(variant.days)}</span>
-                                  <span className="font-medium">
-                                    {variant.price === 0 ? 'Gratis' : formatPrice(variant.price)}
-                                  </span>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
+                  return (
+                    <Card
+                      key={plan.code}
+                      className={`relative transition-all duration-200 ${isCurrentPlan ? 'ring-2 ring-purple-500' : 'hover:shadow-md'
+                        } ${planDisplayInfo.popular ? 'border-purple-300' : ''}`}
+                    >
+                      {planDisplayInfo.popular && (
+                        <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+                          <Badge className="bg-purple-600 text-white">
+                            Más Popular
+                          </Badge>
                         </div>
                       )}
 
-                      <ul className="space-y-1 text-sm mb-4">
-                        {getPlanFeatures(plan).map((feature, index) => (
-                          <li key={index} className="flex items-center gap-2">
-                            <CheckCircle className="h-3 w-3 text-green-500" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-2">
+                          {planDisplayInfo.icon}
+                          <CardTitle className="text-base">{plan.name}</CardTitle>
+                        </div>
+                        <div className="text-2xl font-bold">
+                          {selectedVariant.price === 0 ? 'Gratis' : formatPrice(selectedVariant.price)}
+                          <span className="text-sm font-normal text-muted-foreground">
+                            /{formatDuration(selectedVariant.days)}
+                          </span>
+                        </div>
+                      </CardHeader>
 
-                      {isCurrentPlan ? (
-                        <Badge className="w-full justify-center bg-gray-100 text-gray-600">
-                          Plan Actual
-                        </Badge>
-                      ) : canUpgrade && isPlanActive() ? (
-                        <Button
-                          onClick={() => handlePlanAction('upgrade', plan.code)}
-                          disabled={isProcessing || (activeProfilesCount >= 10 && plan.code !== 'AMATISTA')}
-                          className="w-full bg-purple-600 hover:bg-purple-700"
-                          size="sm"
-                        >
-                          Upgrade
-                        </Button>
-                      ) : canPurchase ? (
-                        <Button
-                          onClick={() => handlePlanAction('purchase', plan.code)}
-                          disabled={isProcessing || (activeProfilesCount >= 10 && plan.code !== 'AMATISTA')}
-                          variant={planDisplayInfo.popular ? 'default' : 'outline'}
-                          className="w-full"
-                          size="sm"
-                        >
-                          Comprar
-                        </Button>
-                      ) : (
-                        <Button
-                          disabled
-                          variant="outline"
-                          className="w-full"
-                          size="sm"
-                        >
-                          {plan.code === 'AMATISTA' ? 'Plan Gratuito' : 'No Disponible'}
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                );              })}            </div>            )}          </div>        </div>
+                      <CardContent>
+                        {/* Selector de variantes */}
+                        {plan.variants.length > 1 && (
+                          <div className="mb-4">
+                            <p className="text-sm font-medium mb-2">Duración:</p>
+                            <div className="grid grid-cols-1 gap-2">
+                              {plan.variants
+                                .sort((a, b) => a.days - b.days)
+                                .map((variant) => (
+                                  <button
+                                    key={variant.days}
+                                    onClick={() => setSelectedVariants(prev => ({
+                                      ...prev,
+                                      [plan.code]: variant.days
+                                    }))}
+                                    className={`p-2 text-xs rounded border transition-colors ${selectedVariant.days === variant.days
+                                      ? 'border-purple-500 bg-purple-50 text-purple-700'
+                                      : 'border-gray-200 hover:border-gray-300'
+                                      }`}
+                                  >
+                                    <div className="flex justify-between items-center">
+                                      <span>{formatDuration(variant.days)}</span>
+                                      <span className="font-medium">
+                                        {variant.price === 0 ? 'Gratis' : formatPrice(variant.price)}
+                                      </span>
+                                    </div>
+                                  </button>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <ul className="space-y-1 text-sm mb-4">
+                          {getPlanFeatures(plan).map((feature, index) => (
+                            <li key={index} className="flex items-center gap-2">
+                              <CheckCircle className="h-3 w-3 text-green-500" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+
+                        {isCurrentPlan ? (
+                          <Badge className="w-full justify-center bg-gray-100 text-gray-600">
+                            Plan Actual
+                          </Badge>
+                        ) : canUpgrade && isPlanActive() ? (
+                          <Button
+                            onClick={() => handlePlanAction('upgrade', plan.code)}
+                            disabled={isProcessing || (activeProfilesCount >= 10 && plan.code !== 'AMATISTA')}
+                            className="w-full bg-purple-600 hover:bg-purple-700"
+                            size="sm"
+                          >
+                            Mejorar a {plan.name}
+                          </Button>
+                        ) : canPurchase ? (
+                          <Button
+                            onClick={() => handlePlanAction('purchase', plan.code)}
+                            disabled={isProcessing || (activeProfilesCount >= 10 && plan.code !== 'AMATISTA')}
+                            variant={planDisplayInfo.popular ? 'default' : 'outline'}
+                            className="w-full"
+                            size="sm"
+                          >
+                            Comprar
+                          </Button>
+                        ) : (
+                          <Button
+                            disabled
+                            variant="outline"
+                            className="w-full"
+                            size="sm"
+                          >
+                            {plan.code === 'AMATISTA' ? 'Plan Gratuito' : 'No Disponible'}
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}            </div>)}          </div>        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isProcessing}>

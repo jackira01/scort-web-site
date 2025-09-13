@@ -15,9 +15,9 @@ export const sidebarItems = [
   },
   {
     id: 'grupos-atributos',
-    label: 'Grupos de Atributos',
+    label: 'Configuración',
     icon: Tags,
-    description: 'Gestiona grupos de atributos y categorías del sistema',
+    description: 'Gestiona la configuración de tu cuenta, datos personales y preferencias del perfil',
   },
   {
     id: 'tablero-noticias',
