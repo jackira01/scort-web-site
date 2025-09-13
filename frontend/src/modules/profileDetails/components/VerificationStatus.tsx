@@ -201,11 +201,11 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
                   Pide depósito anticipado, hay usuarios que piden depósitos para confirmar su cita, esto no quiere decir que sea un mal usuario, valore usted el resto de factores de confiabilidad antes de quedar con él
                 </p>
               )}
-              {/* {step.label === "Redes sociales verificadas" && (
+              {step.label === "Redes sociales verificadas" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   El perfil proporciono sus redes sociales y coinciden con la información de la cuenta
                 </p>
-              )} */}
+              )}
             </div>
           </div>
         ))}

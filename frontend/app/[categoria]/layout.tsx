@@ -10,7 +10,7 @@ interface LayoutProps {
 // Generar metadata para la categoría
 export async function generateMetadata({ params }: LayoutProps): Promise<Metadata> {
   const { categoria } = params;
-  
+
   return {
     title: {
       template: `%s | ${categoria.charAt(0).toUpperCase() + categoria.slice(1)} | Scort`,
@@ -47,12 +47,12 @@ export default function CategoriaLayout({ children, params }: LayoutProps) {
           </div>
         </div>
       </div>
-      
+
       {/* Contenido principal */}
       <main className="flex-1">
         {children}
       </main>
-      
+
       {/* Footer específico de categoría si es necesario */}
       <div className="bg-white border-t mt-12">
         <div className="container mx-auto px-4 py-8">

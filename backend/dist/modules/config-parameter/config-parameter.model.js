@@ -48,7 +48,7 @@ const ConfigMetadataSchema = new mongoose_1.Schema({
         feature_management: { type: Boolean, default: false },
         custom_props: { type: mongoose_1.Schema.Types.Mixed },
     },
-    cache_ttl: { type: Number, default: 3600 }, // TTL en segundos
+    cache_ttl: { type: Number, default: 3600 },
     requires_restart: { type: Boolean, default: false },
     environment: {
         type: String,
@@ -127,19 +127,16 @@ const ConfigParameterSchema = new mongoose_1.Schema({
             type: String,
             trim: true,
         },
-    ], // Keys de otros parámetros de los que depende
+    ],
 }, {
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
 });
-// Índices para optimizar consultas
-// Nota: El índice para 'key' se crea automáticamente por unique: true
 ConfigParameterSchema.index({ category: 1, isActive: 1 });
 ConfigParameterSchema.index({ type: 1, isActive: 1 });
 ConfigParameterSchema.index({ tags: 1 });
 ConfigParameterSchema.index({ lastModified: -1 });
-// Middleware para actualizar version y lastModified
 ConfigParameterSchema.pre('save', function (next) {
     if (this.isModified('value') && !this.isNew) {
         this.version += 1;
@@ -147,11 +144,9 @@ ConfigParameterSchema.pre('save', function (next) {
     }
     next();
 });
-// Virtual para obtener el historial de versiones (si se implementa)
 ConfigParameterSchema.virtual('hasHistory').get(function () {
     return this.version > 1;
 });
-// Método estático para obtener por categoría
 ConfigParameterSchema.statics.findByCategory = function (category, activeOnly = true) {
     const query = { category };
     if (activeOnly) {
@@ -159,7 +154,6 @@ ConfigParameterSchema.statics.findByCategory = function (category, activeOnly = 
     }
     return this.find(query).sort({ name: 1 });
 };
-// Método estático para obtener por tipo
 ConfigParameterSchema.statics.findByType = function (type, activeOnly = true) {
     const query = { type };
     if (activeOnly) {
@@ -167,7 +161,6 @@ ConfigParameterSchema.statics.findByType = function (type, activeOnly = true) {
     }
     return this.find(query).sort({ category: 1, name: 1 });
 };
-// Método estático para búsqueda por tags
 ConfigParameterSchema.statics.findByTags = function (tags, activeOnly = true) {
     const query = { tags: { $in: tags } };
     if (activeOnly) {
@@ -175,7 +168,6 @@ ConfigParameterSchema.statics.findByTags = function (tags, activeOnly = true) {
     }
     return this.find(query).sort({ category: 1, name: 1 });
 };
-// Métodos lean para mejor rendimiento
 ConfigParameterSchema.statics.findByCategoryLean = function (category, activeOnly = true) {
     const query = { category };
     if (activeOnly) {
@@ -197,7 +189,6 @@ ConfigParameterSchema.statics.findByTagsLean = function (tags, activeOnly = true
     }
     return this.find(query).lean().sort({ category: 1, name: 1 });
 };
-// Método para validar dependencias
 ConfigParameterSchema.methods.validateDependencies = async function () {
     if (!this.dependencies || this.dependencies.length === 0) {
         return true;

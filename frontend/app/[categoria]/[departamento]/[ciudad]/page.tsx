@@ -28,12 +28,12 @@ async function getData(categoria: string, departamento: string, ciudad: string) 
         ciudad
       };
     }
-    
+
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     const url = `${baseUrl}/api/escorts/location/${categoria}/${departamento}/${ciudad}`;
-    
+
     const response = await fetch(url, {
-      next: { 
+      next: {
         revalidate: 3600 // ISR: revalidar cada hora
       }
     });
@@ -62,7 +62,7 @@ async function getData(categoria: string, departamento: string, ciudad: string) 
 // Generar metadata dinámicamente
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { categoria, departamento, ciudad } = params;
-  
+
   return {
     title: `${categoria} en ${ciudad}, ${departamento} | Scort`,
     description: `Encuentra los mejores ${categoria} en ${ciudad}, ${departamento}. Perfiles verificados y servicios de calidad.`,
@@ -75,13 +75,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function LocationPage({ params }: PageProps) {
   const { categoria, departamento, ciudad } = params;
-  
+
   // Obtener datos con ISR
   const data = await getData(categoria, departamento, ciudad);
-  
+
   // Renderizar siempre el contenido, sin verificaciones dinámicas
   // Si no hay datos, mostrar contenido por defecto
-  
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -98,7 +98,7 @@ export default async function LocationPage({ params }: PageProps) {
           <span className="font-medium">{ciudad}</span>
         </nav>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.isArray(data) ? (
           data.map((item: any, index: number) => (
@@ -126,13 +126,13 @@ export default async function LocationPage({ params }: PageProps) {
           </div>
         )}
       </div>
-      
+
       {/* Información adicional de la ubicación */}
       <div className="mt-12 bg-gray-50 rounded-lg p-6">
         <h2 className="text-2xl font-semibold mb-4">Sobre {ciudad}, {departamento}</h2>
         <p className="text-gray-700 leading-relaxed">
-          Descubre los mejores servicios de {categoria} en {ciudad}, {departamento}. 
-          Nuestra plataforma te conecta con perfiles verificados y servicios de calidad 
+          Descubre los mejores servicios de {categoria} en {ciudad}, {departamento}.
+          Nuestra plataforma te conecta con perfiles verificados y servicios de calidad
           en tu área local.
         </p>
       </div>

@@ -1,206 +1,161 @@
-import { Router, Response } from 'express';
-import EmailService from '../../services/email.service';
-import { authenticateToken } from '../../middlewares/auth.middleware';
-import { adminMiddleware as requireAdmin } from '../../middlewares/admin.middleware';
-import { AuthRequest } from '../../types/auth.types';
-import User from '../../modules/user/User.model';
-import { ProfileModel } from '../../modules/profile/profile.model';
-import { EmailLogModel } from '../../modules/email-log/email-log.model';
-
-const router = Router();
-
-// Función para obtener la instancia del servicio de forma lazy
-const getEmailService = () => {
-  return new EmailService();
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-
-// Ruta para obtener todos los correos (para envío masivo)
-router.get('/all-emails', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const email_service_1 = __importDefault(require("../../services/email.service"));
+const auth_middleware_1 = require("../../middlewares/auth.middleware");
+const admin_middleware_1 = require("../../middlewares/admin.middleware");
+const User_model_1 = __importDefault(require("../../modules/user/User.model"));
+const profile_model_1 = require("../../modules/profile/profile.model");
+const email_log_model_1 = require("../../modules/email-log/email-log.model");
+const router = (0, express_1.Router)();
+const getEmailService = () => {
+    return new email_service_1.default();
+};
+router.get('/all-emails', auth_middleware_1.authenticateToken, admin_middleware_1.adminMiddleware, async (req, res) => {
     try {
         const { page = 1, limit = 100 } = req.query;
-        const pageNum = parseInt(page as string);
-        const limitNum = parseInt(limit as string);
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
         const skip = (pageNum - 1) * limitNum;
-
-        // Obtener todos los usuarios con email válido para envío masivo
-        const users = await User.find({
+        const users = await User_model_1.default.find({
             $and: [
                 { email: { $exists: true } },
                 { email: { $ne: null } },
                 { email: { $ne: '' } }
             ]
         })
-        .select('username email')
-        .skip(skip)
-        .limit(limitNum)
-        .sort({ username: 1 });
-
-        // Simplificar respuesta - solo enviar datos necesarios para el frontend
+            .select('username email')
+            .skip(skip)
+            .limit(limitNum)
+            .sort({ username: 1 });
         const allEmails = users.map(user => ({
-            id: (user as any)._id,
-            username: (user as any).username,
-            email: (user as any).email
+            id: user._id,
+            username: user.username,
+            email: user.email
         }));
-
         res.json(allEmails);
-    } catch (error) {
+    }
+    catch (error) {
         console.error('Error al obtener todos los correos:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
-
-// Buscar usuarios por ID de perfil, nombre de usuario o nombre del perfil
-router.get('/users/search', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.get('/users/search', auth_middleware_1.authenticateToken, admin_middleware_1.adminMiddleware, async (req, res) => {
     try {
         const { q, type = 'all' } = req.query;
-        
         if (!q || typeof q !== 'string') {
             return res.status(400).json({ error: 'Parámetro de búsqueda requerido' });
         }
-
         const searchTerm = q.toLowerCase();
-        let users: any[] = [];
-
-        // Determinar el tipo de búsqueda
+        let users = [];
         switch (type) {
             case 'username':
-                // Buscar solo por name (nombre del usuario)
-                users = await User.find({
+                users = await User_model_1.default.find({
                     $and: [
                         { email: { $ne: null, $exists: true } },
                         { name: { $regex: searchTerm, $options: 'i' } }
                     ]
                 }).populate('profiles', 'name _id')
-                  .select('name email profiles')
-                  .limit(20);
+                    .select('name email profiles')
+                    .limit(20);
                 break;
-
             case 'id':
-                // Buscar por ID de usuario o perfil
-                let usersByUserId: any[] = [];
-                let usersByProfileId: any[] = [];
-
-                // Intentar buscar por ID de usuario si es un ObjectId válido
+                let usersByUserId = [];
+                let usersByProfileId = [];
                 if (searchTerm.match(/^[0-9a-fA-F]{24}$/)) {
-                    usersByUserId = await User.find({
+                    usersByUserId = await User_model_1.default.find({
                         $and: [
                             { email: { $ne: null, $exists: true } },
                             { _id: searchTerm }
                         ]
                     }).populate('profiles', 'name _id')
-                      .select('username email profiles')
-                      .limit(10);
+                        .select('username email profiles')
+                        .limit(10);
                 }
-
-                // Para búsqueda por ID de perfil, solo buscar si es un ObjectId válido
                 if (searchTerm.match(/^[0-9a-fA-F]{24}$/)) {
-                    const profiles = await ProfileModel.find({
+                    const profiles = await profile_model_1.ProfileModel.find({
                         _id: searchTerm
                     }).select('user').limit(10);
-                    
-                    const profileUserIds = profiles.map((profile: any) => profile.user);
-                    
+                    const profileUserIds = profiles.map((profile) => profile.user);
                     if (profileUserIds.length > 0) {
-                        usersByProfileId = await User.find({
+                        usersByProfileId = await User_model_1.default.find({
                             $and: [
                                 { email: { $ne: null, $exists: true } },
                                 { _id: { $in: profileUserIds } }
                             ]
                         }).populate('profiles', 'name _id')
-                          .select('username email profiles')
-                          .limit(10);
+                            .select('username email profiles')
+                            .limit(10);
                     }
                 }
-
                 users = [...usersByUserId, ...usersByProfileId];
                 break;
-
             case 'all':
             default:
-                // Búsqueda combinada (comportamiento original)
-                const usersByUsername = await User.find({
+                const usersByUsername = await User_model_1.default.find({
                     $and: [
                         { email: { $ne: null, $exists: true } },
                         { name: { $regex: searchTerm, $options: 'i' } }
                     ]
                 }).populate('profiles', 'name _id')
-                  .select('name email profiles')
-                  .limit(10);
-
-                // Buscar usuarios por nombre de perfil
-                const profilesAll = await ProfileModel.find({
+                    .select('name email profiles')
+                    .limit(10);
+                const profilesAll = await profile_model_1.ProfileModel.find({
                     name: { $regex: searchTerm, $options: 'i' }
                 }).select('user').limit(10);
-                
-                const profileUserIdsAll = profilesAll.map((profile: any) => profile.user);
-                
-                const usersByProfile = await User.find({
+                const profileUserIdsAll = profilesAll.map((profile) => profile.user);
+                const usersByProfile = await User_model_1.default.find({
                     $and: [
                         { email: { $ne: null, $exists: true } },
                         { _id: { $in: profileUserIdsAll } }
                     ]
                 }).populate('profiles', 'name _id')
-                  .select('username email profiles')
-                  .limit(10);
-
+                    .select('username email profiles')
+                    .limit(10);
                 users = [...usersByUsername, ...usersByProfile];
                 break;
         }
-
-        // Eliminar duplicados
-        const uniqueUsers = users.filter((user, index, self) => 
-            index === self.findIndex(u => (u as any)._id.toString() === (user as any)._id.toString())
-        );
-
+        const uniqueUsers = users.filter((user, index, self) => index === self.findIndex(u => u._id.toString() === user._id.toString()));
         const finalUsers = uniqueUsers.slice(0, 20);
-
-        // Formatear respuesta con información completa del perfil
         const formattedUsers = finalUsers.map(user => {
-            const userProfiles = (user as any).profiles || [];
-            const primaryProfile = userProfiles[0]; // Tomar el primer perfil como principal
-            
+            const userProfiles = user.profiles || [];
+            const primaryProfile = userProfiles[0];
             return {
-                id: (user as any)._id.toString(),
-                username: (user as any).name,
-                email: (user as any).email,
-                profileName: primaryProfile ? primaryProfile.name : (user as any).name,
-                profileId: primaryProfile ? primaryProfile._id.toString() : (user as any)._id.toString()
+                id: user._id.toString(),
+                username: user.name,
+                email: user.email,
+                profileName: primaryProfile ? primaryProfile.name : user.name,
+                profileId: primaryProfile ? primaryProfile._id.toString() : user._id.toString()
             };
         });
-
         res.json(formattedUsers);
-    } catch (error) {
+    }
+    catch (error) {
         console.error('Error searching users:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
-
-// Enviar correo individual o masivo
-router.post('/send', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.post('/send', auth_middleware_1.authenticateToken, admin_middleware_1.adminMiddleware, async (req, res) => {
     try {
         const { subject, content, recipients } = req.body;
-
         if (!subject || !content || !recipients || !Array.isArray(recipients) || recipients.length === 0) {
-            return res.status(400).json({ 
-                error: 'Asunto, contenido y destinatarios son requeridos' 
+            return res.status(400).json({
+                error: 'Asunto, contenido y destinatarios son requeridos'
             });
         }
-
-        // Validar que todos los destinatarios sean emails válidos
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const invalidEmails = recipients.filter(email => !emailRegex.test(email));
-        
         if (invalidEmails.length > 0) {
-            return res.status(400).json({ 
-                error: `Emails inválidos: ${invalidEmails.join(', ')}` 
+            return res.status(400).json({
+                error: `Emails inválidos: ${invalidEmails.join(', ')}`
             });
         }
-
-        // Enviar correos
         const results = [];
         const errors = [];
         const emailService = getEmailService();
-
         for (const email of recipients) {
             try {
                 await emailService.sendSingleEmail({
@@ -223,15 +178,14 @@ router.post('/send', authenticateToken, requireAdmin, async (req: AuthRequest, r
                     }
                 });
                 results.push({ email, status: 'success' });
-            } catch (error) {
+            }
+            catch (error) {
                 console.error(`Error sending email to ${email}:`, error);
                 errors.push({ email, error: error instanceof Error ? error.message : String(error) });
             }
         }
-
-        // Registrar el envío en la base de datos
         try {
-            await EmailLogModel.create({
+            await email_log_model_1.EmailLogModel.create({
                 subject,
                 content,
                 recipients: recipients.join(','),
@@ -240,43 +194,38 @@ router.post('/send', authenticateToken, requireAdmin, async (req: AuthRequest, r
                 sentAt: new Date(),
                 sentBy: req.user?.id || req.user?._id
             });
-        } catch (logError) {
-            console.error('Error logging email send:', logError);
-            // No fallar la respuesta por error de logging
         }
-
+        catch (logError) {
+            console.error('Error logging email send:', logError);
+        }
         res.json({
             success: true,
-            message: results.length === recipients.length 
+            message: results.length === recipients.length
                 ? `Correo enviado exitosamente a todos los ${recipients.length} destinatarios`
                 : `Correo enviado a ${results.length} de ${recipients.length} destinatarios`,
             successful: results.length,
             failed: errors.length,
             errors: errors.length > 0 ? errors : undefined
         });
-
-    } catch (error) {
+    }
+    catch (error) {
         console.error('Error sending emails:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
-
-// Obtener historial de envíos
-router.get('/history', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.get('/history', auth_middleware_1.authenticateToken, admin_middleware_1.adminMiddleware, async (req, res) => {
     try {
         const { page = 1, limit = 10 } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
-
         const [logs, total] = await Promise.all([
-            EmailLogModel.find()
+            email_log_model_1.EmailLogModel.find()
                 .sort({ sentAt: -1 })
                 .skip(skip)
                 .limit(Number(limit))
                 .populate('sentBy', 'username')
                 .lean(),
-            EmailLogModel.countDocuments()
+            email_log_model_1.EmailLogModel.countDocuments()
         ]);
-
         res.json({
             logs,
             pagination: {
@@ -286,10 +235,10 @@ router.get('/history', authenticateToken, requireAdmin, async (req: AuthRequest,
                 pages: Math.ceil(total / Number(limit))
             }
         });
-    } catch (error) {
+    }
+    catch (error) {
         console.error('Error fetching email history:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
-
-export default router;
+exports.default = router;

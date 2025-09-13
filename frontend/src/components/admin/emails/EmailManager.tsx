@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Send, Users, Search, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from '@/lib/axios';
-import { useAllEmailUsers, useSearchEmailUsers } from '@/hooks/use-email-users';
+import { useAllEmailUsers, useSearchEmailUsersAction } from '@/hooks/use-email-users';
 
 interface User {
     id: string;
@@ -33,7 +33,10 @@ interface EmailData {
 export default function EmailManager() {
     const { data: session } = useSession();
     const [activeTab, setActiveTab] = useState('individual');
-    const [searchTerm, setSearchTerm] = useState('');
+    const [usernameSearch, setUsernameSearch] = useState('');
+    const [userIdSearch, setUserIdSearch] = useState('');
+    const [searchResults, setSearchResults] = useState<User[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
     const [isSending, setIsSending] = useState(false);
     const [emailData, setEmailData] = useState<EmailData>({
@@ -44,7 +47,7 @@ export default function EmailManager() {
 
     // Usar hooks de React Query
     const { data: allUsers = [], isLoading: isLoadingUsers, error: allUsersError } = useAllEmailUsers();
-    const { data: searchResults = [], isLoading: isSearching, error: searchError } = useSearchEmailUsers(searchTerm);
+    const { searchUsers } = useSearchEmailUsersAction();
 
     // Actualizar recipients cuando cambian los usuarios para envío masivo
     useEffect(() => {
@@ -64,21 +67,42 @@ export default function EmailManager() {
         }
     }, [allUsersError]);
 
-    useEffect(() => {
-        if (searchError) {
-            // Error handled by query
-            toast.error('Error en la búsqueda');
+    const handleSearch = async (type?: 'username' | 'id') => {
+        let searchTerm = '';
+        let searchType = type || 'username';
+        
+        // Determinar qué buscar según el tipo especificado o los campos llenos
+        if (type === 'username') {
+            if (!usernameSearch.trim()) return;
+            searchTerm = usernameSearch.trim();
+            searchType = 'username';
+        } else if (type === 'id') {
+            if (!userIdSearch.trim()) return;
+            searchTerm = userIdSearch.trim();
+            searchType = 'id';
+        } else {
+            // Búsqueda automática (para Enter key)
+            if (usernameSearch.trim()) {
+                searchTerm = usernameSearch.trim();
+                searchType = 'username';
+            } else if (userIdSearch.trim()) {
+                searchTerm = userIdSearch.trim();
+                searchType = 'id';
+            } else {
+                return;
+            }
         }
-    }, [searchError]);
-
-    const handleSearch = () => {
-        // La búsqueda se maneja automáticamente por el hook useSearchEmailUsers
-        // cuando cambia searchTerm
-    };
-
-    const handleSearchInputChange = (value: string) => {
-        setSearchTerm(value);
-        // Los resultados se limpian automáticamente por el hook cuando searchTerm está vacío
+        
+        setIsSearching(true);
+        try {
+            const users = await searchUsers(searchTerm, searchType);
+            setSearchResults(users);
+        } catch (error) {
+            console.error('Error searching users:', error);
+            toast.error('Error al buscar usuarios. Inténtalo de nuevo.');
+        } finally {
+            setIsSearching(false);
+        }
     };
 
     const addUserToSelection = (user: User) => {
@@ -139,7 +163,9 @@ export default function EmailManager() {
             if (result.success && result.failed === 0) {
                 setEmailData({ subject: '', content: '', recipients: [] });
                 setSelectedUsers([]);
-                setSearchTerm('');
+                setSearchResults([]);
+                setUsernameSearch('');
+                setUserIdSearch('');
             }
         } catch (error) {
             toast.error('Error al enviar el correo');
@@ -176,30 +202,77 @@ export default function EmailManager() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="search">Buscar por ID de perfil, nombre de usuario o nombre del perfil</Label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        id="search"
-                                        placeholder="Ingresa ID, username o profileName..."
-                                        value={searchTerm}
-                                        onChange={(e) => handleSearchInputChange(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                        className="flex-1"
-                                    />
-                                    <Button
-                                        onClick={handleSearch}
-                                        disabled={!searchTerm.trim() || isSearching}
-                                        className="flex items-center gap-2"
-                                    >
-                                        {isSearching ? (
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                        ) : (
-                                            <Search className="h-4 w-4" />
-                                        )}
-                                        Buscar
-                                    </Button>
+                            <div className="space-y-4">
+                                <Label>Criterios de búsqueda</Label>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="username-search">Buscar por nombre de usuario</Label>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                id="username-search"
+                                                placeholder="Buscar por nombre de usuario..."
+                                                value={usernameSearch}
+                                                onChange={(e) => setUsernameSearch(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                                className="flex-1"
+                                            />
+                                            <Button
+                                                 onClick={() => handleSearch('username')}
+                                                 disabled={isSearching || !usernameSearch.trim()}
+                                                 size="sm"
+                                                 className="flex items-center gap-2"
+                                             >
+                                                 {isSearching ? (
+                                                     <Loader2 className="h-4 w-4 animate-spin" />
+                                                 ) : (
+                                                     <Search className="h-4 w-4" />
+                                                 )}
+                                             </Button>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="userid-search">Buscar por ID de usuario</Label>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                id="userid-search"
+                                                placeholder="Buscar por ID de usuario..."
+                                                value={userIdSearch}
+                                                onChange={(e) => setUserIdSearch(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                                className="flex-1"
+                                            />
+                                            <Button
+                                                 onClick={() => handleSearch('id')}
+                                                 disabled={isSearching || !userIdSearch.trim()}
+                                                 size="sm"
+                                                 className="flex items-center gap-2"
+                                             >
+                                                 {isSearching ? (
+                                                     <Loader2 className="h-4 w-4 animate-spin" />
+                                                 ) : (
+                                                     <Search className="h-4 w-4" />
+                                                 )}
+                                             </Button>
+                                        </div>
+                                    </div>
                                 </div>
+                                
+                                {searchResults.length > 0 && (
+                                    <div className="flex justify-end">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                setSearchResults([]);
+                                                setUsernameSearch('');
+                                                setUserIdSearch('');
+                                            }}
+                                            className="text-sm"
+                                        >
+                                            Limpiar búsqueda
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
 
                             {searchResults.length > 0 && (

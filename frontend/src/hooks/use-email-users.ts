@@ -39,34 +39,51 @@ export const useAllEmailUsers = () => {
   });
 };
 
-// Hook para buscar usuarios por término de búsqueda
-export const useSearchEmailUsers = (searchTerm: string) => {
+// Hook para buscar usuarios manualmente (no automático)
+export const useManualSearchEmailUsers = () => {
   const { data: session } = useSession();
 
   return useQuery({
-    queryKey: ['searchEmailUsers', searchTerm],
+    queryKey: ['manualSearchEmailUsers'],
     queryFn: async (): Promise<User[]> => {
-      if (!searchTerm.trim()) {
-        return [];
-      }
-
-      const headers: HeadersInit = {};
-      
-      // Agregar header de autenticación si hay sesión
-      if (session?.user?._id) {
-        headers['X-User-ID'] = session.user._id;
-      }
-      
-      const response = await axios.get(
-        `/api/admin/emails/users/search?q=${encodeURIComponent(searchTerm)}`,
-        { headers }
-      );
-      return response.data;
+      // Esta función no se ejecutará automáticamente
+      return [];
     },
-    enabled: !!session && !!searchTerm.trim(), // Solo ejecutar si hay sesión y término de búsqueda
-    staleTime: 2 * 60 * 1000, // 2 minutos - búsquedas pueden cambiar más frecuentemente
-    gcTime: 5 * 60 * 1000, // 5 minutos en cache
-    refetchOnMount: false, // No refrescar automáticamente en mount para búsquedas
+    enabled: false, // Deshabilitado por defecto - se ejecutará manualmente
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
+};
+
+// Función para ejecutar búsqueda manual
+export const useSearchEmailUsersAction = () => {
+  const { data: session } = useSession();
+
+  const searchUsers = async (searchTerm: string, searchType: 'username' | 'id' | 'all' = 'all'): Promise<User[]> => {
+    if (!searchTerm.trim()) {
+      return [];
+    }
+
+    const headers: HeadersInit = {};
+    
+    // Agregar header de autenticación si hay sesión
+    if (session?.user?._id) {
+      headers['X-User-ID'] = session.user._id;
+    }
+    
+    const params = new URLSearchParams({
+      q: searchTerm,
+      type: searchType
+    });
+    
+    const response = await axios.get(
+      `/api/admin/emails/users/search?${params.toString()}`,
+      { headers }
+    );
+    return response.data;
+  };
+
+  return { searchUsers };
 };
