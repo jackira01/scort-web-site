@@ -1,4 +1,12 @@
 /** @type {import('next').NextConfig} */
+
+// Validar variables de entorno
+console.log(">>> BUILD ENV:", {
+  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
+  NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version,
+});
+
 const nextConfig = {
   // Configuración de compilación
   typescript: {
@@ -8,6 +16,12 @@ const nextConfig = {
   eslint: {
     // Ignorar errores de ESLint durante el build
     ignoreDuringBuilds: false,
+  },
+
+  // Configuración del compilador nativo de Next.js
+  compiler: {
+    // Eliminar console.log en producción
+    removeConsole: process.env.NODE_ENV === 'production',
   },
 
   // Configuración de imágenes
@@ -140,14 +154,7 @@ const nextConfig = {
         },
       };
 
-      // Eliminar console.log en producción
-      config.optimization.minimizer.push(
-        new webpack.DefinePlugin({
-          'console.log': JSON.stringify(() => {}),
-          'console.debug': JSON.stringify(() => {}),
-          'console.warn': JSON.stringify(() => {}),
-        })
-      );
+
 
       // Optimizar imports dinámicos
       config.optimization.usedExports = true;
@@ -163,8 +170,8 @@ const nextConfig = {
     return config;
   },
 
-  // Configuración de output para standalone
-  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
+  // Configuración de output para standalone (deshabilitado temporalmente por permisos)
+  // output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
 
   // Variables de entorno públicas
   env: {
