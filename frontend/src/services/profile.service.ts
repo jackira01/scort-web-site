@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '@/lib/axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -24,6 +24,22 @@ export const getProfilesWithStories = async (page: number = 1, limit: number = 1
       page,
       limit
     }
+  });
+  return response.data;
+};
+
+export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 10, fields?: string) => {
+  const params: any = {
+    page,
+    limit
+  };
+  
+  if (fields) {
+    params.fields = fields;
+  }
+  
+  const response = await axios.get(`${API_URL}/api/profile/admin/all`, {
+    params
   });
   return response.data;
 };

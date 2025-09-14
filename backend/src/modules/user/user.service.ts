@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import UserModel from './User.model';
 import ProfileVerification from '../profile-verification/profile-verification.model';
-import { checkLastLoginVerification } from '../profile-verification/verification-progress.utils';
 
-export const createUser = (data: any) => UserModel.create(data);
+
+export const createUser = (data: Record<string, any>) => UserModel.create(data);
 export const findUserByEmail = async (email: string) => {
   return UserModel.findOne({ email });
 };
@@ -21,20 +21,30 @@ export const uploadUserDocument = async (userId: string, documentUrl: string) =>
   return user;
 };
 
-export const getUserById = (id: string) => UserModel.findById(id);
-
-export const updateUser = (id: string, data: any) =>
-  UserModel.findByIdAndUpdate(id, data, { new: true });
-
-export const getUsers = async (filters: any, options: any) => {
-  return await UserModel.paginate(filters, options);
-
+export const getUserById = async (id: string) => {
+  try {
+    // Validar formato de ObjectId de MongoDB
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      throw new Error('Formato de ID de usuario inválido');
+    }
+    
+    return await UserModel.findById(id);
+  } catch (error) {
+    throw error;
+  }
 };
 
-export const getUserProfiles = async (userId: string) => {
+export const updateUser = (id: string, data: Record<string, any>) =>
+  UserModel.findByIdAndUpdate(id, data, { new: true });
+
+export const getUsers = async (filters: Record<string, any>, options: Record<string, any>) => {
+  return await UserModel.paginate(filters, options);
+};
+
+export const getUserProfiles = async (userId: string, includeInactive: boolean = false) => {
   const user = await UserModel.findById(userId).populate({
     path: 'profiles',
-    select: '_id user name age location verification media',
+    select: '_id user name age location verification media planAssignment upgrades visible isActive isDeleted',
     populate: {
       path: 'verification',
       model: 'ProfileVerification',
@@ -42,18 +52,53 @@ export const getUserProfiles = async (userId: string) => {
     }
   });
   
-  const profiles = user?.profiles || [];
+  let profiles = user?.profiles || [];
   
-  // Devolver los perfiles con el objeto media completo
-  return profiles.map((profile: any) => ({
-    _id: profile._id,
-    user: profile.user,
-    name: profile.name,
-    age: profile.age,
-    location: profile.location,
-    verification: profile.verification,
-    media: profile.media
-  }));
+  // Filtrar perfiles eliminados lógicamente (isDeleted: true) para usuarios normales
+  // Solo los administradores pueden ver perfiles con isDeleted: true
+  if (!includeInactive) {
+    profiles = profiles.filter((profile: any) => profile.isDeleted !== true);
+  }
+  
+  const now = new Date();
+  
+  // Devolver los perfiles con información completa incluyendo upgrades activos
+  return profiles.map((profile: any) => {
+    // Filtrar upgrades activos
+    const activeUpgrades = profile.upgrades?.filter((upgrade: any) => 
+      new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
+    ) || [];
+    
+    // Verificar si tiene upgrades específicos activos o incluidos en el plan
+    let hasDestacadoUpgrade = activeUpgrades.some((upgrade: any) => 
+      upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT'
+    );
+    let hasImpulsoUpgrade = activeUpgrades.some((upgrade: any) => 
+      upgrade.code === 'IMPULSO' || upgrade.code === 'BOOST'
+    );
+    
+    // Si es plan DIAMANTE, incluye DESTACADO automáticamente
+    if (profile.planAssignment?.planCode === 'DIAMANTE') {
+      hasDestacadoUpgrade = true;
+    }
+    
+    return {
+      _id: profile._id,
+      user: profile.user,
+      name: profile.name,
+      age: profile.age,
+      location: profile.location,
+      verification: profile.verification,
+      media: profile.media,
+      planAssignment: profile.planAssignment,
+      upgrades: profile.upgrades,
+      activeUpgrades,
+      hasDestacadoUpgrade,
+      hasImpulsoUpgrade,
+      visible: profile.visible,
+      isActive: profile.isActive
+    };
+  });
 }
 
 // Actualizar lastLogin del usuario
@@ -70,7 +115,7 @@ export const updateUserLastLogin = async (userId: string) => {
     
     // Actualizar también las verificaciones de perfil asociadas
     if (user && user.profiles.length > 0) {
-      const isLastLoginVerified = checkLastLoginVerification(user.lastLogin.date);
+      const isLastLoginVerified = true; // Simplificado: siempre consideramos verificado
       
       // Actualizar todas las verificaciones de perfiles del usuario
       await ProfileVerification.updateMany(

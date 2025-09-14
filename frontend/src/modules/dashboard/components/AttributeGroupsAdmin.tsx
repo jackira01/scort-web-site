@@ -56,7 +56,7 @@ export const AttributeGroupsAdmin: React.FC = () => {
       setNewGroup({ name: '', key: '', variants: [{ label: '', value: '' }] });
       setIsCreating(false);
     } catch (error) {
-      console.error('Error creating attribute group:', error);
+
       alert('Error al crear el grupo de atributos');
     }
   };
@@ -70,7 +70,7 @@ export const AttributeGroupsAdmin: React.FC = () => {
         active
       });
     } catch (error) {
-      console.error('Error updating variant:', error);
+
       alert('Error al actualizar la variante');
     }
   };
@@ -81,7 +81,7 @@ export const AttributeGroupsAdmin: React.FC = () => {
     try {
       await deleteGroupMutation.mutateAsync(groupId);
     } catch (error) {
-      console.error('Error deleting group:', error);
+
       alert('Error al eliminar el grupo');
     }
   };
@@ -100,7 +100,7 @@ export const AttributeGroupsAdmin: React.FC = () => {
       setEditingGroup(null);
       setEditingGroupData(null);
     } catch (error) {
-      console.error('Error updating group:', error);
+
       alert('Error al actualizar el grupo');
     }
   };
@@ -119,7 +119,7 @@ export const AttributeGroupsAdmin: React.FC = () => {
       setNewVariantForGroup({ label: '', value: '' });
       setAddingVariantTo(null);
     } catch (error) {
-      console.error('Error adding variant:', error);
+
       alert('Error al agregar la variante');
     }
   };
@@ -133,7 +133,7 @@ export const AttributeGroupsAdmin: React.FC = () => {
         data: { variantIndex }
       });
     } catch (error) {
-      console.error('Error removing variant:', error);
+
       alert('Error al eliminar la variante');
     }
   };

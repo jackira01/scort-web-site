@@ -1,7 +1,7 @@
 // Configuración centralizada para URLs y constantes
 
 // URL del API - funciona tanto en cliente como en servidor
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 // URL base para rutas internas
 export const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -21,10 +21,10 @@ export const PAGINATION = {
 
 // Categorías disponibles
 export const CATEGORIES = [
-  { value: 'escort', label: 'Escorts' },
-  { value: 'masajes', label: 'Masajes' },
-  { value: 'trans', label: 'Trans' },
-  { value: 'maduras', label: 'Maduras' },
+  { value: 'escort', label: 'Escort' },
+  { value: 'masajista', label: 'Masajista' },
+  { value: 'modelo', label: 'Modelo' },
+  { value: 'acompañante', label: 'Acompañante' },
 ];
 
 import { getAllDepartments, getCitiesByDepartment } from '@/utils/colombiaData';
@@ -51,9 +51,10 @@ export const POPULAR_ROUTES = [
   { categoria: 'escort', departamento: 'bogota', ciudad: 'chapinero' },
   { categoria: 'escort', departamento: 'medellin', ciudad: 'el-poblado' },
   { categoria: 'escort', departamento: 'cali', ciudad: 'cali-aguacatal' },
-  { categoria: 'masajes', departamento: 'bogota', ciudad: 'usaquen' },
-  { categoria: 'masajes', departamento: 'medellin', ciudad: 'laureles' },
-  { categoria: 'trans', departamento: 'bogota', ciudad: 'chapinero' },
+  { categoria: 'masajista', departamento: 'bogota', ciudad: 'usaquen' },
+  { categoria: 'masajista', departamento: 'medellin', ciudad: 'laureles' },
+  { categoria: 'modelo', departamento: 'bogota', ciudad: 'chapinero' },
+  { categoria: 'acompañante', departamento: 'bogota', ciudad: 'zona-rosa' },
 ];
 
 // Rutas adicionales para pre-generación (solo categoría y categoría + departamento)

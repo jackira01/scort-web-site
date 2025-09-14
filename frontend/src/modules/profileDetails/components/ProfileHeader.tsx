@@ -13,7 +13,7 @@ export default function ProfielHeader({
         {name}
       </h2>
       <p className="text-muted-foreground">
-        {age} años • {category}
+        {age} años • {typeof category === 'object' && category !== null && 'label' in category ? category.label : category}
       </p>
     </div>
   );

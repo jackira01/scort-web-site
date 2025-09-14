@@ -34,7 +34,7 @@ export const colombiaDepartments = {
     "Ciudad Bolívar",
     "Sumapaz"
   ],
-  "Medellín": [
+  /* "Medellín": [
     "Popular",
     "Santa Cruz",
     "Manrique",
@@ -65,7 +65,7 @@ export const colombiaDepartments = {
     "Cañaveralejo",
     "Pance-Lili",
     "Zona Rural"
-  ],
+  ], */
   "Amazonas": [
     "Leticia",
     "Puerto Nariño"
@@ -79,7 +79,8 @@ export const colombiaDepartments = {
     "Rionegro",
     "Sabaneta",
     "La Estrella",
-    "Copacabana"
+    "Copacabana",
+    "Medellin"
   ],
   "Arauca": [
     "Arauca",
@@ -349,7 +350,8 @@ export const colombiaDepartments = {
     "Cartago",
     "Buga",
     "Jamundí",
-    "Yumbo"
+    "Yumbo",
+    "Cali"
   ],
   "Vaupés": [
     "Mitú",

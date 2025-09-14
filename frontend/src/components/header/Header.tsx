@@ -53,6 +53,46 @@ const HeaderComponent = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-4">
+            <Link href="/blog">
+              <Button
+                variant="ghost"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+              >
+                Blog
+              </Button>
+            </Link>
+            <Link href="/plans">
+              <Button
+                variant="ghost"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+              >
+                Planes
+              </Button>
+            </Link>
+            <Link href="/faq">
+              <Button
+                variant="ghost"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+              >
+                FAQ
+              </Button>
+            </Link>
+            <Link href="/terms">
+              <Button
+                variant="ghost"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+              >
+                Términos
+              </Button>
+            </Link>
+            <Link href="/contactanos">
+              <Button
+                variant="ghost"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+              >
+                Contactanos
+              </Button>
+            </Link>
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -123,6 +163,51 @@ const HeaderComponent = () => {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="lg:hidden border-t bg-background/95 backdrop-blur py-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
+            <Link href="/blog">
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Blog
+              </Button>
+            </Link>
+            <Link href="/plans">
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Planes
+              </Button>
+            </Link>
+            <Link href="/faq">
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                FAQ
+              </Button>
+            </Link>
+            <Link href="/terms">
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Términos
+              </Button>
+            </Link>
+            <Link href="/contactanos">
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Contactanos
+              </Button>
+            </Link>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button

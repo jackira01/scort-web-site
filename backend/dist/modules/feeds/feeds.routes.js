@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const feeds_controller_1 = require("./feeds.controller");
+const feeds_test_routes_1 = require("./feeds.test.routes");
+const router = (0, express_1.Router)();
+router.get('/home', feeds_controller_1.getHomeFeedController);
+router.get('/stats', feeds_controller_1.getFeedStatsController);
+router.use('/test', feeds_test_routes_1.feedsTestRoutes);
+exports.default = router;

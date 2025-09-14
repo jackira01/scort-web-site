@@ -84,7 +84,7 @@ export function Step2Description({
                     htmlFor={service.value}
                     className="text-sm text-foreground cursor-pointer"
                   >
-                    {service.value}
+                    {typeof service === 'object' && service !== null && 'label' in service ? service.label : service.value}
                   </Label>
                 </div>
               ))}

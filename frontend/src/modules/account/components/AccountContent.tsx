@@ -3,7 +3,7 @@
 import AccountProfiles from './AccountProfiles';
 import PaymentHistory from '@/modules/payments/components/PaymentHistory';
 import AccountSettings from '@/modules/settings/components/AccountSettings';
-import { paymentHistoryData } from '@/utils/MockedData';
+import NewsBoard from './NewsBoard';
 import {
   getProgressColor,
   getProgressTextColor,
@@ -43,11 +43,15 @@ export default function AccountContent({ activeSection }: Props) {
   }
 
   if (activeSection === 'pagos') {
-    return <PaymentHistory payments={paymentHistoryData} />;
+    return <PaymentHistory />;
   }
 
-  if (activeSection === 'ajustes') {
-    return <AccountSettings />;
+  if (activeSection === 'grupos-atributos') {
+        return <AccountSettings />;
+    }
+
+  if (activeSection === 'tablero-noticias') {
+    return <NewsBoard />;
   }
 
   return null;

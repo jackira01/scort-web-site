@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import Loader from '@/components/Loader';
 import { Pagination } from '@/components/Pagination';
-import { useAllProfiles } from '@/hooks/use-all-profiles';
+import { useAdminProfiles } from '@/hooks/use-admin-profiles';
 import AdminProfileVerificationCarousel from '@/modules/dashboard/components/AdminProfileVerificationCarousel';
+import ManagePlansModal from '@/components/plans/ManagePlansModal';
+import UploadStoryModal from '@/modules/account/components/UploadStoryModal';
 import type { User } from '@/types/user.types';
 import { transformedImages } from '../utils';
 import { DashbProfileCard } from './DashbProfileCard';
@@ -14,14 +16,20 @@ export const DashProfilePanel = () => {
     useState(false);
   const [selectedProfileForVerification, setSelectedProfileForVerification] =
     useState<any | null>();
+  const [managePlansProfileId, setManagePlansProfileId] = useState<string | null>(null);
+  const [selectedProfileForStory, setSelectedProfileForStory] = useState<any | null>(null);
+  const [uploadStoryModalOpen, setUploadStoryModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit] = useState(6);
 
   const {
-    data: profilesData,
+    data: profilesResponse,
     isLoading,
     error,
-  } = useAllProfiles(currentPage, limit, '_id,name,age,isActive,media');
+  } = useAdminProfiles(currentPage, limit, '_id,name,profileName,age,isActive,media,featured,location,verification,isVerified');
+
+  // Extraer los datos de la respuesta del nuevo endpoint
+  const profilesData = profilesResponse?.success ? profilesResponse.data : null;
 
   if (isLoading) {
     return <Loader />;
@@ -51,23 +59,26 @@ export const DashProfilePanel = () => {
             index={index}
             setSelectedProfileForVerification={setSelectedProfileForVerification}
             setVerificationCarouselOpen={setVerificationCarouselOpen}
+            setManagePlansProfileId={setManagePlansProfileId}
+            setSelectedProfileForStory={setSelectedProfileForStory}
+            setUploadStoryModalOpen={setUploadStoryModalOpen}
           />
         ))}
       </div>
-      
+
       {/* Paginación */}
       {profilesData && profilesData.totalPages > 1 && (
         <Pagination
-          currentPage={profilesData.currentPage}
+          currentPage={profilesData.page}
           totalPages={profilesData.totalPages}
           hasNextPage={profilesData.hasNextPage}
           hasPrevPage={profilesData.hasPrevPage}
           onPageChange={setCurrentPage}
-          totalCount={profilesData.totalCount}
+          totalCount={profilesData.totalDocs}
           limit={profilesData.limit}
         />
       )}
-      
+
       {/* Admin Profile Verification Carousel */}
       {selectedProfileForVerification && (
         <AdminProfileVerificationCarousel
@@ -75,6 +86,32 @@ export const DashProfilePanel = () => {
           onOpenChange={setVerificationCarouselOpen}
           profileName={selectedProfileForVerification.profileName || selectedProfileForVerification.name}
           profileId={selectedProfileForVerification._id}
+        />
+      )}
+
+      {/* Manage Plans Modal */}
+      {managePlansProfileId && (
+        <ManagePlansModal
+          isOpen={!!managePlansProfileId}
+          onClose={() => setManagePlansProfileId(null)}
+          profileId={managePlansProfileId}
+          profileName={profilesData?.docs?.find(p => p._id === managePlansProfileId)?.profileName || profilesData?.docs?.find(p => p._id === managePlansProfileId)?.name || ''}
+          currentPlan={profilesData?.docs?.find(p => p._id === managePlansProfileId)?.planAssignment}
+          onPlanChange={() => {
+            // Invalidar queries para actualizar los datos
+            // queryClient.invalidateQueries({ queryKey: ['adminProfiles'] });
+          }}
+        />
+      )}
+
+      {/* Upload Story Modal */}
+      {selectedProfileForStory && (
+        <UploadStoryModal
+          isOpen={uploadStoryModalOpen}
+          onClose={() => setUploadStoryModalOpen(false)}
+          profileId={selectedProfileForStory._id}
+          profileName={selectedProfileForStory.profileName || selectedProfileForStory.name}
+          currentStories={selectedProfileForStory.media?.stories || []}
         />
       )}
     </div>

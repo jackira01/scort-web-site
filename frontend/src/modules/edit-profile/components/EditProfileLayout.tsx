@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAttributeGroups } from '@/hooks/use-attribute-groups';
-import { useProfileDetails } from '@/hooks/use-profile-details';
+import { useProfile } from '@/hooks/use-profile';
 import { updateProfile } from '@/services/user.service';
 import {
   uploadMultipleAudios,
@@ -49,7 +49,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
   const { data: session } = useSession();
 
   // Obtener datos del perfil existente
-  const { data: profileDetails, isLoading: isLoadingProfile, error: profileError } = useProfileDetails(profileId);
+  const { data: profileDetails, isLoading: isLoadingProfile, error: profileError } = useProfile(profileId);
   const { data: attributeGroups, isLoading: isLoadingAttributes, error: attributesError } = useAttributeGroups();
 
   const form = useForm<FormData>({
@@ -72,8 +72,8 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       // Step 3 - Detalles
       contact: {
         number: '',
-        whatsapp: false,
-        telegram: false,
+        whatsapp: '',
+        telegram: '',
       },
       age: '',
       skinColor: '',
@@ -153,8 +153,8 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         selectedServices: getSelectedServices(),
         contact: {
           number: profileDetails.contact?.number || '',
-          whatsapp: Boolean(profileDetails.contact?.whatsapp),
-          telegram: Boolean(profileDetails.contact?.telegram),
+          whatsapp: profileDetails.contact?.whatsapp || '',
+          telegram: profileDetails.contact?.telegram || '',
         },
         age: profileDetails.age ? String(profileDetails.age) : '',
         skinColor: getFeatureValue('skin_color'),
@@ -257,14 +257,14 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         case 3: {
           const contactData = form.getValues('contact') || {
             number: '',
-            whatsapp: false,
-            telegram: false,
+            whatsapp: '',
+            telegram: '',
           };
           const step3Data = {
             contact: {
               number: contactData.number || '',
-              whatsapp: contactData.whatsapp || false,
-              telegram: contactData.telegram || false,
+              whatsapp: contactData.whatsapp || undefined,
+              telegram: contactData.telegram || undefined,
             },
             age: form.getValues('age') || '',
             skinColor: form.getValues('skinColor') || '',

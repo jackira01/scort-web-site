@@ -74,7 +74,7 @@ export const useStories = () => {
         setError(null);
       } catch (err) {
         setError('Error al cargar las historias');
-        console.error('Error fetching stories:', err);
+
       } finally {
         setLoading(false);
       }

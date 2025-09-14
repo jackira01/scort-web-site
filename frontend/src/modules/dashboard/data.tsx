@@ -1,4 +1,4 @@
-import { Receipt, Settings, User } from "lucide-react";
+import { Receipt, Settings, User, Cog, CreditCard, Zap, UserCheck, FileText, Mail, Tags, Newspaper } from "lucide-react";
 
 export const userProfiles = [
     {
@@ -147,12 +147,66 @@ export const sidebarItems = [
         active: false,
     },
     {
-        id: 'ajustes',
-        label: 'Ajustes',
-        icon: Settings,
+        id: 'grupos-atributos',
+        label: 'Grupos de Atributos',
+        icon: Tags,
         badge: null,
         description:
-            'Detalles generales',
+            'Gestiona grupos de atributos y categorías del sistema',
+        active: false,
+    },
+    {
+        id: 'envio-correos',
+        label: 'Envío de correos',
+        icon: Mail,
+        badge: null,
+        description:
+            'Envía correos individuales y masivos a usuarios registrados',
+        active: false,
+    },
+    {
+        id: 'configuracion',
+        label: 'Configuración',
+        icon: Cog,
+        badge: null,
+        description:
+            'Gestiona parámetros de configuración del sistema',
+        active: false,
+    },
+    {
+        id: 'planes',
+        label: 'Planes y Upgrades',
+        icon: CreditCard,
+        badge: null,
+        description:
+            'Gestiona planes de suscripción y upgrades temporales del sistema',
+        active: false,
+    },
+    {
+        id: 'plan-defecto',
+        label: 'Plan por Defecto',
+        icon: UserCheck,
+        badge: null,
+        description:
+            'Configura el plan que se asigna automáticamente a nuevos perfiles',
+        active: false,
+    },
+    {
+        id: 'blogs',
+        label: 'Blogs',
+        icon: FileText,
+        badge: null,
+        description:
+            'Gestiona artículos del blog: crear, editar, publicar y administrar contenido',
+        active: false,
+    },
+    {
+        id: 'noticias',
+        label: 'Tablero de Noticias',
+        icon: Newspaper,
+        badge: null,
+        description:
+            'Gestiona noticias y actualizaciones del sistema: crear, editar y publicar patch notes',
         active: false,
     },
 ];

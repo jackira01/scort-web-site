@@ -5,6 +5,21 @@ export interface IStories {
     type: 'image' | 'video';
 }
 
+export interface IPlanAssignment {
+    planId?: Types.ObjectId;    // ref directo a PlanDefinition._id (PREFERRED)
+    planCode?: string;          // DEPRECATED: ref lógico a PlanDefinition.code (mantener para compatibilidad)
+    variantDays: number;        // 7|15|30|180...
+    startAt: Date;
+    expiresAt: Date;
+}
+
+export interface IProfileUpgrade {
+    code: string;               // ref a UpgradeDefinition.code
+    startAt: Date;
+    endAt: Date;
+    purchaseAt: Date;
+}
+
 export interface IProfile extends Document {
     user: Types.ObjectId;
     name: string;
@@ -32,8 +47,8 @@ export interface IProfile extends Document {
     age: string;
     contact: {
         number: string;
-        whatsapp: boolean;
-        telegram: boolean;
+        whatsapp?: string;
+        telegram?: string;
         changedAt: Date;
     };
     height: string;
@@ -58,8 +73,18 @@ export interface IProfile extends Document {
     }[];
     paymentHistory: Types.ObjectId[];
     plan: Types.ObjectId;
-    upgrades: Types.ObjectId[];
     lastLogin: Date;
+    
+    // Nuevos campos para motor de visibilidad
+    planAssignment: IPlanAssignment | null;
+    upgrades: IProfileUpgrade[];
+    lastShownAt?: Date;           // para rotación
+    visible: boolean;             // default true mientras no expire plan
+    isDeleted: boolean;           // borrado lógico - true significa eliminado
+    
+    // Campos de timestamps de Mongoose
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface CreateProfileDTO {
@@ -87,8 +112,8 @@ export interface CreateProfileDTO {
     age: string;
     contact: {
         number: string;
-        whatsapp: boolean;
-        telegram: boolean;
+        whatsapp?: string;
+        telegram?: string;
     };
     height: string;
     media?: {
@@ -100,9 +125,25 @@ export interface CreateProfileDTO {
     availability?: string[];
     rates?: string[];
     paymentHistory?: string[];
-    plan?: string;
-    upgrades?: string[];
     verification?: string;
+    
+    // Nuevos campos opcionales para motor de visibilidad
+    planAssignment?: {
+        planId?: Types.ObjectId;
+        planCode?: string;  // DEPRECATED: mantener para compatibilidad
+        variantDays: number;
+        startAt: Date;
+        expiresAt: Date;
+    };
+    upgrades?: {
+        code: string;
+        startAt: Date;
+        endAt: Date;
+        purchaseAt: Date;
+    }[];
+    lastShownAt?: Date;
+    visible?: boolean;
+    isDeleted?: boolean;
 }
 
 
@@ -131,8 +172,8 @@ export interface IProfileInput {
     age: string;
     contact: {
         number: string;
-        whatsapp: boolean;
-        telegram: boolean;
+        whatsapp?: string;
+        telegram?: string;
     };
     height: string;
     media?: {
@@ -146,13 +187,21 @@ export interface IProfileInput {
     rates?: Types.ObjectId[];
     paymentHistory?: Types.ObjectId[];
     plan?: Types.ObjectId;
-    upgrades?: Types.ObjectId[];
+    
+    // Nuevos campos opcionales para motor de visibilidad
+    planAssignment?: IPlanAssignment;
+    upgrades?: IProfileUpgrade[];
+    lastShownAt?: Date;
+    visible?: boolean;
+    isDeleted?: boolean;
 }
 
 export interface IProfileVerification extends Document {
     profile: Types.ObjectId;
     verificationStatus: 'pending' | 'verified' | 'rejected';
     verificationProgress: number;
+    accountType: 'common' | 'agency';
+    requiresIndependentVerification: boolean;
     steps: {
         documentPhotos: {
             documents: string[]

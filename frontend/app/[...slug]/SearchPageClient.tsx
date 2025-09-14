@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import SearchProfilesSSG from '@/modules/catalogs/components/SearchProfilesSSG';
+import FeaturedProfilesSection from '@/components/featured/FeaturedProfilesSection';
 import AgeFilter from '@/modules/filters/components/AgeFilter';
 import FilterToglles from '@/modules/filters/components/FilterToglles';
 import GenderFilter from '@/modules/filters/components/GenderFilter';
@@ -29,6 +30,7 @@ import CategoryFilter from '@/modules/filters/components/CategoryFilter';
 import SexFilter from '@/modules/filters/components/SexFilter';
 import LocationFilter from '@/modules/filters/components/LocationFIlter';
 import { useSearchFilters } from '@/hooks/use-search-filters';
+import { useFilteredProfiles } from '@/hooks/use-filtered-profiles';
 import type { ProfilesResponse } from '@/types/profile.types';
 import { LOCATIONS } from '@/lib/config';
 
@@ -48,7 +50,7 @@ export default function SearchPageClient({
   const router = useRouter();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filtersOpen, setFiltersOpen] = useState(false);
-  
+
   // Hook para manejar filtros (mantenemos la funcionalidad existente)
   const initialFilters = {
     category: categoria,
@@ -57,27 +59,70 @@ export default function SearchPageClient({
       city: ciudad,
     },
   };
-  
 
-  
+
+
   const {
     filters,
     updateFilter,
     clearFilters,
-    activeFiltersCount,
   } = useSearchFilters(initialFilters);
-  
 
-  
-
-  
-
-  
-  // Función wrapper para limpiar filtros
-  const handleClearFilters = () => {
-    clearFilters();
+  // Construir filtros solo con valores definidos
+  const queryFilters = {
+    ...(filters.category && { category: filters.category }),
+    ...(filters.location?.department && { location: filters.location }),
+    ...(filters.features?.age && { age: filters.features.age }),
+    ...(filters.features?.gender && { gender: filters.features.gender }),
+    ...(filters.features?.sex && { sex: filters.features.sex }),
+    isActive: true,
+    sortBy: 'createdAt',
+    sortOrder: 'desc' as const,
+    page: 1,
+    limit: 20
   };
-  
+
+  // Determinar si los filtros han cambiado desde los iniciales
+  const hasFiltersChanged = Boolean(
+    filters.features?.age ||
+    filters.features?.gender ||
+    filters.features?.sex ||
+    (filters.location?.department !== departamento) ||
+    (filters.location?.city !== ciudad) ||
+    (filters.category !== categoria)
+  );
+
+  // Usar useQuery para manejar los datos filtrados
+  const {
+    data: currentProfilesData = profilesData,
+    isLoading: isLoadingProfiles,
+    error,
+    refetch
+  } = useFilteredProfiles(
+    queryFilters,
+    {
+      initialData: profilesData,
+      staleTime: hasFiltersChanged ? 0 : 5 * 60 * 1000, // Si los filtros cambiaron, no usar cache
+      enabled: hasFiltersChanged, // Solo hacer fetch si los filtros cambiaron
+      refetchOnMount: hasFiltersChanged // Solo refetch si los filtros cambiaron
+    }
+  );
+
+
+
+
+
+
+
+
+
+  // Función wrapper para limpiar filtros y refrescar datos
+  const handleClearFilters = async () => {
+    clearFilters();
+    // El refetch se ejecutará automáticamente cuando cambien los filtros
+    await refetch();
+  };
+
   // Función wrapper para actualizar filtros
   const handleUpdateFilter = (key: string, value: any) => {
     updateFilter(key, value);
@@ -106,12 +151,12 @@ export default function SearchPageClient({
   // Obtener información de ubicación para mostrar
   const getLocationInfo = () => {
     if (!departamento) return null;
-    
+
     const deptInfo = LOCATIONS[departamento as keyof typeof LOCATIONS];
     if (!deptInfo) return null;
 
     const cityInfo = ciudad ? deptInfo.cities.find(c => c.value === ciudad) : null;
-    
+
     return {
       department: deptInfo.label,
       city: cityInfo?.label,
@@ -123,7 +168,7 @@ export default function SearchPageClient({
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50">
       {/* Header con información de ubicación */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-purple-100 sticky top-0 z-40">
+      <div className="backdrop-blur-sm border-b border-purple-100 sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col gap-4">
             {/* Breadcrumb */}
@@ -148,7 +193,7 @@ export default function SearchPageClient({
             {/* Título principal */}
             <div className="flex flex-col gap-2">
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                <span className="capitalize">{categoria}</span>
+                <span className="capitalize font-medium text-gray-800 dark:text-gray-200">{categoria}</span>
                 {locationInfo?.city && locationInfo?.department && (
                   <span> en {locationInfo.city}, {locationInfo.department}</span>
                 )}
@@ -156,10 +201,10 @@ export default function SearchPageClient({
                   <span> en {locationInfo.department}</span>
                 )}
               </h1>
-              
-              {profilesData.pagination.totalProfiles > 0 && (
+
+              {currentProfilesData.pagination.totalProfiles > 0 && (
                 <p className="text-gray-600">
-                  {profilesData.pagination.totalProfiles} perfiles encontrados
+                  {currentProfilesData.pagination.totalProfiles} perfiles encontrados
                 </p>
               )}
             </div>
@@ -168,6 +213,9 @@ export default function SearchPageClient({
       </div>
 
       <div className="container mx-auto px-4 py-6">
+        {/* Sección de perfiles destacados */}
+        <FeaturedProfilesSection className="mb-8" />
+
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar de filtros - Desktop */}
           <div className="hidden lg:block w-80 flex-shrink-0">
@@ -179,9 +227,10 @@ export default function SearchPageClient({
                     variant="ghost"
                     size="sm"
                     onClick={handleClearFilters}
+                    disabled={isLoadingProfiles}
                     className="text-purple-600 hover:text-purple-700"
                   >
-                    Restaurar filtros
+                    {isLoadingProfiles ? 'Cargando...' : 'Restaurar filtros'}
                   </Button>
                 </div>
 
@@ -191,41 +240,44 @@ export default function SearchPageClient({
                     selectedCity={ciudad}
                     onLocationChange={handleLocationChange}
                   />
-                  
+
                   <Separator />
-                  
+
                   <CategoryFilter
                     selectedCategory={filters.category}
                     onCategoryChange={(category) => handleUpdateFilter('category', category)}
                   />
-                  
+
                   <Separator />
-                  
+
                   <GenderFilter
                     selectedGender={filters.features?.gender}
                     onGenderChange={(gender) => handleUpdateFilter('gender', gender)}
+                    category={categoria}
                   />
-                  
+
                   <Separator />
-                  
+
                   <SexFilter
                     selectedSex={filters.features?.sex}
                     onSexChange={(sex) => handleUpdateFilter('sex', sex)}
+                    category={categoria}
                   />
-                  
+
                   <Separator />
-                  
+
                   <AgeFilter
                     ageRange={filters.features?.ageRange}
                     onAgeRangeChange={(range) => handleUpdateFilter('ageRange', range)}
                   />
-                  
+
                   <Separator />
-                  
+
                   <FilterToglles
                     filters={{
                       verified: filters.isVerified,
                       video: filters.hasVideos,
+                      destacado: filters.hasDestacadoUpgrade,
                     }}
                     onFilterChange={handleUpdateFilter}
                   />
@@ -245,75 +297,72 @@ export default function SearchPageClient({
                     <Button variant="outline" size="sm" className="relative">
                       <Filter className="h-4 w-4 mr-2" />
                       Filtros
-                      {activeFiltersCount > 0 && (
-                        <Badge 
-                          variant="secondary" 
-                          className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs bg-purple-100 text-purple-700"
-                        >
-                          {activeFiltersCount}
-                        </Badge>
-                      )}
+
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="w-80">
-                    <SheetHeader>
+                  <SheetContent side="left" className="w-80 overflow-y-auto max-h-screen">
+                    <SheetHeader className="sticky top-0 bg-white z-10 pb-4">
                       <SheetTitle className="flex items-center justify-between">
                         Filtros
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={handleClearFilters}
+                          disabled={isLoadingProfiles}
                           className="text-purple-600 hover:text-purple-700"
                         >
-                          Restaurar filtros
+                          {isLoadingProfiles ? 'Cargando...' : 'Restaurar filtros'}
                         </Button>
                       </SheetTitle>
                     </SheetHeader>
-                    
-                    <div className="mt-6 space-y-6">
+
+                    <div className="mt-6 space-y-6 pb-20 px-1">
                       <LocationFilter
                         selectedDepartment={departamento}
                         selectedCity={ciudad}
                         onLocationChange={handleLocationChange}
                       />
-                      
+
                       <Separator />
-                      
+
                       <CategoryFilter
                         selectedCategory={filters.category}
                         onCategoryChange={(category) => updateFilter('category', category)}
                       />
-                      
+
                       <Separator />
-                      
+
                       <GenderFilter
                         selectedGender={filters.features?.gender}
                         onGenderChange={(gender) => updateFilter('gender', gender)}
+                        category={categoria}
                       />
-                      
+
                       <Separator />
-                      
+
                       <SexFilter
                         selectedSex={filters.features?.sex}
                         onSexChange={(sex) => updateFilter('sex', sex)}
+                        category={categoria}
                       />
-                      
+
                       <Separator />
-                      
+
                       <AgeFilter
-                         ageRange={filters.features?.ageRange}
-                         onAgeRangeChange={(range) => updateFilter('ageRange', range)}
-                       />
-                       
-                       <Separator />
-                       
-                       <FilterToglles
-                         filters={{
-                           verified: filters.isVerified,
-                           video: filters.hasVideos,
-                         }}
-                         onFilterChange={handleUpdateFilter}
-                       />
+                        ageRange={filters.features?.ageRange}
+                        onAgeRangeChange={(range) => updateFilter('ageRange', range)}
+                      />
+
+                      <Separator />
+
+                      <FilterToglles
+                        filters={{
+                          verified: filters.isVerified,
+                          video: filters.hasVideos,
+                          destacado: filters.hasDestacadoUpgrade,
+                        }}
+                        onFilterChange={handleUpdateFilter}
+                      />
                     </div>
                   </SheetContent>
                 </Sheet>
@@ -343,10 +392,11 @@ export default function SearchPageClient({
               </div>
             </div>
 
+
             {/* Componente de perfiles */}
             <SearchProfilesSSG
               viewMode={viewMode}
-              profilesData={profilesData}
+              profilesData={currentProfilesData}
               filters={filters}
               onPageChange={(page) => {
                 // Aquí podrías implementar navegación con parámetros de página

@@ -1,15 +1,15 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAttributeGroupByKey } from '@/hooks/use-filter-attribute-groups';
 
 interface GenderFilterProps {
   selectedGender?: string;
   onGenderChange?: (gender: string) => void;
+  category?: string;
 }
 
-const GenderFilter = ({ selectedGender, onGenderChange }: GenderFilterProps) => {
+const GenderFilter = ({ selectedGender, onGenderChange, category }: GenderFilterProps) => {
   const { data: genderGroup, isLoading, error } = useAttributeGroupByKey('gender');
 
   if (isLoading) {
@@ -61,12 +61,8 @@ const GenderFilter = ({ selectedGender, onGenderChange }: GenderFilterProps) => 
                 htmlFor={`gender-${variant.value}`}
                 className="text-sm font-medium text-foreground cursor-pointer flex-1"
               >
-                {variant.label || variant.value}
+                {variant.label}
               </label>
-              {/* TODO: Implementar conteo de perfiles por género */}
-              <Badge variant="secondary" className="ml-auto">
-                0
-              </Badge>
             </div>
           );
         })}

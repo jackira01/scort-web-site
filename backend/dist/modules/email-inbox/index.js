@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.emailInboxRoutes = exports.EmailInboxController = exports.EmailInboxService = exports.EmailInboxModel = void 0;
+var email_inbox_model_1 = require("./email-inbox.model");
+Object.defineProperty(exports, "EmailInboxModel", { enumerable: true, get: function () { return email_inbox_model_1.EmailInboxModel; } });
+var email_inbox_service_1 = require("./email-inbox.service");
+Object.defineProperty(exports, "EmailInboxService", { enumerable: true, get: function () { return email_inbox_service_1.EmailInboxService; } });
+var email_inbox_controller_1 = require("./email-inbox.controller");
+Object.defineProperty(exports, "EmailInboxController", { enumerable: true, get: function () { return email_inbox_controller_1.EmailInboxController; } });
+var email_inbox_routes_1 = require("./email-inbox.routes");
+Object.defineProperty(exports, "emailInboxRoutes", { enumerable: true, get: function () { return email_inbox_routes_1.emailInboxRoutes; } });

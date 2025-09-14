@@ -2,13 +2,19 @@
 import path from "path";
 
 const nextConfig = {
-
+  // Configuraciones de producción - habilitar validaciones
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
+  // Configuración para forzar renderizado estático
+  experimental: {
+    staticWorkerRequestDeduping: true,
+  },
+  // Configuración para manejo de errores dinámicos
+  // output: 'standalone', // Comentado porque no es compatible con pnpm run start
   images: {
     remotePatterns: [
       {
@@ -20,14 +26,22 @@ const nextConfig = {
     ],
     unoptimized: false,
   },
-  // experimental: {
-  //  turbo: {
-  //    resolveAlias: {
-  //      underscore: "lodash",
-  //    },
-  //    resolveExtensions: [".mdx", ".tsx", ".ts", ".jsx", ".js", ".json"],
-  //  },
-  //},
+  // Optimizaciones de producción
+  poweredByHeader: false,
+  compress: true,
+  generateEtags: true,
+  
+  // Configuración experimental para Turbopack (solo en desarrollo)
+  ...(process.env.NODE_ENV === 'development' && {
+    experimental: {
+      turbo: {
+        resolveAlias: {
+          underscore: "lodash",
+        },
+        resolveExtensions: [".mdx", ".tsx", ".ts", ".jsx", ".js", ".json"],
+      },
+    },
+  }),
   // Configuración para ffmpeg.wasm
   webpack: (config, { isServer }) => {
     // Configuración para ffmpeg.wasm

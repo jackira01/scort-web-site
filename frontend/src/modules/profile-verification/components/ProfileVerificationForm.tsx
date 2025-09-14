@@ -136,36 +136,6 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
-                {getStatusIcon(verification.steps.selfieWithPoster.isVerified)}
-                <span className="font-medium">Selfie con Cartel</span>
-              </div>
-              <span className="text-sm text-gray-500">
-                {verification.steps.selfieWithPoster.photo ? 'Completado' : 'Pendiente'}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                {getStatusIcon(verification.steps.selfieWithDoc.isVerified)}
-                <span className="font-medium">Selfie con Documento</span>
-              </div>
-              <span className="text-sm text-gray-500">
-                {verification.steps.selfieWithDoc.photo ? 'Completado' : 'Pendiente'}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                {getStatusIcon(verification.steps.fullBodyPhotos.isVerified)}
-                <span className="font-medium">Fotos de Cuerpo Completo</span>
-              </div>
-              <span className="text-sm text-gray-500">
-                {verification.steps.fullBodyPhotos.photos.length} foto(s)
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="flex items-center space-x-3">
                 {getStatusIcon(verification.steps.video.isVerified)}
                 <span className="font-medium">Video de Verificación</span>
               </div>
@@ -173,16 +143,6 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
                 {verification.steps.video.videoLink ? 'Completado' : 'Pendiente'}
               </span>
             </div>
-
-            {/* <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                {getStatusIcon(verification.steps.videoCallRequested.isVerified)}
-                <span className="font-medium">Videollamada</span>
-              </div>
-              <span className="text-sm text-gray-500">
-                {verification.steps.videoCallRequested.videoLink ? 'Completado' : 'Pendiente'}
-              </span>
-            </div> */}
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">

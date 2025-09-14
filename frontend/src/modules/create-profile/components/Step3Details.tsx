@@ -66,13 +66,16 @@ export function Step3Details({
         )}
 
         {/* Contact Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <Label htmlFor="phone" className="text-foreground">
-              Número de contacto <span className="text-red-500">*</span>
-            </Label>
-            <div className="flex items-center gap-4 mt-2">
-              <div className="flex flex-1">
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold text-foreground">Donde contactarme</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Número de contacto */}
+            <div>
+              <Label htmlFor="phone" className="text-foreground">
+                Número de contacto <span className="text-red-500">*</span>
+              </Label>
+              <div className="flex mt-2">
                 <div className="flex items-center px-3 bg-muted border border-r-0 rounded-l-md">
                   <span className="text-sm">🇨🇴</span>
                 </div>
@@ -82,7 +85,7 @@ export function Step3Details({
                   render={({ field }) => (
                     <Input
                       id="phone"
-                      placeholder="+57 300 123 4567"
+                      placeholder="3001234567"
                       value={field.value}
                       onChange={field.onChange}
                       className={`rounded-l-none ${
@@ -92,42 +95,80 @@ export function Step3Details({
                   )}
                 />
               </div>
-              
-              {/* WhatsApp and Telegram checkboxes */}
-              <div className="flex gap-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="whatsapp"
-                    checked={formData.contact.whatsapp}
-                    onCheckedChange={(checked) =>
-                      setValue('contact.whatsapp', checked === true)
-                    }
-                  />
-                  <Label htmlFor="whatsapp" className="text-sm text-foreground cursor-pointer">
-                    WhatsApp
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="telegram"
-                    checked={formData.contact.telegram}
-                    onCheckedChange={(checked) =>
-                      setValue('contact.telegram', checked === true)
-                    }
-                  />
-                  <Label htmlFor="telegram" className="text-sm text-foreground cursor-pointer">
-                    Telegram
-                  </Label>
-                </div>
-              </div>
+              {errors.contact?.number && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.contact.number.message}
+                </p>
+              )}
             </div>
-            {errors.contact?.number && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.contact.number.message}
-              </p>
-            )}
+
+            {/* WhatsApp */}
+            <div>
+              <Label htmlFor="whatsapp" className="text-foreground">
+                WhatsApp (opcional)
+              </Label>
+              <div className="flex mt-2">
+                <div className="flex items-center px-3 bg-muted border border-r-0 rounded-l-md">
+                  <span className="text-sm">📱</span>
+                </div>
+                <Controller
+                  name="contact.whatsapp"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="whatsapp"
+                      placeholder="3001234567"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      className={`rounded-l-none ${
+                        errors.contact?.whatsapp ? 'border-red-500 focus:border-red-500' : ''
+                      }`}
+                    />
+                  )}
+                />
+              </div>
+              {errors.contact?.whatsapp && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.contact.whatsapp.message}
+                </p>
+              )}
+            </div>
+
+            {/* Telegram */}
+            <div>
+              <Label htmlFor="telegram" className="text-foreground">
+                Telegram (opcional)
+              </Label>
+              <div className="flex mt-2">
+                <div className="flex items-center px-3 bg-muted border border-r-0 rounded-l-md">
+                  <span className="text-sm">✈️</span>
+                </div>
+                <Controller
+                  name="contact.telegram"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="telegram"
+                      placeholder="3001234567"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      className={`rounded-l-none ${
+                        errors.contact?.telegram ? 'border-red-500 focus:border-red-500' : ''
+                      }`}
+                    />
+                  )}
+                />
+              </div>
+              {errors.contact?.telegram && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.contact.telegram.message}
+                </p>
+              )}
+            </div>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
           <div>
             <Label htmlFor="age" className="text-foreground">
@@ -173,7 +214,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('skinColor', variant.value)}
                     >
-                      {variant.label || variant.value}
+                      {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
                     </Button>
                   ))}
             </div>
@@ -198,7 +239,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('sexuality', variant.value)}
                     >
-                      {variant.label || variant.value}
+                      {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
                     </Button>
                   ))}
             </div>
@@ -230,7 +271,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('eyeColor', variant.value)}
                     >
-                      {variant.label || variant.value}
+                      {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
                     </Button>
                   ))}
               </div>
@@ -255,7 +296,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('hairColor', variant.value)}
                     >
-                      {variant.label || variant.value}
+                      {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
                     </Button>
                   ))}
               </div>
@@ -278,7 +319,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('bodyType', variant.value)}
                     >
-                      {variant.label || variant.value}
+                      {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
                     </Button>
                   ))}
               </div>

@@ -1,13 +1,24 @@
 'use client';
 
-import { Camera, Mic, Video, X } from 'lucide-react';
-import { useState } from 'react';
+import { Camera, Mic, Video, X, Edit3, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { applyWatermarkToFiles, needsWatermark } from '@/utils/watermark';
+import { ImageCropModal } from '@/components/ImageCropModal';
+import { ProcessedImageResult } from '@/utils/imageProcessor';
+import { uploadProcessedImages, uploadMixedImages } from '@/utils/tools';
+// Watermark se aplica automáticamente en uploadMultipleImages
 import { useFormContext } from '../context/FormContext';
+import { usePlans } from '@/hooks/usePlans';
+import { useConfigValue } from '@/hooks/use-config-parameters';
+
+interface DefaultPlanConfig {
+  enabled: boolean;
+  planId: string | null;
+  planCode: string | null;
+}
 
 type Step4MultimediaProps = {};
 
@@ -18,7 +29,51 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
     formState: { errors },
   } = useFormContext();
   const formData = watch();
-  const [isProcessingWatermark, setIsProcessingWatermark] = useState(false);
+  // Estados para el procesamiento de imágenes
+  const [contentLimits, setContentLimits] = useState({
+    maxPhotos: 20, // valores por defecto
+    maxVideos: 8,
+    maxAudios: 6
+  });
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [currentImageToCrop, setCurrentImageToCrop] = useState<{
+    file: File;
+    index?: number;
+  } | null>(null);
+  const [processedImages, setProcessedImages] = useState<Map<number, ProcessedImageResult>>(new Map());
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+
+  // Obtener planes disponibles
+  const { data: plansResponse } = usePlans({
+    limit: 50,
+    page: 1,
+    isActive: true
+  });
+  const plans = plansResponse?.plans || [];
+
+  // Obtener configuración del plan por defecto
+  const { value: defaultConfig } = useConfigValue<DefaultPlanConfig>(
+    'system.default_plan',
+    {
+      enabled: true,
+      defaultValue: { enabled: false, planId: null, planCode: null }
+    }
+  );
+
+  // Cargar límites del plan por defecto
+  useEffect(() => {
+    if (defaultConfig?.enabled && defaultConfig.planId && plans.length > 0) {
+      const defaultPlan = plans.find(plan => plan._id === defaultConfig.planId);
+
+      if (defaultPlan && defaultPlan.variants) {
+        setContentLimits({
+          maxPhotos: defaultPlan.variants[0].contentLimits.maxPhotos || 20,
+          maxVideos: defaultPlan.variants[0].contentLimits.maxVideos || 8,
+          maxAudios: defaultPlan.variants[0].contentLimits.maxAudios || 6
+        });
+      }
+    }
+  }, [defaultConfig, plans]);
 
   // Usar los valores del formulario como fuente de verdad
   const photos = formData.photos || [];
@@ -33,13 +88,20 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
     if (!files) return;
 
     const fileArray = Array.from(files);
-    const currentFiles =
+    const currentFiles: (File | string)[] =
       type === 'photos' ? photos : type === 'videos' ? videos : audios;
-    const maxFiles = type === 'photos' ? 20 : type === 'videos' ? 8 : 6;
 
-    // Validar límites
-    if (currentFiles.length + fileArray.length > maxFiles) {
-      toast.error(`Máximo ${maxFiles} archivos permitidos para ${type}`);
+    // Validar límites dinámicos
+    const limits = {
+      photos: contentLimits.maxPhotos,
+      videos: contentLimits.maxVideos,
+      audios: contentLimits.maxAudios,
+    };
+
+    if (currentFiles.length + fileArray.length > limits[type]) {
+      toast.error(
+        `Solo puedes subir un máximo de ${limits[type]} ${type === 'photos' ? 'fotos' : type === 'videos' ? 'videos' : 'audios'}`,
+      );
       return;
     }
 
@@ -65,64 +127,41 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
       return;
     }
 
-    // Validar tamaño (10MB por archivo)
-    const oversizedFiles = fileArray.filter(
-      (file) => file.size > 10 * 1024 * 1024,
-    );
-    if (oversizedFiles.length > 0) {
-      toast.error('Archivo muy grande. Máximo 10MB por archivo');
-      return;
-    }
-
-    // Aplicar marca de agua a imágenes y videos
-    let processedFiles = fileArray;
-    const filesToWatermark = fileArray.filter(needsWatermark);
-
-    if (filesToWatermark.length > 0) {
-      setIsProcessingWatermark(true);
-      toast.loading('Aplicando marca de agua...', { id: 'watermark-process' });
-
-      try {
-        const watermarkedFiles = await applyWatermarkToFiles(
-          filesToWatermark,
-          undefined, // Usar texto por defecto
-          (current, total) => {
-            toast.loading(`Procesando ${current}/${total} archivos...`, {
-              id: 'watermark-process',
-            });
-          },
-        );
-
-        // Reemplazar archivos originales con los que tienen marca de agua
-        processedFiles = fileArray.map((file) => {
-          const watermarkedIndex = filesToWatermark.findIndex(
-            (f) => f === file,
-          );
-          return watermarkedIndex !== -1
-            ? watermarkedFiles[watermarkedIndex]
-            : file;
-        });
-
-        toast.success('Marca de agua aplicada correctamente', {
-          id: 'watermark-process',
-        });
-      } catch (error) {
-        // Error aplicando marca de agua
-        toast.error(
-          'Error aplicando marca de agua. Usando archivos originales.',
-          { id: 'watermark-process' },
-        );
-        // Continuar con archivos originales en caso de error
-      } finally {
-        setIsProcessingWatermark(false);
+    // Para imágenes, no hay restricciones de tamaño inicial - se procesarán después
+    // Para videos y audios, mantener límite de 10MB
+    if (type !== 'photos') {
+      const maxSize = 10 * 1024 * 1024; // 10MB para videos y audios
+      const oversizedFiles = fileArray.filter(
+        (file) => file.size > maxSize,
+      );
+      if (oversizedFiles.length > 0) {
+        toast.error(`Archivo muy grande. Máximo 10MB por archivo de ${type}`);
+        return;
       }
     }
 
-    // Agregar archivos procesados al formulario
-    const newFiles = [...currentFiles, ...processedFiles];
-    setValue(type, newFiles);
+    // Para imágenes, abrir modal de crop para cada archivo
+    if (type === 'photos') {
+      // Agregar archivos temporalmente y abrir crop para el primero
+      const newFiles: (File | string)[] = [...currentFiles, ...fileArray];
+      setValue(type, newFiles);
 
-    toast.success(`${fileArray.length} archivo(s) agregado(s) a ${type}`);
+      // Abrir crop modal para la primera imagen nueva
+      if (fileArray.length > 0) {
+        setCurrentImageToCrop({
+          file: fileArray[0],
+          index: currentFiles.length
+        });
+        setCropModalOpen(true);
+      }
+
+      toast.success(`${fileArray.length} imagen(es) agregada(s). Recorta cada una para optimizar.`);
+    } else {
+      // Para videos y audios, agregar directamente
+      const newFiles: (File | string)[] = [...currentFiles, ...fileArray];
+      setValue(type, newFiles);
+      toast.success(`${fileArray.length} archivo(s) agregado(s) a ${type}`);
+    }
   };
 
   // Función para eliminar archivos
@@ -130,18 +169,96 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
     type: 'photos' | 'videos' | 'audios',
     index: number,
   ) => {
-    const currentFiles =
+    const currentFiles: (File | string)[] =
       type === 'photos' ? photos : type === 'videos' ? videos : audios;
     const newFiles = currentFiles.filter((_, i) => i !== index);
 
-    setValue(type, newFiles);
+    // Liberar URL de objeto si es un archivo File
+    const fileToRemove = currentFiles[index];
+    if (fileToRemove instanceof File) {
+      URL.revokeObjectURL(URL.createObjectURL(fileToRemove));
+    }
 
+    // Para fotos, también eliminar de processedImages y actualizar el formulario
+    if (type === 'photos') {
+      const newProcessedImages = new Map(processedImages);
+      newProcessedImages.delete(index);
+      setProcessedImages(newProcessedImages);
+
+      // Actualizar las imágenes procesadas en el formulario
+      const processedImagesArray = Array.from(newProcessedImages.values());
+      setValue('processedImages', processedImagesArray);
+    }
+
+    setValue(type, newFiles);
     toast.success('Archivo eliminado');
+  };
+
+  // Función para manejar el crop completado
+  const handleCropComplete = async (croppedBlob: Blob, croppedUrl: string) => {
+    if (!currentImageToCrop) return;
+
+    try {
+      setIsProcessingImage(true);
+
+      // Crear el resultado procesado desde el blob ya optimizado
+      // El procesamiento centralizado ya aplicó crop, marca de agua y compresión
+      const processedFile = new File([croppedBlob], currentImageToCrop.file.name, {
+        type: croppedBlob.type,
+        lastModified: Date.now(),
+      });
+
+      // Obtener dimensiones de la imagen procesada
+      const img = new Image();
+      const dimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+        img.onload = () => resolve({ width: img.width, height: img.height });
+        img.onerror = () => reject(new Error('Error al cargar imagen'));
+        img.src = croppedUrl;
+      });
+
+      const processedResult: ProcessedImageResult = {
+        file: processedFile,
+        url: croppedUrl,
+        originalSize: currentImageToCrop.file.size,
+        compressedSize: processedFile.size,
+        compressionRatio: ((currentImageToCrop.file.size - processedFile.size) / currentImageToCrop.file.size) * 100,
+        dimensions,
+        originalIndex: currentImageToCrop.index,
+        originalFileName: currentImageToCrop.file.name
+      };
+
+      // Guardar el resultado procesado
+      const newProcessedImages = new Map(processedImages);
+      newProcessedImages.set(currentImageToCrop.index || 0, processedResult);
+      setProcessedImages(newProcessedImages);
+
+      // Guardar las imágenes procesadas en el formulario
+      const processedImagesArray = Array.from(newProcessedImages.values());
+      setValue('processedImages', processedImagesArray);
+
+      toast.success(
+        `Imagen procesada: ${Math.round(processedResult.compressionRatio)}% de compresión aplicada`
+      );
+    } catch (error) {
+      toast.error('Error al procesar la imagen');
+    } finally {
+      setIsProcessingImage(false);
+      setCropModalOpen(false);
+      setCurrentImageToCrop(null);
+    }
+  };
+
+  // Función para abrir crop modal para una imagen existente
+  const handleEditImage = (file: File | string, index: number) => {
+    if (file instanceof File) {
+      setCurrentImageToCrop({ file, index });
+      setCropModalOpen(true);
+    }
   };
 
   // Función para renderizar la vista previa de archivos
   const renderFilePreview = (
-    file: File,
+    file: File | string,
     type: 'photos' | 'videos' | 'audios',
     index: number,
   ) => {
@@ -149,24 +266,54 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
     const isVideo = type === 'videos';
     const isAudio = type === 'audios';
 
+    // Validar que el file sea un objeto File válido
+    const isValidFile = file instanceof File && file.size > 0;
+    const isStringUrl = typeof file === 'string';
+    const previewUrl = isValidFile ? URL.createObjectURL(file) : isStringUrl ? file : null;
+    const fileName = isValidFile ? file.name : isStringUrl ? file.split('/').pop() || 'Archivo' : 'Archivo';
+    const fileSize = isValidFile ? file.size : 0;
+
+    // Para imágenes, verificar si está procesada
+    const processedImage = isImage ? processedImages.get(index) : null;
+    const isProcessed = !!processedImage;
+    const displayUrl = processedImage ? processedImage.url : previewUrl;
+
     return (
       <div
         key={index}
-        className="relative group border rounded-lg p-2 bg-muted/50"
+        className={`relative group border rounded-lg p-2 transition-all ${isProcessed ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' : 'bg-muted/50'
+          }`}
       >
         <div className="flex items-center space-x-2">
           {isImage && (
-            <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center overflow-hidden">
-              <img
-                src={URL.createObjectURL(file)}
-                alt={file.name}
-                className="w-full h-full object-cover"
-              />
+            <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center overflow-hidden relative">
+              {displayUrl ? (
+                <img
+                  src={displayUrl}
+                  alt={fileName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Camera className="h-6 w-6 text-gray-400" />
+              )}
+              {isProcessed && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                  <CheckCircle className="h-3 w-3 text-white" />
+                </div>
+              )}
             </div>
           )}
           {isVideo && (
-            <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
-              <Video className="h-6 w-6 text-gray-600" />
+            <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center overflow-hidden">
+              {previewUrl ? (
+                <video
+                  src={previewUrl}
+                  className="w-full h-full object-cover"
+                  muted
+                />
+              ) : (
+                <Video className="h-6 w-6 text-gray-400" />
+              )}
             </div>
           )}
           {isAudio && (
@@ -176,20 +323,52 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
           )}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">
-              {file.name}
+              {fileName}
             </p>
-            <p className="text-xs text-muted-foreground">
-              {(file.size / (1024 * 1024)).toFixed(2)} MB
-            </p>
+            {isValidFile && (
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground">
+                  {(fileSize / 1024 / 1024).toFixed(2)} MB
+                </p>
+                {processedImage && (
+                  <>
+                    <span className="text-xs text-muted-foreground">→</span>
+                    <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                      {(processedImage.compressedSize / 1024 / 1024).toFixed(2)} MB
+                      ({Math.round(processedImage.compressionRatio)}% reducido)
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
+            {processedImage && (
+              <p className="text-xs text-muted-foreground">
+                {processedImage.dimensions.width} × {processedImage.dimensions.height}px
+              </p>
+            )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleFileRemove(type, index)}
-            className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            {isImage && isValidFile && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleEditImage(file, index)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
+                title="Editar imagen"
+              >
+                <Edit3 className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleFileRemove(type, index)}
+              className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
+              title="Eliminar archivo"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -212,7 +391,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
               <CardTitle className="text-foreground">
                 Mis fotos <span className="text-red-500">*</span>
               </CardTitle>
-              <Badge variant="outline">{photos.length} / 20</Badge>
+              <Badge variant="outline">{photos.length} / {contentLimits.maxPhotos}</Badge>
             </div>
             <div className="space-y-3 mt-3">
               <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
@@ -233,9 +412,9 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
                     <span className="text-white text-xs font-bold">✓</span>
                   </div>
                   <p className="text-purple-700 dark:text-purple-300 text-sm">
-                    <strong>Protección automática:</strong> Se aplicará una
-                    marca de agua a tus imágenes proteger tu
-                    contenido.
+                    <strong>Procesamiento automático:</strong> Tus imágenes serán
+                    optimizadas, redimensionadas y protegidas con marca de agua
+                    automáticamente durante la subida.
                   </p>
                 </div>
               </div>
@@ -247,7 +426,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
                 className={`border-2 border-dashed rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer ${errors.photos
                   ? 'border-red-500'
                   : 'border-muted-foreground/30'
-                  } ${isProcessingWatermark ? 'opacity-50 pointer-events-none' : ''}`}
+                  }`}
               >
                 <input
                   type="file"
@@ -256,13 +435,15 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
                   onChange={(e) => handleFileSelect('photos', e.target.files)}
                   className="hidden"
                   id="photos-upload"
-                  disabled={isProcessingWatermark}
                 />
                 <label htmlFor="photos-upload" className="cursor-pointer">
                   <Camera className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
                   <p className="text-muted-foreground">Añadir fotos</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    JPG, PNG, WEBP hasta 10MB cada una
+                    JPG, PNG, WEBP - Sin límite de tamaño
+                  </p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
+                    📏 Recomendado: mínimo 500×600px para mejor calidad
                   </p>
                 </label>
               </div>
@@ -295,7 +476,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle className="text-foreground">Mis videos</CardTitle>
-              <Badge variant="outline">{videos.length} / 8</Badge>
+              <Badge variant="outline">{videos.length} / {contentLimits.maxVideos}</Badge>
             </div>
             <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-3">
               <div className="flex items-start space-x-2">
@@ -311,7 +492,7 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
           <CardContent>
             <div className="space-y-4">
               <div
-                className={`border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer ${isProcessingWatermark ? 'opacity-50 pointer-events-none' : ''}`}
+                className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer"
               >
                 <input
                   type="file"
@@ -320,7 +501,6 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
                   onChange={(e) => handleFileSelect('videos', e.target.files)}
                   className="hidden"
                   id="videos-upload"
-                  disabled={isProcessingWatermark}
                 />
                 <label htmlFor="videos-upload" className="cursor-pointer">
                   <Video className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
@@ -361,13 +541,13 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
               <CardTitle className="text-foreground">
                 Mis archivos de audio
               </CardTitle>
-              <Badge variant="outline">{audios.length} / 6</Badge>
+              <Badge variant="outline">{audios.length} / {contentLimits.maxAudios}</Badge>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div
-                className={`border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer ${isProcessingWatermark ? 'opacity-50 pointer-events-none' : ''}`}
+                className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer"
               >
                 <input
                   type="file"
@@ -376,7 +556,6 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
                   onChange={(e) => handleFileSelect('audios', e.target.files)}
                   className="hidden"
                   id="audios-upload"
-                  disabled={isProcessingWatermark}
                 />
                 <label htmlFor="audios-upload" className="cursor-pointer">
                   <Mic className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
@@ -410,6 +589,21 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de recorte de imagen */}
+      {currentImageToCrop && (
+        <ImageCropModal
+          isOpen={cropModalOpen}
+          onClose={() => {
+            setCropModalOpen(false);
+            setCurrentImageToCrop(null);
+          }}
+          imageSrc={URL.createObjectURL(currentImageToCrop.file)}
+          onCropComplete={handleCropComplete}
+          fileName={currentImageToCrop.file.name}
+          aspectRatio={4 / 3}
+        />
+      )}
     </div>
   );
 }

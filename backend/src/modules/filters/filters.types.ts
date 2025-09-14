@@ -21,6 +21,8 @@ export interface FilterQuery {
   };
   isActive?: boolean;
   isVerified?: boolean;
+  hasDestacadoUpgrade?: boolean;
+  hasVideos?: boolean;
   page?: number;
   limit?: number;
   sortBy?: 'createdAt' | 'updatedAt' | 'name' | 'price';

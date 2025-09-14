@@ -157,13 +157,6 @@ export default function TermsPage() {
                 </span>
               </div>
             </div>
-
-            <div className="flex items-center space-x-2">
-              <ThemeToggle />
-              <Badge className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-700 dark:to-slate-800 text-white">
-                🟢 NICOLAS ALVAREZ
-              </Badge>
-            </div>
           </div>
         </div>
       </header>
@@ -195,11 +188,10 @@ export default function TermsPage() {
                 <button
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 animate-in slide-in-from-left-2 ${
-                    activeSection === section.id
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                  }`}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 animate-in slide-in-from-left-2 ${activeSection === section.id
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    }`}
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <section.icon className="h-5 w-5 flex-shrink-0" />
@@ -230,9 +222,8 @@ export default function TermsPage() {
             {sections.map((section) => (
               <div
                 key={section.id}
-                className={`${
-                  activeSection === section.id ? 'block' : 'hidden'
-                } animate-in fade-in-50 slide-in-from-right-4 duration-500`}
+                className={`${activeSection === section.id ? 'block' : 'hidden'
+                  } animate-in fade-in-50 slide-in-from-right-4 duration-500`}
               >
                 <Card className="bg-card border-border shadow-sm">
                   <CardHeader>
@@ -288,13 +279,6 @@ export default function TermsPage() {
             </Card>
           </div>
         </div>
-      </div>
-
-      {/* Footer Badge */}
-      <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-500">
-        <Badge className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-700 dark:to-slate-800 text-white px-3 py-1 shadow-lg hover:scale-105 transition-transform duration-200">
-          🟢 NICOLAS ALVAREZ
-        </Badge>
       </div>
     </div>
   );

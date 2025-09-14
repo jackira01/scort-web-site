@@ -1,15 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AttributeGroupsAdmin from './AttributeGroupsAdmin';
 import { sidebarItems } from '@/modules/dashboard/data';
 import { DashUserPanel } from './DashbUserPanel';
 import { DashProfilePanel } from './DashbProfilePanel';
+import ConfigManager from '@/components/admin/ConfigManager/ConfigManager';
+import PlansManager from '@/components/admin/plans/PlansManager';
+import DefaultPlanManager from '@/components/admin/DefaultPlanManager';
+import BlogsManager from '@/components/admin/blogs/BlogsManager';
+import InvoicesManager from '@/components/admin/invoices/InvoicesManager';
+import EmailManager from '@/components/admin/emails/EmailManager';
+import NewsManager from '@/components/admin/news/NewsManager';
+
 
 export default function DashboardLayout() {
     const [activeSection, setActiveSection] = useState('usuarios');
+    const [mounted, setMounted] = useState(false);
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (mounted) {
+            const section = searchParams.get('section');
+            if (section) {
+                setActiveSection(section);
+            }
+        }
+    }, [searchParams, mounted]);
+
+    // Evitar hidratación mismatch
+    if (!mounted) {
+        return null;
+    }
 
 
     const renderContent = () => {
@@ -21,75 +50,54 @@ export default function DashboardLayout() {
                 return <DashProfilePanel />;
 
             case 'facturas':
-                return (
-                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
-                        <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                            Saldo y Facturas
-                        </h1>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <Card className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
-                                <CardContent className="p-6">
-                                    <h3 className="text-lg font-semibold mb-2">Saldo Actual</h3>
-                                    <p className="text-3xl font-bold">$2,450.00</p>
-                                    <p className="text-sm opacity-90 mt-1">
-                                        Disponible para retiro
-                                    </p>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-gradient-to-r from-blue-500 to-cyan-600 text-white">
-                                <CardContent className="p-6">
-                                    <h3 className="text-lg font-semibold mb-2">Este Mes</h3>
-                                    <p className="text-3xl font-bold">$890.00</p>
-                                    <p className="text-sm opacity-90 mt-1">Ingresos generados</p>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-gradient-to-r from-purple-500 to-pink-600 text-white">
-                                <CardContent className="p-6">
-                                    <h3 className="text-lg font-semibold mb-2">Total</h3>
-                                    <p className="text-3xl font-bold">$12,340.00</p>
-                                    <p className="text-sm opacity-90 mt-1">Ingresos totales</p>
-                                </CardContent>
-                            </Card>
-                        </div>
-                        <Card className="bg-card border-border">
-                            <CardHeader>
-                                <CardTitle className="text-foreground">
-                                    Facturas Recientes
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {[1, 2, 3].map((item) => (
-                                        <div
-                                            key={item}
-                                            className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors duration-200"
-                                        >
-                                            <div>
-                                                <p className="font-medium text-foreground">
-                                                    Factura #{String(item).padStart(4, '0')}
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Servicios de plataforma - Diciembre 2024
-                                                </p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-semibold text-foreground">$125.00</p>
-                                                <Badge variant="outline" className="text-xs">
-                                                    Pagado
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                );
+                return <InvoicesManager />;
 
-            case 'ajustes':
+            case 'grupos-atributos':
                 return (
                     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
                         <AttributeGroupsAdmin />
+                    </div>
+                );
+
+            case 'envio-correos':
+                return (
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                        <EmailManager />
+                    </div>
+                );
+
+            case 'configuracion':
+                return (
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                        <ConfigManager />
+                    </div>
+                );
+
+            case 'planes':
+                return (
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                        <PlansManager />
+                    </div>
+                );
+
+            case 'plan-defecto':
+                return (
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                        <DefaultPlanManager />
+                    </div>
+                );
+
+            case 'blogs':
+                return (
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                        <BlogsManager />
+                    </div>
+                );
+
+            case 'noticias':
+                return (
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                        <NewsManager />
                     </div>
                 );
 
@@ -123,10 +131,10 @@ export default function DashboardLayout() {
                                             <item.icon
                                                 className={`h-5 w-5 ${activeSection === item.id ? 'text-white' : 'group-hover:text-purple-600'} transition-colors duration-200`}
                                             />
-                                            <div className="flex-1">
+                                            <div className="flex-1 relative group">
                                                 <div className="flex items-center justify-between">
                                                     <span className="font-medium">{item.label}</span>
-                                                    {item.badge && (
+                                                    {/* {item.badge && (
                                                         <Badge
                                                             variant={
                                                                 activeSection === item.id
@@ -140,16 +148,14 @@ export default function DashboardLayout() {
                                                         >
                                                             {item.badge}
                                                         </Badge>
-                                                    )}
+                                                    )} */}
                                                 </div>
-                                                <p
-                                                    className={`text-xs mt-1 ${activeSection === item.id
-                                                        ? 'text-white/80'
-                                                        : 'text-muted-foreground'
-                                                        }`}
-                                                >
+
+                                                {/* Tooltip con descripción que aparece en hover */}
+                                                <div className="absolute left-0 top-full mt-2 w-64 p-3 bg-gray-900 dark:bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                                                    <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 dark:bg-gray-800 rotate-45"></div>
                                                     {item.description}
-                                                </p>
+                                                </div>
                                             </div>
                                         </button>
                                     ))}

@@ -1,11 +1,10 @@
-import FooterBadge from '@/components/footerBadge/FooterBadge';
 import { SeedUserCache } from '@/components/SeedUserCache';
 import HomeProfiles from '@/modules/catalogs/components/HomeProfiles';
 import CategoriesFilter from '@/modules/filters/components/CategoriesFilter';
 import FilterBar from '@/modules/filters/components/FilterBar';
 import StoriesCards from '@/modules/stories/components/storiesCards';
 
-export default async function HomePage() {
+export default function HomePage() {
   return (
     <div className="min-h-screen dark:bg-background transition-all duration-500">
       <SeedUserCache />
@@ -16,8 +15,6 @@ export default async function HomePage() {
         <StoriesCards />
         <HomeProfiles />
       </div>
-
-      <FooterBadge />
     </div>
   );
 }

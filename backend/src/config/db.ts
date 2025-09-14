@@ -1,4 +1,24 @@
 import mongoose from 'mongoose';
+import { ReadPreferenceMode } from 'mongodb';
+
+// Configuración optimizada para producción
+const getConnectionOptions = () => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  return {
+    maxPoolSize: isProduction ? 10 : 5, // Máximo de conexiones en el pool
+    serverSelectionTimeoutMS: 5000, // Timeout para selección de servidor
+    socketTimeoutMS: 45000, // Timeout para operaciones de socket
+    bufferCommands: false, // Deshabilitar buffering de comandos
+    retryWrites: true, // Reintentar escrituras automáticamente
+    w: 'majority' as any, // Write concern para consistencia
+    readPreference: 'primary' as ReadPreferenceMode, // Leer desde el primario
+    ...(isProduction && {
+      ssl: true, // SSL en producción
+      sslValidate: true,
+    })
+  };
+};
 
 export const connectDB = async () => {
   try {
@@ -6,10 +26,33 @@ export const connectDB = async () => {
     if (!mongoUri) {
       throw new Error('MONGO_URI environment variable is not defined');
     }
-    await mongoose.connect(mongoUri);
-    console.log('MongoDB conectado');
+
+    const options = getConnectionOptions();
+    
+    // Configurar eventos de conexión
+    mongoose.connection.on('connected', () => {
+      console.log('✅ MongoDB conectado exitosamente');
+    });
+
+    mongoose.connection.on('error', (err) => {
+      console.error('❌ Error de conexión MongoDB:', err);
+    });
+
+    mongoose.connection.on('disconnected', () => {
+      console.log('⚠️ MongoDB desconectado');
+    });
+
+    // Manejar cierre graceful
+    process.on('SIGINT', async () => {
+      await mongoose.connection.close();
+      console.log('🔌 Conexión MongoDB cerrada por terminación de aplicación');
+      process.exit(0);
+    });
+
+    await mongoose.connect(mongoUri, options);
+    
   } catch (error) {
-    console.error('Error conectando a MongoDB', error);
+    console.error('❌ Error conectando a MongoDB:', error);
     process.exit(1);
   }
 };
