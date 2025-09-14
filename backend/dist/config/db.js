@@ -17,7 +17,8 @@ const getConnectionOptions = () => {
         readPreference: 'primary',
         ...(isProduction && {
             ssl: true,
-            sslValidate: true,
+            tlsAllowInvalidCertificates: false,
+            tlsAllowInvalidHostnames: false,
         })
     };
 };
