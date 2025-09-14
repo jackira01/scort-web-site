@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Plus, Trash2, Save, X } from 'lucide-react';
 import { useCreatePlan, useUpdatePlan } from '@/hooks/usePlans';
-import { Plan, PlanVariant, CreatePlanRequest, UpdatePlanRequest, PLAN_LEVELS, PlanFeatures } from '@/types/plans';
+import { Plan, PlanVariant, CreatePlanRequest, UpdatePlanRequest, PLAN_LEVELS, PlanFeatures, ContentLimits } from '@/types/plans';
 import toast from 'react-hot-toast';
 
 interface PlanFormProps {
@@ -32,20 +32,15 @@ interface FormData {
   level: number;
   isActive: boolean;
   features: PlanFeatures;
+  contentLimits: ContentLimits;
+  includedUpgrades: string[];
   variants: PlanVariant[];
 }
 
 const defaultVariant: PlanVariant = {
   price: 0,
   days: 30,
-  features: [],
-  contentLimits: {
-    maxPhotos: 10,
-    maxVideos: 5,
-    maxAudios: 3,
-    storiesPerDayMax: 5,
-  },
-  includedUpgrades: [],
+  durationRank: 1,
 };
 
 const defaultFormData: FormData = {
@@ -59,6 +54,13 @@ const defaultFormData: FormData = {
     showInFilters: false,
     showInSponsored: false
   },
+  contentLimits: {
+    photos: { min: 0, max: 10 },
+    videos: { min: 0, max: 5 },
+    audios: { min: 0, max: 3 },
+    storiesPerDayMax: 5
+  },
+  includedUpgrades: [],
   variants: [{ ...defaultVariant }],
 };
 
@@ -73,26 +75,19 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
 
   useEffect(() => {
     if (plan && mode === 'edit') {
-      // Asegurar que cada variante tenga la estructura correcta de contentLimits
+      // Asegurar que cada variante tenga la estructura correcta
       const normalizedVariants = plan.variants.length > 0 
-        ? plan.variants.map(variant => ({
+        ? plan.variants.map((variant, index) => ({
             price: variant.price || 0,
             days: variant.days || 30,
-            contentLimits: {
-              maxPhotos: variant.contentLimits?.maxPhotos ?? defaultVariant.contentLimits.maxPhotos,
-              maxVideos: variant.contentLimits?.maxVideos ?? defaultVariant.contentLimits.maxVideos,
-              maxAudios: variant.contentLimits?.maxAudios ?? defaultVariant.contentLimits.maxAudios,
-              storiesPerDayMax: variant.contentLimits?.storiesPerDayMax ?? defaultVariant.contentLimits.storiesPerDayMax,
-            },
-            features: variant.features || [],
-            includedUpgrades: variant.includedUpgrades || [],
+            durationRank: variant.durationRank || index + 1,
           }))
         : [{ ...defaultVariant }];
 
       const initialData = {
         code: plan.code,
         name: plan.name,
-        description: plan.description,
+        description: '',
         level: plan.level,
         isActive: plan.isActive,
         features: plan.features || {
@@ -100,6 +95,13 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
           showInFilters: false,
           showInSponsored: false
         },
+        contentLimits: plan.contentLimits || {
+          photos: { min: 0, max: 10 },
+          videos: { min: 0, max: 5 },
+          audios: { min: 0, max: 3 },
+          storiesPerDayMax: 5
+        },
+        includedUpgrades: plan.includedUpgrades || [],
         variants: normalizedVariants,
       };
       
@@ -125,16 +127,25 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
     }));
   };
 
-  const handleContentLimitChange = (index: number, field: keyof PlanVariant['contentLimits'], value: number) => {
-    setFormData(prev => ({
-      ...prev,
-      variants: prev.variants.map((variant, i) => 
-        i === index ? {
-          ...variant,
-          contentLimits: { ...variant.contentLimits, [field]: value }
-        } : variant
-      ),
-    }));
+  const handleContentLimitChange = (field: string, value: number) => {
+    setFormData(prev => {
+      const newContentLimits = { ...prev.contentLimits };
+      if (field === 'storiesPerDayMax') {
+        newContentLimits.storiesPerDayMax = value;
+      } else {
+        const [category, type] = field.split('.');
+        if (category && type && (category === 'photos' || category === 'videos' || category === 'audios')) {
+          const categoryLimits = newContentLimits[category as 'photos' | 'videos' | 'audios'];
+          if (categoryLimits && typeof categoryLimits === 'object' && 'min' in categoryLimits && 'max' in categoryLimits) {
+            (categoryLimits as { min: number; max: number })[type as 'min' | 'max'] = value;
+          }
+        }
+      }
+      return {
+        ...prev,
+        contentLimits: newContentLimits
+      };
+    });
   };
 
   const handleFeatureChange = (field: keyof PlanFeatures, value: boolean) => {
@@ -170,20 +181,21 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
 
 
 
-  const addUpgrade = (variantIndex: number) => {
+  const addUpgrade = () => {
     if (!newUpgrade.trim()) return;
     
-    handleVariantChange(variantIndex, 'includedUpgrades', [
-      ...formData.variants[variantIndex].includedUpgrades,
-      newUpgrade.trim()
-    ]);
+    setFormData(prev => ({
+      ...prev,
+      includedUpgrades: [...prev.includedUpgrades, newUpgrade.trim()]
+    }));
     setNewUpgrade('');
   };
 
-  const removeUpgrade = (variantIndex: number, upgradeIndex: number) => {
-    handleVariantChange(variantIndex, 'includedUpgrades', 
-      formData.variants[variantIndex].includedUpgrades.filter((_, i) => i !== upgradeIndex)
-    );
+  const removeUpgrade = (upgradeIndex: number) => {
+    setFormData(prev => ({
+      ...prev,
+      includedUpgrades: prev.includedUpgrades.filter((_, i) => i !== upgradeIndex)
+    }));
   };
 
   // Función para detectar si hay cambios en el formulario
@@ -274,23 +286,24 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
         const createData: CreatePlanRequest = {
           code: formData.code,
           name: formData.name,
-          description: formData.description,
           level: formData.level,
-          isActive: formData.isActive,
-          features: formData.features,
           variants: formData.variants,
+          features: formData.features,
+          contentLimits: formData.contentLimits,
+          includedUpgrades: formData.includedUpgrades,
+          active: formData.isActive,
         };
         await createPlanMutation.mutateAsync(createData);
       } else if (plan?._id) {
         const updateData: UpdatePlanRequest = {
           _id: plan._id,
-          code: formData.code,
           name: formData.name,
-          description: formData.description,
           level: formData.level,
-          isActive: formData.isActive,
-          features: formData.features,
           variants: formData.variants,
+          features: formData.features,
+          contentLimits: formData.contentLimits,
+          includedUpgrades: formData.includedUpgrades,
+          active: formData.isActive,
         };
         await updatePlanMutation.mutateAsync(updateData);
       }
@@ -450,7 +463,85 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
             </CardContent>
           </Card>
 
-          {/* Variantes */}
+          {/* Límites de Contenido */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Límites de Contenido</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Máx. Fotos</Label>
+                  <Input
+                    type="number"
+                    value={formData.contentLimits.photos.max}
+                    onChange={(e) => handleContentLimitChange('photos.max', parseInt(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Máx. Videos</Label>
+                  <Input
+                    type="number"
+                    value={formData.contentLimits.videos.max}
+                    onChange={(e) => handleContentLimitChange('videos.max', parseInt(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Máx. Audios</Label>
+                  <Input
+                    type="number"
+                    value={formData.contentLimits.audios.max}
+                    onChange={(e) => handleContentLimitChange('audios.max', parseInt(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Máx. Historias por Día</Label>
+                  <Input
+                    type="number"
+                    value={formData.contentLimits.storiesPerDayMax}
+                    onChange={(e) => handleContentLimitChange('storiesPerDayMax', parseInt(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+           {/* Upgrades Incluidos */}
+           <Card>
+             <CardHeader>
+               <CardTitle className="text-lg">Upgrades Incluidos</CardTitle>
+             </CardHeader>
+             <CardContent>
+               <div className="space-y-3">
+                 <div className="flex gap-2">
+                   <Input
+                     value={newUpgrade}
+                     onChange={(e) => setNewUpgrade(e.target.value)}
+                     placeholder="Código del upgrade..."
+                     onKeyPress={(e) => e.key === 'Enter' && addUpgrade()}
+                   />
+                   <Button onClick={() => addUpgrade()} size="sm">
+                     <Plus className="h-4 w-4" />
+                   </Button>
+                 </div>
+                 <div className="flex flex-wrap gap-2">
+                   {formData.includedUpgrades.map((upgrade, index) => (
+                     <Badge key={index} variant="outline" className="flex items-center gap-1 font-mono">
+                       {upgrade}
+                       <span
+                         className="h-4 w-4 p-0 inline-flex items-center justify-center rounded hover:bg-black/10 cursor-pointer"
+                         onClick={() => removeUpgrade(index)}
+                       >
+                         <X className="h-3 w-3" />
+                       </span>
+                     </Badge>
+                   ))}
+                 </div>
+               </div>
+             </CardContent>
+           </Card>
+ 
+           {/* Variantes */}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -514,77 +605,11 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
 
                   <Separator />
 
-                  {/* Límites de contenido */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">Límites de Contenido</Label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs">Máx. Fotos</Label>
-                        <Input
-                          type="number"
-                          value={formData.variants[activeVariantIndex]?.contentLimits?.maxPhotos || 0}
-                          onChange={(e) => handleContentLimitChange(activeVariantIndex, 'maxPhotos', parseInt(e.target.value) || 0)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs">Máx. Videos</Label>
-                        <Input
-                          type="number"
-                          value={formData.variants[activeVariantIndex]?.contentLimits?.maxVideos || 0}
-                          onChange={(e) => handleContentLimitChange(activeVariantIndex, 'maxVideos', parseInt(e.target.value) || 0)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs">Máx. Audios</Label>
-                        <Input
-                          type="number"
-                          value={formData.variants[activeVariantIndex]?.contentLimits?.maxAudios || 0}
-                          onChange={(e) => handleContentLimitChange(activeVariantIndex, 'maxAudios', parseInt(e.target.value) || 0)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs">Máx. Historias por Día</Label>
-                        <Input
-                          type="number"
-                          value={formData.variants[activeVariantIndex]?.contentLimits?.storiesPerDayMax || 0}
-                          onChange={(e) => handleContentLimitChange(activeVariantIndex, 'storiesPerDayMax', parseInt(e.target.value) || 0)}
-                        />
-                      </div>
-                    </div>
-                  </div>
 
 
 
-                  <Separator />
 
-                  {/* Upgrades incluidos */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">Upgrades Incluidos</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={newUpgrade}
-                        onChange={(e) => setNewUpgrade(e.target.value)}
-                        placeholder="Código del upgrade..."
-                        onKeyPress={(e) => e.key === 'Enter' && addUpgrade(activeVariantIndex)}
-                      />
-                      <Button onClick={() => addUpgrade(activeVariantIndex)} size="sm">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {(formData.variants[activeVariantIndex]?.includedUpgrades || []).map((upgrade, index) => (
-                        <Badge key={index} variant="outline" className="flex items-center gap-1 font-mono">
-                          {upgrade}
-                          <span
-                            className="h-4 w-4 p-0 inline-flex items-center justify-center rounded hover:bg-black/10 cursor-pointer"
-                            onClick={() => removeUpgrade(activeVariantIndex, index)}
-                          >
-                            <X className="h-3 w-3" />
-                          </span>
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
+
                 </div>
               )}
             </CardContent>

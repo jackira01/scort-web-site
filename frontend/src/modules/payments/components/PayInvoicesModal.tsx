@@ -60,27 +60,16 @@ export function PayInvoicesModal({ open, onOpenChange, invoices }: PayInvoicesMo
     if (whatsappData?.message) {
       try {
         await navigator.clipboard.writeText(whatsappData.message);
-        toast({
-          title: 'Mensaje copiado',
-          description: 'El mensaje ha sido copiado al portapapeles.',
-        });
+        toast.success('El mensaje ha sido copiado al portapapeles.');
       } catch (error) {
-        toast({
-          title: 'Error',
-          description: 'No se pudo copiar el mensaje.',
-          variant: 'destructive',
-        });
+        toast.error('No se pudo copiar el mensaje.');
       }
     }
   };
 
   const handleMarkAsPaid = async (invoice: Invoice) => {
     if (!paymentMethod.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Por favor ingresa el método de pago.',
-        variant: 'destructive',
-      });
+      toast.error('Por favor ingresa el método de pago.');
       return;
     }
 
@@ -97,10 +86,7 @@ export function PayInvoicesModal({ open, onOpenChange, invoices }: PayInvoicesMo
       setSelectedInvoice(null);
       setWhatsappData(null);
       
-      toast({
-        title: 'Pago registrado',
-        description: 'La factura ha sido marcada como pagada exitosamente.',
-      });
+      toast.success('La factura ha sido marcada como pagada exitosamente.');
     } catch (error) {
       console.error('Error marking as paid:', error);
     } finally {

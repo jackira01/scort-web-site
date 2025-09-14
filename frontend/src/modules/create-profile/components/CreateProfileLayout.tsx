@@ -372,7 +372,7 @@ export function CreateProfileLayout() {
 
   const handleCreateProfileClick = () => {
     const formData = form.getValues();
-    const hasPaidPlan = formData.selectedPlan && formData.selectedPlan.planCode !== 'FREE';
+    const hasPaidPlan = formData.selectedPlan && formData.selectedPlan.code !== 'FREE';
 
     if (hasPaidPlan) {
       setShowConfirmModal(true);
@@ -525,8 +525,7 @@ export function CreateProfileLayout() {
         if (profileError?.response?.status === 409) {
           const errorMessage = profileError?.response?.data?.message || 'Límite de perfiles excedido';
           toast.error(errorMessage, {
-            duration: 6000,
-            description: 'Puedes desactivar perfiles existentes desde tu cuenta para crear uno nuevo.'
+            duration: 6000
           });
         } else if (profileError?.response?.status === 400) {
           toast.error('Datos del perfil inválidos. Revisa la información ingresada.');

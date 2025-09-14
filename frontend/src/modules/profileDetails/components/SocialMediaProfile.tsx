@@ -101,7 +101,7 @@ export const SocialMediaProfile = ({
           <Button
             className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
             onClick={() =>
-              handleContactClick('whatsapp', contact.whatsapp)
+              handleContactClick('whatsapp', contact.whatsapp || '')
             }
           >
             <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
@@ -115,7 +115,7 @@ export const SocialMediaProfile = ({
           <Button
             className="w-full bg-blue-500 hover:bg-blue-600 text-white"
             onClick={() =>
-              handleContactClick('telegram', contact.telegram)
+              handleContactClick('telegram', contact.telegram || '')
             }
           >
             <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">

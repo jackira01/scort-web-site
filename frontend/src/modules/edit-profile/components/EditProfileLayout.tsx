@@ -61,7 +61,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       category: '',
       location: {
         country: 'Colombia',
-        state: '',
+        department: '',
         city: '',
       },
 
@@ -459,9 +459,9 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       if (newPhotos.length > 0) {
         toast.loading('Subiendo fotos nuevas...');
         const newPhotoUrls = await uploadMultipleImages(newPhotos);
-        photoUrls = [...existingPhotoUrls, ...newPhotoUrls];
+        photoUrls = [...existingPhotoUrls, ...newPhotoUrls.filter((url): url is string => url !== null)];
         toast.dismiss();
-        toast.success(`${newPhotoUrls.length} fotos nuevas subidas exitosamente`);
+        toast.success(`${newPhotoUrls.filter(url => url !== null).length} fotos nuevas subidas exitosamente`);
       } else {
         photoUrls = existingPhotoUrls;
       }
@@ -469,9 +469,9 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       if (newVideos.length > 0) {
         toast.loading('Subiendo videos nuevos...');
         const newVideoUrls = await uploadMultipleVideos(newVideos);
-        videoUrls = [...existingVideoUrls, ...newVideoUrls];
+        videoUrls = [...existingVideoUrls, ...newVideoUrls.filter((url): url is string => url !== null)];
         toast.dismiss();
-        toast.success(`${newVideoUrls.length} videos nuevos subidos exitosamente`);
+        toast.success(`${newVideoUrls.filter(url => url !== null).length} videos nuevos subidos exitosamente`);
       } else {
         videoUrls = existingVideoUrls;
       }
@@ -479,9 +479,9 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       if (newAudios.length > 0) {
         toast.loading('Subiendo audios nuevos...');
         const newAudioUrls = await uploadMultipleAudios(newAudios);
-        audioUrls = [...existingAudioUrls, ...newAudioUrls];
+        audioUrls = [...existingAudioUrls, ...newAudioUrls.filter((url): url is string => url !== null)];
         toast.dismiss();
-        toast.success(`${newAudioUrls.length} audios nuevos subidos exitosamente`);
+        toast.success(`${newAudioUrls.filter(url => url !== null).length} audios nuevos subidos exitosamente`);
       } else {
         audioUrls = existingAudioUrls;
       }
@@ -613,11 +613,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
             {/* Sidebar */}
             <div className="lg:col-span-1">
               <div className="sticky top-8">
-                <SidebarContent
-                  steps={steps}
-                  currentStep={currentStep}
-                  onStepClick={setCurrentStep}
-                />
+                <SidebarContent currentStep={currentStep} />
               </div>
             </div>
 

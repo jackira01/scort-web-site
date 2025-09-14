@@ -43,8 +43,8 @@ const FilterBar = () => {
     // Construir la ruta dinámica basada en los parámetros seleccionados
     // Convertir los nombres de la API a slugs amigables para URLs
     const segments = [createSlug(categoria)];
-    if (departamento) segments.push(createSlug(typeof departamento === 'string' ? departamento : departamento.value || departamento.label));
-    if (ciudad && departamento) segments.push(createSlug(typeof ciudad === 'string' ? ciudad : ciudad.value || ciudad.label));
+    if (departamento) segments.push(createSlug(typeof departamento === 'string' ? departamento : (departamento as any).value || (departamento as any).label));
+    if (ciudad && departamento) segments.push(createSlug(typeof ciudad === 'string' ? ciudad : (ciudad as any).value || (ciudad as any).label));
     
 
     

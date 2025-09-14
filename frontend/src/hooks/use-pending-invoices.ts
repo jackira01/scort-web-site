@@ -15,13 +15,12 @@ export interface UsePendingInvoicesReturn {
 
 export function usePendingInvoices(): UsePendingInvoicesReturn {
   const { data: session } = useSession();
-  const { toast } = useToast();
   const [pendingInvoices, setPendingInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchPendingInvoices = async () => {
-    if (!session?.user?.id) {
+    if (!session?.user?._id) {
       setLoading(false);
       return;
     }
@@ -29,7 +28,7 @@ export function usePendingInvoices(): UsePendingInvoicesReturn {
     try {
       setLoading(true);
       setError(null);
-      const invoices = await invoiceService.getPendingInvoicesByUser(session.user.id);
+      const invoices = await invoiceService.getPendingInvoicesByUser(session.user._id);
       setPendingInvoices(invoices);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al cargar facturas pendientes';
@@ -45,18 +44,11 @@ export function usePendingInvoices(): UsePendingInvoicesReturn {
   ) => {
     try {
       await invoiceService.markAsPaid(invoiceId, paymentData);
-      toast({
-        title: 'Pago registrado',
-        description: 'La factura ha sido marcada como pagada exitosamente.',
-      });
+      toast.success('Pago registrado');
       await fetchPendingInvoices(); // Refrescar la lista
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al marcar como pagada';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      toast.error('Error');
       throw err;
     }
   };
@@ -64,18 +56,11 @@ export function usePendingInvoices(): UsePendingInvoicesReturn {
   const cancelInvoice = async (invoiceId: string) => {
     try {
       await invoiceService.cancelInvoice(invoiceId);
-      toast({
-        title: 'Factura cancelada',
-        description: 'La factura ha sido cancelada exitosamente.',
-      });
+      toast.success('Factura cancelada');
       await fetchPendingInvoices(); // Refrescar la lista
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al cancelar factura';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      toast.error('Error');
       throw err;
     }
   };
@@ -86,18 +71,14 @@ export function usePendingInvoices(): UsePendingInvoicesReturn {
       return data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al generar datos de WhatsApp';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      toast.error('Error');
       throw err;
     }
   };
 
   useEffect(() => {
     fetchPendingInvoices();
-  }, [session?.user?.id]);
+  }, [session?.user?._id]);
 
   return {
     pendingInvoices,

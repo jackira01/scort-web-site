@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCreateUpgrade, useUpdateUpgrade } from '@/hooks/usePlans';
-import { Upgrade, CreateUpgradeData, UpdateUpgradeData } from '@/types/plans';
+import { Upgrade, CreateUpgradeRequest, UpdateUpgradeRequest } from '@/types/plans';
 
 interface UpgradeFormProps {
   isOpen: boolean;
@@ -23,9 +23,7 @@ interface FormData {
   name: string;
   description: string;
   price: number;
-  durationDays: number;
-  boostMultiplier: number;
-  features: string[];
+  durationHours: number;
   active: boolean;
 }
 
@@ -33,15 +31,12 @@ const initialFormData: FormData = {
   name: '',
   description: '',
   price: 0,
-  durationDays: 1,
-  boostMultiplier: 1,
-  features: [],
+  durationHours: 24,
   active: true,
 };
 
 export default function UpgradeForm({ isOpen, onClose, upgrade, mode }: UpgradeFormProps) {
   const [formData, setFormData] = useState<FormData>(initialFormData);
-  const [featuresText, setFeaturesText] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const createUpgradeMutation = useCreateUpgrade();
@@ -51,17 +46,13 @@ export default function UpgradeForm({ isOpen, onClose, upgrade, mode }: UpgradeF
     if (upgrade && mode === 'edit') {
       setFormData({
         name: upgrade.name,
-        description: upgrade.description,
-        price: upgrade.price,
-        durationDays: upgrade.durationDays,
-        boostMultiplier: upgrade.boostMultiplier || 1,
-        features: upgrade.features || [],
+        description: upgrade.description || '',
+        price: upgrade.price || 0,
+        durationHours: upgrade.durationHours,
         active: upgrade.active,
       });
-      setFeaturesText((upgrade.features || []).join('\n'));
     } else {
       setFormData(initialFormData);
-      setFeaturesText('');
     }
     setErrors({});
   }, [upgrade, mode, isOpen]);
@@ -81,12 +72,8 @@ export default function UpgradeForm({ isOpen, onClose, upgrade, mode }: UpgradeF
       newErrors.price = 'El precio debe ser mayor a 0';
     }
 
-    if (formData.durationDays <= 0) {
-      newErrors.durationDays = 'La duración debe ser mayor a 0';
-    }
-
-    if (formData.boostMultiplier <= 0) {
-      newErrors.boostMultiplier = 'El multiplicador debe ser mayor a 0';
+    if (formData.durationHours <= 0) {
+      newErrors.durationHours = 'La duración debe ser mayor a 0';
     }
 
     setErrors(newErrors);
@@ -100,28 +87,31 @@ export default function UpgradeForm({ isOpen, onClose, upgrade, mode }: UpgradeF
       return;
     }
 
-    const features = featuresText
-      .split('\n')
-      .map(f => f.trim())
-      .filter(f => f.length > 0);
-
-    const upgradeData = {
-      ...formData,
-      features,
+    const upgradeData: CreateUpgradeRequest = {
+      code: formData.name.toLowerCase().replace(/\s+/g, '_'),
+      name: formData.name,
+      description: formData.description,
+      price: formData.price,
+      durationHours: formData.durationHours,
+      requires: [],
+      stackingPolicy: 'extend',
+      effect: {},
+      active: formData.active,
     };
 
     try {
       if (mode === 'create') {
-        await createUpgradeMutation.mutateAsync(upgradeData as CreateUpgradeData);
-      } else if (upgrade) {
-        await updateUpgradeMutation.mutateAsync({
-          id: upgrade.id,
-          data: upgradeData as UpdateUpgradeData,
-        });
+        await createUpgradeMutation.mutateAsync(upgradeData);
+      } else if (upgrade && upgrade._id) {
+        const updateData: UpdateUpgradeRequest = {
+          _id: upgrade._id,
+          ...upgradeData,
+        };
+        await updateUpgradeMutation.mutateAsync(updateData);
       }
       onClose();
     } catch (error) {
-      
+      console.error('Error saving upgrade:', error);
     }
   };
 
@@ -215,70 +205,29 @@ export default function UpgradeForm({ isOpen, onClose, upgrade, mode }: UpgradeF
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="durationDays">Duración (días) *</Label>
+                  <Label htmlFor="durationHours">Duración (horas) *</Label>
                   <Input
-                    id="durationDays"
+                    id="durationHours"
                     type="number"
                     min="1"
-                    value={formData.durationDays}
-                    onChange={(e) => handleInputChange('durationDays', parseInt(e.target.value) || 1)}
-                    className={errors.durationDays ? 'border-red-500' : ''}
+                    value={formData.durationHours}
+                    onChange={(e) => handleInputChange('durationHours', parseInt(e.target.value) || 1)}
+                    className={errors.durationHours ? 'border-red-500' : ''}
                   />
-                  {errors.durationDays && (
-                    <p className="text-sm text-red-600">{errors.durationDays}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="boostMultiplier">Multiplicador de Boost *</Label>
-                  <Input
-                    id="boostMultiplier"
-                    type="number"
-                    min="1"
-                    step="0.1"
-                    value={formData.boostMultiplier}
-                    onChange={(e) => handleInputChange('boostMultiplier', parseFloat(e.target.value) || 1)}
-                    className={errors.boostMultiplier ? 'border-red-500' : ''}
-                  />
-                  {errors.boostMultiplier && (
-                    <p className="text-sm text-red-600">{errors.boostMultiplier}</p>
+                  {errors.durationHours && (
+                    <p className="text-sm text-red-600">{errors.durationHours}</p>
                   )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Features */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Características</CardTitle>
-              <CardDescription>
-                Lista las características del upgrade (una por línea)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="features">Características</Label>
-                <Textarea
-                  id="features"
-                  value={featuresText}
-                  onChange={(e) => setFeaturesText(e.target.value)}
-                  placeholder={`Perfil destacado en búsquedas\nMayor visibilidad por 24 horas\nAparición en sección premium\nNotificaciones prioritarias`}
-                  rows={6}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Escribe cada característica en una línea separada
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Status */}
+          {/* Estado */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Estado</CardTitle>
               <CardDescription>
-                Controla la disponibilidad del upgrade
+                Configuración del estado del upgrade
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -292,6 +241,9 @@ export default function UpgradeForm({ isOpen, onClose, upgrade, mode }: UpgradeF
                   {formData.active ? 'Upgrade activo' : 'Upgrade inactivo'}
                 </Label>
               </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Los upgrades inactivos no estarán disponibles para los usuarios
+              </p>
             </CardContent>
           </Card>
 

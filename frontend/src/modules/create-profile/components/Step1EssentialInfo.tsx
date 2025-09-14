@@ -76,7 +76,7 @@ export function Step1EssentialInfo({
                       .filter((v) => v.active)
                       .map((variant) => (
                         <SelectItem key={variant._id} value={variant.value}>
-                          {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
+                          {variant.label || variant.value}
                         </SelectItem>
                       ))}
                   </SelectContent>

@@ -36,7 +36,7 @@ const AccountSettings = () => {
 
   // Temporal: usar datos básicos hasta que se implemente la integración completa con perfiles
   const currentPlan: CurrentPlan | null = null; // user?.profile?.planAssignment?.plan;
-  const planInfo = currentPlan ? getPlanInfo(currentPlan.level) : getPlanInfo(0);
+  const planInfo = currentPlan ? getPlanInfo((currentPlan as any).level) : getPlanInfo(0);
 
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">

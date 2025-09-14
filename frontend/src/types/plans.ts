@@ -32,6 +32,7 @@ export interface Plan {
   _id: string;
   code: string;
   name: string;
+  description?: string;
   level: number;
   variants: PlanVariant[];
   features: PlanFeatures;

@@ -44,7 +44,7 @@ export function Step3Details({
       <div className="space-y-6">
         {/* Rates Section */}
         <div>
-          <RatesManager rates={formData.rates} onChange={handleRatesChange} />
+          <RatesManager rates={formData.rates || []} onChange={handleRatesChange} />
           {errors.rates && (
             <p className="text-red-500 text-sm mt-2">
               {errors.rates.message}
@@ -54,7 +54,7 @@ export function Step3Details({
 
         {/* Availability Section */}
         <AvailabilitySchedule
-          availability={formData.availability}
+          availability={formData.availability || []}
           onChange={(newAvailability) =>
             setValue('availability', newAvailability)
           }
@@ -214,7 +214,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('skinColor', variant.value)}
                     >
-                      {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
+                      {variant.label || variant.value}
                     </Button>
                   ))}
             </div>
@@ -239,7 +239,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('sexuality', variant.value)}
                     >
-                      {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
+                      {variant.label || variant.value}
                     </Button>
                   ))}
             </div>
@@ -271,7 +271,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('eyeColor', variant.value)}
                     >
-                      {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
+                      {variant.label || variant.value}
                     </Button>
                   ))}
               </div>
@@ -296,7 +296,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('hairColor', variant.value)}
                     >
-                      {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
+                      {variant.label || variant.value}
                     </Button>
                   ))}
               </div>
@@ -319,7 +319,7 @@ export function Step3Details({
                       size="sm"
                       onClick={() => setValue('bodyType', variant.value)}
                     >
-                      {typeof variant === 'object' && variant !== null && 'label' in variant ? variant.label : (typeof variant === 'object' && variant !== null && 'value' in variant ? variant.value : variant)}
+                      {variant.label || variant.value}
                     </Button>
                   ))}
               </div>

@@ -61,9 +61,7 @@ export const useInvoices = (userId?: string): UseInvoicesReturn => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
       setError(errorMessage);
-      toast.error('Error al cargar facturas', {
-        description: errorMessage
-      });
+      toast.error('Error al cargar facturas');
     } finally {
       setIsLoading(false);
     }
@@ -95,16 +93,12 @@ export const useInvoices = (userId?: string): UseInvoicesReturn => {
         )
       );
       
-      toast.success('Pago procesado exitosamente', {
-        description: `Factura #${data.invoice?.invoiceNumber || invoiceId} pagada`
-      });
+      toast.success('Pago procesado exitosamente');
       
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      toast.error('Error al procesar el pago', {
-        description: errorMessage
-      });
+      toast.error('Error al procesar el pago');
       return false;
     } finally {
       setIsLoading(false);
@@ -117,7 +111,7 @@ export const useInvoices = (userId?: string): UseInvoicesReturn => {
       .map(invoice => invoice._id);
     
     if (pendingInvoiceIds.length === 0) {
-      toast.info('No hay facturas pendientes para pagar');
+      toast('No hay facturas pendientes para pagar');
       return true;
     }
     
@@ -147,16 +141,12 @@ export const useInvoices = (userId?: string): UseInvoicesReturn => {
         )
       );
       
-      toast.success('Pagos procesados exitosamente', {
-        description: `${pendingInvoiceIds.length} facturas pagadas`
-      });
+      toast.success('Pagos procesados exitosamente');
       
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      toast.error('Error al procesar los pagos', {
-        description: errorMessage
-      });
+      toast.error('Error al procesar los pagos');
       return false;
     } finally {
       setIsLoading(false);

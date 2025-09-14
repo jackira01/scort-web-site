@@ -57,7 +57,7 @@ export const testImageProcessingFlow = async (file: File): Promise<void> => {
     });
 
     // 3. Validar dimensiones finales
-    const validation = validateImageDimensions(processedResult.dimensions.width, processedResult.dimensions.height);
+    const validation = validateImageDimensions(processedResult.dimensions);
     console.log('🔍 Validación de dimensiones:', validation);
 
     // Limpiar URLs
