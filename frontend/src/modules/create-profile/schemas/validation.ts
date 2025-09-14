@@ -72,10 +72,19 @@ export const formSchema = z.object({
       durationRank: z.number()
     })),
     contentLimits: z.object({
-      maxPhotos: z.number(),
-      maxVideos: z.number(),
-      maxAudios: z.number(),
-      maxProfiles: z.number()
+      photos: z.object({
+        min: z.number(),
+        max: z.number()
+      }),
+      videos: z.object({
+        min: z.number(),
+        max: z.number()
+      }),
+      audios: z.object({
+        min: z.number(),
+        max: z.number()
+      }),
+      storiesPerDayMax: z.number()
     })
   }).optional(),
   selectedVariant: z.object({

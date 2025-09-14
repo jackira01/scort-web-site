@@ -170,21 +170,13 @@ export default function EditBlogPage() {
 
     // Validar tipo de archivo
     if (!file.type.startsWith('image/')) {
-      toast({
-        title: 'Error',
-        description: 'Solo se permiten archivos de imagen',
-        variant: 'destructive'
-      });
+      toast.error('Solo se permiten archivos de imagen');
       return;
     }
 
     // Validar tamaño (máximo 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: 'Error',
-        description: 'El archivo es demasiado grande. Máximo 10MB.',
-        variant: 'destructive'
-      });
+      toast.error('El archivo es demasiado grande. Máximo 10MB.');
       return;
     }
 
@@ -206,11 +198,7 @@ export default function EditBlogPage() {
       setErrors(prev => ({ ...prev, coverImage: undefined }));
     }
 
-    toast({
-      title: 'Imagen seleccionada',
-      description: 'Se subirá al guardar el blog.',
-      variant: 'default'
-    });
+    toast.success('Imagen seleccionada. Se subirá al guardar el blog.');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -239,11 +227,7 @@ export default function EditBlogPage() {
 
         if (Object.keys(newErrors).length > 0) {
           setErrors(newErrors);
-          toast({
-            title: 'Error en el formulario',
-            description: 'Por favor corrige los errores en el formulario',
-            variant: 'destructive'
-          });
+          toast.error('Por favor corrige los errores en el formulario');
           return;
         }
 
@@ -270,20 +254,12 @@ export default function EditBlogPage() {
           }
         });
 
-        toast({
-          title: 'Blog actualizado',
-          description: 'Blog actualizado exitosamente',
-          variant: 'default'
-        });
+        toast.success('Blog actualizado exitosamente');
         router.push('/adminboard?section=blogs');
       }
     } catch (error) {
       console.error('Error updating blog:', error);
-      toast({
-        title: 'Error',
-        description: 'Error al actualizar el blog',
-        variant: 'destructive'
-      });
+      toast.error('Error al actualizar el blog');
     }
   };
 
@@ -299,11 +275,7 @@ export default function EditBlogPage() {
   const handleDelete = async () => {
     try {
       await deleteBlogMutation.mutateAsync(blogId);
-      toast({
-        title: 'Blog eliminado',
-        description: 'Blog eliminado exitosamente',
-        variant: 'default'
-      });
+      toast.success('Blog eliminado exitosamente');
       router.push('/adminboard?section=blogs');
     } catch (error) {
       console.error('Error deleting blog:', error);
@@ -324,7 +296,7 @@ export default function EditBlogPage() {
       }
       
       console.log('Preview - contentToRender:', contentToRender);
-      console.log('Preview - blocks length:', contentToRender?.blocks?.length);
+      console.log('Preview - blocks length:', contentToRender?.blocks?.length || 0);
       
       setPreviewContent(contentToRender);
     } catch (error) {

@@ -10,7 +10,7 @@ interface UseVerificationChangesReturn {
   getCurrentVerificationStatus: (stepKey: keyof ProfileVerificationData['steps'], verificationData?: ProfileVerificationData) => boolean;
   getCurrentVideoLink: (stepKey: 'video', verificationData?: ProfileVerificationData) => string;
   resetChanges: () => void;
-  buildUpdatedSteps: (verificationData: ProfileVerificationData) => Record<string, any>;
+  buildUpdatedSteps: (verificationData: ProfileVerificationData) => ProfileVerificationData['steps'];
 }
 
 export const useVerificationChanges = (): UseVerificationChangesReturn => {
@@ -26,7 +26,7 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
       ...prev,
       [stepKey]: isVerified
     }));
-    
+
     setHasChanges(true);
   };
 
@@ -38,7 +38,7 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
       ...prev,
       [stepKey]: videoLink
     }));
-    
+
     setHasChanges(true);
   };
 
@@ -70,28 +70,39 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
 
   const buildUpdatedSteps = (verificationData: ProfileVerificationData) => {
     const currentSteps = verificationData.steps;
-    const updatedSteps = { ...currentSteps };
+    const updatedSteps: ProfileVerificationData['steps'] = {
+      documentPhotos: {
+        documents: currentSteps.documentPhotos?.documents || [],
+        isVerified: currentSteps.documentPhotos?.isVerified || false
+      },
+      video: {
+        videoLink: currentSteps.video?.videoLink,
+        isVerified: currentSteps.video?.isVerified || false
+      },
+      socialMedia: {
+        accounts: currentSteps.socialMedia?.accounts || [],
+        isVerified: currentSteps.socialMedia?.isVerified || false
+      }
+    };
 
     // Aplicar los cambios pendientes de verificación
     Object.entries(pendingChanges).forEach(([stepKey, isVerified]) => {
-      if (updatedSteps[stepKey as keyof typeof updatedSteps]) {
-        updatedSteps[stepKey as keyof typeof updatedSteps] = {
-          ...updatedSteps[stepKey as keyof typeof updatedSteps],
-          isVerified
-        };
+      if (stepKey === 'documentPhotos') {
+        updatedSteps.documentPhotos.isVerified = isVerified;
+      } else if (stepKey === 'video') {
+        updatedSteps.video.isVerified = isVerified;
+      } else if (stepKey === 'socialMedia') {
+        updatedSteps.socialMedia.isVerified = isVerified;
       }
     });
 
     // Aplicar los cambios pendientes de videoLink
     Object.entries(pendingVideoLinks).forEach(([stepKey, videoLink]) => {
-      if (updatedSteps[stepKey as keyof typeof updatedSteps]) {
-        updatedSteps[stepKey as keyof typeof updatedSteps] = {
-          ...updatedSteps[stepKey as keyof typeof updatedSteps],
-          videoLink
-        };
+      if (stepKey === 'video') {
+        updatedSteps.video.videoLink = videoLink;
       }
     });
-    
+
     return updatedSteps;
   };
 

@@ -26,7 +26,7 @@ export const PaymentManager: React.FC<PaymentManagerProps> = ({
     payInvoice,
     payAllInvoices,
     refreshInvoices
-  } = useInvoices(session?.user?.id);
+  } = useInvoices(session?.user?._id);
 
   const handlePayClick = () => {
     setIsModalOpen(true);
@@ -58,7 +58,7 @@ export const PaymentManager: React.FC<PaymentManagerProps> = ({
   };
 
   // No mostrar nada si no hay sesión
-  if (!session?.user?.id) {
+  if (!session?.user?._id) {
     return null;
   }
 

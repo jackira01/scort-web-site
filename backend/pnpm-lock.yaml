@@ -20,6 +20,9 @@ importers:
       cors:
         specifier: ^2.8.5
         version: 2.8.5
+      dotenv:
+        specifier: ^17.2.0
+        version: 17.2.0
       express:
         specifier: ^5.1.0
         version: 5.1.0
@@ -72,9 +75,6 @@ importers:
       '@types/morgan':
         specifier: ^1.9.10
         version: 1.9.10
-      dotenv:
-        specifier: ^17.2.0
-        version: 17.2.0
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10

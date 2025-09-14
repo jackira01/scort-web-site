@@ -196,7 +196,7 @@ backup_logs() {
     log "INFO" "Iniciando backup de logs..."
     
     local log_dirs=(
-        "$PROJECT_ROOT/logs"
+        "${LOG_DIR:-$PROJECT_ROOT/logs}"
         "/var/log/nginx"
         "$HOME/.pm2/logs"
     )

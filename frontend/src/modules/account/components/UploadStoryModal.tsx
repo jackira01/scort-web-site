@@ -188,7 +188,7 @@ export default function UploadStoryModal({
             selectedFiles.forEach((file) => URL.revokeObjectURL(file.preview));
             setSelectedFiles([]);
             onClose();
-        } catch (error) {
+        } catch (error: unknown) {
             toast.dismiss();
             toast.error('Error al subir las historias');
         } finally {
@@ -206,7 +206,7 @@ export default function UploadStoryModal({
 
             // Filtrar la historia a eliminar por _id
             const updatedStories = (fullProfile.media?.stories || []).filter(
-                (story) => story._id !== storyId,
+                (story: { _id?: string; link: string; type: 'image' | 'video' }) => story._id !== storyId,
             );
 
             // Actualizar el perfil preservando todos los datos de media
@@ -231,7 +231,7 @@ export default function UploadStoryModal({
 
             // Recargar la página para mostrar los cambios
             window.location.reload();
-        } catch (error) {
+        } catch (error: unknown) {
             toast.error('Error al eliminar la historia');
         } finally {
             setDeletingStory(null);

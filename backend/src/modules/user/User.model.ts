@@ -56,7 +56,7 @@ const userSchema = new Schema<IUserDocument>({
 });
 
 // Índices optimizados
-userSchema.index({ email: 1 }, { unique: true }); // Ya existe pero lo hacemos explícito
+// Nota: El índice para 'email' se crea automáticamente por unique: true
 userSchema.index({ isVerified: 1 }); // Para filtros de verificación
 userSchema.index({ role: 1 }); // Para filtros por rol
 userSchema.index({ accountType: 1 }); // Para filtros por tipo de cuenta

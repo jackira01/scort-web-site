@@ -70,14 +70,14 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
 
   const nextSlide = () => {
     setCurrentIndex((prev) => {
-      const maxIndex = Math.max(0, sponsoredProfiles.length - visibleCount);
+      const maxIndex = Math.max(0, (sponsoredProfiles || []).length - visibleCount);
       return prev >= maxIndex ? 0 : prev + 1;
     });
   };
 
   const prevSlide = () => {
     setCurrentIndex((prev) => {
-      const maxIndex = Math.max(0, sponsoredProfiles.length - visibleCount);
+      const maxIndex = Math.max(0, (sponsoredProfiles || []).length - visibleCount);
       return prev <= 0 ? maxIndex : prev - 1;
     });
   };
@@ -110,7 +110,7 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
     );
   }
 
-  if (error || sponsoredProfiles.length === 0) {
+  if (error || (sponsoredProfiles || []).length === 0) {
     return null; // No mostrar nada si hay error o no hay perfiles
   }
 
@@ -127,7 +127,7 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
         </div>
 
         {/* Navigation buttons */}
-        {sponsoredProfiles.length > visibleCount && (
+        {(sponsoredProfiles || []).length > visibleCount && (
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -216,9 +216,9 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
       </div>
 
       {/* Indicators */}
-      {sponsoredProfiles.length > visibleCount && (
-        <div className="flex justify-center gap-2 mt-4">
-          {Array.from({ length: Math.ceil(sponsoredProfiles.length / visibleCount) }).map((_, index) => (
+      {(sponsoredProfiles || []).length > visibleCount && (
+        <div className="flex justify-center mt-4 space-x-2">
+          {Array.from({ length: Math.ceil((sponsoredProfiles || []).length / visibleCount) }).map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}

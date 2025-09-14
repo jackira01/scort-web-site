@@ -12,7 +12,7 @@ const StoriesCards = () => {
   const [selectedProfileIndex, setSelectedProfileIndex] = useState(0);
 
   // Transformar los datos de la API al formato esperado por el modal
-  const profilesWithStories = data?.profiles?.map(profile => ({
+  const profilesWithStories = data?.profiles?.map((profile: any) => ({
     _id: profile._id,
     name: profile.name,
     media: profile.media,
@@ -65,7 +65,7 @@ const StoriesCards = () => {
         Últimas historias
       </h2>
       <div className="flex h-48 space-x-4 overflow-x-auto overflow-y-visible pb-4 scrollbar-hide items-center">
-        {profilesWithStories.map((profile, index) => (
+        {profilesWithStories.map((profile: any, index: number) => (
           <button
             type="button"
             key={profile._id}

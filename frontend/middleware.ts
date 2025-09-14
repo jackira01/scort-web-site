@@ -1,12 +1,24 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getAllDepartments } from '@/utils/colombiaData';
 
 // Lista de categorías válidas (debe coincidir con el backend)
 const VALID_CATEGORIES = ['escort', 'masajista', 'modelo', 'acompañante'];
 
-// Lista completa de departamentos válidos de Colombia
-const VALID_DEPARTMENTS = getAllDepartments().map(dept => dept.value);
+// Lista hardcodeada de departamentos para evitar problemas en build
+const VALID_DEPARTMENTS = [
+  'bogota', 'medellin', 'cali', 'barranquilla', 'cartagena', 'cucuta', 'bucaramanga',
+  'pereira', 'santa-marta', 'ibague', 'pasto', 'manizales', 'neiva', 'villavicencio',
+  'armenia', 'valledupar', 'monteria', 'sincelejo', 'popayan', 'buenaventura',
+  'palmira', 'floridablanca', 'soledad', 'malambo', 'bello', 'itagui', 'envigado',
+  'soacha', 'dosquebradas', 'giron', 'tunja', 'florencia', 'riohacha', 'quibdo',
+  'yopal', 'mocoa', 'leticia', 'inirida', 'san-jose-del-guaviare', 'mitu',
+  'puerto-carreno', 'arauca', 'casanare', 'vichada', 'guainia', 'guaviare',
+  'vaupes', 'amazonas', 'antioquia', 'atlantico', 'bolivar', 'boyaca', 'caldas',
+  'caqueta', 'cauca', 'cesar', 'choco', 'cordoba', 'cundinamarca', 'huila',
+  'la-guajira', 'magdalena', 'meta', 'narino', 'norte-de-santander', 'putumayo',
+  'quindio', 'risaralda', 'san-andres-y-providencia', 'santander', 'sucre',
+  'tolima', 'valle-del-cauca'
+];
 
 // Lista de rutas que NO deben ser procesadas por el sistema de búsqueda
 const EXCLUDED_ROUTES = [
@@ -50,26 +62,20 @@ export function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-
-
     // Verificar si es una ruta de categoría válida
     if (categoria && !VALID_CATEGORIES.includes(categoria)) {
-
-
       // Si parece ser un departamento, redirigir a una categoría por defecto
       if (VALID_DEPARTMENTS.includes(categoria)) {
-
         const redirectUrl = new URL(`/escort/${categoria}`, request.url);
         return NextResponse.redirect(redirectUrl);
       }
-
       // Si no es ni categoría ni departamento válido, continuar al 404
-
+      return NextResponse.next();
     }
 
     // Verificar departamento si está presente
     if (departamento && !VALID_DEPARTMENTS.includes(departamento)) {
-
+      return NextResponse.next();
     }
   }
 

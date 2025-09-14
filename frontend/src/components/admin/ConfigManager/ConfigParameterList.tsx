@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Edit, Trash2, Eye, EyeOff, Copy, ExternalLink } from 'lucide-react';
 import { useDeleteConfigParameter, useToggleConfigParameterActive } from '../../../hooks/use-config-parameters';
 import type { ConfigParameter } from '../../../types/config-parameter.types';
@@ -28,24 +28,32 @@ export function ConfigParameterList({
     onEdit,
     onPageChange
 }: ConfigParameterListProps) {
+    const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
+    const [deleteLoadingStates, setDeleteLoadingStates] = useState<Record<string, boolean>>({});
     const deleteParameter = useDeleteConfigParameter();
     const toggleActive = useToggleConfigParameterActive();
 
     const handleDelete = async (parameter: ConfigParameter) => {
         if (window.confirm(`¿Estás seguro de que quieres eliminar el parámetro "${parameter.name}"?`)) {
             try {
+                setDeleteLoadingStates(prev => ({ ...prev, [parameter._id]: true }));
                 await deleteParameter.mutateAsync(parameter._id);
             } catch (error) {
           
+            } finally {
+                setDeleteLoadingStates(prev => ({ ...prev, [parameter._id]: false }));
             }
         }
     };
 
     const handleToggleActive = async (parameter: ConfigParameter) => {
         try {
+            setLoadingStates(prev => ({ ...prev, [parameter._id]: true }));
             await toggleActive.mutateAsync(parameter._id);
         } catch (error) {
       
+        } finally {
+            setLoadingStates(prev => ({ ...prev, [parameter._id]: false }));
         }
     };
 
@@ -223,7 +231,7 @@ export function ConfigParameterList({
                                                 ? 'bg-green-100 text-green-800 hover:bg-green-200'
                                                 : 'bg-red-100 text-red-800 hover:bg-red-200'
                                         }`}
-                                        disabled={toggleActive.isLoading}
+                                        disabled={loadingStates[parameter._id] || false}
                                     >
                                         {parameter.isActive ? (
                                             <Eye className="w-3 h-3" />
@@ -259,7 +267,7 @@ export function ConfigParameterList({
                                             onClick={() => handleDelete(parameter)}
                                             className="text-red-600 hover:text-red-800 p-1 rounded"
                                             title="Eliminar"
-                                            disabled={deleteParameter.isLoading}
+                                            disabled={deleteLoadingStates[parameter._id]}
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>

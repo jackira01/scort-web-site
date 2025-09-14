@@ -11,13 +11,13 @@ export interface ProfileVerificationData {
       isVerified: boolean;
     };
     video: {
-    videoLink?: string;
-    isVerified: boolean;
-  };
-  socialMedia: {
-    accounts: string[];
-    isVerified: boolean;
-  };
+      videoLink?: string;
+      isVerified: boolean;
+    };
+    socialMedia: {
+      accounts: string[];
+      isVerified: boolean;
+    };
   };
 }
 

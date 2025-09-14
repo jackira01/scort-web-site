@@ -102,7 +102,7 @@ export const uploadMultipleImages = async (
 ): Promise<(string | null)[]> => {
   const uploadedUrls: (string | null)[] = [];
 
-  for (let i = 0; i < filesArray.length; i++) {
+  for (let i = 0; i < (filesArray || []).length; i++) {
     const file = filesArray[i];
     try {
       // 1. Normalización de tamaño (máximo 1000px)

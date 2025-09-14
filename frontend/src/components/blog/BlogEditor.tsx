@@ -19,7 +19,7 @@ type BlogEditorProps = {
   isLoading?: boolean; // Estado de carga
   className?: string;
   deferredUpload?: {
-    addPendingFile: (file: File, type: string) => { id: string; preview: string };
+    addPendingFile: (file: File, type?: 'image' | 'video') => { id: string; preview: string };
     uploadAllPendingFiles: (folder: string) => Promise<Record<string, string>>;
   };
 };

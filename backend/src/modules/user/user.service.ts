@@ -27,7 +27,7 @@ export const getUserById = async (id: string) => {
     if (!id.match(/^[0-9a-fA-F]{24}$/)) {
       throw new Error('Formato de ID de usuario inválido');
     }
-    
+
     return await UserModel.findById(id);
   } catch (error) {
     throw error;
@@ -51,37 +51,37 @@ export const getUserProfiles = async (userId: string, includeInactive: boolean =
       select: 'verificationProgress verificationStatus'
     }
   });
-  
+
   let profiles = user?.profiles || [];
-  
+
   // Filtrar perfiles eliminados lógicamente (isDeleted: true) para usuarios normales
   // Solo los administradores pueden ver perfiles con isDeleted: true
   if (!includeInactive) {
     profiles = profiles.filter((profile: any) => profile.isDeleted !== true);
   }
-  
+
   const now = new Date();
-  
+
   // Devolver los perfiles con información completa incluyendo upgrades activos
   return profiles.map((profile: any) => {
     // Filtrar upgrades activos
-    const activeUpgrades = profile.upgrades?.filter((upgrade: any) => 
+    const activeUpgrades = profile.upgrades?.filter((upgrade: any) =>
       new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
     ) || [];
-    
+
     // Verificar si tiene upgrades específicos activos o incluidos en el plan
-    let hasDestacadoUpgrade = activeUpgrades.some((upgrade: any) => 
+    let hasDestacadoUpgrade = activeUpgrades.some((upgrade: any) =>
       upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT'
     );
-    let hasImpulsoUpgrade = activeUpgrades.some((upgrade: any) => 
+    let hasImpulsoUpgrade = activeUpgrades.some((upgrade: any) =>
       upgrade.code === 'IMPULSO' || upgrade.code === 'BOOST'
     );
-    
+
     // Si es plan DIAMANTE, incluye DESTACADO automáticamente
     if (profile.planAssignment?.planCode === 'DIAMANTE') {
       hasDestacadoUpgrade = true;
     }
-    
+
     return {
       _id: profile._id,
       user: profile.user,
@@ -112,11 +112,11 @@ export const updateUserLastLogin = async (userId: string) => {
       },
       { new: true }
     );
-    
+
     // Actualizar también las verificaciones de perfil asociadas
     if (user && user.profiles.length > 0) {
       const isLastLoginVerified = true; // Simplificado: siempre consideramos verificado
-      
+
       // Actualizar todas las verificaciones de perfiles del usuario
       await ProfileVerification.updateMany(
         { profile: { $in: user.profiles } },
@@ -128,7 +128,7 @@ export const updateUserLastLogin = async (userId: string) => {
         }
       );
     }
-    
+
     return user;
   } catch (error) {
     throw new Error(`Error al actualizar lastLogin: ${error}`);

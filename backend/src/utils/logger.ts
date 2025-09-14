@@ -16,7 +16,7 @@ class ProductionLogger implements Logger {
   constructor() {
     this.logLevel = process.env.LOG_LEVEL || 'info';
     this.logToFile = process.env.NODE_ENV === 'production';
-    this.logDir = path.join(process.cwd(), 'logs');
+    this.logDir = process.env.LOG_DIR || '/tmp/logs';
     
     if (this.logToFile) {
       this.ensureLogDirectory();

@@ -54,7 +54,7 @@ const blogSchema = new Schema<IBlog>(
 );
 
 // Índices para optimizar consultas
-blogSchema.index({ slug: 1 });
+// Nota: El índice para 'slug' se crea automáticamente por unique: true
 blogSchema.index({ published: 1, createdAt: -1 });
 blogSchema.index({ title: 'text', content: 'text' }); // Para búsqueda de texto
 

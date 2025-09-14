@@ -24,7 +24,7 @@ export default function NotFound() {
 
       // Si el primer segmento parece ser un departamento, sugerir rutas con categorías
       const isDepartment = filterOptions.locations.departments.some(dept =>
-        createSlug(dept) === firstSegment
+        createSlug(typeof dept === 'string' ? dept : dept.value || dept.label) === firstSegment
       );
 
       if (isDepartment && filterOptions.categories.length > 0) {

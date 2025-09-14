@@ -429,7 +429,7 @@ export const getAllDepartments = (): LocationValue[] => {
 // Función para obtener todas las ciudades de un departamento en formato LocationValue
 export const getCitiesByDepartment = (departmentNormalized: string): LocationValue[] => {
   const department = colombiaLocations[departmentNormalized];
-  if (!department) return [];
+  if (!department || !department.cities) return [];
 
   return department.cities.map(city => ({
     value: city.normalized,

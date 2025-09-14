@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { MapPin, Plus, Edit, Trash2, Globe, Navigation } from 'lucide-react';
 import { useLocationConfig, useCreateConfigParameter, useUpdateConfigParameter, useDeleteConfigParameter } from '../../../hooks/use-config-parameters';
-import type { LocationConfig, ConfigParameterFormData } from '../../../types/config-parameter.types';
+import type { LocationConfig, ConfigParameterFormData, ConfigParameter } from '../../../types/config-parameter.types';
 
 interface LocationFormData {
     key: string;
@@ -46,7 +46,7 @@ export function LocationManager() {
     const [formData, setFormData] = useState<LocationFormData>(DEFAULT_LOCATION);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    const { locations, loading, error, refetch } = useLocationConfig();
+    const { value: locations, loading, error, refetch } = useLocationConfig();
     const createMutation = useCreateConfigParameter();
     const updateMutation = useUpdateConfigParameter();
     const deleteMutation = useDeleteConfigParameter();
@@ -189,7 +189,7 @@ export function LocationManager() {
         setErrors({});
     };
 
-    const isLoading = createMutation.isLoading || updateMutation.isLoading || deleteMutation.isLoading;
+    const isLoading = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
     if (loading) {
         return (
@@ -543,7 +543,7 @@ export function LocationManager() {
                     </div>
                 ) : (
                     <div className="divide-y divide-gray-200">
-                        {locations.map((location) => {
+                        {locations.map((location: ConfigParameter) => {
                             const locationValue = location.value as LocationConfig;
                             return (
                                 <div key={location._id} className="p-6 hover:bg-gray-50">

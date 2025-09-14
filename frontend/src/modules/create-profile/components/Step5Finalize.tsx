@@ -28,11 +28,10 @@ interface Plan {
     showInSponsored: boolean;
   };
   contentLimits?: {
-    maxPhotos: number;
-    maxVideos: number;
-    maxAudios: number;
-    maxProfiles: number;
-    storiesPerDayMax?: number;
+    photos: { min: number; max: number };
+    videos: { min: number; max: number };
+    audios: { min: number; max: number };
+    storiesPerDayMax: number;
   };
   includedUpgrades?: string[];
 }
@@ -41,13 +40,6 @@ interface PlanVariant {
   price: number;
   days: number;
   durationRank: number;
-  contentLimits?: {
-    maxPhotos: number;
-    maxVideos: number;
-    maxAudios: number;
-    maxProfiles: number;
-    storiesPerDayMax?: number;
-  };
 }
 
 interface DefaultPlanConfig {
@@ -108,10 +100,10 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
           code: defaultPlan.code,
           variants: defaultPlan.variants,
           contentLimits: {
-            maxPhotos: defaultPlan.contentLimits?.maxPhotos || 10,
-            maxVideos: defaultPlan.contentLimits?.maxVideos || 5,
-            maxAudios: defaultPlan.contentLimits?.maxAudios || 3,
-            maxProfiles: defaultPlan.contentLimits?.maxProfiles || 1
+            photos: { min: 0, max: defaultPlan.contentLimits?.photos?.max || 10 },
+            videos: { min: 0, max: defaultPlan.contentLimits?.videos?.max || 5 },
+            audios: { min: 0, max: defaultPlan.contentLimits?.audios?.max || 3 },
+            storiesPerDayMax: defaultPlan.contentLimits?.storiesPerDayMax || 5
           }
         });
 
@@ -129,21 +121,21 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
   // Validar límites de archivos cuando cambie el plan
   useEffect(() => {
     if (selectedPlan && selectedPlan.contentLimits) {
-      const { maxPhotos, maxVideos, maxAudios } = selectedPlan.contentLimits;
+      const { photos, videos, audios } = selectedPlan.contentLimits;
 
       // Validar fotos
-      if (formData.photos && formData.photos.length > maxPhotos) {
-        toast.error(`El plan seleccionado permite máximo ${maxPhotos} fotos. Tienes ${formData.photos.length} fotos.`);
+      if (formData.photos && formData.photos.length > photos.max) {
+        toast.error(`El plan seleccionado permite máximo ${photos.max} fotos. Tienes ${formData.photos.length} fotos.`);
       }
 
       // Validar videos
-      if (formData.videos && formData.videos.length > maxVideos) {
-        toast.error(`El plan seleccionado permite máximo ${maxVideos} videos. Tienes ${formData.videos.length} videos.`);
+      if (formData.videos && formData.videos.length > videos.max) {
+        toast.error(`El plan seleccionado permite máximo ${videos.max} videos. Tienes ${formData.videos.length} videos.`);
       }
 
       // Validar audios
-      if (formData.audios && formData.audios.length > maxAudios) {
-        toast.error(`El plan seleccionado permite máximo ${maxAudios} audios. Tienes ${formData.audios.length} audios.`);
+      if (formData.audios && formData.audios.length > audios.max) {
+        toast.error(`El plan seleccionado permite máximo ${audios.max} audios. Tienes ${formData.audios.length} audios.`);
       }
     }
   }, [selectedPlan, formData.photos, formData.videos, formData.audios]);
@@ -160,10 +152,10 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
         code: plan.code,
         variants: plan.variants,
         contentLimits: {
-          maxPhotos: plan.contentLimits?.maxPhotos || 10,
-          maxVideos: plan.contentLimits?.maxVideos || 5,
-          maxAudios: plan.contentLimits?.maxAudios || 3,
-          maxProfiles: plan.contentLimits?.maxProfiles || 1
+          photos: { min: 0, max: plan.contentLimits?.photos?.max || 10 },
+          videos: { min: 0, max: plan.contentLimits?.videos?.max || 5 },
+          audios: { min: 0, max: plan.contentLimits?.audios?.max || 3 },
+          storiesPerDayMax: plan.contentLimits?.storiesPerDayMax || 5
         }
       });
 
@@ -408,31 +400,25 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
                       <div className="flex items-center space-x-2">
                         <Image className="h-4 w-4 text-blue-500" />
                         <div>
-                          <p className="text-sm font-medium">{selectedPlan.contentLimits.maxPhotos}</p>
+                          <p className="text-sm font-medium">{selectedPlan.contentLimits.photos.max}</p>
                           <p className="text-xs text-muted-foreground">Fotos máx.</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Video className="h-4 w-4 text-red-500" />
                         <div>
-                          <p className="text-sm font-medium">{selectedPlan.contentLimits.maxVideos}</p>
+                          <p className="text-sm font-medium">{selectedPlan.contentLimits.videos.max}</p>
                           <p className="text-xs text-muted-foreground">Videos máx.</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Music className="h-4 w-4 text-green-500" />
                         <div>
-                          <p className="text-sm font-medium">{selectedPlan.contentLimits.maxAudios}</p>
+                          <p className="text-sm font-medium">{selectedPlan.contentLimits.audios.max}</p>
                           <p className="text-xs text-muted-foreground">Audios máx.</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Users className="h-4 w-4 text-purple-500" />
-                        <div>
-                          <p className="text-sm font-medium">{selectedPlan.contentLimits.maxProfiles}</p>
-                          <p className="text-xs text-muted-foreground">Perfiles máx.</p>
-                        </div>
-                      </div>
+
                       {selectedPlan.contentLimits.storiesPerDayMax && (
                         <div className="flex items-center space-x-2">
                           <Star className="h-4 w-4 text-yellow-500" />
@@ -472,13 +458,13 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
                       <div className="flex items-center justify-between">
                         <span className="text-sm">Fotos subidas:</span>
                         <div className="flex items-center space-x-2">
-                          <span className={`text-sm font-medium ${(formData.photos?.length || 0) <= selectedPlan.contentLimits.maxPhotos
+                          <span className={`text-sm font-medium ${(formData.photos?.length || 0) <= selectedPlan.contentLimits.photos.max
                             ? 'text-green-600'
                             : 'text-red-600'
                             }`}>
-                            {formData.photos?.length || 0} / {selectedPlan.contentLimits.maxPhotos}
+                            {formData.photos?.length || 0} / {selectedPlan.contentLimits.photos.max}
                           </span>
-                          {(formData.photos?.length || 0) <= selectedPlan.contentLimits.maxPhotos ? (
+                          {(formData.photos?.length || 0) <= selectedPlan.contentLimits.photos.max ? (
                             <CheckCircle className="h-4 w-4 text-green-500" />
                           ) : (
                             <AlertCircle className="h-4 w-4 text-red-500" />
@@ -488,13 +474,13 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
                       <div className="flex items-center justify-between">
                         <span className="text-sm">Videos subidos:</span>
                         <div className="flex items-center space-x-2">
-                          <span className={`text-sm font-medium ${(formData.videos?.length || 0) <= selectedPlan.contentLimits.maxVideos
+                          <span className={`text-sm font-medium ${(formData.videos?.length || 0) <= selectedPlan.contentLimits.videos.max
                             ? 'text-green-600'
                             : 'text-red-600'
                             }`}>
-                            {formData.videos?.length || 0} / {selectedPlan.contentLimits.maxVideos}
+                            {formData.videos?.length || 0} / {selectedPlan.contentLimits.videos.max}
                           </span>
-                          {(formData.videos?.length || 0) <= selectedPlan.contentLimits.maxVideos ? (
+                          {(formData.videos?.length || 0) <= selectedPlan.contentLimits.videos.max ? (
                             <CheckCircle className="h-4 w-4 text-green-500" />
                           ) : (
                             <AlertCircle className="h-4 w-4 text-red-500" />
@@ -504,13 +490,13 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
                       <div className="flex items-center justify-between">
                         <span className="text-sm">Audios subidos:</span>
                         <div className="flex items-center space-x-2">
-                          <span className={`text-sm font-medium ${(formData.audios?.length || 0) <= selectedPlan.contentLimits.maxAudios
+                          <span className={`text-sm font-medium ${(formData.audios?.length || 0) <= selectedPlan.contentLimits.audios.max
                             ? 'text-green-600'
                             : 'text-red-600'
                             }`}>
-                            {formData.audios?.length || 0} / {selectedPlan.contentLimits.maxAudios}
+                            {formData.audios?.length || 0} / {selectedPlan.contentLimits.audios.max}
                           </span>
-                          {(formData.audios?.length || 0) <= selectedPlan.contentLimits.maxAudios ? (
+                          {(formData.audios?.length || 0) <= selectedPlan.contentLimits.audios.max ? (
                             <CheckCircle className="h-4 w-4 text-green-500" />
                           ) : (
                             <AlertCircle className="h-4 w-4 text-red-500" />
@@ -525,55 +511,7 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
           </Card>
         )}
 
-        {/* Límites de Contenido de la Variante Seleccionada */}
-        {selectedPlan && selectedVariant && selectedVariant.contentLimits && (
-          <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2 mb-3">
-                <CheckCircle className="h-5 w-5 text-blue-500" />
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  <strong>{selectedPlan.name}</strong> - {selectedVariant.days} días
-                </p>
-              </div>
 
-              {/* Límites de Contenido */}
-              <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
-                <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-2">
-                  Límites de contenido para esta variante:
-                </p>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex items-center space-x-1">
-                    <Image className="h-3 w-3 text-blue-500" />
-                    <span className="text-blue-700 dark:text-blue-300">
-                      Fotos: {selectedVariant.contentLimits.maxPhotos}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Video className="h-3 w-3 text-blue-500" />
-                    <span className="text-blue-700 dark:text-blue-300">
-                      Videos: {selectedVariant.contentLimits.maxVideos}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Music className="h-3 w-3 text-blue-500" />
-                    <span className="text-blue-700 dark:text-blue-300">
-                      Audios: {selectedVariant.contentLimits.maxAudios}
-                    </span>
-                  </div>
-
-                  {selectedVariant.contentLimits.storiesPerDayMax && (
-                    <div className="flex items-center space-x-1 col-span-2">
-                      <Star className="h-3 w-3 text-blue-500" />
-                      <span className="text-blue-700 dark:text-blue-300">
-                        Historias por día: {selectedVariant.contentLimits.storiesPerDayMax}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Terms and Conditions */}
         <div className="space-y-4">

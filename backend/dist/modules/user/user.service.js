@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateUserLastLogin = exports.getUserProfiles = exports.getUsers = exports.updateUser = exports.getUserById = exports.uploadUserDocument = exports.findUserByEmail = exports.createUser = void 0;
 const User_model_1 = __importDefault(require("./User.model"));
 const profile_verification_model_1 = __importDefault(require("../profile-verification/profile-verification.model"));
-const verification_progress_utils_1 = require("../profile-verification/verification-progress.utils");
 const createUser = (data) => User_model_1.default.create(data);
 exports.createUser = createUser;
 const findUserByEmail = async (email) => {
@@ -89,7 +88,7 @@ const updateUserLastLogin = async (userId) => {
             'lastLogin.isVerified': true
         }, { new: true });
         if (user && user.profiles.length > 0) {
-            const isLastLoginVerified = (0, verification_progress_utils_1.checkLastLoginVerification)(user.lastLogin.date);
+            const isLastLoginVerified = true;
             await profile_verification_model_1.default.updateMany({ profile: { $in: user.profiles } }, {
                 $set: {
                     'steps.lastLogin.isVerified': isLastLoginVerified,

@@ -42,7 +42,7 @@ export const DashUserPanel = () => {
 
       {/* Usuarios */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {usersData?.docs?.map((user, index) => (
+        {usersData?.docs?.map((user: any, index: number) => (
           <DashboardUserCard
             key={user._id}
             user={user}

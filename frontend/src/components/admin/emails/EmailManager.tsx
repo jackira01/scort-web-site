@@ -16,10 +16,10 @@ import toast from 'react-hot-toast';
 import axios from '@/lib/axios';
 import { useAllEmailUsers, useSearchEmailUsersAction } from '@/hooks/use-email-users';
 
-interface User {
-    id: string;
+interface EmailUser {
+    _id?: string;
     username: string;
-    email: string;
+    email?: string;
     profileName: string;
     profileId: string;
 }
@@ -35,9 +35,9 @@ export default function EmailManager() {
     const [activeTab, setActiveTab] = useState('individual');
     const [usernameSearch, setUsernameSearch] = useState('');
     const [userIdSearch, setUserIdSearch] = useState('');
-    const [searchResults, setSearchResults] = useState<User[]>([]);
+    const [searchResults, setSearchResults] = useState<EmailUser[]>([]);
     const [isSearching, setIsSearching] = useState(false);
-    const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
+    const [selectedUsers, setSelectedUsers] = useState<EmailUser[]>([]);
     const [isSending, setIsSending] = useState(false);
     const [emailData, setEmailData] = useState<EmailData>({
         subject: '',
@@ -54,7 +54,7 @@ export default function EmailManager() {
         if (activeTab === 'masivo' && allUsers.length > 0) {
             setEmailData(prev => ({
                 ...prev,
-                recipients: allUsers.map((user: User) => user.email)
+                recipients: allUsers.map((user: EmailUser) => user.email).filter((email): email is string => Boolean(email))
             }));
         }
     }, [activeTab, allUsers]);
@@ -105,23 +105,23 @@ export default function EmailManager() {
         }
     };
 
-    const addUserToSelection = (user: User) => {
-        if (!selectedUsers.find(u => u.id === user.id)) {
+    const addUserToSelection = (user: EmailUser) => {
+        if (user._id && !selectedUsers.find(u => u?._id === user._id)) {
             const newSelection = [...selectedUsers, user];
             setSelectedUsers(newSelection);
             setEmailData(prev => ({
                 ...prev,
-                recipients: newSelection.map(u => u.email)
+                recipients: newSelection.map(u => u.email).filter((email): email is string => Boolean(email))
             }));
         }
     };
 
     const removeUserFromSelection = (userId: string) => {
-        const newSelection = selectedUsers.filter(u => u.id !== userId);
+        const newSelection = selectedUsers.filter(u => u._id !== userId);
         setSelectedUsers(newSelection);
         setEmailData(prev => ({
             ...prev,
-            recipients: newSelection.map(u => u.email)
+            recipients: newSelection.map(u => u.email).filter((email): email is string => Boolean(email))
         }));
     };
 
@@ -280,7 +280,7 @@ export default function EmailManager() {
                                     <Label>Resultados de búsqueda</Label>
                                     <div className="max-h-60 overflow-y-auto space-y-2">
                                         {searchResults.map((user) => (
-                                            <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div key={user._id || user.email} className="flex items-center justify-between p-3 border rounded-lg">
                                                 <div className="space-y-1">
                                                     <p className="font-medium">{user.profileName}</p>
                                                     <p className="text-sm text-muted-foreground">@{user.username}</p>
@@ -290,9 +290,9 @@ export default function EmailManager() {
                                                 <Button
                                                     size="sm"
                                                     onClick={() => addUserToSelection(user)}
-                                                    disabled={selectedUsers.some(u => u.id === user.id)}
+                                                    disabled={Boolean(user._id && selectedUsers.some(u => u?._id === user._id))}
                                                 >
-                                                    {selectedUsers.some(u => u.id === user.id) ? (
+                                                    {user._id && selectedUsers.some(u => u?._id === user._id) ? (
                                                         <CheckCircle className="h-4 w-4" />
                                                     ) : (
                                                         'Agregar'
@@ -309,10 +309,10 @@ export default function EmailManager() {
                                     <Label>Usuarios seleccionados ({selectedUsers.length})</Label>
                                     <div className="flex flex-wrap gap-2">
                                         {selectedUsers.map((user) => (
-                                            <Badge key={user.id} variant="secondary" className="flex items-center gap-1">
+                                            <Badge key={user._id || user.email} variant="secondary" className="flex items-center gap-1">
                                                 {user.profileName}
                                                 <button
-                                                    onClick={() => removeUserFromSelection(user.id)}
+                                                    onClick={() => user._id && removeUserFromSelection(user._id)}
                                                     className="ml-1 hover:text-destructive"
                                                 >
                                                     ×

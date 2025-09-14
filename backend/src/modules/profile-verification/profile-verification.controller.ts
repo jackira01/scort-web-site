@@ -14,20 +14,20 @@ import EmailService from '../../services/email.service';
 export const getProfileVerificationByProfileId = async (req: Request, res: Response) => {
   try {
     const { profileId } = req.params;
-    
+
     if (!profileId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'ID del perfil es requerido' 
+      return res.status(400).json({
+        success: false,
+        message: 'ID del perfil es requerido'
       });
     }
 
     const verification = await profileVerificationService.getProfileVerificationByProfileId(profileId);
-    
+
     if (!verification) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Verificación no encontrada para este perfil' 
+      return res.status(404).json({
+        success: false,
+        message: 'Verificación no encontrada para este perfil'
       });
     }
 
@@ -37,10 +37,10 @@ export const getProfileVerificationByProfileId = async (req: Request, res: Respo
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error interno del servidor', 
-      error: errorMessage 
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: errorMessage
     });
   }
 };
@@ -49,20 +49,20 @@ export const getProfileVerificationByProfileId = async (req: Request, res: Respo
 export const getProfileVerificationById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     if (!id) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'ID de verificación es requerido' 
+      return res.status(400).json({
+        success: false,
+        message: 'ID de verificación es requerido'
       });
     }
 
     const verification = await profileVerificationService.getProfileVerificationById(id);
-    
+
     if (!verification) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Verificación no encontrada' 
+      return res.status(404).json({
+        success: false,
+        message: 'Verificación no encontrada'
       });
     }
 
@@ -72,10 +72,10 @@ export const getProfileVerificationById = async (req: Request, res: Response) =>
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error interno del servidor', 
-      error: errorMessage 
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: errorMessage
     });
   }
 };
@@ -84,16 +84,16 @@ export const getProfileVerificationById = async (req: Request, res: Response) =>
 export const createProfileVerification = async (req: Request, res: Response) => {
   try {
     const verificationData: CreateProfileVerificationDTO = req.body;
-    
+
     if (!verificationData.profile) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'ID del perfil es requerido' 
+      return res.status(400).json({
+        success: false,
+        message: 'ID del perfil es requerido'
       });
     }
 
     const verification = await profileVerificationService.createProfileVerification(verificationData);
-    
+
     res.status(201).json({
       success: true,
       data: verification,
@@ -101,10 +101,10 @@ export const createProfileVerification = async (req: Request, res: Response) => 
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error interno del servidor', 
-      error: errorMessage 
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: errorMessage
     });
   }
 };
@@ -114,20 +114,20 @@ export const updateProfileVerification = async (req: Request, res: Response) => 
   try {
     const { id } = req.params;
     const updateData: UpdateProfileVerificationDTO = req.body;
-    
+
     if (!id) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'ID de verificación es requerido' 
+      return res.status(400).json({
+        success: false,
+        message: 'ID de verificación es requerido'
       });
     }
 
     const verification = await profileVerificationService.updateProfileVerification(id, updateData);
-    
+
     if (!verification) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Verificación no encontrada' 
+      return res.status(404).json({
+        success: false,
+        message: 'Verificación no encontrada'
       });
     }
 
@@ -138,10 +138,10 @@ export const updateProfileVerification = async (req: Request, res: Response) => 
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error interno del servidor', 
-      error: errorMessage 
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: errorMessage
     });
   }
 };
@@ -151,27 +151,27 @@ export const updateVerificationStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { status, reason }: UpdateVerificationStatusDTO = req.body;
-    
+
     if (!id) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'ID de verificación es requerido' 
+      return res.status(400).json({
+        success: false,
+        message: 'ID de verificación es requerido'
       });
     }
 
     if (!status || !['pending', 'verified', 'rejected'].includes(status)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Estado de verificación inválido. Debe ser: pending, verified o rejected' 
+      return res.status(400).json({
+        success: false,
+        message: 'Estado de verificación inválido. Debe ser: pending, verified o rejected'
       });
     }
 
     const verification = await profileVerificationService.updateVerificationStatus(id, status, reason);
-    
+
     if (!verification) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Verificación no encontrada' 
+      return res.status(404).json({
+        success: false,
+        message: 'Verificación no encontrada'
       });
     }
 
@@ -182,10 +182,10 @@ export const updateVerificationStatus = async (req: Request, res: Response) => {
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error interno del servidor', 
-      error: errorMessage 
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: errorMessage
     });
   }
 };
@@ -194,7 +194,7 @@ export const updateVerificationStatus = async (req: Request, res: Response) => {
 export const getAllProfileVerifications = async (req: Request, res: Response) => {
   try {
     const { status, page, limit } = req.query;
-    
+
     const filters: ProfileVerificationFiltersDTO = {
       status: status as 'pending' | 'verified' | 'rejected' | undefined,
       page: page ? parseInt(page as string) : 1,
@@ -202,7 +202,7 @@ export const getAllProfileVerifications = async (req: Request, res: Response) =>
     };
 
     const result = await profileVerificationService.getAllProfileVerifications(filters);
-    
+
     res.status(200).json({
       success: true,
       data: result.verifications,
@@ -210,10 +210,10 @@ export const getAllProfileVerifications = async (req: Request, res: Response) =>
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error interno del servidor', 
-      error: errorMessage 
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: errorMessage
     });
   }
 };
@@ -222,20 +222,20 @@ export const getAllProfileVerifications = async (req: Request, res: Response) =>
 export const deleteProfileVerification = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     if (!id) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'ID de verificación es requerido' 
+      return res.status(400).json({
+        success: false,
+        message: 'ID de verificación es requerido'
       });
     }
 
     const verification = await profileVerificationService.deleteProfileVerification(id);
-    
+
     if (!verification) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Verificación no encontrada' 
+      return res.status(404).json({
+        success: false,
+        message: 'Verificación no encontrada'
       });
     }
 
@@ -245,10 +245,10 @@ export const deleteProfileVerification = async (req: Request, res: Response) => 
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error interno del servidor', 
-      error: errorMessage 
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: errorMessage
     });
   }
 };
@@ -292,11 +292,11 @@ export const updateVerificationSteps = async (req: Request, res: Response): Prom
     // Enviar notificación por correo a la empresa sobre los cambios de verificación
     try {
       const emailService = new EmailService();
-      
+
       // Obtener información completa del perfil para el email
       const profileName = (updatedVerification.profile as any)?.name || 'Perfil sin nombre';
-      const profileId = updatedVerification.profile.toString();
-      
+      const profileId = (updatedVerification.profile as any)?._id?.toString() || (updatedVerification.profile as any)?.id?.toString() || updatedVerification.profile.toString();
+
       // Crear descripción detallada de los cambios
       const changesDescription = `Se han actualizado los pasos de verificación del perfil.
 
@@ -304,10 +304,10 @@ Estado actual: ${updatedVerification.verificationStatus}
 Progreso: ${updatedVerification.verificationProgress}%
 
 Pasos actualizados:
-${Object.entries(stepsData).map(([step, data]: [string, any]) => 
+${Object.entries(stepsData).map(([step, data]: [string, any]) =>
         `- ${step}: ${data?.isVerified ? 'Verificado' : 'Pendiente'}`
       ).join('\n')}`;
-      
+
       await emailService.sendProfileVerificationNotification(
         profileName,
         profileId,
@@ -336,27 +336,27 @@ ${Object.entries(stepsData).map(([step, data]: [string, any]) =>
 export const recalculateProgress = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     if (!id) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'ID de verificación es requerido' 
+      return res.status(400).json({
+        success: false,
+        message: 'ID de verificación es requerido'
       });
     }
 
     // Obtener verificación actual
     const currentVerification = await profileVerificationService.getProfileVerificationById(id);
-    
+
     if (!currentVerification) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Verificación no encontrada' 
+      return res.status(404).json({
+        success: false,
+        message: 'Verificación no encontrada'
       });
     }
 
     // Recalcular progreso sin actualizar pasos
     const verification = await profileVerificationService.updateVerificationSteps(id, currentVerification.steps as UpdateVerificationStepsDTO);
-    
+
     res.status(200).json({
       success: true,
       data: verification,
@@ -364,10 +364,10 @@ export const recalculateProgress = async (req: Request, res: Response) => {
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error interno del servidor', 
-      error: errorMessage 
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: errorMessage
     });
   }
 };

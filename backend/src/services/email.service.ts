@@ -1,11 +1,11 @@
 import Mailjet from 'node-mailjet';
-import { 
-  EmailRecipient, 
-  EmailContent, 
-  SingleEmailRequest, 
-  BulkEmailRequest, 
-  EmailResponse, 
-  BulkEmailResponse 
+import {
+  EmailRecipient,
+  EmailContent,
+  SingleEmailRequest,
+  BulkEmailRequest,
+  EmailResponse,
+  BulkEmailResponse
 } from '../types/email.types';
 import { ConfigParameterService } from '../modules/config-parameter/config-parameter.service';
 
@@ -20,7 +20,7 @@ class EmailService {
 
     const apiKeyPublic = process.env.MJ_APIKEY_PUBLIC;
     const apiKeyPrivate = process.env.MJ_APIKEY_PRIVATE;
-    
+
     // Obtener configuración desde la base de datos
     this.senderEmail = await ConfigParameterService.getValue('company.email') || '';
     this.appName = await ConfigParameterService.getValue('company.name') || 'Soporte App';
@@ -137,7 +137,7 @@ class EmailService {
       // Procesar resultados
       messageResults.forEach((messageInfo: any, index: number) => {
         const recipient = to[index];
-        
+
         if (messageInfo.Status === 'success') {
           results.push({
             email: recipient.email,
@@ -192,7 +192,7 @@ class EmailService {
   ): Promise<EmailResponse> {
     try {
       await this.initialize();
-      
+
       const companyEmail = await ConfigParameterService.getValue('company.email');
       if (!companyEmail) {
         throw new Error('Email de la empresa no configurado');

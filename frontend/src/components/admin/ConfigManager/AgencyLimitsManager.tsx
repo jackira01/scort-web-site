@@ -135,8 +135,7 @@ export function AgencyLimitsManager() {
               data: {
                 value: update.value,
                 name: update.name,
-                type: update.type,
-                category: 'profiles'
+                modifiedBy: 'system' // TODO: Use actual user ID
               }
             });
           } else {

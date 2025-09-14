@@ -140,21 +140,13 @@ export default function CreateBlogPage() {
 
     // Validar tipo de archivo
     if (!file.type.startsWith('image/')) {
-      toast({
-        title: 'Error',
-        description: 'Solo se permiten archivos de imagen',
-        variant: 'destructive'
-      });
+      toast.error('Solo se permiten archivos de imagen');
       return;
     }
 
     // Validar tamaño (máximo 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: 'Error',
-        description: 'El archivo es demasiado grande. Máximo 10MB.',
-        variant: 'destructive'
-      });
+      toast.error('El archivo es demasiado grande. Máximo 10MB.');
       return;
     }
 
@@ -165,7 +157,7 @@ export default function CreateBlogPage() {
 
     // Agregar archivo para subida diferida
     const { id, preview } = addPendingFile(file, 'image');
-    
+
     setFormData(prev => ({
       ...prev,
       coverImage: preview,
@@ -176,11 +168,7 @@ export default function CreateBlogPage() {
       setErrors(prev => ({ ...prev, coverImage: undefined }));
     }
 
-    toast({
-      title: 'Imagen seleccionada',
-      description: 'Se subirá al guardar el blog.',
-      variant: 'default'
-    });
+    toast.success('Imagen seleccionada. Se subirá al guardar el blog.');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -194,7 +182,7 @@ export default function CreateBlogPage() {
       }
 
       const updatedFormData = { ...formData, content: currentContent };
-      
+
       // Validar con el contenido actualizado
       const newErrors: BlogFormErrors = {};
 
@@ -212,17 +200,13 @@ export default function CreateBlogPage() {
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
-        toast({
-          title: 'Error en el formulario',
-          description: 'Por favor corrige los errores en el formulario',
-          variant: 'destructive'
-        });
+        toast.error('Por favor corrige los errores en el formulario');
         return;
       }
 
       // Subir archivos pendientes a Cloudinary
       const uploadedUrls = await uploadAllPendingFiles('blog-images');
-      
+
       // Procesar imagen de portada
       let finalCoverImage = updatedFormData.coverImage;
       if (updatedFormData.coverImageFileId && uploadedUrls[updatedFormData.coverImageFileId]) {
@@ -240,29 +224,17 @@ export default function CreateBlogPage() {
         published: updatedFormData.published,
       });
 
-      toast({
-        title: 'Blog creado',
-        description: 'Blog creado exitosamente',
-        variant: 'default'
-      });
+      toast.success('Blog creado exitosamente');
       router.push('/adminboard?section=blogs');
     } catch (error) {
       console.error('Error creating blog:', error);
-      toast({
-        title: 'Error',
-        description: 'Error al guardar el blog',
-        variant: 'destructive'
-      });
+      toast.error('Error al guardar el blog');
     }
   };
 
   const handleSaveDraft = async () => {
     if (!formData.title.trim()) {
-      toast({
-        title: 'Error',
-        description: 'El título es requerido para guardar el borrador',
-        variant: 'destructive'
-      });
+      toast.error('El título es requerido para guardar el borrador');
       return;
     }
 
@@ -275,7 +247,7 @@ export default function CreateBlogPage() {
 
       // Subir archivos pendientes a Cloudinary
       const uploadedUrls = await uploadAllPendingFiles('blog-images');
-      
+
       // Procesar imagen de portada
       let finalCoverImage = formData.coverImage;
       if (formData.coverImageFileId && uploadedUrls[formData.coverImageFileId]) {
@@ -293,19 +265,11 @@ export default function CreateBlogPage() {
         published: false,
       });
 
-      toast({
-        title: 'Borrador guardado',
-        description: 'Borrador guardado exitosamente',
-        variant: 'default'
-      });
+      toast.success('Borrador guardado exitosamente');
       router.push('/adminboard?section=blogs');
     } catch (error) {
       console.error('Error saving draft:', error);
-      toast({
-        title: 'Error',
-        description: 'Error al guardar el borrador',
-        variant: 'destructive'
-      });
+      toast.error('Error al guardar el borrador');
     }
   };
 
@@ -320,10 +284,10 @@ export default function CreateBlogPage() {
       if (editorRef.current) {
         currentContent = await editorRef.current.getData();
       }
-      
+
       console.log('Preview - currentContent:', currentContent);
-      console.log('Preview - blocks length:', currentContent?.blocks?.length);
-      
+      console.log('Preview - blocks length:', currentContent?.blocks?.length || 0);
+
       setPreviewContent(currentContent);
     } catch (error) {
       console.error('Error getting editor content for preview:', error);
@@ -337,7 +301,7 @@ export default function CreateBlogPage() {
     if (isLoadingPreview) {
       return <p className="text-gray-500">Cargando vista previa...</p>;
     }
-    
+
     if (!previewContent || !previewContent.blocks || previewContent.blocks.length === 0) {
       return <p className="text-gray-500">No hay contenido para mostrar</p>;
     }
@@ -516,7 +480,7 @@ export default function CreateBlogPage() {
                         Subir imagen desde mi equipo
                       </Button>
                     </div>
-                    
+
                     {/* URL Input */}
                     <div>
                       <Input

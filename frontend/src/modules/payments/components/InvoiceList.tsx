@@ -35,13 +35,12 @@ interface InvoiceListProps {
 
 export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: InvoiceListProps) {
   const { data: session } = useSession();
-  const { toast } = useToast();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<InvoiceFilters>({
-    userId: userId || session?.user?.id,
+    userId: userId || session?.user?._id,
   });
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [showPayModal, setShowPayModal] = useState(false);
@@ -54,11 +53,7 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
       setInvoices(response.invoices);
       setTotalPages(response.totalPages);
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'No se pudieron cargar las facturas.',
-        variant: 'destructive',
-      });
+      toast.error('No se pudieron cargar las facturas.');
     } finally {
       setLoading(false);
     }
@@ -208,7 +203,7 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setFilters({ userId: userId || session?.user?.id });
+                    setFilters({ userId: userId || session?.user?._id });
                     setCurrentPage(1);
                   }}
                   className="w-full"

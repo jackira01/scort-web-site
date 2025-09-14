@@ -495,7 +495,7 @@ async function sendWebhookAlert(alert) {
 // Configuración de logging de métricas
 const metricsLogging = {
   // Directorio de logs
-  logDir: path.join(process.cwd(), 'logs', 'metrics'),
+  logDir: path.join(process.env.LOG_DIR || path.join(process.cwd(), 'logs'), 'metrics'),
   
   // Rotación de logs
   rotation: {

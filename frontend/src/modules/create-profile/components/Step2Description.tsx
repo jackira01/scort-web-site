@@ -17,9 +17,10 @@ export function Step2Description({
   const { control, watch, setValue, formState: { errors } } = useFormContext();
   const formData = watch();
   const handleServiceToggle = (service: string) => {
-    const selectedServices = formData.selectedServices.includes(service)
-      ? formData.selectedServices.filter((s) => s !== service)
-      : [...formData.selectedServices, service];
+    const currentServices = formData.selectedServices || [];
+    const selectedServices = currentServices.includes(service)
+      ? currentServices.filter((s) => s !== service)
+      : [...currentServices, service];
 
     setValue('selectedServices', selectedServices);
   };
@@ -40,7 +41,7 @@ export function Step2Description({
               Acerca de mí <span className="text-red-500">*</span>
             </Label>
             <span className="text-sm text-muted-foreground">
-              {formData.description.length} / 1000 caracteres restantes
+              {(formData.description || '').length} / 1000 caracteres restantes
             </span>
           </div>
           <Controller
@@ -77,14 +78,14 @@ export function Step2Description({
                 <div key={service.value} className="flex items-center space-x-2">
                   <Checkbox
                     id={service.value}
-                    checked={formData.selectedServices.includes(service.value)}
+                    checked={formData.selectedServices?.includes(service.value) || false}
                     onCheckedChange={() => handleServiceToggle(service.value)}
                   />
                   <Label
                     htmlFor={service.value}
                     className="text-sm text-foreground cursor-pointer"
                   >
-                    {typeof service === 'object' && service !== null && 'label' in service ? service.label : service.value}
+                    {service.label || service.value}
                   </Label>
                 </div>
               ))}

@@ -52,7 +52,7 @@ export const DashProfilePanel = () => {
 
       {/* Perfiles */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {profilesData?.docs?.map((profile, index) => (
+        {profilesData?.docs?.map((profile: any, index: number) => (
           <DashbProfileCard
             key={profile._id}
             profile={profile}
@@ -95,8 +95,8 @@ export const DashProfilePanel = () => {
           isOpen={!!managePlansProfileId}
           onClose={() => setManagePlansProfileId(null)}
           profileId={managePlansProfileId}
-          profileName={profilesData?.docs?.find(p => p._id === managePlansProfileId)?.profileName || profilesData?.docs?.find(p => p._id === managePlansProfileId)?.name || ''}
-          currentPlan={profilesData?.docs?.find(p => p._id === managePlansProfileId)?.planAssignment}
+          profileName={profilesData?.docs?.find((p: any) => p._id === managePlansProfileId)?.profileName || profilesData?.docs?.find((p: any) => p._id === managePlansProfileId)?.name || ''}
+          currentPlan={profilesData?.docs?.find((p: any) => p._id === managePlansProfileId)?.planAssignment}
           onPlanChange={() => {
             // Invalidar queries para actualizar los datos
             // queryClient.invalidateQueries({ queryKey: ['adminProfiles'] });

@@ -6,10 +6,8 @@ import filtersRoutes from './filters.routes';
 
 // Exportaciones explícitas del controlador
 export {
-  getFilteredProfiles as getFilteredProfilesController,
   getFilteredProfilesPost,
-  getFilterOptions as getFilterOptionsController,
-  getProfilesCount
+  getFilterOptions as getFilterOptionsController
 } from './filters.controller';
 
 // Exportaciones explícitas del servicio

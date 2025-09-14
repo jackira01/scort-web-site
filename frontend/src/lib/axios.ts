@@ -30,7 +30,7 @@ axiosInstance.interceptors.request.use(
       if (session?.accessToken) {
         // Usar el token JWT personalizado de NextAuth.js
         config.headers['Authorization'] = `Bearer ${session.accessToken}`;
-      } else if (session?.user?._id) {
+      } else if (session?.user && session.user._id) {
         // Fallback: usar X-User-ID si no hay accessToken
         config.headers['X-User-ID'] = session.user._id;
       } else if (process.env.NODE_ENV === 'development') {

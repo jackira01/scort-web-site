@@ -55,7 +55,7 @@ const updateDefaultPlanConfig = async (config: DefaultPlanConfig): Promise<void>
         key: 'system.default_plan',
         name: 'Plan por Defecto',
         value: config,
-        type: 'object',
+        type: 'object' as const,
         category: 'system',
         metadata: {
           description: 'Configuración del plan por defecto para nuevos perfiles'
@@ -71,12 +71,11 @@ const updateDefaultPlanConfig = async (config: DefaultPlanConfig): Promise<void>
           key: 'system.default_plan',
           name: 'Plan por Defecto',
           value: config,
-          type: 'object',
+          type: 'object' as const,
           category: 'system',
           metadata: {
             description: 'Configuración del plan por defecto para nuevos perfiles'
-          },
-          isActive: true
+          }
         };
         
         await ConfigParameterService.create(createData);

@@ -33,9 +33,11 @@ RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 # Copiar el build desde builder
 COPY --from=builder /app/dist ./dist
 
-# Usuario no root
+# Crear directorio de logs y usuario no root
 RUN addgroup -g 1001 -S nodejs \
- && adduser -S backend -u 1001
+ && adduser -S backend -u 1001 \
+ && mkdir -p /app/logs \
+ && chown -R backend:nodejs /app/logs
 USER backend
 
 EXPOSE 5000

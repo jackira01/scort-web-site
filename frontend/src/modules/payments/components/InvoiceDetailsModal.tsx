@@ -178,7 +178,7 @@ export function InvoiceDetailsModal({ open, onOpenChange, invoice }: InvoiceDeta
           </Card>
 
           {/* Información de pago */}
-          {(invoice.paymentMethod || invoice.paymentReference) && (
+          {(invoice.paymentData?.paymentMethod || invoice.paymentData?.paymentReference) && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center space-x-2">
@@ -187,17 +187,17 @@ export function InvoiceDetailsModal({ open, onOpenChange, invoice }: InvoiceDeta
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {invoice.paymentMethod && (
+                {invoice.paymentData?.paymentMethod && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Método de Pago</p>
-                    <p className="text-sm">{invoice.paymentMethod}</p>
+                    <p className="text-sm">{invoice.paymentData.paymentMethod}</p>
                   </div>
                 )}
                 
-                {invoice.paymentReference && (
+                {invoice.paymentData?.paymentReference && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Referencia de Pago</p>
-                    <p className="text-sm font-mono">{invoice.paymentReference}</p>
+                    <p className="text-sm font-mono">{invoice.paymentData.paymentReference}</p>
                   </div>
                 )}
               </CardContent>
@@ -259,11 +259,11 @@ export function InvoiceDetailsModal({ open, onOpenChange, invoice }: InvoiceDeta
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">ID de Usuario</p>
-                  <p className="text-sm font-mono">{invoice.userId}</p>
+                  <p className="text-sm font-mono">{typeof invoice.userId === 'string' ? invoice.userId : invoice.userId._id}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">ID de Perfil</p>
-                  <p className="text-sm font-mono">{invoice.profileId}</p>
+                  <p className="text-sm font-mono">{typeof invoice.profileId === 'string' ? invoice.profileId : invoice.profileId._id}</p>
                 </div>
               </div>
               

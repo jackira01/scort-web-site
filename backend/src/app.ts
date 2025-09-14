@@ -36,20 +36,20 @@ const app = express();
 const whitelist = JSON.parse(ORIGIN_ALLOWED || '[]');
 
 const corsOptions: CorsOptions = {
-    origin: (origin, callback) => {
-        if (!origin || whitelist.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true, // si usas cookies o headers personalizados
+  origin: (origin, callback) => {
+    if (!origin || whitelist.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true, // si usas cookies o headers personalizados
 };
 
 if (ENVIROMENT === 'development') {
-    app.use(cors()); // no necesitas '*', cors() permite todos por defecto
+  app.use(cors()); // no necesitas '*', cors() permite todos por defecto
 } else {
-    app.use(cors(corsOptions));
+  app.use(cors(corsOptions));
 }
 
 
@@ -73,12 +73,12 @@ app.use(securityMiddleware);
 app.use(generalRateLimit);
 
 // Optimizar parsing de JSON con límites apropiados
-app.use(express.json({ 
+app.use(express.json({
   limit: '10mb',
   type: ['application/json', 'text/plain']
 }));
-app.use(express.urlencoded({ 
-  extended: true, 
+app.use(express.urlencoded({
+  extended: true,
   limit: '10mb',
   parameterLimit: 1000 // Limitar número de parámetros
 }));
@@ -92,7 +92,12 @@ if (process.env.NODE_ENV === 'production') {
 
 
 app.get('/ping', (req, res) => {
-    res.send('pong');
+  res.json({ message: 'pong', timestamp: new Date().toISOString() });
+});
+
+// Ruta raíz para evitar 404
+app.get('/', (req, res) => {
+  res.send('Backend API is running 🚀');
 });
 app.use('/api/attribute-groups', attributeGroupRoutes);
 app.use('/api/blogs', blogRoutes);

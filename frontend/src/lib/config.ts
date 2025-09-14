@@ -27,7 +27,7 @@ export const CATEGORIES = [
   { value: 'acompañante', label: 'Acompañante' },
 ];
 
-import { getAllDepartments, getCitiesByDepartment } from '@/utils/colombiaData';
+import { getAllDepartments, getCitiesByDepartment } from '../utils/colombiaData';
 
 // Convertir datos de Colombia al formato esperado por la aplicación
 function createLocationsFromColombiaData() {

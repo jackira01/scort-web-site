@@ -32,7 +32,7 @@ export const DescriptionProfile = ({
               >
                 <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                 <span className="text-foreground text-sm">
-                  {typeof service === 'object' && service !== null && 'label' in service ? service.label : service}
+                  {typeof service === 'object' && service !== null && 'label' in service ? (service as any).label : service}
                 </span>
               </div>
             ))}

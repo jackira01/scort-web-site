@@ -155,7 +155,7 @@ export const useLocationSelection = () => {
         if (!department) return false;
 
         if (cityNormalized) {
-            return department.cities.some((c) => c.value === cityNormalized);
+            return department.cities && department.cities.some((c) => c.value === cityNormalized);
         }
 
         return true;

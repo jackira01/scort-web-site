@@ -338,7 +338,7 @@ class BlogService {
           const text = block.data?.text || '';
           return this.stripHtmlTags(text);
         })
-        .filter(text => text.trim().length > 0)
+        .filter((text: string) => text.trim().length > 0)
         .join(' ');
 
       const cleanText = textBlocks.trim();

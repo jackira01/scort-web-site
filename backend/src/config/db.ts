@@ -15,7 +15,8 @@ const getConnectionOptions = () => {
     readPreference: 'primary' as ReadPreferenceMode, // Leer desde el primario
     ...(isProduction && {
       ssl: true, // SSL en producción
-      sslValidate: true,
+      tlsAllowInvalidCertificates: false, // Validar certificados SSL/TLS
+      tlsAllowInvalidHostnames: false, // Validar nombres de host
     })
   };
 };

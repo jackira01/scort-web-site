@@ -55,7 +55,7 @@ export function TextManager() {
     const [activeLanguage, setActiveLanguage] = useState('es');
     const [previewMode, setPreviewMode] = useState(false);
 
-    const { texts, loading, error, refetch } = useTextConfig();
+    const { value: texts, loading, error, refetch } = useTextConfig();
     const createMutation = useCreateConfigParameter();
     const updateMutation = useUpdateConfigParameter();
     const deleteMutation = useDeleteConfigParameter();
@@ -69,13 +69,13 @@ export function TextManager() {
     };
 
     const handleEdit = (text: any) => {
-        const textValue = text.value as TextConfig;
+        const textValue = text.value as any;
         setFormData({
             key: text.key,
             name: text.name,
             description: text.metadata?.description || '',
-            content: textValue.content,
-            defaultLanguage: textValue.defaultLanguage,
+            content: textValue.content || { es: '', en: '' },
+            defaultLanguage: textValue.defaultLanguage || 'es',
             category: textValue.category || 'general',
             isRichText: textValue.isRichText || false,
             maxLength: textValue.maxLength,
@@ -140,7 +140,7 @@ export function TextManager() {
                 content: formData.content,
                 defaultLanguage: formData.defaultLanguage,
                 category: formData.category,
-                isRichText: formData.isRichText,
+                isRichText: formData.isRichText ? 'true' : 'false',
                 maxLength: formData.maxLength
             };
 
@@ -236,7 +236,7 @@ export function TextManager() {
         }
     };
 
-    const isLoading = createMutation.isLoading || updateMutation.isLoading || deleteMutation.isLoading;
+    const isLoading = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
     if (loading) {
         return (
@@ -604,10 +604,11 @@ export function TextManager() {
                     </div>
                 ) : (
                     <div className="divide-y divide-gray-200">
-                        {texts.map((text) => {
+                        {texts.map((text: any) => {
                             const textValue = text.value as TextConfig;
-                            const defaultContent = textValue.content[textValue.defaultLanguage] || '';
-                            const availableLanguages = Object.keys(textValue.content).filter(lang => textValue.content[lang]);
+                            const content = textValue.content as Record<string, string>;
+                            const defaultContent = content[textValue.defaultLanguage] || '';
+                            const availableLanguages = Object.keys(content).filter(lang => content[lang]);
                             
                             return (
                                 <div key={text._id} className="p-6 hover:bg-gray-50">
@@ -628,7 +629,7 @@ export function TextManager() {
                                                         ? 'bg-purple-100 text-purple-800'
                                                         : 'bg-gray-100 text-gray-800'
                                                 }`}>
-                                                    {TEXT_CATEGORIES.find(c => c.value === textValue.category)?.label || textValue.category}
+                                                    {TEXT_CATEGORIES.find(c => c.value === textValue.category)?.label || String(textValue.category)}
                                                 </span>
                                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                                     text.isActive

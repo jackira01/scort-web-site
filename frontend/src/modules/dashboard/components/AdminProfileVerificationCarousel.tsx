@@ -65,7 +65,7 @@ const AdminProfileVerificationCarousel: React.FC<
   // Mutation hook for updating verification
   const updateVerificationMutation = useProfileVerificationMutation({
     profileId,
-    verificationId: verificationData?.data?._id,
+    verificationId: verificationData?._id,
     onSuccess: () => {
       // Callback adicional si es necesario
     }
@@ -138,8 +138,8 @@ const AdminProfileVerificationCarousel: React.FC<
 
   // Save and cancel functions
   const handleSaveChanges = async () => {
-    if (!verificationData?.data) return;
-    const updatedSteps = buildUpdatedSteps(verificationData.data);
+    if (!verificationData) return;
+    const updatedSteps = buildUpdatedSteps(verificationData);
     await updateVerificationMutation.mutateAsync(updatedSteps);
     resetChanges();
   };
@@ -167,7 +167,7 @@ const AdminProfileVerificationCarousel: React.FC<
     );
   }
 
-  if (error || !verificationData?.data) {
+  if (error || !verificationData) {
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl">
@@ -201,16 +201,16 @@ const AdminProfileVerificationCarousel: React.FC<
               <span>Verificación de Perfil - {profileName}</span>
               <Badge
                 variant={
-                  verificationData?.data?.verificationStatus === 'verified'
+                  verificationData?.verificationStatus === 'verified'
                     ? 'default'
-                    : verificationData?.data?.verificationStatus === 'rejected'
+                    : verificationData?.verificationStatus === 'rejected'
                       ? 'destructive'
                       : 'secondary'
                 }
               >
-                {verificationData?.data?.verificationStatus === 'verified'
+                {verificationData?.verificationStatus === 'verified'
                   ? 'Verificado'
-                  : verificationData?.data?.verificationStatus === 'rejected'
+                  : verificationData?.verificationStatus === 'rejected'
                     ? 'Rechazado'
                     : 'Pendiente'}
               </Badge>
@@ -247,12 +247,12 @@ const AdminProfileVerificationCarousel: React.FC<
               </div>
               <Badge
                 variant={
-                  getVerifiedCount(verificationData.data) === verificationSteps.length
+                  getVerifiedCount(verificationData) === verificationSteps.length
                     ? 'default'
                     : 'secondary'
                 }
               >
-                {getVerifiedCount(verificationData.data)}/{verificationSteps.length} Verificados
+                {getVerifiedCount(verificationData)}/{verificationSteps.length} Verificados
               </Badge>
             </div>
 
@@ -265,7 +265,7 @@ const AdminProfileVerificationCarousel: React.FC<
                   onClick={() => setCurrentStepIndex(index)}
                   className={`h-2 w-2 rounded-full transition-colors ${index === currentStepIndex
                     ? 'bg-primary'
-                    : verificationData?.data?.steps?.[verificationSteps[index].key]
+                    : verificationData?.steps?.[verificationSteps[index].key]
                       ?.isVerified
                       ? 'bg-green-500'
                       : 'bg-muted'
@@ -284,12 +284,12 @@ const AdminProfileVerificationCarousel: React.FC<
                   </div>
                   <Badge
                     variant={
-                      verificationData?.data?.steps?.[currentStep.key]?.isVerified
+                      verificationData?.steps?.[currentStep.key]?.isVerified
                         ? 'default'
                         : 'secondary'
                     }
                   >
-                    {verificationData?.data?.steps?.[currentStep.key]?.isVerified ? (
+                    {verificationData?.steps?.[currentStep.key]?.isVerified ? (
                       <>
                         <Check className="h-3 w-3 mr-1" /> Verificado
                       </>
@@ -319,7 +319,7 @@ const AdminProfileVerificationCarousel: React.FC<
                     </div>
                   </div>
                   <Switch
-                    checked={getCurrentVerificationStatus(currentStep.key, verificationData.data)}
+                    checked={getCurrentVerificationStatus(currentStep.key, verificationData)}
                     onCheckedChange={(checked) =>
                       handleToggleVerification(currentStep.key, checked)
                     }
@@ -331,9 +331,9 @@ const AdminProfileVerificationCarousel: React.FC<
                 <div className="border rounded-lg p-4">
                   <VerificationStepRenderer
                     step={currentStep}
-                    stepData={verificationData?.data?.steps?.[currentStep.key]}
+                    stepData={verificationData?.steps?.[currentStep.key]}
                     onPreviewImage={setPreviewImage}
-                    getCurrentVideoLink={(stepKey) => getCurrentVideoLink(stepKey, verificationData.data)}
+                    getCurrentVideoLink={(stepKey) => getCurrentVideoLink(stepKey, verificationData)}
                     handleVideoLinkChange={handleVideoLinkChange}
                   />
                 </div>

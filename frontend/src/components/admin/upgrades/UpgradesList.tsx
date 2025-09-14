@@ -157,7 +157,7 @@ export default function UpgradesList({ onEdit }: UpgradesListProps) {
           </Card>
         ) : (
           data?.upgrades?.map((upgrade) => (
-            <Card key={upgrade.id} className="hover:shadow-md transition-shadow">
+            <Card key={upgrade._id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -177,21 +177,21 @@ export default function UpgradesList({ onEdit }: UpgradesListProps) {
                       <div className="flex items-center gap-1">
                         <DollarSign className="h-4 w-4 text-green-600" />
                         <span className="font-medium">
-                          {formatCurrency(upgrade.price)}
+                          {formatCurrency(upgrade.price || 0)}
                         </span>
                       </div>
                       
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4 text-blue-600" />
                         <span>
-                          {upgrade.durationDays} día{upgrade.durationDays !== 1 ? 's' : ''}
+                          {Math.round(upgrade.durationHours / 24)} día{Math.round(upgrade.durationHours / 24) !== 1 ? 's' : ''}
                         </span>
                       </div>
                       
-                      {upgrade.boostMultiplier && (
+                      {upgrade.effect?.priorityBonus && (
                         <div className="flex items-center gap-1">
                           <Zap className="h-4 w-4 text-yellow-600" />
-                          <span>x{upgrade.boostMultiplier} boost</span>
+                          <span>+{upgrade.effect.priorityBonus} prioridad</span>
                         </div>
                       )}
                     </div>
@@ -211,7 +211,7 @@ export default function UpgradesList({ onEdit }: UpgradesListProps) {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDelete(upgrade.id)}
+                      onClick={() => handleDelete(upgrade._id!)}
                       className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
                       disabled={deleteUpgradeMutation.isPending}
                     >

@@ -4,11 +4,11 @@ import { Metadata } from 'next';
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     categoria: string;
     departamento: string;
     ciudad: string;
-  };
+  }>;
 }
 
 // Configuración para ISR - no precompilamos rutas en build time
@@ -61,7 +61,7 @@ async function getData(categoria: string, departamento: string, ciudad: string) 
 
 // Generar metadata dinámicamente
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { categoria, departamento, ciudad } = params;
+  const { categoria, departamento, ciudad } = await params;
 
   return {
     title: `${categoria} en ${ciudad}, ${departamento} | Scort`,
@@ -74,7 +74,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function LocationPage({ params }: PageProps) {
-  const { categoria, departamento, ciudad } = params;
+  const { categoria, departamento, ciudad } = await params;
 
   // Obtener datos con ISR
   const data = await getData(categoria, departamento, ciudad);

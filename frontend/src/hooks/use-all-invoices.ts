@@ -59,11 +59,7 @@ export const useAllInvoices = (options: UseAllInvoicesOptions = {}): UseAllInvoi
       if (startDate) filters.startDate = startDate;
       if (endDate) filters.endDate = endDate;
 
-      return await invoiceService.getInvoices({
-        page,
-        limit,
-        ...filters
-      });
+      return await invoiceService.getInvoices(filters, page, limit);
     },
     staleTime: 30000, // 30 segundos
     gcTime: 5 * 60 * 1000, // 5 minutos
@@ -76,7 +72,7 @@ export const useAllInvoices = (options: UseAllInvoicesOptions = {}): UseAllInvoi
   } = useQuery({
     queryKey: ['invoiceStats'],
     queryFn: async () => {
-      const allInvoicesResponse = await invoiceService.getInvoices({ limit: 1000 });
+      const allInvoicesResponse = await invoiceService.getInvoices({}, 1, 1000);
       const allInvoices = allInvoicesResponse.invoices;
 
       const now = new Date();
@@ -111,7 +107,7 @@ export const useAllInvoices = (options: UseAllInvoicesOptions = {}): UseAllInvoi
     invoices: invoicesData?.invoices || [],
     total: invoicesData?.total || 0,
     totalPages: invoicesData?.totalPages || 0,
-    currentPage: invoicesData?.currentPage || page,
+    currentPage: invoicesData?.page || page,
     isLoading: isLoadingInvoices || isLoadingStats,
     error: invoicesError ? (invoicesError instanceof Error ? invoicesError.message : 'Error al cargar las facturas') : null,
     refetch: refetchInvoices,

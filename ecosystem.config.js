@@ -17,9 +17,9 @@ module.exports = {
         PORT: 5000
       },
       // Configuración de logs
-      log_file: './logs/backend-combined.log',
-      out_file: './logs/backend-out.log',
-      error_file: './logs/backend-error.log',
+      log_file: `${process.env.LOG_DIR || './logs'}/backend-combined.log`,
+      out_file: `${process.env.LOG_DIR || './logs'}/backend-out.log`,
+      error_file: `${process.env.LOG_DIR || './logs'}/backend-error.log`,
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       
       // Configuración de reinicio automático
@@ -73,9 +73,9 @@ module.exports = {
       },
       
       // Configuración de logs
-      log_file: './logs/frontend-combined.log',
-      out_file: './logs/frontend-out.log',
-      error_file: './logs/frontend-error.log',
+      log_file: `${process.env.LOG_DIR || './logs'}/frontend-combined.log`,
+      out_file: `${process.env.LOG_DIR || './logs'}/frontend-out.log`,
+      error_file: `${process.env.LOG_DIR || './logs'}/frontend-error.log`,
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       
       // Configuración de reinicio automático

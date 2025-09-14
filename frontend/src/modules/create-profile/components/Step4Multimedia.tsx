@@ -65,11 +65,11 @@ export function Step4Multimedia({ }: Step4MultimediaProps) {
     if (defaultConfig?.enabled && defaultConfig.planId && plans.length > 0) {
       const defaultPlan = plans.find(plan => plan._id === defaultConfig.planId);
 
-      if (defaultPlan && defaultPlan.variants) {
+      if (defaultPlan && defaultPlan.contentLimits) {
         setContentLimits({
-          maxPhotos: defaultPlan.variants[0].contentLimits.maxPhotos || 20,
-          maxVideos: defaultPlan.variants[0].contentLimits.maxVideos || 8,
-          maxAudios: defaultPlan.variants[0].contentLimits.maxAudios || 6
+          maxPhotos: defaultPlan.contentLimits.photos.max || 20,
+          maxVideos: defaultPlan.contentLimits.videos.max || 8,
+          maxAudios: defaultPlan.contentLimits.audios.max || 6
         });
       }
     }

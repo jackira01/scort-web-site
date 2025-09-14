@@ -32,7 +32,15 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
     const conversionData: AgencyConversionRequest = {
       businessName: user.name || 'Empresa',
       businessDocument: 'Pendiente de verificación',
-      reason: 'Solicitud de conversión a cuenta de agencia'
+      reason: 'Solicitud de conversión a cuenta de agencia',
+      _id: '',
+      user: {
+        _id: user._id || '',
+        email: user.email || '',
+        name: user.name || ''
+      },
+      conversionRequestedAt: new Date(),
+      conversionStatus: 'pending'
     };
 
     requestConversion.mutate(conversionData, {
@@ -185,16 +193,16 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
             <Button
               variant="outline"
               onClick={() => setShowWarningModal(false)}
-              disabled={requestConversion.isLoading}
+              disabled={requestConversion.isPending}
             >
               Cancelar
             </Button>
             <Button
               onClick={handleAcceptConversion}
-              disabled={requestConversion.isLoading}
+              disabled={requestConversion.isPending}
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
             >
-              {requestConversion.isLoading ? 'Procesando...' : 'Aceptar'}
+              {requestConversion.isPending ? 'Procesando...' : 'Aceptar'}
             </Button>
           </DialogFooter>
         </DialogContent>
