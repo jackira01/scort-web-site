@@ -2,14 +2,14 @@ import { Metadata } from 'next';
 
 interface LayoutProps {
   children: React.ReactNode;
-  params: {
+  params: Promise<{
     categoria: string;
-  };
+  }>;
 }
 
 // Generar metadata para la categoría
 export async function generateMetadata({ params }: LayoutProps): Promise<Metadata> {
-  const { categoria } = params;
+  const { categoria } = await params;
 
   return {
     title: {
@@ -29,7 +29,9 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
   };
 }
 
-export default function CategoriaLayout({ children, params }: LayoutProps) {
+export default async function CategoriaLayout({ children, params }: LayoutProps) {
+  const { categoria } = await params;
+  
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header específico de categoría si es necesario */}
@@ -38,7 +40,7 @@ export default function CategoriaLayout({ children, params }: LayoutProps) {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {params.categoria.charAt(0).toUpperCase() + params.categoria.slice(1)}
+                {categoria.charAt(0).toUpperCase() + categoria.slice(1)}
               </h1>
               <p className="text-gray-600 mt-1">
                 Encuentra los mejores servicios en tu ubicación

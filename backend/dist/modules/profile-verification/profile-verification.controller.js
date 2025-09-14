@@ -32,9 +32,13 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.recalculateProgress = exports.updateVerificationSteps = exports.deleteProfileVerification = exports.getAllProfileVerifications = exports.updateVerificationStatus = exports.updateProfileVerification = exports.createProfileVerification = exports.getProfileVerificationById = exports.getProfileVerificationByProfileId = void 0;
 const profileVerificationService = __importStar(require("./profile-verification.service"));
+const email_service_1 = __importDefault(require("../../services/email.service"));
 const getProfileVerificationByProfileId = async (req, res) => {
     try {
         const { profileId } = req.params;
@@ -276,6 +280,22 @@ const updateVerificationSteps = async (req, res) => {
                 message: 'Verificación no encontrada'
             });
             return;
+        }
+        try {
+            const emailService = new email_service_1.default();
+            const profileName = updatedVerification.profile?.name || 'Perfil sin nombre';
+            const profileId = updatedVerification.profile?._id?.toString() || updatedVerification.profile?.id?.toString() || updatedVerification.profile.toString();
+            const changesDescription = `Se han actualizado los pasos de verificación del perfil.
+
+Estado actual: ${updatedVerification.verificationStatus}
+Progreso: ${updatedVerification.verificationProgress}%
+
+Pasos actualizados:
+${Object.entries(stepsData).map(([step, data]) => `- ${step}: ${data?.isVerified ? 'Verificado' : 'Pendiente'}`).join('\n')}`;
+            await emailService.sendProfileVerificationNotification(profileName, profileId, changesDescription);
+        }
+        catch (emailError) {
+            console.error('Error al enviar notificación por correo:', emailError);
         }
         res.status(200).json({
             success: true,

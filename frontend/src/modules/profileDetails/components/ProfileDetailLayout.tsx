@@ -19,7 +19,7 @@ import VideoPlayer from './VideoPlayer';
 
 export default function ProfileDetailLayout({ id }: { id: string }) {
   const { data: profile, isLoading, error } = useProfile(id);
-  
+
   // Obtener datos de verificación por separado
   const { data: verification, isLoading: isVerificationLoading } = useProfileVerification(id);
 
@@ -104,7 +104,7 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-7 gap-8">
           {/* Left Section - 80% */}
           <div className="lg:col-span-5 space-y-8">

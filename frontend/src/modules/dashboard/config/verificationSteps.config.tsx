@@ -30,16 +30,16 @@ export const verificationSteps: VerificationStep[] = [
 
 export const getVerifiedCount = (verification: any): number => {
   if (!verification?.steps) return 0;
-  
+
   let count = 0;
-  
+
   // Contar solo los pasos simplificados verificados
   verificationSteps.forEach(step => {
     if (verification.steps[step.key]?.isVerified) {
       count++;
     }
   });
-  
+
   return count;
 };
 

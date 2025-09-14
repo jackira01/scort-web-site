@@ -24,23 +24,7 @@ const getDefaultVerificationSteps = (accountType, requiresIndependentVerificatio
             documents: [],
             isVerified: false
         },
-        selfieWithPoster: {
-            photo: undefined,
-            isVerified: false
-        },
-        selfieWithDoc: {
-            photo: undefined,
-            isVerified: false
-        },
-        fullBodyPhotos: {
-            photos: [],
-            isVerified: false
-        },
         video: {
-            videoLink: undefined,
-            isVerified: false
-        },
-        videoCallRequested: {
             videoLink: undefined,
             isVerified: false
         },
@@ -59,10 +43,6 @@ const getDefaultVerificationSteps = (accountType, requiresIndependentVerificatio
             ...baseSteps,
             documentPhotos: {
                 documents: [],
-                isVerified: true
-            },
-            selfieWithDoc: {
-                photo: undefined,
                 isVerified: true
             }
         };
@@ -96,7 +76,14 @@ const recalculateVerificationProgress = async (verification) => {
 const getProfileVerificationByProfileId = async (profileId) => {
     try {
         const verification = await profile_verification_model_1.default.findOne({ profile: profileId })
-            .populate('profile', 'name user')
+            .populate({
+            path: 'profile',
+            select: 'name user createdAt',
+            populate: {
+                path: 'user',
+                select: 'accountType lastLogin'
+            }
+        })
             .lean();
         return verification;
     }
@@ -129,7 +116,7 @@ const createProfileVerification = async (verificationData) => {
                 accountType = profile.user.accountType || 'common';
                 if (profile.user.lastLogin?.date) {
                     userLastLoginDate = profile.user.lastLogin.date;
-                    lastLoginVerified = (0, verification_progress_utils_1.checkLastLoginVerification)(userLastLoginDate);
+                    lastLoginVerified = true;
                 }
                 if (accountType === 'agency') {
                     const userId = profile.user._id || profile.user.id;
@@ -198,7 +185,15 @@ const updateVerificationSteps = async (verificationId, stepsUpdate) => {
                 updatedSteps[stepKey] = stepData;
             }
         });
-        const verification = await profile_verification_model_1.default.findByIdAndUpdate(verificationId, { $set: { steps: updatedSteps } }, { new: true, runValidators: true }).lean();
+        const verification = await profile_verification_model_1.default.findByIdAndUpdate(verificationId, {
+            $set: {
+                steps: updatedSteps,
+                verificationStatus: 'pending',
+                verifiedAt: null,
+                verificationFailedAt: null,
+                verificationFailedReason: null
+            }
+        }, { new: true, runValidators: true }).lean();
         if (!verification) {
             throw new Error('Verificación no encontrada después de actualización');
         }

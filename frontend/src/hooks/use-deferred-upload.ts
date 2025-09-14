@@ -94,103 +94,102 @@ export const useDeferredUpload = () => {
         error: error instanceof Error ? error.message : 'Error al subir el archivo'
       };
     }
-  }
-};
+  };
 
-// Subir todos los archivos pendientes
-const uploadAllPendingFiles = async (folder: string = 'blog-images'): Promise<{ [key: string]: string }> => {
-  if (pendingFiles.length === 0) {
-    return {};
-  }
-
-  setIsUploading(true);
-  const uploadedUrls: { [key: string]: string } = {};
-
-  try {
-    toast.loading(`Subiendo ${pendingFiles.length} archivo(s)...`);
-
-    for (const pendingFile of pendingFiles) {
-      const result = await uploadSingleFile(pendingFile.file, folder);
-
-      if (result.success && result.url) {
-        uploadedUrls[pendingFile.id] = result.url;
-      } else {
-        throw new Error(result.error || `Error al subir ${pendingFile.file.name}`);
-      }
+  // Subir todos los archivos pendientes
+  const uploadAllPendingFiles = async (folder: string = 'blog-images'): Promise<{ [key: string]: string }> => {
+    if (pendingFiles.length === 0) {
+      return {};
     }
 
-    toast.success(`${pendingFiles.length} archivo(s) subido(s) exitosamente`);
+    setIsUploading(true);
+    const uploadedUrls: { [key: string]: string } = {};
 
-    // Limpiar archivos pendientes después de subir
-    clearPendingFiles();
+    try {
+      toast.loading(`Subiendo ${pendingFiles.length} archivo(s)...`);
 
-    return uploadedUrls;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Error al subir archivos';
-    toast.error(`Error al subir archivos: ${errorMessage}`);
-    throw error;
-  } finally {
-    setIsUploading(false);
-  }
-};
+      for (const pendingFile of pendingFiles) {
+        const result = await uploadSingleFile(pendingFile.file, folder);
 
-// Función para procesar contenido del editor y reemplazar URLs temporales
-const processEditorContent = (content: any, uploadedUrls: Record<string, string>): any => {
-  if (!content || !content.blocks) return content;
+        if (result.success && result.url) {
+          uploadedUrls[pendingFile.id] = result.url;
+        } else {
+          throw new Error(result.error || `Error al subir ${pendingFile.file.name}`);
+        }
+      }
 
-  const processedBlocks = content.blocks.map((block: any) => {
-    if (block.type === 'image' && block.data?.file?.pendingId) {
-      const pendingId = block.data.file.pendingId;
-      const uploadedUrl = uploadedUrls[pendingId];
+      toast.success(`${pendingFiles.length} archivo(s) subido(s) exitosamente`);
 
-      if (uploadedUrl) {
-        return {
-          ...block,
-          data: {
-            ...block.data,
-            file: {
-              ...block.data.file,
-              url: uploadedUrl,
-              // Remover el pendingId ya que ya no es necesario
-              pendingId: undefined
+      // Limpiar archivos pendientes después de subir
+      clearPendingFiles();
+
+      return uploadedUrls;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al subir archivos';
+      toast.error(`Error al subir archivos: ${errorMessage}`);
+      throw error;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Función para procesar contenido del editor y reemplazar URLs temporales
+  const processEditorContent = (content: any, uploadedUrls: Record<string, string>): any => {
+    if (!content || !content.blocks) return content;
+
+    const processedBlocks = content.blocks.map((block: any) => {
+      if (block.type === 'image' && block.data?.file?.pendingId) {
+        const pendingId = block.data.file.pendingId;
+        const uploadedUrl = uploadedUrls[pendingId];
+
+        if (uploadedUrl) {
+          return {
+            ...block,
+            data: {
+              ...block.data,
+              file: {
+                ...block.data.file,
+                url: uploadedUrl,
+                // Remover el pendingId ya que ya no es necesario
+                pendingId: undefined
+              }
             }
-          }
-        };
+          };
+        }
       }
-    }
-    return block;
-  });
+      return block;
+    });
+
+    return {
+      ...content,
+      blocks: processedBlocks
+    };
+  };
+
+  // Limpiar todos los archivos pendientes
+  const clearPendingFiles = useCallback(() => {
+    setPendingFiles(prev => {
+      prev.forEach(file => {
+        URL.revokeObjectURL(file.preview);
+      });
+      return [];
+    });
+  }, []);
+
+  // Obtener URL de preview para un archivo pendiente
+  const getPreviewUrl = useCallback((id: string) => {
+    return pendingFiles.find(f => f.id === id)?.preview;
+  }, [pendingFiles]);
 
   return {
-    ...content,
-    blocks: processedBlocks
+    pendingFiles,
+    isUploading,
+    addPendingFile,
+    removePendingFile,
+    uploadAllPendingFiles,
+    clearPendingFiles,
+    getPreviewUrl,
+    uploadSingleFile,
+    processEditorContent
   };
-};
-
-// Limpiar todos los archivos pendientes
-const clearPendingFiles = useCallback(() => {
-  setPendingFiles(prev => {
-    prev.forEach(file => {
-      URL.revokeObjectURL(file.preview);
-    });
-    return [];
-  });
-}, []);
-
-// Obtener URL de preview para un archivo pendiente
-const getPreviewUrl = useCallback((id: string) => {
-  return pendingFiles.find(f => f.id === id)?.preview;
-}, [pendingFiles]);
-
-return {
-  pendingFiles,
-  isUploading,
-  addPendingFile,
-  removePendingFile,
-  uploadAllPendingFiles,
-  clearPendingFiles,
-  getPreviewUrl,
-  uploadSingleFile,
-  processEditorContent
-};
 };

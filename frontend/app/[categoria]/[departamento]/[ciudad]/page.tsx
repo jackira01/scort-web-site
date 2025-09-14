@@ -4,11 +4,11 @@ import { Metadata } from 'next';
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     categoria: string;
     departamento: string;
     ciudad: string;
-  };
+  }>;
 }
 
 // Configuración para ISR - no precompilamos rutas en build time

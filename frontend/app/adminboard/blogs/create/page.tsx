@@ -165,7 +165,7 @@ export default function CreateBlogPage() {
 
     // Agregar archivo para subida diferida
     const { id, preview } = addPendingFile(file, 'image');
-    
+
     setFormData(prev => ({
       ...prev,
       coverImage: preview,
@@ -194,7 +194,7 @@ export default function CreateBlogPage() {
       }
 
       const updatedFormData = { ...formData, content: currentContent };
-      
+
       // Validar con el contenido actualizado
       const newErrors: BlogFormErrors = {};
 
@@ -222,7 +222,7 @@ export default function CreateBlogPage() {
 
       // Subir archivos pendientes a Cloudinary
       const uploadedUrls = await uploadAllPendingFiles('blog-images');
-      
+
       // Procesar imagen de portada
       let finalCoverImage = updatedFormData.coverImage;
       if (updatedFormData.coverImageFileId && uploadedUrls[updatedFormData.coverImageFileId]) {
@@ -275,7 +275,7 @@ export default function CreateBlogPage() {
 
       // Subir archivos pendientes a Cloudinary
       const uploadedUrls = await uploadAllPendingFiles('blog-images');
-      
+
       // Procesar imagen de portada
       let finalCoverImage = formData.coverImage;
       if (formData.coverImageFileId && uploadedUrls[formData.coverImageFileId]) {
@@ -320,10 +320,10 @@ export default function CreateBlogPage() {
       if (editorRef.current) {
         currentContent = await editorRef.current.getData();
       }
-      
+
       console.log('Preview - currentContent:', currentContent);
       console.log('Preview - blocks length:', currentContent?.blocks?.length);
-      
+
       setPreviewContent(currentContent);
     } catch (error) {
       console.error('Error getting editor content for preview:', error);
@@ -337,7 +337,7 @@ export default function CreateBlogPage() {
     if (isLoadingPreview) {
       return <p className="text-gray-500">Cargando vista previa...</p>;
     }
-    
+
     if (!previewContent || !previewContent.blocks || previewContent.blocks.length === 0) {
       return <p className="text-gray-500">No hay contenido para mostrar</p>;
     }
@@ -516,7 +516,7 @@ export default function CreateBlogPage() {
                         Subir imagen desde mi equipo
                       </Button>
                     </div>
-                    
+
                     {/* URL Input */}
                     <div>
                       <Input

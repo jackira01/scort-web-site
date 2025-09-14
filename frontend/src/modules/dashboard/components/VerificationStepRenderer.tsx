@@ -22,7 +22,7 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
   switch (step.key) {
     case 'documentPhotos': {
       const documents = (stepData as ProfileVerificationData['steps']['documentPhotos']).documents || [];
-      
+
       if (documents.length === 0) {
         return (
           <div className="mt-4 text-gray-500 text-center">
@@ -30,7 +30,7 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
           </div>
         );
       }
-      
+
       return (
         <div className="mt-4">
           <div className="grid grid-cols-2 gap-2">
@@ -60,7 +60,7 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
 
     case 'video': {
       const currentVideoLink = getCurrentVideoLink(step.key as 'video');
-      
+
       return (
         <div className="mt-4 space-y-4">
           {/* Input para editar el videoLink */}
@@ -76,7 +76,7 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
               className="w-full"
             />
           </div>
-          
+
           {/* Mostrar el video/link actual si existe */}
           {currentVideoLink && (
             <div>
@@ -113,7 +113,7 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
 
     case 'socialMedia': {
       const accounts = (stepData as ProfileVerificationData['steps']['socialMedia']).accounts || [];
-      
+
       if (accounts.length === 0) {
         return (
           <div className="mt-4 text-gray-500 text-center">
@@ -121,7 +121,7 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
           </div>
         );
       }
-      
+
       return (
         <div className="mt-4">
           <div className="space-y-2">

@@ -20,12 +20,12 @@ const shouldRequireIndependentVerification = async (userId: string | Types.Objec
   try {
     // Contar perfiles existentes del usuario
     const existingProfilesCount = await ProfileModel.countDocuments({ user: userId });
-    
+
     // Si es el primer perfil, no requiere verificación independiente
     if (existingProfilesCount <= 1) {
       return false;
     }
-    
+
     // Para perfiles adicionales de agencias, siempre requiere verificación independiente
     return true;
   } catch (error) {
@@ -83,7 +83,7 @@ import { calculateVerificationProgress } from './verification-progress.utils';
 const recalculateVerificationProgress = async (verification: IProfileVerification) => {
   try {
 
-    
+
     // Obtener datos del usuario asociado al perfil
     const populatedVerification = await ProfileVerification.findById(verification._id)
       .populate({
@@ -102,7 +102,7 @@ const recalculateVerificationProgress = async (verification: IProfileVerificatio
 
     const user = populatedVerification.profile.user;
     const newProgress = calculateVerificationProgress(verification, user);
-    
+
 
 
     // Actualizar SOLO el progreso en la base de datos, sin tocar los steps
@@ -111,7 +111,7 @@ const recalculateVerificationProgress = async (verification: IProfileVerificatio
       { $set: { verificationProgress: newProgress } },
       { new: true }
     ).lean();
-    
+
 
 
     return newProgress;
@@ -134,7 +134,7 @@ export const getProfileVerificationByProfileId = async (profileId: string | Type
         }
       })
       .lean();
-    
+
     return verification;
   } catch (error) {
     throw new Error(`Error al obtener verificación del perfil: ${error}`);
@@ -147,7 +147,7 @@ export const getProfileVerificationById = async (verificationId: string | Types.
     const verification = await ProfileVerification.findById(verificationId)
       .populate('profile', 'name user')
       .lean();
-    
+
     return verification;
   } catch (error) {
     throw new Error(`Error al obtener verificación: ${error}`);
@@ -162,19 +162,19 @@ export const createProfileVerification = async (verificationData: CreateProfileV
     let lastLoginVerified = true; // Por defecto true para perfiles nuevos
     let accountType = 'common'; // Por defecto común
     let requiresIndependentVerification = false;
-    
+
     if (verificationData.profile) {
       // Buscar el perfil y su usuario asociado
       const profile = await ProfileModel.findById(verificationData.profile).populate('user') as IProfileWithUser | null;
       // Verificar que user esté poblado correctamente
       if (profile && profile.user) {
         accountType = profile.user.accountType || 'common';
-        
+
         if (profile.user.lastLogin?.date) {
           userLastLoginDate = profile.user.lastLogin.date;
           lastLoginVerified = true; // Simplificado: siempre consideramos verificado
         }
-        
+
         // Para agencias, verificar si requiere verificación independiente
         if (accountType === 'agency') {
           const userId = (profile.user as any)._id || (profile.user as any).id;
@@ -182,7 +182,7 @@ export const createProfileVerification = async (verificationData: CreateProfileV
         }
       }
     }
-    
+
     // Inicializar steps con valores por defecto basados en el tipo de cuenta
     const defaultSteps = getDefaultVerificationSteps(accountType, requiresIndependentVerification, lastLoginVerified, userLastLoginDate);
 
@@ -193,14 +193,14 @@ export const createProfileVerification = async (verificationData: CreateProfileV
       accountType,
       requiresIndependentVerification
     };
-    
+
     const verification = new ProfileVerification(verificationWithDefaults);
     await verification.save();
-    
+
     const populatedVerification = await ProfileVerification.findById(verification._id)
       .populate('profile', 'name user')
       .lean();
-    
+
     return populatedVerification;
   } catch (error) {
     throw new Error(`Error al crear verificación: ${error}`);
@@ -231,15 +231,15 @@ export const updateProfileVerification = async (
     // Recalcular progreso solo si se actualizaron pasos de verificación
     if (isUpdatingSteps) {
       await recalculateVerificationProgress(verification);
-      
+
       // Obtener la verificación actualizada con el nuevo progreso
       const updatedVerification = await ProfileVerification.findById(verificationId)
         .populate('profile', 'name user')
         .lean();
-      
+
       return updatedVerification;
     }
-    
+
     return verification;
   } catch (error) {
     throw new Error(`Error al actualizar verificación: ${error}`);
@@ -253,22 +253,22 @@ export const updateVerificationSteps = async (
 ) => {
   try {
 
-    
+
     // Primero obtener los datos actuales para hacer un merge correcto
     const currentVerification = await ProfileVerification.findById(verificationId).lean();
     if (!currentVerification) {
       throw new Error('Verificación no encontrada');
     }
-    
 
-    
+
+
     // Hacer un merge profundo de los steps existentes con los nuevos datos
     const updatedSteps = { ...currentVerification.steps };
-    
+
     Object.keys(stepsUpdate).forEach(stepKey => {
       const stepData = stepsUpdate[stepKey as keyof UpdateVerificationStepsDTO];
       const currentStepData = updatedSteps[stepKey as keyof typeof updatedSteps];
-      
+
       if (stepData && typeof stepData === 'object') {
         // Merge el step actual con los nuevos datos
         const mergedData = Object.assign({}, currentStepData, stepData);
@@ -278,22 +278,22 @@ export const updateVerificationSteps = async (
         updatedSteps[stepKey as keyof typeof updatedSteps] = stepData as any;
       }
     });
-    
 
-    
+
+
     // Actualizar con los steps completos y resetear estado a pending
     // Cuando se actualizan los pasos, el perfil debe volver a estado pendiente
     // para requerir aprobación manual del administrador
     const verification = await ProfileVerification.findByIdAndUpdate(
       verificationId,
-      { 
-        $set: { 
+      {
+        $set: {
           steps: updatedSteps,
           verificationStatus: 'pending',
           verifiedAt: null,
           verificationFailedAt: null,
           verificationFailedReason: null
-        } 
+        }
       },
       { new: true, runValidators: true }
     ).lean();
@@ -301,19 +301,19 @@ export const updateVerificationSteps = async (
     if (!verification) {
       throw new Error('Verificación no encontrada después de actualización');
     }
-    
+
 
 
     // Recalcular progreso automáticamente
     await recalculateVerificationProgress(verification);
-    
+
     // Retornar verificación actualizada
     const finalVerification = await ProfileVerification.findById(verificationId)
       .populate('profile', 'name user')
       .lean();
-      
 
-    
+
+
     return finalVerification;
   } catch (error) {
 
@@ -346,7 +346,7 @@ export const updateVerificationStatus = async (
     )
       .populate('profile', 'name user')
       .lean();
-    
+
     return verification;
   } catch (error) {
     throw new Error(`Error al actualizar estado de verificación: ${error}`);
@@ -358,13 +358,13 @@ export const getAllProfileVerifications = async (filters: ProfileVerificationFil
   try {
     const { status, page = 1, limit = 10 } = filters;
     const query: any = {};
-    
+
     if (status) {
       query.verificationStatus = status;
     }
 
     const skip = (page - 1) * limit;
-    
+
     const [verifications, total] = await Promise.all([
       ProfileVerification.find(query)
         .populate('profile', 'name user')

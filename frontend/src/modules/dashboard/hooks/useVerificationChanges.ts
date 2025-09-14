@@ -26,7 +26,7 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
       ...prev,
       [stepKey]: isVerified
     }));
-    
+
     setHasChanges(true);
   };
 
@@ -38,7 +38,7 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
       ...prev,
       [stepKey]: videoLink
     }));
-    
+
     setHasChanges(true);
   };
 
@@ -91,7 +91,7 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
         };
       }
     });
-    
+
     return updatedSteps;
   };
 
