@@ -93,6 +93,36 @@ const validateCancelReason = [
 router.get('/stats', invoiceController.getInvoiceStats);
 router.post('/expire-overdue', invoiceController.expireOverdueInvoices);
 
+// Webhooks (deben ir antes de /:id para evitar conflictos)
+router.post(
+  '/webhook/payment-confirmed',
+  [
+    body('invoiceId')
+      .isMongoId()
+      .withMessage('invoiceId debe ser un ID válido de MongoDB'),
+    body('paymentData')
+      .optional()
+      .isObject()
+      .withMessage('paymentData debe ser un objeto válido')
+  ],
+  PaymentWebhookController.confirmPayment
+);
+
+router.post(
+  '/webhook/payment-cancelled',
+  [
+    body('invoiceId')
+      .isMongoId()
+      .withMessage('invoiceId debe ser un ID válido de MongoDB'),
+    body('reason')
+      .optional()
+      .isString()
+      .isLength({ max: 500 })
+      .withMessage('reason no puede exceder 500 caracteres')
+  ],
+  PaymentWebhookController.cancelPayment
+);
+
 // Rutas con parámetros de usuario
 router.get(
   '/user/:userId/pending',
@@ -120,7 +150,7 @@ router.get(
   invoiceController.getAllInvoicesByUser
 );
 
-// Rutas principales
+// CRUD básico
 router.post(
   '/',
   validateCreateInvoice,
@@ -133,17 +163,18 @@ router.get(
   invoiceController.getInvoices
 );
 
-// Rutas con ID de factura
-router.get(
-  '/:id',
-  validateObjectId('id'),
-  invoiceController.getInvoiceById
-);
-
+// Rutas con ID específico - IMPORTANTE: estas deben ir al final
+// para evitar que capturen rutas específicas como /stats, /webhook, etc.
 router.get(
   '/:id/whatsapp-data',
   validateObjectId('id'),
   invoiceController.getWhatsAppData
+);
+
+router.get(
+  '/:id/status',
+  validateObjectId('id'),
+  PaymentWebhookController.getInvoiceStatus
 );
 
 router.put(
@@ -175,40 +206,11 @@ router.patch(
   invoiceController.updateInvoiceStatus
 );
 
-// Rutas de webhooks de pago
-router.post(
-  '/webhook/payment-confirmed',
-  [
-    body('invoiceId')
-      .isMongoId()
-      .withMessage('invoiceId debe ser un ID válido de MongoDB'),
-    body('paymentData')
-      .optional()
-      .isObject()
-      .withMessage('paymentData debe ser un objeto válido')
-  ],
-  PaymentWebhookController.confirmPayment
-);
-
-router.post(
-  '/webhook/payment-cancelled',
-  [
-    body('invoiceId')
-      .isMongoId()
-      .withMessage('invoiceId debe ser un ID válido de MongoDB'),
-    body('reason')
-      .optional()
-      .isString()
-      .isLength({ max: 500 })
-      .withMessage('reason no puede exceder 500 caracteres')
-  ],
-  PaymentWebhookController.cancelPayment
-);
-
+// Ruta genérica /:id DEBE IR AL FINAL para evitar conflictos
 router.get(
-  '/:id/status',
+  '/:id',
   validateObjectId('id'),
-  PaymentWebhookController.getInvoiceStatus
+  invoiceController.getInvoiceById
 );
 
 export default router;
