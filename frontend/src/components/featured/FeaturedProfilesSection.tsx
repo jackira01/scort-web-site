@@ -69,14 +69,14 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
 
   const nextSlide = () => {
     setCurrentIndex((prev) => {
-      const maxIndex = Math.max(0, featuredProfiles.length - visibleCount);
+      const maxIndex = Math.max(0, (featuredProfiles || []).length - visibleCount);
       return prev >= maxIndex ? 0 : prev + 1;
     });
   };
 
   const prevSlide = () => {
     setCurrentIndex((prev) => {
-      const maxIndex = Math.max(0, featuredProfiles.length - visibleCount);
+      const maxIndex = Math.max(0, (featuredProfiles || []).length - visibleCount);
       return prev <= 0 ? maxIndex : prev - 1;
     });
   };

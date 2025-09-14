@@ -91,7 +91,7 @@ const AgencyConversionsPage: React.FC = () => {
             pending: stats.pending || 0,
             approved: stats.approved || 0,
             rejected: stats.rejected || 0,
-            total: stats.total || 0
+            total: (stats.pending || 0) + (stats.approved || 0) + (stats.rejected || 0)
           }}
           onProcessConversion={handleProcessConversion}
           isLoading={isLoading}

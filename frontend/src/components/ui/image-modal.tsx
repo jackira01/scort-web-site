@@ -54,7 +54,7 @@ export const ImageModal = ({
                     }
                     break;
                 case 'ArrowRight':
-                    if (currentIndex < images.length - 1) {
+                    if (images && currentIndex < images.length - 1) {
                         onIndexChange(currentIndex + 1);
                     }
                     break;
@@ -70,7 +70,7 @@ export const ImageModal = ({
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, currentIndex, images.length, onClose, onIndexChange]);
+    }, [isOpen, currentIndex, images?.length, onClose, onIndexChange]);
 
     const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.25, 3));
     const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.25, 0.5));
@@ -128,18 +128,18 @@ export const ImageModal = ({
     };
 
     const handleNext = () => {
-        if (currentIndex < images.length - 1) {
+        if (images && currentIndex < images.length - 1) {
             onIndexChange(currentIndex + 1);
         }
     };
 
-    if (!images.length) return null;
+    if (!images || !images.length) return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none">
                 <VisuallyHidden>
-                    <DialogTitle>Visor de imágenes - {alt} {currentIndex + 1} de {images.length}</DialogTitle>
+                    <DialogTitle>Visor de imágenes - {alt} {currentIndex + 1} de {images?.length || 0}</DialogTitle>
                 </VisuallyHidden>
                 <div className="relative w-full h-[95vh] flex items-center justify-center overflow-hidden">
                     {/* Close Button */}
@@ -201,12 +201,12 @@ export const ImageModal = ({
                     {/* Image Counter */}
                     <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50">
                         <div className="bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-                            {currentIndex + 1} / {images.length}
+                            {currentIndex + 1} / {images?.length || 0}
                         </div>
                     </div>
 
                     {/* Navigation Arrows */}
-                    {images.length > 1 && (
+                    {images && images.length > 1 && (
                         <>
                             <Button
                                 variant="ghost"
@@ -223,7 +223,7 @@ export const ImageModal = ({
                                 variant="ghost"
                                 size="icon"
                                 onClick={handleNext}
-                                disabled={currentIndex === images.length - 1}
+                                disabled={!images || currentIndex === images.length - 1}
                                 className="absolute right-4 top-1/2 transform -translate-y-1/2 z-50 bg-black/50 hover:bg-black/70 text-white border-none h-12 w-12"
                             >
                                 <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -257,7 +257,7 @@ export const ImageModal = ({
                     </div>
 
                     {/* Thumbnails */}
-                    {images.length > 1 && (
+                    {images && images.length > 1 && (
                         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50">
                             <div className="flex gap-2 bg-black/50 p-2 rounded-lg max-w-[90vw] overflow-x-auto">
                                 {images.map((image, index) => (

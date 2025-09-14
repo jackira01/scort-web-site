@@ -1,83 +1,61 @@
 import {
-    Add as AddIcon,
-    LocationCity as CityIcon,
-    Public as CountryIcon,
-    Delete as DeleteIcon,
-    Domain as DepartmentIcon,
+    Plus as AddIcon,
+    MapPin as CityIcon,
+    Globe as CountryIcon,
+    Trash2 as DeleteIcon,
+    Building as DepartmentIcon,
     Download as DownloadIcon,
     Edit as EditIcon,
-    ExpandMore as ExpandMoreIcond
-    Refreshdas RefreshIcon,
-    UploadaasnUploadIcon
-    ,
-    Loca@mui / icons - materiality as CityIcon,
-    Public as CountryIcon,
-    Delete as DeleteIcon,
-    Domain as DepartmentIcon,
-    Download as DownloadIcon,
-    Edit as EditIcon,
-    ExpandMore as ExpandMoreIcon,
-    Refresh as RefreshIcon,
+    ChevronDown as ExpandMoreIcon,
+    RefreshCw as RefreshIcon,
     Upload as UploadIcon,
-} from '@mui/icons-material';
+    Loader2
+} from 'lucide-react';
 import {
     Accordion,
-    AccordionDetails,
-    AccordionSummary,
-    Alert,
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Chip,
-    CircularProgress,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
     Dialog,
-    DialogActions,
     DialogContent,
+    DialogHeader,
     DialogTitle,
-    Grid,
-    IconButton,
-    List,
-    ListItem,
-    ListItReactet{
-        useStateuuseDeparreactonStats,
-    }  useConfigParameters figParameter } from useConfigParametersparameter.t
-useCountry,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import React, { useState, useEffect } from 'react';
+import { useConfigParameters, useConfigParameterMutations } from '../../hooks/use-config-parameters';
+import type { ConfigParameter } from '../../types/config-parameter.types';
+import {
+    useCountry,
     useDepartments,
     useLocationStats
-rarchySel.e../ hooks / useLocationHierarchyerarchySeltype ecConfigParameterbPanelProps {
-    typesdconfig - parameter.typesde;
-    indembLocationHierarchySelectormber;
-}
+} from '../../hooks/useLocationHierarchy';
+import { LocationHierarchySelector } from './LocationHierarchySelector';
 
-fnLocationHierarchySelectorrops) {
-    const { children, value, index, ...other } = props;
-    return (
-        <div
-            role="tabpanel"
-            hidden={value !== index}
-            id={`location-tabpanel-${index}`}
-            aria-labelledby={`location-tab-${index}`}
-            {...other}
-        >
-            {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-        </div>
-    );
-}
+// TabPanel no longer needed with shadcn/ui Tabs
 
 /**
  * Componente para gestionar la jerarquía de ubicaciones
  * Compatible con la estructura de departamentos y ciudades de colombiaData.ts
  */
 export const LocationManager: React.FC = () => {
-    const [tabValue, setTabValue] = useState(0);
+    const [tabValue, setTabValue] = useState("0");
     const [openDialog, setOpenDialog] = useState(false);
     const [editingLocation, setEditingLocation] =
         useState<ConfigParameter | null>(null);
-    const [selectedDepartment, setSelectedDepartment] = useState<string | null>(
-        null,
+    const [selectedDepartment, setSelectedDepartment] = useState<string | undefined>(
+        undefined,
     );
-    const [selectedCity, setSelectedCity] = useState<string | null>(null);
+    const [selectedCity, setSelectedCity] = useState<string | undefined>(undefined);
 
     // Hooks para datos
     const { data: country, isLoading: countryLoading } = useCountry();
@@ -88,14 +66,12 @@ export const LocationManager: React.FC = () => {
     } = useDepartments();
     const { data: stats, isLoading: statsLoading } = useLocationStats();
     const {
-        createConfigParameter,
-        updateConfigParameter,
-        deleteConfigParameter,
-    } = useConfigParameters();
+        create: createConfigParameter,
+        update: updateConfigParameter,
+        delete: deleteConfigParameter,
+    } = useConfigParameterMutations();
 
-    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-        setTabValue(newValue);
-    };
+    // handleTabChange no longer needed with shadcn/ui Tabs
 
     const handleAddLocation = () => {
         setEditingLocation(null);
@@ -114,7 +90,7 @@ export const LocationManager: React.FC = () => {
             )
         ) {
             try {
-                await deleteConfigParameter.mutateAsync(location._id);
+                await deleteConfigParameter(location._id);
                 refetchDepartments();
             } catch (error) {
           
@@ -125,12 +101,9 @@ export const LocationManager: React.FC = () => {
     const handleSaveLocation = async (locationData: any) => {
         try {
             if (editingLocation) {
-                await updateConfigParameter.mutateAsync({
-                    id: editingLocation._id,
-                    data: locationData,
-                });
+                await updateConfigParameter(editingLocation._id, locationData);
             } else {
-                await createConfigParameter.mutateAsync(locationData);
+                await createConfigParameter(locationData);
             }
             setOpenDialog(false);
             refetchDepartments();
@@ -145,330 +118,309 @@ export const LocationManager: React.FC = () => {
 
     if (countryLoading || departmentsLoading || statsLoading) {
         return (
-            <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                minHeight={400}
-            >
-                <CircularProgress />
-            </Box>
+            <div className="flex justify-center items-center min-h-[400px]">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
         );
     }
 
     return (
-        <Box>
+        <div>
             {/* Header */}
-            <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-                mb={3}
-            >
-                <Typography variant="h4" component="h1">
-                    <CountryIcon sx={{ mr: 2, verticalAlign: 'middle' }} />
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold flex items-center gap-2">
+                    <CountryIcon className="w-8 h-8" />
                     Gestión de Ubicaciones
-                </Typography>
-                <Box>
-                    <Tooltip title="Actualizar datos">
-                        <IconButton onClick={handleRefresh} disabled={departmentsLoading}>
-                            <RefreshIcon />
-                        </IconButton>
-                    </Tooltip>
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        onClick={handleAddLocation}
-                        sx={{ ml: 1 }}
-                    >
+                </h1>
+                <div className="flex items-center gap-2">
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={handleRefresh}
+                                    disabled={departmentsLoading}
+                                >
+                                    <RefreshIcon className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Actualizar datos</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                    <Button onClick={handleAddLocation}>
+                        <AddIcon className="mr-2 h-4 w-4" />
                         Agregar Ubicación
                     </Button>
-                </Box>
-            </Box>
+                </div>
+            </div>
 
             {/* Estadísticas generales */}
             {stats && (
-                <Grid container spacing={3} mb={3}>
-                    <Grid item xs={12} md={4}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h6" color="primary">
-                                    <CountryIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                                    País
-                                </Typography>
-                                <Typography variant="h4">
-                                    {country?.label || 'Colombia'}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    {country?.code || 'CO'} • {country?.currency || 'COP'}
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h6" color="primary">
-                                    <DepartmentIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                                    Departamentos
-                                </Typography>
-                                <Typography variant="h4">{stats.totalDepartments}</Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    Divisiones administrativas
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h6" color="primary">
-                                    <CityIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                                    Ciudades
-                                </Typography>
-                                <Typography variant="h4">{stats.totalCities}</Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    {stats.departmentWithMostCities && (
-                                        <>Mayor cobertura: {stats.departmentWithMostCities.name}</>
-                                    )}
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                </Grid>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <Card>
+                        <CardContent className="p-6">
+                            <h3 className="text-lg font-semibold text-primary flex items-center gap-2 mb-2">
+                                <CountryIcon className="w-5 h-5" />
+                                País
+                            </h3>
+                            <p className="text-3xl font-bold mb-1">
+                                {country?.label || 'Colombia'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                {country?.code || 'CO'} • {country?.currency || 'COP'}
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="p-6">
+                            <h3 className="text-lg font-semibold text-primary flex items-center gap-2 mb-2">
+                                <DepartmentIcon className="w-5 h-5" />
+                                Departamentos
+                            </h3>
+                            <p className="text-3xl font-bold mb-1">{stats.totalDepartments}</p>
+                            <p className="text-sm text-muted-foreground">
+                                Divisiones administrativas
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="p-6">
+                            <h3 className="text-lg font-semibold text-primary flex items-center gap-2 mb-2">
+                                <CityIcon className="w-5 h-5" />
+                                Ciudades
+                            </h3>
+                            <p className="text-3xl font-bold mb-1">{stats.totalCities}</p>
+                            <p className="text-sm text-muted-foreground">
+                                {stats.departmentWithMostCities && (
+                                    <>Mayor cobertura: {stats.departmentWithMostCities.name}</>
+                                )}
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
             )}
 
             {/* Tabs */}
             <Card>
-                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <Tabs value={tabValue} onChange={handleTabChange}>
-                        <Tab
-                            label="Vista Jerárquica"
-                            icon={<DepartmentIcon />}
-                            iconPosition="start"
-                        />
-                        <Tab
-                            label="Selector de Ubicaciones"
-                            icon={<CityIcon />}
-                            iconPosition="start"
-                        />
-                        <Tab
-                            label="Configuración"
-                            icon={<CountryIcon />}
-                            iconPosition="start"
-                        />
-                    </Tabs>
-                </Box>
+                <Tabs value={tabValue} onValueChange={setTabValue}>
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="0" className="flex items-center gap-2">
+                            <DepartmentIcon className="w-4 h-4" />
+                            Vista Jerárquica
+                        </TabsTrigger>
+                        <TabsTrigger value="1" className="flex items-center gap-2">
+                            <CityIcon className="w-4 h-4" />
+                            Selector de Ubicaciones
+                        </TabsTrigger>
+                        <TabsTrigger value="2" className="flex items-center gap-2">
+                            <CountryIcon className="w-4 h-4" />
+                            Configuración
+                        </TabsTrigger>
+                    </TabsList>
 
-                {/* Vista Jerárquica */}
-                <TabPanel value={tabValue} index={0}>
-                    <Typography variant="h6" gutterBottom>
-                        Estructura Jerárquica de Ubicaciones
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" paragraph>
-                        Estructura compatible con colombiaData.ts: País → Departamentos →
-                        Ciudades
-                    </Typography>
+                    {/* Vista Jerárquica */}
+                    <TabsContent value="0" className="p-6">
+                        <h2 className="text-xl font-semibold mb-4">
+                            Estructura Jerárquica de Ubicaciones
+                        </h2>
+                        <p className="text-sm text-muted-foreground mb-6">
+                            Estructura compatible con colombiaData.ts: País → Departamentos →
+                            Ciudades
+                        </p>
 
-                    {departments?.map((department) => (
-                        <Accordion key={department.value} sx={{ mb: 1 }}>
-                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                <Box display="flex" alignItems="center" width="100%">
-                                    <DepartmentIcon sx={{ mr: 2, color: 'primary.main' }} />
-                                    <Box flexGrow={1}>
-                                        <Typography variant="subtitle1">
-                                            {department.label}
-                                        </Typography>
-                                        <Typography variant="caption" color="text.secondary">
-                                            {department.cityCount} ciudades
-                                        </Typography>
-                                    </Box>
-                                    <Chip
-                                        label={department.cityCount}
-                                        size="small"
-                                        color="primary"
-                                        variant="outlined"
-                                    />
-                                </Box>
-                            </AccordionSummary>
-                            <AccordionDetails>
-                                <Grid container spacing={1}>
-                                    {department.cities.map((city) => (
-                                        <Grid item xs={12} sm={6} md={4} key={city.value}>
-                                            <Box
-                                                display="flex"
-                                                alignItems="center"
-                                                p={1}
-                                                border={1}
-                                                borderColor="divider"
-                                                borderRadius={1}
-                                            >
-                                                <CityIcon
-                                                    sx={{ mr: 1, color: 'secondary.main', fontSize: 16 }}
-                                                />
-                                                <Typography variant="body2" flexGrow={1}>
-                                                    {city.label}
-                                                </Typography>
-                                                {city.coordinates && (
-                                                    <Tooltip
-                                                        title={`${city.coordinates.lat.toFixed(4)}, ${city.coordinates.lng.toFixed(4)}`}
-                                                    >
-                                                        <Chip
-                                                            label="GPS"
-                                                            size="small"
-                                                            variant="outlined"
-                                                            sx={{ fontSize: '0.7rem', height: 20 }}
-                                                        />
-                                                    </Tooltip>
-                                                )}
-                                            </Box>
-                                        </Grid>
-                                    ))}
-                                </Grid>
-                            </AccordionDetails>
+                        <Accordion type="single" collapsible className="space-y-2">
+                            {departments && departments.length > 0 ? departments.map((department) => (
+                                <AccordionItem key={department.value} value={department.value}>
+                                    <AccordionTrigger className="hover:no-underline">
+                                        <div className="flex items-center justify-between w-full pr-4">
+                                            <div className="flex items-center gap-2">
+                                                <DepartmentIcon className="w-5 h-5 text-primary" />
+                                                <div className="text-left">
+                                                    <p className="font-medium">{department.label}</p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {department.cityCount} ciudades
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Badge variant="outline">
+                                                {department.cityCount}
+                                            </Badge>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                            {department.cities && department.cities.length > 0 ? department.cities.map((city) => (
+                                                <div
+                                                    key={city.value}
+                                                    className="flex items-center gap-2 p-2 border border-border rounded-md"
+                                                >
+                                                    <CityIcon className="w-4 h-4 text-secondary" />
+                                                    <span className="text-sm flex-1">{city.label}</span>
+                                                    {city.coordinates && (
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Badge variant="outline" className="text-xs h-5">
+                                                                        GPS
+                                                                    </Badge>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p>{city.coordinates.lat.toFixed(4)}, {city.coordinates.lng.toFixed(4)}</p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+                                                    )}
+                                                </div>
+                                            )) : (
+                                                <div className="text-center py-4 text-muted-foreground">
+                                                    No hay ciudades disponibles
+                                                </div>
+                                            )}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            )) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    No hay departamentos disponibles
+                                </div>
+                            )}
                         </Accordion>
-                    ))}
-                </TabPanel>
+                    </TabsContent>
 
-                {/* Selector de Ubicaciones */}
-                <TabPanel value={tabValue} index={1}>
-                    <Typography variant="h6" gutterBottom>
-                        Selector de Ubicaciones
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" paragraph>
-                        Prueba el selector jerárquico de ubicaciones que mantiene la
-                        estructura de colombiaData.ts
-                    </Typography>
+                    {/* Selector de Ubicaciones */}
+                    <TabsContent value="1" className="p-6">
+                        <h2 className="text-xl font-semibold mb-4">
+                            Selector de Ubicaciones
+                        </h2>
+                        <p className="text-sm text-muted-foreground mb-6">
+                            Prueba el selector jerárquico de ubicaciones que mantiene la
+                            estructura de colombiaData.ts
+                        </p>
 
-                    <LocationHierarchySelector
-                        selectedDepartment={selectedDepartment}
-                        selectedCity={selectedCity}
-                        onDepartmentChange={setSelectedDepartment}
-                        onCityChange={setSelectedCity}
-                        showStats={true}
-                        helperText="Este selector mantiene la estructura jerárquica original de departamentos y ciudades"
-                    />
-                </TabPanel>
+                        <LocationHierarchySelector
+                            selectedDepartment={selectedDepartment}
+                            selectedCity={selectedCity}
+                            onDepartmentChange={setSelectedDepartment}
+                            onCityChange={setSelectedCity}
+                            showStats={true}
+                            helperText="Este selector mantiene la estructura jerárquica original de departamentos y ciudades"
+                        />
+                    </TabsContent>
 
-                {/* Configuración */}
-                <TabPanel value={tabValue} index={2}>
-                    <Typography variant="h6" gutterBottom>
-                        Configuración del Sistema
-                    </Typography>
+                    {/* Configuración */}
+                    <TabsContent value="2" className="p-6">
+                        <h2 className="text-xl font-semibold mb-4">
+                            Configuración del Sistema
+                        </h2>
 
-                    <Alert severity="info" sx={{ mb: 3 }}>
-                        <Typography variant="body2">
-                            <strong>Estructura Compatible:</strong> El sistema mantiene la
-                            misma estructura jerárquica que tenías en{' '}
-                            <code>colombiaData.ts</code>, con departamentos y sus respectivas
-                            ciudades.
-                        </Typography>
-                    </Alert>
+                        <Alert className="mb-6">
+                            <AlertDescription>
+                                <strong>Estructura Compatible:</strong> El sistema mantiene la
+                                misma estructura jerárquica que tenías en{' '}
+                                <code>colombiaData.ts</code>, con departamentos y sus respectivas
+                                ciudades.
+                            </AlertDescription>
+                        </Alert>
 
-                    <Grid container spacing={3}>
-                        <Grid item xs={12} md={6}>
-                            <Card variant="outlined">
-                                <CardContent>
-                                    <Typography variant="h6" gutterBottom>
-                                        <UploadIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <UploadIcon className="w-5 h-5" />
                                         Migración de Datos
-                                    </Typography>
-                                    <Typography variant="body2" paragraph>
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground mb-4">
                                         Migra los datos existentes de colombiaData.ts al nuevo
                                         sistema ConfigParameter.
-                                    </Typography>
-                                    <Button
-                                        variant="outlined"
-                                        startIcon={<UploadIcon />}
-                                        fullWidth
-                                    >
+                                    </p>
+                                    <Button variant="outline" className="w-full">
+                                        <UploadIcon className="mr-2 h-4 w-4" />
                                         Ejecutar Migración
                                     </Button>
                                 </CardContent>
                             </Card>
-                        </Grid>
 
-                        <Grid item xs={12} md={6}>
-                            <Card variant="outlined">
-                                <CardContent>
-                                    <Typography variant="h6" gutterBottom>
-                                        <DownloadIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <DownloadIcon className="w-5 h-5" />
                                         Exportar Datos
-                                    </Typography>
-                                    <Typography variant="body2" paragraph>
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground mb-4">
                                         Exporta la estructura actual a formato JSON compatible.
-                                    </Typography>
-                                    <Button
-                                        variant="outlined"
-                                        startIcon={<DownloadIcon />}
-                                        fullWidth
-                                    >
+                                    </p>
+                                    <Button variant="outline" className="w-full">
+                                        <DownloadIcon className="mr-2 h-4 w-4" />
                                         Exportar JSON
                                     </Button>
                                 </CardContent>
                             </Card>
-                        </Grid>
-                    </Grid>
+                        </div>
 
-                    {/* Información técnica */}
-                    <Box mt={3}>
-                        <Typography variant="h6" gutterBottom>
-                            Información Técnica
-                        </Typography>
-                        <List>
-                            <ListItem>
-                                <ListItemText
-                                    primary="Estructura de Datos"
-                                    secondary="País → Departamentos → Ciudades (compatible con colombiaData.ts)"
-                                />
-                            </ListItem>
-                            <ListItem>
-                                <ListItemText
-                                    primary="Almacenamiento"
-                                    secondary="MongoDB con esquema flexible ConfigParameter"
-                                />
-                            </ListItem>
-                            <ListItem>
-                                <ListItemText
-                                    primary="API"
-                                    secondary="RESTful API con endpoints para CRUD y búsqueda jerárquica"
-                                />
-                            </ListItem>
-                            <ListItem>
-                                <ListItemText
-                                    primary="Frontend"
-                                    secondary="React Query para cache y estado, componentes reutilizables"
-                                />
-                            </ListItem>
-                        </List>
-                    </Box>
-                </TabPanel>
+                        {/* Información técnica */}
+                        <div className="mt-6">
+                            <h3 className="text-lg font-semibold mb-4">
+                                Información Técnica
+                            </h3>
+                            <div className="space-y-3">
+                                <div className="border-l-4 border-primary pl-4">
+                                    <h4 className="font-medium">Estructura de Datos</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        País → Departamentos → Ciudades (compatible con colombiaData.ts)
+                                    </p>
+                                </div>
+                                <div className="border-l-4 border-primary pl-4">
+                                    <h4 className="font-medium">Almacenamiento</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        MongoDB con esquema flexible ConfigParameter
+                                    </p>
+                                </div>
+                                <div className="border-l-4 border-primary pl-4">
+                                    <h4 className="font-medium">API</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        RESTful API con endpoints para CRUD y búsqueda jerárquica
+                                    </p>
+                                </div>
+                                <div className="border-l-4 border-primary pl-4">
+                                    <h4 className="font-medium">Frontend</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        React Query para cache y estado, componentes reutilizables
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </TabsContent>
+                </Tabs>
             </Card>
 
             {/* Dialog para agregar/editar ubicación */}
-            <Dialog
-                open={openDialog}
-                onClose={() => setOpenDialog(false)}
-                maxWidth="md"
-                fullWidth
-            >
-                <DialogTitle>
-                    {editingLocation ? 'Editar Ubicación' : 'Agregar Nueva Ubicación'}
-                </DialogTitle>
-                <DialogContent>
-                    <Typography variant="body2" color="text.secondary" paragraph>
+            <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {editingLocation ? 'Editar Ubicación' : 'Agregar Nueva Ubicación'}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-muted-foreground mb-4">
                         Funcionalidad de edición en desarrollo. Por ahora, usa el script de
                         migración para importar datos desde colombiaData.ts.
-                    </Typography>
+                    </p>
+                    <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setOpenDialog(false)}>Cancelar</Button>
+                        <Button onClick={() => setOpenDialog(false)}>
+                            Guardar
+                        </Button>
+                    </div>
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setOpenDialog(false)}>Cancelar</Button>
-                    <Button variant="contained" onClick={() => setOpenDialog(false)}>
-                        Guardar
-                    </Button>
-                </DialogActions>
             </Dialog>
-        </Box>
+        </div>
     );
 };
 

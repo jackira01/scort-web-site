@@ -7,7 +7,9 @@ export type ConfigParameterType =
     | 'boolean' 
     | 'array' 
     | 'object' 
-    | 'json';
+    | 'json'
+    | 'system'
+    | 'app';
 
 export interface UIConfig {
     component?: string;
@@ -18,6 +20,15 @@ export interface UIConfig {
     price_editable?: boolean;
     feature_management?: boolean;
     custom_props?: Record<string, any>;
+    input_type?: string;
+    placeholder?: string;
+    help_text?: string;
+    options?: any[];
+    min?: number;
+    max?: number;
+    step?: number | string;
+    rows?: number;
+    external_link?: string;
 }
 
 export interface ConfigMetadata {
@@ -71,6 +82,7 @@ export interface UpdateConfigParameterInput {
     isActive?: boolean;
     tags?: string[];
     dependencies?: string[];
+    modifiedBy?: string; // ObjectId as string
 }
 
 // Tipos específicos para diferentes categorías de configuración
@@ -112,7 +124,12 @@ export interface LocationConfig {
 
 // Textos
 export interface TextConfig {
-    [key: string]: string | TextConfig;
+    content: Record<string, string>;
+    defaultLanguage: string;
+    category: string;
+    isRichText: boolean | string;
+    maxLength?: number;
+    [key: string]: string | TextConfig | Record<string, string> | boolean | number | undefined;
 }
 
 // Membresías
@@ -194,10 +211,12 @@ export interface ConfigParameterFormData {
     description?: string;
     tags?: string[];
     dependencies?: string[];
+    metadata?: ConfigMetadata;
     ui_config?: UIConfig;
     cache_ttl?: number;
     requires_restart?: boolean;
     environment?: 'development' | 'production' | 'all';
+    isActive?: boolean;
 }
 
 // Validation types

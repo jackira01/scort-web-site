@@ -5,6 +5,21 @@ import { Crown, Plus, Edit, Trash2, Star, Users, DollarSign, Clock } from 'lucid
 import { useMembershipConfig, useCreateConfigParameter, useUpdateConfigParameter, useDeleteConfigParameter } from '../../../hooks/use-config-parameters';
 import type { MembershipConfig, ConfigParameterFormData } from '../../../types/config-parameter.types';
 
+// Tipo específico para el valor de membresía individual
+interface MembershipValue {
+    displayName: string;
+    level: number;
+    price: number;
+    currency: string;
+    duration: number;
+    durationType: 'days' | 'months' | 'years';
+    features: string[];
+    limits: Record<string, number>;
+    color: string;
+    icon: string;
+    isPopular: boolean;
+}
+
 interface MembershipFormData {
     key: string;
     name: string;
@@ -96,7 +111,7 @@ export function MembershipManager() {
     const [newLimitKey, setNewLimitKey] = useState('');
     const [newLimitValue, setNewLimitValue] = useState('');
 
-    const { memberships, loading, error, refetch } = useMembershipConfig();
+    const { value: memberships, loading, error, refetch } = useMembershipConfig();
     const createMutation = useCreateConfigParameter();
     const updateMutation = useUpdateConfigParameter();
     const deleteMutation = useDeleteConfigParameter();
@@ -109,7 +124,7 @@ export function MembershipManager() {
     };
 
     const handleEdit = (membership: any) => {
-        const membershipValue = membership.value as MembershipConfig;
+        const membershipValue = membership.value as MembershipValue;
         setFormData({
             key: membership.key,
             name: membership.name,
@@ -184,7 +199,7 @@ export function MembershipManager() {
         }
 
         try {
-            const membershipConfig: MembershipConfig = {
+            const membershipConfig: MembershipValue = {
                 displayName: formData.displayName,
                 level: formData.level,
                 price: formData.price,
@@ -295,7 +310,7 @@ export function MembershipManager() {
         return `${duration} ${typeInfo?.label.toLowerCase() || durationType}`;
     };
 
-    const isLoading = createMutation.isLoading || updateMutation.isLoading || deleteMutation.isLoading;
+    const isLoading = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
     if (loading) {
         return (
@@ -734,8 +749,8 @@ export function MembershipManager() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-                        {memberships.map((membership) => {
-                            const membershipValue = membership.value as MembershipConfig;
+                        {memberships.map((membership: any) => {
+                            const membershipValue = membership.value as MembershipValue;
                             const iconInfo = MEMBERSHIP_ICONS.find(i => i.value === membershipValue.icon);
                             
                             return (

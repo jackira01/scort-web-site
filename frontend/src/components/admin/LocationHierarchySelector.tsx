@@ -36,8 +36,8 @@ import type {
 interface LocationHierarchySelectorProps {
     selectedDepartment?: string;
     selectedCity?: string;
-    onDepartmentChange: (department: string | null) => void;
-    onCityChange: (city: string | null) => void;
+    onDepartmentChange: (department: string | undefined) => void;
+    onCityChange: (city: string | undefined) => void;
     showStats?: boolean;
     allowCityOnly?: boolean;
     disabled?: boolean;
@@ -89,14 +89,14 @@ export const LocationHierarchySelector: React.FC<
             if (selectedDepartment && selectedCity) {
                 const isValid = validateSelection(selectedDepartment, selectedCity);
                 if (!isValid) {
-                    onCityChange(null);
+                    onCityChange(undefined);
                 }
             }
         }, [selectedDepartment, selectedCity, validateSelection, onCityChange]);
 
-        const handleDepartmentChange = (departmentValue: string | null) => {
+        const handleDepartmentChange = (departmentValue: string | undefined) => {
             onDepartmentChange(departmentValue);
-            onCityChange(null); // Reset city when department changes
+            onCityChange(undefined); // Reset city when department changes
         };
 
         const handleAutocompleteSelect = (suggestion: any) => {
@@ -249,7 +249,7 @@ export const LocationHierarchySelector: React.FC<
                             <Select
                                 labelId="department-select-label"
                                 value={selectedDepartment || ''}
-                                onChange={(e) => handleDepartmentChange(e.target.value || null)}
+                                onChange={(e) => handleDepartmentChange(e.target.value || undefined)}
                                 label="Departamento"
                                 disabled={disabled}
                             >
@@ -287,7 +287,7 @@ export const LocationHierarchySelector: React.FC<
                             <Select
                                 labelId="city-select-label"
                                 value={selectedCity || ''}
-                                onChange={(e) => onCityChange(e.target.value || null)}
+                                onChange={(e) => onCityChange(e.target.value || undefined)}
                                 label="Ciudad"
                                 disabled={disabled || (!selectedDepartment && !allowCityOnly)}
                             >

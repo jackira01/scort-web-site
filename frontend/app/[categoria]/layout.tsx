@@ -60,7 +60,7 @@ export default async function CategoriaLayout({ children, params }: LayoutProps)
         <div className="container mx-auto px-4 py-8">
           <div className="text-center text-gray-600">
             <p className="text-sm">
-              Explora más servicios de {params.categoria} en diferentes ubicaciones
+              Explora más servicios de {categoria} en diferentes ubicaciones
             </p>
           </div>
         </div>

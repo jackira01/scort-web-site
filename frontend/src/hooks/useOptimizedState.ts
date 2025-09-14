@@ -114,6 +114,7 @@ export const useDeepMemo = <T>(factory: () => T, deps: DependencyList): T => {
  * Función helper para comparación profunda
  */
 const areEqual = (a: DependencyList, b: DependencyList): boolean => {
+  if (!a || !b) return false;
   if (a.length !== b.length) return false;
   
   for (let i = 0; i < a.length; i++) {
@@ -164,8 +165,8 @@ export const usePagination = <T>({
   }, [data, currentPage, itemsPerPage]);
 
   const totalPages = useMemo(() => {
-    return Math.ceil(data.length / itemsPerPage);
-  }, [data.length, itemsPerPage]);
+    return Math.ceil((data || []).length / itemsPerPage);
+  }, [data?.length, itemsPerPage]);
 
   const goToPage = useCallback((page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));

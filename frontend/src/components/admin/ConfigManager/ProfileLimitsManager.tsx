@@ -127,9 +127,7 @@ export function ProfileLimitsManager() {
               id: paramData.data._id,
               data: {
                 value: update.value,
-                name: update.name,
-                type: 'number',
-                category: 'profiles'
+                name: update.name
               }
             });
           } else {

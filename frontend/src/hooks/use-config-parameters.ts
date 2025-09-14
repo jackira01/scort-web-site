@@ -511,21 +511,81 @@ export function useCriticalConfigs() {
 
 // Hooks individuales para mutaciones específicas
 export function useDeleteConfigParameter() {
-    const mutations = useConfigParameterMutations();
-    return mutations.delete;
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => ConfigParameterService.delete(id),
+        onSuccess: (_, id) => {
+            queryClient.removeQueries({ queryKey: configParameterKeys.detail(id) });
+            queryClient.invalidateQueries({ queryKey: configParameterKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: configParameterKeys.values() });
+            toast.success('Parámetro de configuración eliminado exitosamente');
+        },
+        onError: (error: any) => {
+            toast.error(
+                error?.response?.data?.message || 'Error al eliminar el parámetro',
+            );
+        },
+    });
 }
 
 export function useToggleConfigParameterActive() {
-    const mutations = useConfigParameterMutations();
-    return mutations.toggleActive;
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => ConfigParameterService.toggleActive(id),
+        onSuccess: (data, id) => {
+            queryClient.setQueryData(configParameterKeys.detail(id), data);
+            queryClient.invalidateQueries({ queryKey: configParameterKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: configParameterKeys.values() });
+            toast.success(
+                `Parámetro ${data.isActive ? 'activado' : 'desactivado'} exitosamente`,
+            );
+        },
+        onError: (error: any) => {
+            toast.error(
+                error?.response?.data?.message ||
+                'Error al cambiar el estado del parámetro',
+            );
+        },
+    });
 }
 
 export function useCreateConfigParameter() {
-    const mutations = useConfigParameterMutations();
-    return mutations.create;
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data: CreateConfigParameterInput) =>
+            ConfigParameterService.create(data),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: configParameterKeys.all });
+            toast.success('Parámetro de configuración creado exitosamente');
+        },
+        onError: (error: any) => {
+            toast.error(
+                error?.response?.data?.message || 'Error al crear el parámetro',
+            );
+        },
+    });
 }
 
 export function useUpdateConfigParameter() {
-    const mutations = useConfigParameterMutations();
-    return mutations.update;
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({
+            id,
+            data,
+        }: {
+            id: string;
+            data: UpdateConfigParameterInput;
+        }) => ConfigParameterService.update(id, data),
+        onSuccess: (data, variables) => {
+            queryClient.setQueryData(configParameterKeys.detail(variables.id), data);
+            queryClient.invalidateQueries({ queryKey: configParameterKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: configParameterKeys.values() });
+            toast.success('Parámetro de configuración actualizado exitosamente');
+        },
+        onError: (error: any) => {
+            toast.error(
+                error?.response?.data?.message || 'Error al actualizar el parámetro',
+            );
+        },
+    });
 }

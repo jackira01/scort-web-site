@@ -50,7 +50,8 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
   }
 
   const formattedDate = blogService.formatDate(blog.createdAt);
-  const readingTime = Math.ceil(blogService.extractTextFromContent(blog.content).length / 200);
+  const extractedText = blogService.extractTextFromContent(blog.content);
+  const readingTime = Math.ceil((extractedText?.length || 0) / 200);
 
 
 

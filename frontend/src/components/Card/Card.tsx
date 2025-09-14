@@ -13,7 +13,7 @@ interface CardComponentProps {
 
 const CardComponent = ({ profiles = [] }: CardComponentProps) => {
   // Si no hay perfiles, mostrar mensaje
-  if (profiles.length === 0) {
+  if (!profiles || profiles.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-600 dark:text-gray-300">No hay perfiles disponibles</p>

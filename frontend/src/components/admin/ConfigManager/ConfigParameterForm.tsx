@@ -24,6 +24,11 @@ const DEFAULT_CATEGORIES = {
     location: 'locations',
     text: 'texts',
     membership: 'memberships',
+    number: 'numbers',
+    boolean: 'booleans',
+    array: 'arrays',
+    object: 'objects',
+    json: 'json',
     system: 'system',
     app: 'app'
 };
@@ -57,6 +62,7 @@ export function ConfigParameterForm({
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [newTag, setNewTag] = useState('');
     const [newDependency, setNewDependency] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const createMutation = useCreateConfigParameter();
     const updateMutation = useUpdateConfigParameter();
@@ -69,7 +75,7 @@ export function ConfigParameterForm({
                 name: parameter.name,
                 type: parameter.type,
                 category: parameter.category,
-                value: typeof parameter.value === 'object' 
+                value: typeof parameter.value === 'object'
                     ? JSON.stringify(parameter.value, null, 2)
                     : String(parameter.value),
                 metadata: {
@@ -129,7 +135,7 @@ export function ConfigParameterForm({
             metadata: {
                 ...prev.metadata,
                 ui_config: {
-                    ...prev.metadata.ui_config,
+                    ...(prev.metadata?.ui_config || {}),
                     [field]: value
                 }
             }
@@ -137,10 +143,10 @@ export function ConfigParameterForm({
     };
 
     const addTag = () => {
-        if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
+        if (newTag.trim() && !(formData.tags || []).includes(newTag.trim())) {
             setFormData(prev => ({
                 ...prev,
-                tags: [...prev.tags, newTag.trim()]
+                tags: [...(prev.tags || []), newTag.trim()]
             }));
             setNewTag('');
         }
@@ -149,15 +155,15 @@ export function ConfigParameterForm({
     const removeTag = (tagToRemove: string) => {
         setFormData(prev => ({
             ...prev,
-            tags: prev.tags.filter(tag => tag !== tagToRemove)
+            tags: prev.tags?.filter(tag => tag !== tagToRemove)
         }));
     };
 
     const addDependency = () => {
-        if (newDependency.trim() && !formData.dependencies.includes(newDependency.trim())) {
+        if (newDependency.trim() && !formData.dependencies?.includes(newDependency.trim())) {
             setFormData(prev => ({
                 ...prev,
-                dependencies: [...prev.dependencies, newDependency.trim()]
+                dependencies: [...(prev.dependencies || []), newDependency.trim()]
             }));
             setNewDependency('');
         }
@@ -166,7 +172,7 @@ export function ConfigParameterForm({
     const removeDependency = (depToRemove: string) => {
         setFormData(prev => ({
             ...prev,
-            dependencies: prev.dependencies.filter(dep => dep !== depToRemove)
+            dependencies: (prev.dependencies || []).filter(dep => dep !== depToRemove)
         }));
     };
 
@@ -188,7 +194,7 @@ export function ConfigParameterForm({
         }
 
         // Validar JSON si el tipo de entrada es JSON
-        if (formData.metadata.ui_config.input_type === 'json') {
+        if (formData.metadata?.ui_config?.input_type === 'json') {
             try {
                 JSON.parse(formData.value as string);
             } catch {
@@ -202,20 +208,21 @@ export function ConfigParameterForm({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!validateForm()) {
             return;
         }
 
         try {
+            setIsLoading(true);
             // Procesar el valor según el tipo
             let processedValue: any = formData.value;
-            
-            if (formData.metadata.ui_config.input_type === 'json') {
+
+            if (formData.metadata?.ui_config?.input_type === 'json') {
                 processedValue = JSON.parse(formData.value as string);
-            } else if (formData.metadata.ui_config.input_type === 'number') {
+            } else if (formData.metadata?.ui_config?.input_type === 'number') {
                 processedValue = Number(formData.value);
-            } else if (formData.metadata.ui_config.input_type === 'checkbox') {
+            } else if (formData.metadata?.ui_config?.input_type === 'checkbox') {
                 processedValue = Boolean(formData.value);
             }
 
@@ -235,11 +242,13 @@ export function ConfigParameterForm({
 
             onSubmit(submitData);
         } catch (error) {
-      
+            console.error('Error al guardar:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const isLoading = createMutation.isLoading || updateMutation.isLoading;
+
 
     return (
         <div className="bg-white rounded-lg shadow">
@@ -271,9 +280,8 @@ export function ConfigParameterForm({
                             type="text"
                             value={formData.key}
                             onChange={(e) => handleInputChange('key', e.target.value)}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                errors.key ? 'border-red-300' : 'border-gray-300'
-                            }`}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.key ? 'border-red-300' : 'border-gray-300'
+                                }`}
                             placeholder="ej: app.title"
                             disabled={mode === 'edit'}
                         />
@@ -294,9 +302,8 @@ export function ConfigParameterForm({
                             type="text"
                             value={formData.name}
                             onChange={(e) => handleInputChange('name', e.target.value)}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                errors.name ? 'border-red-300' : 'border-gray-300'
-                            }`}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.name ? 'border-red-300' : 'border-gray-300'
+                                }`}
                             placeholder="Nombre descriptivo"
                         />
                         {errors.name && (
@@ -337,9 +344,8 @@ export function ConfigParameterForm({
                             type="text"
                             value={formData.category}
                             onChange={(e) => handleInputChange('category', e.target.value)}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                errors.category ? 'border-red-300' : 'border-gray-300'
-                            }`}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.category ? 'border-red-300' : 'border-gray-300'
+                                }`}
                             placeholder="Categoría del parámetro"
                         />
                         {errors.category && (
@@ -357,7 +363,7 @@ export function ConfigParameterForm({
                         Descripción
                     </label>
                     <textarea
-                        value={formData.metadata.description}
+                        value={formData.metadata?.description}
                         onChange={(e) => handleMetadataChange('description', e.target.value)}
                         rows={3}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -368,7 +374,7 @@ export function ConfigParameterForm({
                 {/* Configuración de UI */}
                 <div className="border border-gray-200 rounded-lg p-4">
                     <h3 className="text-lg font-medium text-gray-900 mb-4">Configuración de Interfaz</h3>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Tipo de entrada */}
                         <div>
@@ -376,7 +382,7 @@ export function ConfigParameterForm({
                                 Tipo de entrada
                             </label>
                             <select
-                                value={formData.metadata.ui_config.input_type}
+                                value={formData.metadata?.ui_config?.input_type}
                                 onChange={(e) => handleUIConfigChange('input_type', e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             >
@@ -399,7 +405,7 @@ export function ConfigParameterForm({
                             </label>
                             <input
                                 type="text"
-                                value={formData.metadata.ui_config.placeholder}
+                                value={formData.metadata?.ui_config?.placeholder}
                                 onChange={(e) => handleUIConfigChange('placeholder', e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 placeholder="Texto de ayuda"
@@ -414,7 +420,7 @@ export function ConfigParameterForm({
                         </label>
                         <input
                             type="text"
-                            value={formData.metadata.ui_config.help_text}
+                            value={formData.metadata?.ui_config?.help_text}
                             onChange={(e) => handleUIConfigChange('help_text', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Información adicional para el usuario"
@@ -427,17 +433,16 @@ export function ConfigParameterForm({
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                         Valor *
                     </label>
-                    {formData.metadata.ui_config.input_type === 'textarea' || formData.metadata.ui_config.input_type === 'json' ? (
+                    {formData.metadata?.ui_config?.input_type === 'textarea' || formData.metadata?.ui_config?.input_type === 'json' ? (
                         <textarea
                             value={formData.value as string}
                             onChange={(e) => handleInputChange('value', e.target.value)}
                             rows={formData.metadata.ui_config.input_type === 'json' ? 6 : 4}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono ${
-                                errors.value ? 'border-red-300' : 'border-gray-300'
-                            }`}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono ${errors.value ? 'border-red-300' : 'border-gray-300'
+                                }`}
                             placeholder={formData.metadata.ui_config.placeholder || 'Valor del parámetro'}
                         />
-                    ) : formData.metadata.ui_config.input_type === 'checkbox' ? (
+                    ) : formData.metadata?.ui_config?.input_type === 'checkbox' ? (
                         <label className="flex items-center">
                             <input
                                 type="checkbox"
@@ -449,13 +454,12 @@ export function ConfigParameterForm({
                         </label>
                     ) : (
                         <input
-                            type={formData.metadata.ui_config.input_type || 'text'}
+                            type={formData.metadata?.ui_config?.input_type || 'text'}
                             value={formData.value as string}
                             onChange={(e) => handleInputChange('value', e.target.value)}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                errors.value ? 'border-red-300' : 'border-gray-300'
-                            }`}
-                            placeholder={formData.metadata.ui_config.placeholder || 'Valor del parámetro'}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.value ? 'border-red-300' : 'border-gray-300'
+                                }`}
+                            placeholder={formData.metadata?.ui_config?.placeholder || 'Valor del parámetro'}
                         />
                     )}
                     {errors.value && (
@@ -472,7 +476,7 @@ export function ConfigParameterForm({
                         Etiquetas
                     </label>
                     <div className="flex flex-wrap gap-2 mb-2">
-                        {formData.tags.map(tag => (
+                        {(formData.tags || []).map(tag => (
                             <span
                                 key={tag}
                                 className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"

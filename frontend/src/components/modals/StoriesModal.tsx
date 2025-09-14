@@ -67,7 +67,7 @@ const StoriesModal = ({
   }, [isOpen, isPaused, currentProfileIndex, currentStoryIndex]);
 
   const nextStory = () => {
-    if (currentStoryIndex < currentProfile.stories.length - 1) {
+    if (currentProfile?.stories && currentStoryIndex < currentProfile.stories.length - 1) {
       setCurrentStoryIndex(currentStoryIndex + 1);
       setProgress(0);
     } else {
@@ -85,7 +85,7 @@ const StoriesModal = ({
   };
 
   const nextProfile = () => {
-    if (currentProfileIndex < profiles.length - 1) {
+    if (profiles && currentProfileIndex < profiles.length - 1) {
       setCurrentProfileIndex(currentProfileIndex + 1);
       setCurrentStoryIndex(0);
       setProgress(0);
@@ -95,10 +95,10 @@ const StoriesModal = ({
   };
 
   const prevProfile = () => {
-    if (currentProfileIndex > 0) {
+    if (profiles && currentProfileIndex > 0) {
       setCurrentProfileIndex(currentProfileIndex - 1);
       setCurrentStoryIndex(
-        profiles[currentProfileIndex - 1].stories.length - 1,
+        profiles[currentProfileIndex - 1]?.stories?.length ? profiles[currentProfileIndex - 1].stories.length - 1 : 0,
       );
       setProgress(0);
     }

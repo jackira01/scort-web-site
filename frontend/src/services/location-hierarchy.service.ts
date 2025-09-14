@@ -248,7 +248,7 @@ export class LocationHierarchyService {
 
             // Si se especifica ciudad, verificar que existe en el departamento
             if (cityNormalized) {
-                return department.cities.some((c) => c.value === cityNormalized);
+                return department.cities && department.cities.some((c) => c.value === cityNormalized);
             }
 
             return true;

@@ -11,6 +11,7 @@ interface AudioPlayerProps {
 }
 
 export default function AudioPlayer({ audios }: AudioPlayerProps) {
+  const safeAudios = audios || [];
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [currentAudioIndex, setCurrentAudioIndex] = useState(0);
@@ -28,7 +29,7 @@ export default function AudioPlayer({ audios }: AudioPlayerProps) {
     const handleEnded = () => {
       setIsPlaying(false);
       // Auto-play next audio if available
-      if (currentAudioIndex < audios.length - 1) {
+      if (currentAudioIndex < safeAudios.length - 1) {
         setCurrentAudioIndex(currentAudioIndex + 1);
       }
     };
@@ -42,7 +43,7 @@ export default function AudioPlayer({ audios }: AudioPlayerProps) {
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [currentAudioIndex, audios.length]);
+  }, [currentAudioIndex, safeAudios.length]);
 
   const handlePlayPause = () => {
     if (audioRef.current) {
@@ -87,7 +88,7 @@ export default function AudioPlayer({ audios }: AudioPlayerProps) {
     return fileName.split('.')[0];
   };
 
-  if (!audios || audios.length === 0) {
+  if (!safeAudios || safeAudios.length === 0) {
     return (
       <Card className="bg-card border-border animate-in fade-in-50 slide-in-from-right-10 duration-1000">
         <CardHeader>
@@ -110,23 +111,23 @@ export default function AudioPlayer({ audios }: AudioPlayerProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm">
           <Music className="h-4 w-4" />
-          Audios ({audios.length})
+          Audios ({safeAudios.length})
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 space-y-4">
         <audio
           ref={audioRef}
-          src={audios[currentAudioIndex]}
+          src={safeAudios[currentAudioIndex]}
           preload="metadata"
         />
         
         {/* Current Audio Info */}
         <div className="text-center">
           <p className="text-sm font-medium truncate">
-            {getAudioName(audios[currentAudioIndex])}
+            {getAudioName(safeAudios[currentAudioIndex])}
           </p>
           <p className="text-xs text-muted-foreground">
-            {currentAudioIndex + 1} de {audios.length}
+            {currentAudioIndex + 1} de {safeAudios.length}
           </p>
         </div>
 
@@ -177,8 +178,8 @@ export default function AudioPlayer({ audios }: AudioPlayerProps) {
           <Button
             size="sm"
             variant="ghost"
-            disabled={currentAudioIndex === audios.length - 1}
-            onClick={() => setCurrentAudioIndex(Math.min(audios.length - 1, currentAudioIndex + 1))}
+            disabled={currentAudioIndex === safeAudios.length - 1}
+          onClick={() => setCurrentAudioIndex(Math.min(safeAudios.length - 1, currentAudioIndex + 1))}
             className="h-8 w-8 p-0"
           >
             <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -211,10 +212,10 @@ export default function AudioPlayer({ audios }: AudioPlayerProps) {
         </div>
 
         {/* Audio List */}
-        {audios.length > 1 && (
+        {safeAudios.length > 1 && (
           <div className="space-y-1 max-h-32 overflow-y-auto">
             <p className="text-xs font-medium text-muted-foreground">Lista de audios:</p>
-            {audios.map((audio, index) => (
+            {safeAudios.map((audio, index) => (
               <button
                 type="button"
                 key={index}
