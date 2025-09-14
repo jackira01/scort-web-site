@@ -79,7 +79,8 @@ export const colombiaDepartments = {
     "Rionegro",
     "Sabaneta",
     "La Estrella",
-    "Copacabana"
+    "Copacabana",
+    "Medellin"
   ],
   "Arauca": [
     "Arauca",
@@ -349,7 +350,8 @@ export const colombiaDepartments = {
     "Cartago",
     "Buga",
     "Jamundí",
-    "Yumbo"
+    "Yumbo",
+    "Cali"
   ],
   "Vaupés": [
     "Mitú",

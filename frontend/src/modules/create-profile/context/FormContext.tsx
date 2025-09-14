@@ -1,6 +1,6 @@
 import { createContext, useContext, ReactNode } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import type { FormData } from '../types';
+import type { FormData } from '../schemas/validation';
 
 interface FormContextType {
   form: UseFormReturn<FormData>;

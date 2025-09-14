@@ -117,7 +117,7 @@ export const LocationManager: React.FC = () => {
                 await deleteConfigParameter.mutateAsync(location._id);
                 refetchDepartments();
             } catch (error) {
-                console.error('Error deleting location:', error);
+          
             }
         }
     };
@@ -135,7 +135,7 @@ export const LocationManager: React.FC = () => {
             setOpenDialog(false);
             refetchDepartments();
         } catch (error) {
-            console.error('Error saving location:', error);
+      
         }
     };
 

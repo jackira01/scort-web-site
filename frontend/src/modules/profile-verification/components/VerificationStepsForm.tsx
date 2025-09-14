@@ -11,25 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { uploadMultipleImages, uploadMultipleVideos } from '@/utils/tools';
+import axios from '@/lib/axios';
 
 const verificationSchema = z.object({
   documentPhotos: z.object({
     documents: z.array(z.string()).max(2, 'Máximo 2 documentos permitidos').optional(),
   }),
-  selfieWithPoster: z.object({
-    photo: z.string().optional(),
-  }),
-  selfieWithDoc: z.object({
-    photo: z.string().optional(),
-  }),
-  fullBodyPhotos: z.object({
-    photos: z.array(z.string()).optional(),
-  }),
   video: z.object({
-    videoLink: z.string().optional(),
-  }),
-  videoCallRequested: z.object({
-    isRequested: z.boolean().optional(),
     videoLink: z.string().optional(),
   }),
   socialMedia: z.object({
@@ -53,11 +41,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
   // Estados para archivos temporales
   const [tempDocuments, setTempDocuments] = useState<File[]>([]);
-  const [tempSelfieWithPoster, setTempSelfieWithPoster] = useState<File | null>(null);
-  const [tempSelfieWithDoc, setTempSelfieWithDoc] = useState<File | null>(null);
-  const [tempFullBodyPhotos, setTempFullBodyPhotos] = useState<File[]>([]);
   const [tempVideo, setTempVideo] = useState<File | null>(null);
-  const [tempVideoCall, setTempVideoCall] = useState<File | null>(null);
 
   const form = useForm<VerificationFormData>({
     resolver: zodResolver(verificationSchema),
@@ -65,21 +49,8 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
       documentPhotos: {
         documents: initialData.documentPhotos?.documents || [],
       },
-      selfieWithPoster: {
-        photo: initialData.selfieWithPoster?.photo || '',
-      },
-      selfieWithDoc: {
-        photo: initialData.selfieWithDoc?.photo || '',
-      },
-      fullBodyPhotos: {
-        photos: initialData.fullBodyPhotos?.photos || [],
-      },
       video: {
         videoLink: initialData.video?.videoLink || '',
-      },
-      videoCallRequested: {
-        isRequested: initialData.videoCallRequested?.isRequested || false,
-        videoLink: initialData.videoCallRequested?.videoLink || '',
       },
       socialMedia: {
         accounts: initialData.socialMedia?.accounts || [],
@@ -89,22 +60,11 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
   const updateVerificationMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile-verification/${verificationId}/steps`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al actualizar la verificación');
-      }
-
-      return response.json();
+      const response = await axios.patch(`/api/profile-verification/${verificationId}/steps`, data);
+      return response.data;
     },
     onSuccess: () => {
-      toast.success('Verificación actualizada exitosamente');
+      toast.success('Verificación actualizada exitosamente. Se ha notificado a la empresa para revisión.');
       queryClient.invalidateQueries({ queryKey: ['profileVerification', profileId] });
       onSuccess();
     },
@@ -151,46 +111,11 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
         formData.documentPhotos.documents = uploadedDocs;
       }
 
-      // Subir selfie con cartel
-      if (tempSelfieWithPoster) {
-        const uploadedSelfie = await handleFileUpload([tempSelfieWithPoster], 'selfieWithPoster');
-        if (uploadedSelfie.length > 0) {
-          formData.selfieWithPoster.photo = uploadedSelfie[0];
-        }
-      }
-
-      // Subir selfie con documento
-      if (tempSelfieWithDoc) {
-        const uploadedSelfie = await handleFileUpload([tempSelfieWithDoc], 'selfieWithDoc');
-        if (uploadedSelfie.length > 0) {
-          formData.selfieWithDoc.photo = uploadedSelfie[0];
-        }
-      }
-
-      // Subir fotos de cuerpo completo (exactamente 2)
-      if (tempFullBodyPhotos.length > 0) {
-        if (tempFullBodyPhotos.length !== 2) {
-          toast.error('Se requieren exactamente 2 fotos de cuerpo completo');
-          setIsSubmitting(false);
-          return;
-        }
-        const uploadedPhotos = await handleFileUpload(tempFullBodyPhotos, 'fullBodyPhotos');
-        formData.fullBodyPhotos.photos = uploadedPhotos;
-      }
-
       // Subir video
       if (tempVideo) {
         const uploadedVideo = await handleFileUpload([tempVideo], 'video');
         if (uploadedVideo.length > 0) {
           formData.video.videoLink = uploadedVideo[0];
-        }
-      }
-
-      // Subir video de videollamada
-      if (tempVideoCall) {
-        const uploadedVideoCall = await handleFileUpload([tempVideoCall], 'videoCall');
-        if (uploadedVideoCall.length > 0) {
-          formData.videoCallRequested.videoLink = uploadedVideoCall[0];
         }
       }
 
@@ -288,164 +213,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               </div>
             </div>
 
-            {/* Selfie con Póster */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Selfie con Cartel</h3>
-              <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mb-3">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  📸 <strong>Instrucciones:</strong> Toma una selfie sosteniendo un cartel o papel con el nombre de tu perfil y la fecha actual. Esta foto ayuda a verificar tu identidad.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="selfieWithPoster" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Subir foto con cartel</label>
-                  <Input
-                    id="selfieWithPoster"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] || null;
-                      setTempSelfieWithPoster(file);
-                    }}
-                    disabled={uploadingFiles.selfieWithPoster}
-                  />
-                  {tempSelfieWithPoster && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      Archivo seleccionado: {tempSelfieWithPoster.name}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="currentSelfieWithPoster" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Foto con cartel actual</label>
-                  {form.watch('selfieWithPoster.photo') ? (
-                    <div className="relative inline-block">
-                      <img
-                        src={form.watch('selfieWithPoster.photo')!}
-                        alt="Selfie con cartel"
-                        className="w-full h-32 object-cover rounded border cursor-pointer"
-                        onClick={() => window.open(form.watch('selfieWithPoster.photo')!, '_blank')}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => window.open(form.watch('selfieWithPoster.photo')!, '_blank')}
-                        className="absolute top-1 right-1 bg-blue-600 text-white p-1 rounded text-xs hover:bg-blue-700"
-                      >
-                        Ver
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Sin foto</p>
-                  )}
-                </div>
-              </div>
-            </div>
 
-            {/* Selfie con Documento */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Selfie con Documento</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="selfieWithDoc" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Subir nueva foto</label>
-                  <Input
-                    id="selfieWithDoc"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] || null;
-                      setTempSelfieWithDoc(file);
-                    }}
-                    disabled={uploadingFiles.selfieWithDoc}
-                  />
-                  {tempSelfieWithDoc && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      Archivo seleccionado: {tempSelfieWithDoc.name}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="currentSelfieWithDoc" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Foto actual</label>
-                  {form.watch('selfieWithDoc.photo') ? (
-                    <div className="relative inline-block">
-                      <img
-                        src={form.watch('selfieWithDoc.photo')!}
-                        alt="Selfie con documento"
-                        className="w-full h-32 object-cover rounded border cursor-pointer"
-                        onClick={() => window.open(form.watch('selfieWithDoc.photo')!, '_blank')}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => window.open(form.watch('selfieWithDoc.photo')!, '_blank')}
-                        className="absolute top-1 right-1 bg-blue-600 text-white p-1 rounded text-xs hover:bg-blue-700"
-                      >
-                        Ver
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Sin foto</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Fotos de Cuerpo Completo */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Fotos de Cuerpo Completo</h3>
-              <p className="text-sm text-blue-600 dark:text-blue-400 mb-3">
-                📸 Debes elegir exactamente 2 imágenes de cuerpo completo para completar la verificación.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="fullBodyPhotos" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Subir nuevas fotos</label>
-                  <Input
-                    id="fullBodyPhotos"
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || []);
-                      if (files.length !== 2) {
-                        toast.error('Debes seleccionar exactamente 2 fotos de cuerpo completo');
-                        e.target.value = '';
-                        return;
-                      }
-                      setTempFullBodyPhotos(files);
-                    }}
-                    disabled={uploadingFiles.fullBodyPhotos}
-                  />
-                  {tempFullBodyPhotos.length > 0 && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      {tempFullBodyPhotos.length} archivo(s) seleccionado(s)
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="currentFullBodyPhotos" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Fotos actuales</label>
-                  {form.watch('fullBodyPhotos.photos') && form.watch('fullBodyPhotos.photos')!.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2">
-                      {form.watch('fullBodyPhotos.photos')!.map((photoUrl, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={photoUrl}
-                            alt={`Foto cuerpo completo ${index + 1}`}
-                            className="w-full h-32 object-cover rounded border cursor-pointer"
-                            onClick={() => window.open(photoUrl, '_blank')}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => window.open(photoUrl, '_blank')}
-                            className="absolute top-1 right-1 bg-blue-600 text-white p-1 rounded text-xs hover:bg-blue-700"
-                          >
-                            Ver
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Sin fotos</p>
-                  )}
-                </div>
-              </div>
-            </div>
 
             {/* Video */}
             <div className="space-y-4">

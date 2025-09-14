@@ -69,7 +69,7 @@ const StoriesCards = () => {
           <button
             type="button"
             key={profile._id}
-            className="flex-shrink-0 cursor-pointer group animate-in zoom-in-50 flex flex-col items-center border-0 bg-transparent p-0"
+            className="flex-shrink-0 cursor-pointer group flex flex-col items-center border-0 bg-transparent p-0"
             style={{ animationDelay: `${index * 150}ms` }}
             onClick={() => handleStoryClick(index)}
           >

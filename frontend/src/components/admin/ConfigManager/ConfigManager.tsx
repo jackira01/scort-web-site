@@ -22,8 +22,10 @@ import type {
 import { ConfigParameterFilters } from './ConfigParameterFilters';
 import { ConfigParameterForm } from './ConfigParameterForm';
 import { ConfigParameterList } from './ConfigParameterList';
+import { AgencyLimitsManager } from './AgencyLimitsManager';
 import { LocationManager } from './LocationManager';
 import { MembershipManager } from './MembershipManager';
+import { ProfileLimitsManager } from './ProfileLimitsManager';
 import { TextManager } from './TextManager';
 
 type ViewMode =
@@ -32,7 +34,9 @@ type ViewMode =
     | 'edit'
     | 'locations'
     | 'texts'
-    | 'memberships';
+    | 'memberships'
+    | 'profile-limits'
+    | 'agency-limits';
 
 interface ConfigManagerProps {
     className?: string;
@@ -119,29 +123,27 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
     const handleExport = async () => {
         try {
             // Implementar exportación
-            console.log('Exporting configurations...');
         } catch (error) {
-            console.error('Export failed:', error);
+            // Error handled by the service
         }
     };
 
     const handleImport = async (file: File) => {
         try {
             // Implementar importación
-            console.log('Importing configurations...', file);
         } catch (error) {
-            console.error('Import failed:', error);
+            // Error handled by the service
         }
     };
 
     const renderHeader = () => (
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         Gestión de Configuración
                     </h1>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         Administra parámetros de configuración del sistema
                     </p>
                 </div>
@@ -150,8 +152,8 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
                     <button
                         onClick={() => setViewMode('locations')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'locations'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                     >
                         Ubicaciones
@@ -160,8 +162,8 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
                     <button
                         onClick={() => setViewMode('texts')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'texts'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                     >
                         Textos
@@ -169,12 +171,35 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
 
                     <button
                         onClick={() => setViewMode('memberships')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'memberships'
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            viewMode === 'memberships'
+                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                    >
+                        Membresías
+                    </button>
+
+                    <button
+                        onClick={() => setViewMode('profile-limits')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            viewMode === 'profile-limits'
                                 ? 'bg-blue-100 text-blue-700'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                     >
-                        Membresías
+                        Límites de Perfiles
+                    </button>
+
+                    <button
+                        onClick={() => setViewMode('agency-limits')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            viewMode === 'agency-limits'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                    >
+                        Límites de Agencias
                     </button>
 
                     <button
@@ -311,6 +336,21 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
                 return (
                     <div className="p-6">
                         <MembershipManager />
+                    </div>
+                );
+
+            case 'profile-limits':
+                // Rendering profile-limits section
+                return (
+                    <div className="p-6">
+                        <ProfileLimitsManager />
+                    </div>
+                );
+
+            case 'agency-limits':
+                return (
+                    <div className="p-6">
+                        <AgencyLimitsManager />
                     </div>
                 );
 

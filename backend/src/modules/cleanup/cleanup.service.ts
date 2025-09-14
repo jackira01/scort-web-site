@@ -1,5 +1,7 @@
 import { ProfileModel } from '../profile/profile.model';
 import type { IProfile } from '../profile/profile.types';
+import { hideProfile } from '../profile/profile.service';
+import { logger } from '../../utils/logger';
 
 /**
  * Servicio de limpieza automática para perfiles y upgrades expirados
@@ -12,20 +14,28 @@ import type { IProfile } from '../profile/profile.types';
  */
 export const hideExpiredProfiles = async (now: Date = new Date()): Promise<number> => {
   try {
-    const result = await ProfileModel.updateMany(
-      {
-        visible: true,
-        'planAssignment.expiresAt': { $lte: now }
-      },
-      {
-        $set: { visible: false }
-      }
-    );
+    // Buscar perfiles con planes expirados que aún están activos
+    const expiredProfiles = await ProfileModel.find({
+      visible: true,
+      isActive: true,
+      'planAssignment.expiresAt': { $lte: now }
+    });
 
-    console.log(`[Cleanup] Hidden ${result.modifiedCount} expired profiles at ${now.toISOString()}`);
-    return result.modifiedCount;
+    let processedCount = 0;
+
+    // Usar el método de ocultación para cada perfil expirado
+    for (const profile of expiredProfiles) {
+      try {
+        await hideProfile((profile as any)._id.toString(), (profile as any).user.toString());
+        processedCount++;
+      } catch (error) {
+        // Continuar con el siguiente perfil si hay error
+        continue;
+      }
+    }
+
+    return processedCount;
   } catch (error) {
-    console.error('[Cleanup] Error hiding expired profiles:', error);
     throw error;
   }
 };
@@ -37,7 +47,7 @@ export const hideExpiredProfiles = async (now: Date = new Date()): Promise<numbe
  * @returns Número de perfiles con upgrades limpiados
  */
 export const cleanupExpiredUpgrades = async (
-  now: Date = new Date(), 
+  now: Date = new Date(),
   keepHistory: boolean = true
 ): Promise<number> => {
   try {
@@ -55,12 +65,12 @@ export const cleanupExpiredUpgrades = async (
         if (expiredUpgrades.length > 0) {
           // Mantener solo upgrades activos
           profile.upgrades = activeUpgrades;
-          
+
           // Agregar campo de historial si no existe
           if (!(profile as any).upgradeHistory) {
             (profile as any).upgradeHistory = [];
           }
-          
+
           // Mover upgrades expirados al historial
           (profile as any).upgradeHistory.push(...expiredUpgrades.map(upgrade => ({
             ...(upgrade as any).toObject(),
@@ -72,7 +82,7 @@ export const cleanupExpiredUpgrades = async (
         }
       }
 
-      console.log(`[Cleanup] Moved expired upgrades to history for ${updatedCount} profiles at ${now.toISOString()}`);
+      logger.info(`Moved expired upgrades to history for ${updatedCount} profiles`, { timestamp: now.toISOString() });
       return updatedCount;
     } else {
       // Opción 2: Eliminar completamente los upgrades expirados
@@ -87,11 +97,12 @@ export const cleanupExpiredUpgrades = async (
         }
       );
 
-      console.log(`[Cleanup] Removed expired upgrades from ${result.modifiedCount} profiles at ${now.toISOString()}`);
+      logger.info(`Removed expired upgrades from ${result.modifiedCount} profiles`, { timestamp: now.toISOString() });
       return result.modifiedCount;
     }
   } catch (error) {
-    console.error('[Cleanup] Error cleaning up expired upgrades:', error);
+    const err = error as Error;
+    logger.error('Error cleaning up expired upgrades', { error: err.message, stack: err.stack });
     throw error;
   }
 };
@@ -107,7 +118,7 @@ export const runCleanupTasks = async (now: Date = new Date()): Promise<{
   timestamp: Date;
 }> => {
   console.log(`[Cleanup] Starting cleanup tasks at ${now.toISOString()}`);
-  
+
   try {
     // Ejecutar tareas de limpieza en paralelo
     const [hiddenProfiles, cleanedUpgrades] = await Promise.all([
@@ -130,27 +141,38 @@ export const runCleanupTasks = async (now: Date = new Date()): Promise<{
 };
 
 /**
- * Obtiene estadísticas de perfiles por estado de visibilidad
+ * Obtiene estadísticas de perfiles por estado de visibilidad y eliminación
  * @returns Estadísticas de perfiles
  */
 export const getProfileVisibilityStats = async (): Promise<{
   visible: number;
   hidden: number;
+  active: number;
+  softDeleted: number;
   withActivePlan: number;
   withExpiredPlan: number;
   withActiveUpgrades: number;
 }> => {
   const now = new Date();
-  
+
   try {
-    const [visible, hidden, withActivePlan, withExpiredPlan, withActiveUpgrades] = await Promise.all([
-      ProfileModel.countDocuments({ visible: true }),
-      ProfileModel.countDocuments({ visible: false }),
-      ProfileModel.countDocuments({ 'planAssignment.expiresAt': { $gt: now } }),
-      ProfileModel.countDocuments({ 'planAssignment.expiresAt': { $lte: now } }),
-      ProfileModel.countDocuments({ 
-        'upgrades': { 
-          $elemMatch: { 
+    const [visible, hidden, active, softDeleted, withActivePlan, withExpiredPlan, withActiveUpgrades] = await Promise.all([
+      ProfileModel.countDocuments({ visible: true, isDeleted: { $ne: true } }),
+      ProfileModel.countDocuments({ visible: false, isDeleted: { $ne: true } }),
+      ProfileModel.countDocuments({ isActive: true }),
+      ProfileModel.countDocuments({ isDeleted: true }),
+      ProfileModel.countDocuments({
+        isActive: true,
+        'planAssignment.expiresAt': { $gt: now }
+      }),
+      ProfileModel.countDocuments({
+        isActive: true,
+        'planAssignment.expiresAt': { $lte: now }
+      }),
+      ProfileModel.countDocuments({
+        isActive: true,
+        'upgrades': {
+          $elemMatch: {
             startAt: { $lte: now },
             endAt: { $gt: now }
           }
@@ -161,12 +183,13 @@ export const getProfileVisibilityStats = async (): Promise<{
     return {
       visible,
       hidden,
+      active,
+      softDeleted,
       withActivePlan,
       withExpiredPlan,
       withActiveUpgrades
     };
   } catch (error) {
-    console.error('[Cleanup] Error getting visibility stats:', error);
     throw error;
   }
 };

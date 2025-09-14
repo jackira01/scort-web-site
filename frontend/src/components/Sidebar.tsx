@@ -1,4 +1,4 @@
-import { Receipt, Settings, User } from 'lucide-react';
+import { Receipt, Settings, User, Tags } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 const sidebarItems = [
@@ -15,9 +15,9 @@ const sidebarItems = [
     description: 'Revisa tu historial completo de transacciones y pagos.',
   },
   {
-    id: 'ajustes',
-    label: 'Ajustes',
-    icon: Settings,
+    id: 'grupos-atributos',
+    label: 'Configuración',
+    icon: Tags,
     description: 'Configura tu cuenta, privacidad y preferencias.',
   },
 ];
@@ -39,27 +39,23 @@ export default function Sidebar({
                 type="button"
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 group animate-in slide-in-from-left-2 ${
-                  activeSection === item.id
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 group animate-in slide-in-from-left-2 ${activeSection === item.id
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                }`}
+                  }`}
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <item.icon
                   className={`h-5 w-5 ${activeSection === item.id ? 'text-white' : 'group-hover:text-purple-600'} transition-colors duration-200`}
                 />
-                <div className="flex-1">
+                <div className="flex-1 relative group">
                   <span className="font-medium">{item.label}</span>
-                  <p
-                    className={`text-xs mt-1 ${
-                      activeSection === item.id
-                        ? 'text-white/80'
-                        : 'text-muted-foreground'
-                    }`}
-                  >
+
+                  {/* Tooltip con descripción que aparece en hover */}
+                  <div className="absolute left-0 top-full mt-2 w-64 p-3 bg-gray-900 dark:bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                    <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 dark:bg-gray-800 rotate-45"></div>
                     {item.description}
-                  </p>
+                  </div>
                 </div>
               </button>
             ))}

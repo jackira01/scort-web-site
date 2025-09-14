@@ -9,7 +9,7 @@ export const steps: Step[] = [
     description: 'Características físicas y contacto',
   },
   { id: 4, title: 'Multimedia', description: 'Fotos, videos y audios' },
-  { id: 5, title: 'Finalizar', description: 'Revisión y publicación' },
+  { id: 5, title: 'Finalizar', description: 'Selección de plan y publicación' },
 ];
 
 export const services = [

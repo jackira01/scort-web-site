@@ -1,0 +1,145 @@
+import mongoose, { type Document, Schema } from 'mongoose';
+
+export interface InvoiceItem {
+  type: 'plan' | 'upgrade';
+  code: string;
+  name: string;
+  days?: number;
+  price: number;
+  quantity: number;
+}
+
+export interface IInvoice extends Document {
+  profileId: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
+  status: 'pending' | 'paid' | 'cancelled' | 'expired';
+  items: InvoiceItem[];
+  totalAmount: number;
+  createdAt: Date;
+  expiresAt: Date;
+  paidAt?: Date;
+  cancelledAt?: Date;
+  paymentMethod?: string;
+  paymentData?: any;
+  cancellationReason?: string;
+  notes?: string;
+}
+
+const invoiceItemSchema = new Schema<InvoiceItem>({
+  type: { 
+    type: String, 
+    enum: ['plan', 'upgrade'], 
+    required: true 
+  },
+  code: { 
+    type: String, 
+    required: true 
+  },
+  name: { 
+    type: String, 
+    required: true 
+  },
+  days: { 
+    type: Number 
+  },
+  price: { 
+    type: Number, 
+    required: true, 
+    min: 0 
+  },
+  quantity: { 
+    type: Number, 
+    required: true, 
+    min: 1, 
+    default: 1 
+  }
+}, { _id: false });
+
+const invoiceSchema = new Schema<IInvoice>(
+  {
+    profileId: { 
+      type: Schema.Types.ObjectId, 
+      ref: 'Profile', 
+      required: true 
+    },
+    userId: { 
+      type: Schema.Types.ObjectId, 
+      ref: 'User', 
+      required: true 
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'paid', 'cancelled', 'expired'],
+      default: 'pending',
+      required: true
+    },
+    items: {
+      type: [invoiceItemSchema],
+      required: true,
+      validate: {
+        validator: function(items: InvoiceItem[]) {
+          return items && items.length > 0;
+        },
+        message: 'Invoice must have at least one item'
+      }
+    },
+    totalAmount: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    expiresAt: {
+      type: Date,
+      required: true
+    },
+    paidAt: {
+      type: Date
+    },
+    cancelledAt: {
+      type: Date
+    },
+    paymentMethod: {
+      type: String,
+      maxlength: 100
+    },
+    paymentData: {
+      type: Schema.Types.Mixed
+    },
+    cancellationReason: {
+      type: String,
+      maxlength: 500
+    },
+    notes: {
+      type: String,
+      maxlength: 500
+    }
+  },
+  { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
+);
+
+// Virtual para verificar si la factura está vencida
+invoiceSchema.virtual('isExpired').get(function() {
+  return this.status === 'pending' && new Date() > this.expiresAt;
+});
+
+// Índices para optimizar consultas
+invoiceSchema.index({ profileId: 1, status: 1 });
+invoiceSchema.index({ userId: 1, status: 1 });
+invoiceSchema.index({ expiresAt: 1, status: 1 });
+invoiceSchema.index({ createdAt: -1 });
+
+// Middleware para actualizar totalAmount antes de guardar
+invoiceSchema.pre('save', function(next) {
+  if (this.isModified('items')) {
+    this.totalAmount = this.items.reduce((total, item) => {
+      return total + (item.price * item.quantity);
+    }, 0);
+  }
+  next();
+});
+
+export default mongoose.model<IInvoice>('Invoice', invoiceSchema);

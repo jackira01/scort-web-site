@@ -10,6 +10,17 @@ export interface IUser {
   verification_in_progress?: boolean;
   profiles: mongoose.Types.ObjectId[];
   role: 'admin' | 'user' | 'guest';
+  accountType: 'common' | 'agency';
+  agencyInfo?: {
+    businessName?: string;
+    businessDocument?: string;
+    conversionRequestedAt?: Date;
+    conversionApprovedAt?: Date;
+    conversionApprovedBy?: mongoose.Types.ObjectId;
+    conversionStatus: 'pending' | 'approved' | 'rejected';
+    reason?: string;
+    rejectionReason?: string;
+  };
   lastLogin: {
     isVerified: boolean;
     date: Date;
@@ -26,12 +37,30 @@ const userSchema = new Schema<IUserDocument>({
   verification_in_progress: { type: Boolean, default: false },
   profiles: [{ type: Schema.Types.ObjectId, ref: 'Profile' }],
   role: { type: String, enum: ['admin', 'user', 'guest'], default: 'user' },
+  accountType: { type: String, enum: ['common', 'agency'], default: 'common' },
+  agencyInfo: {
+    businessName: { type: String },
+    businessDocument: { type: String },
+    conversionRequestedAt: { type: Date },
+    conversionApprovedAt: { type: Date },
+    conversionApprovedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    conversionStatus: { type: String, enum: ['pending', 'approved', 'rejected'] },
+    reason: { type: String },
+    rejectionReason: { type: String },
+  },
   lastLogin: {
     isVerified: { type: Boolean, default: false },
     date: { type: Date, default: null },
   },
 
 });
+
+// Índices optimizados
+userSchema.index({ email: 1 }, { unique: true }); // Ya existe pero lo hacemos explícito
+userSchema.index({ isVerified: 1 }); // Para filtros de verificación
+userSchema.index({ role: 1 }); // Para filtros por rol
+userSchema.index({ accountType: 1 }); // Para filtros por tipo de cuenta
+userSchema.index({ 'lastLogin.date': -1 }); // Para ordenar por último login
 
 userSchema.plugin(mongoosePaginate);
 

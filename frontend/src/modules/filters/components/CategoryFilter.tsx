@@ -1,6 +1,5 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAttributeGroupByKey } from '@/hooks/use-filter-attribute-groups';
 
@@ -65,10 +64,6 @@ const CategoryFilter = ({ selectedCategory, onCategoryChange }: CategoryFilterPr
               >
                 {variant.label || variant.value}
               </label>
-              {/* TODO: Implementar conteo de perfiles por categoría */}
-              <Badge variant="secondary" className="ml-auto">
-                0
-              </Badge>
             </div>
           );
         })}

@@ -21,6 +21,10 @@ export interface ContentLimits {
         min: number;
         max: number;
     };
+    audios: {
+        min: number;
+        max: number;
+    };
     storiesPerDayMax: number;
 }
 
@@ -103,6 +107,18 @@ const ContentLimitsSchema = new Schema<ContentLimits>({
             min: 0
         }
     },
+    audios: {
+        min: {
+            type: Number,
+            required: true,
+            min: 0
+        },
+        max: {
+            type: Number,
+            required: true,
+            min: 0
+        }
+    },
     storiesPerDayMax: {
         type: Number,
         required: true,
@@ -159,6 +175,11 @@ const PlanDefinitionSchema = new Schema<IPlanDefinition>({
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
+});
+
+// Virtual para compatibilidad con frontend (mapea 'active' a 'isActive')
+PlanDefinitionSchema.virtual('isActive').get(function() {
+    return this.active;
 });
 
 // Índices

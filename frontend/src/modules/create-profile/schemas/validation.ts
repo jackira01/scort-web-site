@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ProcessedImageResult } from '@/utils/imageProcessor';
 
 // Re-export step1Schema for backward compatibility
 export { step1Schema, type Step1FormData } from './step1';
@@ -22,10 +23,23 @@ export const formSchema = z.object({
 
   // Step 3 - Detalles
   contact: z.object({
-    number: z.string().optional(),
-    whatsapp: z.boolean().optional(),
-    telegram: z.boolean().optional(),
-  }).optional(),
+    number: z
+      .string()
+      .min(1, 'El número de teléfono es requerido')
+      .regex(/^[0-9]{10}$/, 'El número debe tener exactamente 10 dígitos'),
+    whatsapp: z
+      .string()
+      .optional()
+      .refine((val) => !val || /^[0-9]{10}$/.test(val), {
+        message: 'WhatsApp debe tener exactamente 10 dígitos'
+      }),
+    telegram: z
+      .string()
+      .optional()
+      .refine((val) => !val || /^[0-9]{10}$/.test(val), {
+        message: 'Telegram debe tener exactamente 10 dígitos'
+      }),
+  }),
   age: z.string().optional(),
   skinColor: z.string().optional(),
   sexuality: z.string().optional(),
@@ -38,13 +52,37 @@ export const formSchema = z.object({
   availability: z.array(z.any()).optional(),
 
   // Step 4 - Multimedia
-  photos: z.array(z.any()).optional(),
-  videos: z.array(z.any()).optional(),
-  audios: z.array(z.any()).optional(),
+  photos: z.array(z.union([z.string(), z.instanceof(File)])).optional(),
+  videos: z.array(z.union([z.string(), z.instanceof(File)])).optional(),
+  audios: z.array(z.union([z.string(), z.instanceof(File)])).optional(),
+  processedImages: z.array(z.any()).optional(), // Array de ProcessedImageResult
 
   // Step 5 - Finalizar
   selectedUpgrades: z.array(z.string()).optional(),
   acceptTerms: z.boolean().optional(),
+
+  // Step 5 - Selección de Plan (integrado en finalizar)
+  selectedPlan: z.object({
+    _id: z.string(),
+    name: z.string(),
+    code: z.string(),
+    variants: z.array(z.object({
+      price: z.number(),
+      days: z.number(),
+      durationRank: z.number()
+    })),
+    contentLimits: z.object({
+      maxPhotos: z.number(),
+      maxVideos: z.number(),
+      maxAudios: z.number(),
+      maxProfiles: z.number()
+    })
+  }).optional(),
+  selectedVariant: z.object({
+    price: z.number(),
+    days: z.number(),
+    durationRank: z.number()
+  }).optional(),
 });
 
 export type FormData = z.infer<typeof formSchema>;

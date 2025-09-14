@@ -31,7 +31,9 @@ export const DescriptionProfile = ({
                 className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors duration-200"
               >
                 <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                <span className="text-foreground text-sm">{service}</span>
+                <span className="text-foreground text-sm">
+                  {typeof service === 'object' && service !== null && 'label' in service ? service.label : service}
+                </span>
               </div>
             ))}
           </div>

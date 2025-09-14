@@ -4,7 +4,7 @@ import { validationResult } from 'express-validator';
 
 export class PlansController {
     // ==================== PLANES ====================
-    
+
     async createPlan(req: Request, res: Response): Promise<void> {
         try {
             const errors = validationResult(req);
@@ -16,10 +16,10 @@ export class PlansController {
                 });
                 return;
             }
-            
+
             const planData: CreatePlanInput = req.body;
             const plan = await plansService.createPlan(planData);
-            
+
             res.status(201).json({
                 success: true,
                 message: 'Plan creado exitosamente',
@@ -33,7 +33,7 @@ export class PlansController {
             });
         }
     }
-    
+
     async getAllPlans(req: Request, res: Response): Promise<void> {
         try {
             const {
@@ -41,19 +41,24 @@ export class PlansController {
                 limit = 10,
                 sortBy = 'level',
                 sortOrder = 'asc',
-                activeOnly = 'true'
+                isActive,
+                search
             } = req.query;
-            
+
+            // Si isActive está definido, usarlo; si no, mostrar todos los planes (no filtrar por defecto)
+            const activeOnly = isActive !== undefined ? isActive === 'true' : false;
+
             const options = {
                 page: parseInt(page as string),
                 limit: parseInt(limit as string),
                 sortBy: sortBy as string,
                 sortOrder: sortOrder as 'asc' | 'desc',
-                activeOnly: activeOnly === 'true'
+                activeOnly,
+                search: search as string
             };
-            
+
             const result = await plansService.getAllPlans(options);
-            
+
             res.status(200).json({
                 success: true,
                 message: 'Planes obtenidos exitosamente',
@@ -73,12 +78,12 @@ export class PlansController {
             });
         }
     }
-    
+
     async getPlanById(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params;
             const plan = await plansService.getPlanById(id);
-            
+
             if (!plan) {
                 res.status(404).json({
                     success: false,
@@ -86,7 +91,7 @@ export class PlansController {
                 });
                 return;
             }
-            
+
             res.status(200).json({
                 success: true,
                 message: 'Plan obtenido exitosamente',
@@ -100,12 +105,12 @@ export class PlansController {
             });
         }
     }
-    
+
     async getPlanByCode(req: Request, res: Response): Promise<void> {
         try {
             const { code } = req.params;
             const plan = await plansService.getPlanByCode(code);
-            
+
             if (!plan) {
                 res.status(404).json({
                     success: false,
@@ -113,7 +118,7 @@ export class PlansController {
                 });
                 return;
             }
-            
+
             res.status(200).json({
                 success: true,
                 message: 'Plan obtenido exitosamente',
@@ -127,17 +132,17 @@ export class PlansController {
             });
         }
     }
-    
+
     async getPlansByLevel(req: Request, res: Response): Promise<void> {
         try {
             const { level } = req.params;
             const { activeOnly = 'true' } = req.query;
-            
+
             const plans = await plansService.getPlansByLevel(
                 parseInt(level),
                 activeOnly === 'true'
             );
-            
+
             res.status(200).json({
                 success: true,
                 message: 'Planes obtenidos exitosamente',
@@ -151,7 +156,7 @@ export class PlansController {
             });
         }
     }
-    
+
     async updatePlan(req: Request, res: Response): Promise<void> {
         try {
             const errors = validationResult(req);
@@ -163,12 +168,12 @@ export class PlansController {
                 });
                 return;
             }
-            
+
             const { id } = req.params;
             const updateData: UpdatePlanInput = req.body;
-            
+
             const plan = await plansService.updatePlan(id, updateData);
-            
+
             if (!plan) {
                 res.status(404).json({
                     success: false,
@@ -176,7 +181,7 @@ export class PlansController {
                 });
                 return;
             }
-            
+
             res.status(200).json({
                 success: true,
                 message: 'Plan actualizado exitosamente',
@@ -190,12 +195,12 @@ export class PlansController {
             });
         }
     }
-    
+
     async deletePlan(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params;
             const deleted = await plansService.deletePlan(id);
-            
+
             if (!deleted) {
                 res.status(404).json({
                     success: false,
@@ -203,7 +208,7 @@ export class PlansController {
                 });
                 return;
             }
-            
+
             res.status(200).json({
                 success: true,
                 message: 'Plan eliminado exitosamente'
@@ -216,9 +221,9 @@ export class PlansController {
             });
         }
     }
-    
+
     // ==================== UPGRADES ====================
-    
+
     async createUpgrade(req: Request, res: Response): Promise<void> {
         try {
             const errors = validationResult(req);
@@ -230,10 +235,10 @@ export class PlansController {
                 });
                 return;
             }
-            
+
             const upgradeData: CreateUpgradeInput = req.body;
             const upgrade = await plansService.createUpgrade(upgradeData);
-            
+
             res.status(201).json({
                 success: true,
                 message: 'Upgrade creado exitosamente',
@@ -247,27 +252,40 @@ export class PlansController {
             });
         }
     }
-    
+
     async getAllUpgrades(req: Request, res: Response): Promise<void> {
         try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Errores de validación',
+                    errors: errors.array()
+                });
+                return;
+            }
+
             const {
                 page = 1,
                 limit = 10,
                 sortBy = 'code',
                 sortOrder = 'asc',
-                activeOnly = 'true'
+                active
             } = req.query;
-            
+
+            // Si active está definido, usarlo; si no, mostrar todos los upgrades (no filtrar por defecto)
+            const activeOnly = active !== undefined ? active === 'true' : false;
+
             const options = {
                 page: parseInt(page as string),
                 limit: parseInt(limit as string),
                 sortBy: sortBy as string,
                 sortOrder: sortOrder as 'asc' | 'desc',
-                activeOnly: activeOnly === 'true'
+                activeOnly
             };
-            
+
             const result = await plansService.getAllUpgrades(options);
-            
+
             res.status(200).json({
                 success: true,
                 message: 'Upgrades obtenidos exitosamente',
@@ -287,12 +305,12 @@ export class PlansController {
             });
         }
     }
-    
+
     async getUpgradeById(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params;
             const upgrade = await plansService.getUpgradeById(id);
-            
+
             if (!upgrade) {
                 res.status(404).json({
                     success: false,
@@ -300,7 +318,7 @@ export class PlansController {
                 });
                 return;
             }
-            
+
             res.status(200).json({
                 success: true,
                 message: 'Upgrade obtenido exitosamente',
@@ -314,12 +332,12 @@ export class PlansController {
             });
         }
     }
-    
+
     async getUpgradeByCode(req: Request, res: Response): Promise<void> {
         try {
             const { code } = req.params;
             const upgrade = await plansService.getUpgradeByCode(code);
-            
+
             if (!upgrade) {
                 res.status(404).json({
                     success: false,
@@ -327,7 +345,7 @@ export class PlansController {
                 });
                 return;
             }
-            
+
             res.status(200).json({
                 success: true,
                 message: 'Upgrade obtenido exitosamente',
@@ -341,7 +359,7 @@ export class PlansController {
             });
         }
     }
-    
+
     async updateUpgrade(req: Request, res: Response): Promise<void> {
         try {
             const errors = validationResult(req);
@@ -353,12 +371,12 @@ export class PlansController {
                 });
                 return;
             }
-            
+
             const { id } = req.params;
             const updateData: UpdateUpgradeInput = req.body;
-            
+
             const upgrade = await plansService.updateUpgrade(id, updateData);
-            
+
             if (!upgrade) {
                 res.status(404).json({
                     success: false,
@@ -366,7 +384,7 @@ export class PlansController {
                 });
                 return;
             }
-            
+
             res.status(200).json({
                 success: true,
                 message: 'Upgrade actualizado exitosamente',
@@ -380,12 +398,12 @@ export class PlansController {
             });
         }
     }
-    
+
     async deleteUpgrade(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params;
             const deleted = await plansService.deleteUpgrade(id);
-            
+
             if (!deleted) {
                 res.status(404).json({
                     success: false,
@@ -393,7 +411,7 @@ export class PlansController {
                 });
                 return;
             }
-            
+
             res.status(200).json({
                 success: true,
                 message: 'Upgrade eliminado exitosamente'
@@ -406,14 +424,14 @@ export class PlansController {
             });
         }
     }
-    
+
     // ==================== UTILIDADES ====================
-    
+
     async validatePlanUpgrades(req: Request, res: Response): Promise<void> {
         try {
             const { code } = req.params;
             const result = await plansService.validatePlanUpgrades(code);
-            
+
             res.status(200).json({
                 success: true,
                 message: 'Validación completada',
@@ -427,12 +445,12 @@ export class PlansController {
             });
         }
     }
-    
+
     async getUpgradeDependencyTree(req: Request, res: Response): Promise<void> {
         try {
             const { code } = req.params;
             const result = await plansService.getUpgradeDependencyTree(code);
-            
+
             if (!result) {
                 res.status(404).json({
                     success: false,
@@ -440,7 +458,7 @@ export class PlansController {
                 });
                 return;
             }
-            
+
             res.status(200).json({
                 success: true,
                 message: 'Árbol de dependencias obtenido exitosamente',
@@ -450,6 +468,72 @@ export class PlansController {
             res.status(500).json({
                 success: false,
                 message: 'Error al obtener el árbol de dependencias',
+                error: error.message
+            });
+        }
+    }
+
+    // ==================== OPERACIONES DE PLANES ====================
+
+    async purchasePlan(req: Request, res: Response): Promise<void> {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Errores de validación',
+                    errors: errors.array()
+                });
+                return;
+            }
+
+            const { profileId, planCode, variantDays } = req.body;
+            const result = await plansService.purchasePlan(profileId, planCode, variantDays);
+
+            res.status(200).json({
+                success: true,
+                message: 'Plan comprado exitosamente',
+                data: {
+                    ...result,
+                    whatsAppMessage: result.whatsAppMessage
+                }
+            });
+        } catch (error: any) {
+            res.status(400).json({
+                success: false,
+                message: error.message || 'Error al comprar el plan',
+                error: error.message
+            });
+        }
+    }
+
+    async renewPlan(req: Request, res: Response): Promise<void> {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Errores de validación',
+                    errors: errors.array()
+                });
+                return;
+            }
+
+            const { profileId, planCode, variantDays } = req.body;
+            const result = await plansService.renewPlan(profileId, planCode, variantDays);
+
+            res.status(200).json({
+                success: true,
+                message: 'Plan renovado exitosamente',
+                data: {
+                    ...result,
+                    whatsAppMessage: result.whatsAppMessage
+                }
+            });
+        } catch (error: any) {
+            res.status(400).json({
+                success: false,
+                message: error.message || 'Error al renovar el plan',
                 error: error.message
             });
         }

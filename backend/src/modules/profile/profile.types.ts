@@ -6,7 +6,8 @@ export interface IStories {
 }
 
 export interface IPlanAssignment {
-    planCode: string;           // ref lógico a PlanDefinition.code
+    planId?: Types.ObjectId;    // ref directo a PlanDefinition._id (PREFERRED)
+    planCode?: string;          // DEPRECATED: ref lógico a PlanDefinition.code (mantener para compatibilidad)
     variantDays: number;        // 7|15|30|180...
     startAt: Date;
     expiresAt: Date;
@@ -46,8 +47,8 @@ export interface IProfile extends Document {
     age: string;
     contact: {
         number: string;
-        whatsapp: boolean;
-        telegram: boolean;
+        whatsapp?: string;
+        telegram?: string;
         changedAt: Date;
     };
     height: string;
@@ -79,6 +80,11 @@ export interface IProfile extends Document {
     upgrades: IProfileUpgrade[];
     lastShownAt?: Date;           // para rotación
     visible: boolean;             // default true mientras no expire plan
+    isDeleted: boolean;           // borrado lógico - true significa eliminado
+    
+    // Campos de timestamps de Mongoose
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface CreateProfileDTO {
@@ -106,8 +112,8 @@ export interface CreateProfileDTO {
     age: string;
     contact: {
         number: string;
-        whatsapp: boolean;
-        telegram: boolean;
+        whatsapp?: string;
+        telegram?: string;
     };
     height: string;
     media?: {
@@ -119,12 +125,12 @@ export interface CreateProfileDTO {
     availability?: string[];
     rates?: string[];
     paymentHistory?: string[];
-    plan?: string;
     verification?: string;
     
     // Nuevos campos opcionales para motor de visibilidad
     planAssignment?: {
-        planCode: string;
+        planId?: Types.ObjectId;
+        planCode?: string;  // DEPRECATED: mantener para compatibilidad
         variantDays: number;
         startAt: Date;
         expiresAt: Date;
@@ -137,6 +143,7 @@ export interface CreateProfileDTO {
     }[];
     lastShownAt?: Date;
     visible?: boolean;
+    isDeleted?: boolean;
 }
 
 
@@ -165,8 +172,8 @@ export interface IProfileInput {
     age: string;
     contact: {
         number: string;
-        whatsapp: boolean;
-        telegram: boolean;
+        whatsapp?: string;
+        telegram?: string;
     };
     height: string;
     media?: {
@@ -186,12 +193,15 @@ export interface IProfileInput {
     upgrades?: IProfileUpgrade[];
     lastShownAt?: Date;
     visible?: boolean;
+    isDeleted?: boolean;
 }
 
 export interface IProfileVerification extends Document {
     profile: Types.ObjectId;
     verificationStatus: 'pending' | 'verified' | 'rejected';
     verificationProgress: number;
+    accountType: 'common' | 'agency';
+    requiresIndependentVerification: boolean;
     steps: {
         documentPhotos: {
             documents: string[]

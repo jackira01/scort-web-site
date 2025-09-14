@@ -1,19 +1,12 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { ConfigParameterService } from './config-parameter.service';
 import { AppError } from '../../utils/AppError';
+import { AuthRequest } from '../../types/auth.types';
 import type {
     CreateConfigParameterInput,
     UpdateConfigParameterInput,
     ConfigParameterQuery
 } from './config-parameter.types';
-
-interface AuthRequest extends Request {
-    user?: {
-        id: string;
-        role?: string;
-        [key: string]: any;
-    };
-}
 
 export class ConfigParameterController {
     /**

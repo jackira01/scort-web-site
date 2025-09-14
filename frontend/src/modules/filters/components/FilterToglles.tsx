@@ -3,8 +3,9 @@ import { Switch } from '@/components/ui/switch';
 
 interface FilterToggleProps {
   filters: {
-    verified: boolean;
-    video: boolean;
+    verified: boolean | undefined;
+    video: boolean | undefined;
+    destacado: boolean | undefined;
   };
   onFilterChange: (key: string, value: boolean) => void;
 }
@@ -15,6 +16,7 @@ const FilterToglles = ({ filters, onFilterChange }: FilterToggleProps) => {
       {Object.entries({
         verified: 'Verificado',
         video: 'Video',
+        destacado: 'Destacado',
       }).map(([key, label]) => (
         <div key={key} className="flex items-center justify-between">
           <Label
@@ -25,12 +27,14 @@ const FilterToglles = ({ filters, onFilterChange }: FilterToggleProps) => {
           </Label>
           <Switch
             id={key}
-            checked={filters[key as keyof typeof filters]}
+            checked={filters[key as keyof typeof filters] || false}
             onCheckedChange={(checked) => {
               if (key === 'verified') {
                 onFilterChange('isVerified', checked);
               } else if (key === 'video') {
                 onFilterChange('hasVideos', checked);
+              } else if (key === 'destacado') {
+                onFilterChange('hasDestacadoUpgrade', checked);
               }
             }}
           />

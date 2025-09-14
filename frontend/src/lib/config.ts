@@ -1,7 +1,7 @@
 // Configuración centralizada para URLs y constantes
 
 // URL del API - funciona tanto en cliente como en servidor
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 // URL base para rutas internas
 export const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';

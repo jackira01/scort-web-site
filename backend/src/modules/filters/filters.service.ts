@@ -1,5 +1,9 @@
 import { AttributeGroupModel as AttributeGroup } from '../attribute-group/attribute-group.model';
 import { ProfileModel as Profile } from '../profile/profile.model';
+import { sortProfiles } from '../visibility/visibility.service';
+import { updateLastShownAt } from '../feeds/feeds.service';
+import { cacheService, CACHE_TTL, CACHE_KEYS } from '../../services/cache.service';
+import { logger } from '../../utils/logger';
 import type {
   FilterOptions,
   FilterQuery,
@@ -20,30 +24,54 @@ export const getFilteredProfiles = async (
       availability,
       isActive,
       isVerified,
+      hasDestacadoUpgrade,
+      hasVideos,
       page = 1,
       limit = 20,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      // sortBy = 'createdAt',
+      // sortOrder = 'desc',
       fields,
     } = filters;
+
+    // Generar clave de caché basada en los filtros
+    const cacheKey = cacheService.generateKey(
+      CACHE_KEYS.FILTERS,
+      JSON.stringify(filters)
+    );
+
+    // Intentar obtener del caché primero
+    const cachedResult = await cacheService.get<FilterResponse>(cacheKey);
+    if (cachedResult) {
+      logger.info(`Cache hit para filtros: ${cacheKey}`);
+      return cachedResult;
+    }
 
     let features = filters.features;
 
     // Construir query de MongoDB
     const query: any = {};
 
-    // Solo agregar filtro isActive si está definido
+    // Alinear con home feed: solo perfiles visibles, no eliminados
+    const now = new Date();
+    query.visible = true;
+    query.isDeleted = { $ne: true };
+    // Temporalmente comentado para debugging - permitir perfiles sin plan activo
+    // query['planAssignment.expiresAt'] = { $gt: now };
+
+    // Solo agregar filtro isActive si está definido (para activación/desactivación)
     if (isActive !== undefined) {
       query.isActive = isActive;
     }
 
     // Filtro por categoría (se maneja como feature)
+    // DEBUG - Category filter
     if (category) {
       // Agregar la categoría a las features para procesarla junto con las demás
       if (!features) {
         features = {};
       }
       features.category = category;
+      // DEBUG - Features after adding category
     }
 
     // Filtro por ubicación
@@ -64,23 +92,56 @@ export const getFilteredProfiles = async (
       query['user.isVerified'] = isVerified;
     }
 
+    // Filtro por destacado (upgrade activo)
+    if (hasDestacadoUpgrade !== undefined && hasDestacadoUpgrade) {
+      const now = new Date();
+      query.$or = [
+        // Perfiles con upgrade DESTACADO/HIGHLIGHT activo
+        {
+          upgrades: {
+            $elemMatch: {
+              code: { $in: ['DESTACADO', 'HIGHLIGHT'] },
+              startAt: { $lte: now },
+              endAt: { $gt: now }
+            }
+          }
+        },
+        // Perfiles con plan DIAMANTE
+        {
+          'planAssignment.planCode': 'DIAMANTE'
+        }
+      ];
+    }
+
+    // Filtro por videos
+    if (hasVideos !== undefined && hasVideos) {
+      query['media.videos'] = { $exists: true, $not: { $size: 0 } };
+    }
+
     // Filtro por características (features)
+    // DEBUG - Features object
     if (features && Object.keys(features).length > 0) {
+      // DEBUG - Processing features with keys
       const featureConditions: any[] = [];
 
       // Primero necesitamos obtener los IDs de los grupos por sus keys
       const groupKeys = Object.keys(features);
+      // DEBUG - Features keys
       const attributeGroups = await AttributeGroup.find({
         key: { $in: groupKeys },
       });
+      // DEBUG - Found attribute groups
       const groupKeyToId = new Map();
       attributeGroups.forEach((group) => {
         groupKeyToId.set(group.key, group._id);
       });
+      // DEBUG - Group key to ID map
 
       for (const [groupKey, value] of Object.entries(features)) {
         const groupId = groupKeyToId.get(groupKey);
+        // DEBUG - Processing feature
         if (!groupId) {
+          // WARNING - No groupId found for feature key
           continue;
         }
 
@@ -98,7 +159,7 @@ export const getFilteredProfiles = async (
           featureConditions.push(condition);
         } else {
           // Si es un valor único (normalizado) - buscar en el array de valores del perfil
-          const normalizedValue = value.toLowerCase().trim();
+          const normalizedValue = (value as string).toLowerCase().trim();
           const condition = {
             features: {
               $elemMatch: {
@@ -181,43 +242,120 @@ export const getFilteredProfiles = async (
     // Configurar paginación
     const skip = (page - 1) * limit;
 
-    // Configurar ordenamiento
-    const sort: any = {};
-    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
-
-    // Determinar campos a seleccionar
-    const selectFields =
-      fields && fields.length > 0
-        ? fields.join(' ')
-        : '_id name age location description verification media isActive';
-
-    // Construir consulta base
-    let profileQuery = Profile.find(query)
-      .select(selectFields)
-      .populate('user', 'isVerified')
-      .sort(sort)
-      .skip(skip)
-      .limit(limit);
-
-    // Agregar populate para campos que requieren datos completos
-    if (!fields || fields.includes('verification')) {
-      profileQuery = profileQuery.populate('verification');
-    }
-
-    // Solo hacer populate de features si está explícitamente incluido en los campos seleccionados
-    if (fields && fields.includes('features')) {
-      profileQuery = profileQuery.populate('features.group_id');
-    }
+    // Determinar campos a seleccionar: asegurar campos requeridos por el motor de visibilidad
+    const requiredFields = ['planAssignment', 'upgrades', 'lastShownAt', 'createdAt'];
+    const finalFields = Array.isArray(fields) && fields.length > 0
+      ? Array.from(new Set([...fields, ...requiredFields]))
+      : ['_id', 'name', 'age', 'location', 'description', 'verification', 'media', 'isActive', ...requiredFields];
+    const selectFields = finalFields.join(' ');
 
     const startTime = Date.now();
 
-    // Ejecutar consulta
-    const [profiles, totalCount] = await Promise.all([
-      profileQuery.lean(),
-      Profile.countDocuments(query),
+    // Debug: Log para verificar la query
+    // DEBUG getFilteredProfiles - Query inicial
+
+    // Usar agregación para filtrar perfiles con usuarios verificados (alineado con homeFeed)
+    const aggregationPipeline: any[] = [
+      {
+        $match: query
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'userInfo'
+        }
+      },
+      {
+      $match: {
+        'userInfo.isVerified': true
+      }
+    },
+      {
+        $addFields: {
+          user: { $arrayElemAt: ['$userInfo', 0] }
+        }
+      },
+      {
+        $project: {
+          userInfo: 0
+        }
+      }
+    ];
+
+    // DEBUG getFilteredProfiles - Pipeline de agregación
+
+    // Agregar lookup para verification si es necesario
+    if (!fields || fields.includes('verification')) {
+      aggregationPipeline.push({
+        $lookup: {
+          from: 'profileverifications',
+          localField: 'verification',
+          foreignField: '_id',
+          as: 'verification'
+        }
+      });
+      aggregationPipeline.push({
+        $addFields: {
+          verification: { $arrayElemAt: ['$verification', 0] }
+        }
+      });
+    }
+
+    // Agregar lookup para features si es necesario
+    if (fields && fields.includes('features')) {
+      aggregationPipeline.push({
+        $lookup: {
+          from: 'attributegroups',
+          localField: 'features.group_id',
+          foreignField: '_id',
+          as: 'featureGroups'
+        }
+      });
+    }
+
+    // Ejecutar agregación para obtener perfiles
+    const [allProfiles, totalCountResult] = await Promise.all([
+      Profile.aggregate(aggregationPipeline),
+      Profile.aggregate([
+        {
+          $match: query
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'user',
+            foreignField: '_id',
+            as: 'userInfo'
+          }
+        },
+        {
+          $match: {
+            'userInfo.isVerified': true
+          }
+        },
+        { $count: 'total' }
+      ])
     ]);
 
+    // DEBUG getFilteredProfiles - Perfiles encontrados y total count result
+
+    const totalCount = totalCountResult[0]?.total || 0;
+
+    // Ordenar perfiles usando el motor de visibilidad (nivel -> score -> lastShownAt -> createdAt)
+    const sortedProfiles = await sortProfiles(allProfiles as any, now);
+
+    // Aplicar paginación después del ordenamiento
+    const paginatedProfiles = sortedProfiles.slice(skip, skip + limit);
+
+    // Actualizar lastShownAt para los perfiles servidos (rotación justa)
+    if (paginatedProfiles.length > 0) {
+      await updateLastShownAt(paginatedProfiles.map(p => (p._id as any).toString()));
+    }
+
     const executionTime = Date.now() - startTime;
+    void executionTime; // mantener variable para debugging futuro si se requiere
 
     // Calcular información de paginación
     const totalPages = Math.ceil(totalCount / limit);
@@ -233,15 +371,43 @@ export const getFilteredProfiles = async (
       limit,
     };
 
+    // Agregar información de verificación a los perfiles
+    const profilesWithVerification = paginatedProfiles.map(profile => {
+      // Calcular estado de verificación basado en verificationStatus
+      let isVerified = false;
+      let verificationLevel = 'pending';
+      
+      if (profile.verification) {
+        const verifiedCount = Object.values(profile.verification).filter(status => status === 'verified').length;
+        const totalFields = Object.keys(profile.verification).length;
+        
+        if (verifiedCount === totalFields && totalFields > 0) {
+          isVerified = true;
+          verificationLevel = 'verified';
+        } else if (verifiedCount > 0) {
+          verificationLevel = 'partial';
+        }
+      }
+      
+      return {
+        ...profile,
+        verification: {
+          isVerified,
+          verificationLevel
+        }
+      };
+    });
+
     const result = {
-      profiles,
-      pagination: paginationInfo,
+      ...paginationInfo,
+      profiles: profilesWithVerification,
     };
 
-    return {
-      ...result.pagination,
-      profiles: result.profiles,
-    };
+    // Guardar resultado en caché (5 minutos para consultas de filtros)
+    await cacheService.set(cacheKey, result, CACHE_TTL.MEDIUM);
+    logger.info(`Resultado guardado en caché: ${cacheKey}`);
+
+    return result;
   } catch (error) {
     // Error in getFilteredProfiles
     throw error;
@@ -253,10 +419,17 @@ export const getFilteredProfiles = async (
  */
 export const getFilterOptions = async (): Promise<FilterOptions> => {
   try {
+    // Intentar obtener del caché primero
+    const cacheKey = cacheService.generateKey(CACHE_KEYS.FILTERS, 'options');
+    const cachedOptions = await cacheService.get<FilterOptions>(cacheKey);
+    if (cachedOptions) {
+      logger.info('Cache hit para opciones de filtros');
+      return cachedOptions;
+    }
     const [locations, attributeGroups, priceRange] = await Promise.all([
       // Obtener ubicaciones únicas
       Profile.aggregate([
-        { $match: { isActive: true } },
+        { $match: { isDeleted: { $ne: true } } },
         {
           $group: {
             _id: null,
@@ -272,7 +445,7 @@ export const getFilterOptions = async (): Promise<FilterOptions> => {
 
       // Obtener rango de precios
       Profile.aggregate([
-        { $match: { isActive: true } },
+        { $match: { isDeleted: { $ne: true } } },
         { $unwind: '$rates' },
         {
           $group: {
@@ -308,7 +481,7 @@ export const getFilterOptions = async (): Promise<FilterOptions> => {
         }));
     });
 
-    return {
+    const result = {
       categories: categoryGroup
         ? categoryGroup.variants
           .filter((variant: any) => variant.active)
@@ -319,18 +492,24 @@ export const getFilterOptions = async (): Promise<FilterOptions> => {
           .filter(Boolean)
         : [],
       locations: {
-        countries: locations[0]?.countries?.filter(Boolean) || [],
-        departments: locations[0]?.departments?.filter(Boolean) || [],
-        cities: locations[0]?.cities?.filter(Boolean) || [],
+        countries: (locations[0]?.countries || []).filter(Boolean),
+        departments: (locations[0]?.departments || []).filter(Boolean),
+        cities: (locations[0]?.cities || []).filter(Boolean),
       },
       features,
       priceRange: {
         min: priceRange[0]?.minPrice || 0,
-        max: priceRange[0]?.maxPrice || 1000000,
+        max: priceRange[0]?.maxPrice || 0,
       },
     };
+
+    // Guardar en caché por 30 minutos (las opciones cambian poco)
+    await cacheService.set(cacheKey, result, CACHE_TTL.LONG);
+    logger.info('Opciones de filtros guardadas en caché');
+
+    return result;
   } catch (error) {
     // Error in getFilterOptions
-    throw new Error('Error al obtener opciones de filtros');
+    throw error;
   }
 };

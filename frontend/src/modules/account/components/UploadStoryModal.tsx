@@ -48,12 +48,7 @@ export default function UploadStoryModal({
     profileName,
     currentStories = [],
 }: UploadStoryModalProps) {
-    // Debug: verificar qué datos están llegando
-    console.log('UploadStoryModal - currentStories:', currentStories);
-    console.log(
-        'UploadStoryModal - currentStories length:',
-        currentStories.length,
-    );
+
     const [selectedFiles, setSelectedFiles] = useState<StoryFile[]>([]);
     const [uploading, setUploading] = useState(false);
     const [deletingStory, setDeletingStory] = useState<string | null>(null);
@@ -64,8 +59,7 @@ export default function UploadStoryModal({
     const queryClient = useQueryClient();
     const { data: session } = useSession();
 
-    console.log('previewStory:', previewStory);
-    console.log('currentStories:', currentStories);
+
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(event.target.files || []);
@@ -195,7 +189,6 @@ export default function UploadStoryModal({
             setSelectedFiles([]);
             onClose();
         } catch (error) {
-            console.error('Error uploading stories:', error);
             toast.dismiss();
             toast.error('Error al subir las historias');
         } finally {
@@ -239,7 +232,6 @@ export default function UploadStoryModal({
             // Recargar la página para mostrar los cambios
             window.location.reload();
         } catch (error) {
-            console.error('Error al eliminar historia:', error);
             toast.error('Error al eliminar la historia');
         } finally {
             setDeletingStory(null);

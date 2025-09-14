@@ -1,15 +1,15 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAttributeGroupByKey } from '@/hooks/use-filter-attribute-groups';
 
 interface SexFilterProps {
   selectedSex?: string[];
   onSexChange?: (sex: string[]) => void;
+  category?: string;
 }
 
-const SexFilter = ({ selectedSex = [], onSexChange }: SexFilterProps) => {
+const SexFilter = ({ selectedSex, onSexChange, category }: SexFilterProps) => {
   const { data: sexGroup, isLoading, error } = useAttributeGroupByKey('sex');
 
   if (isLoading) {
@@ -41,10 +41,11 @@ const SexFilter = ({ selectedSex = [], onSexChange }: SexFilterProps) => {
   const activeVariants = sexGroup.variants.filter(variant => variant.active !== false);
 
   const handleSexToggle = (sexValue: string) => {
-    const newSelectedSex = selectedSex.includes(sexValue)
-      ? selectedSex.filter(s => s !== sexValue)
-      : [...selectedSex, sexValue];
-    
+    const currentSelection = selectedSex || [];
+    const newSelectedSex = currentSelection.includes(sexValue)
+      ? currentSelection.filter(s => s !== sexValue)
+      : [...currentSelection, sexValue];
+
     onSexChange?.(newSelectedSex);
   };
 
@@ -53,7 +54,7 @@ const SexFilter = ({ selectedSex = [], onSexChange }: SexFilterProps) => {
       <h4 className="font-medium text-foreground">{sexGroup.name}</h4>
       <div className="space-y-2">
         {activeVariants.map((variant) => {
-          const isSelected = selectedSex.includes(variant.value);
+          const isSelected = selectedSex?.includes(variant.value) || false;
           return (
             <div key={variant.value} className="flex items-center space-x-2">
               <input
@@ -63,9 +64,10 @@ const SexFilter = ({ selectedSex = [], onSexChange }: SexFilterProps) => {
                 checked={isSelected}
                 onChange={(e) => {
                   const value = e.target.value;
+                  const currentSelection = selectedSex || [];
                   const newSelection = isSelected
-                    ? selectedSex.filter(s => s !== value)
-                    : [...selectedSex, value];
+                    ? currentSelection.filter(s => s !== value)
+                    : [...currentSelection, value];
                   onSexChange?.(newSelection);
                 }}
                 className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
@@ -76,10 +78,7 @@ const SexFilter = ({ selectedSex = [], onSexChange }: SexFilterProps) => {
               >
                 {variant.label || variant.value}
               </label>
-              {/* TODO: Implementar conteo de perfiles por orientación sexual */}
-              <Badge variant="secondary" className="ml-auto">
-                0
-              </Badge>
+
             </div>
           );
         })}

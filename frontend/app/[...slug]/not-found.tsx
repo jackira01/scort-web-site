@@ -18,15 +18,15 @@ export default function NotFound() {
     if (filterOptions && pathname) {
       const pathSegments = pathname.split('/').filter(Boolean);
       const firstSegment = pathSegments[0];
-      
+
       // Generar sugerencias basadas en el primer segmento
       const newSuggestions: string[] = [];
-      
+
       // Si el primer segmento parece ser un departamento, sugerir rutas con categorías
-      const isDepartment = filterOptions.locations.departments.some(dept => 
+      const isDepartment = filterOptions.locations.departments.some(dept =>
         createSlug(dept) === firstSegment
       );
-      
+
       if (isDepartment && filterOptions.categories.length > 0) {
         // Sugerir categorías populares con este departamento
         const popularCategories = ['escort', 'masajista', 'modelo'];
@@ -46,7 +46,7 @@ export default function NotFound() {
           }
         });
       }
-      
+
       setSuggestions(newSuggestions.slice(0, 4)); // Máximo 4 sugerencias
     }
   }, [filterOptions, pathname]);
@@ -74,7 +74,7 @@ export default function NotFound() {
             )}
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent className="space-y-6">
           {suggestions.length > 0 && (
             <div>
@@ -96,16 +96,16 @@ export default function NotFound() {
               </div>
             </div>
           )}
-          
+
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button 
+            <Button
               onClick={() => router.push('/')}
               className="flex-1"
             >
               <Home className="w-4 h-4 mr-2" />
               Ir al inicio
             </Button>
-            <Button 
+            <Button
               variant="outline"
               onClick={() => router.push('/buscar')}
               className="flex-1"
@@ -114,7 +114,7 @@ export default function NotFound() {
               Buscar perfiles
             </Button>
           </div>
-          
+
           <div className="text-center text-sm text-gray-500">
             <p>Las rutas válidas siguen el formato:</p>
             <code className="bg-gray-100 px-2 py-1 rounded text-xs">

@@ -1,25 +1,62 @@
 import type { Request, Response } from 'express';
 import UserModel from './User.model';
 import * as userService from './user.service';
+import { sendWelcomeEmail } from '../../utils/welcome-email.util';
 
 export const CreateUserController = async (req: Request, res: Response) => {
-  const user = await userService.createUser(req.body);
-  res.status(201).json(user);
+  try {
+    const user = await userService.createUser(req.body);
+
+    // Enviar correo de bienvenida
+    if (user.email) {
+      try {
+        await sendWelcomeEmail(user.email, user.name);
+      } catch (emailError) {
+        // Error enviando correo de bienvenida
+        // No fallar el registro por error de email
+      }
+    }
+
+    res.status(201).json(user);
+  } catch (error) {
+    // Error creating user
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
 };
 
 export const getUserById = async (req: Request, res: Response) => {
-  const user = await userService.getUserById(req.params.id);
+  try {
+    const { id } = req.params;
 
-  if (!user) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
-  res.json({
-    _id: user._id,
-    email: user.email,
-    name: user.name,
-    verificationDocument: user.verificationDocument,
-    isVerified: user.isVerified,
-    verification_in_progress: user.verification_in_progress,
-    role: user.role,
-  });
+    // Validar que el ID sea válido
+    if (!id) {
+      return res.status(400).json({ mensaje: 'ID de usuario requerido' });
+    }
+
+    const user = await userService.getUserById(id);
+
+    if (!user) {
+      return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+    }
+
+    res.json({
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+      verificationDocument: user.verificationDocument,
+      isVerified: user.isVerified,
+      verification_in_progress: user.verification_in_progress,
+      role: user.role,
+      accountType: user.accountType,
+      agencyInfo: user.agencyInfo,
+    });
+  } catch (error) {
+    // Error al obtener usuario por ID
+    res.status(500).json({
+      mensaje: 'Error interno del servidor al obtener usuario',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
 };
 
 export const verifyUserController = async (req: Request, res: Response) => { };
@@ -30,9 +67,23 @@ export const authGoogleUserController = async (req: Request, res: Response) => {
 
   // Buscar usuario por email
   let user = await userService.findUserByEmail(email);
+  let isNewUser = false;
+
   if (!user) {
     user = await userService.createUser({ email, name });
+    isNewUser = true;
   }
+
+  // Enviar correo de bienvenida para nuevos usuarios
+  if (isNewUser) {
+    try {
+      await sendWelcomeEmail(user.email, name);
+    } catch (emailError) {
+      // Error enviando correo de bienvenida
+      // No fallar el registro por error de email
+    }
+  }
+
   return res.json({
     _id: user._id,
     isVerified: user.isVerified,
@@ -64,8 +115,59 @@ export const uploadUserDocumentController = async (
 };
 
 export const updateUser = async (req: Request, res: Response) => {
-  const user = await userService.updateUser(req.params.id, req.body);
-  res.json(user);
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Actualizando usuario con datos
+
+    // Validar que el ID sea válido
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de usuario requerido'
+      });
+    }
+
+    // Validar que hay datos para actualizar
+    if (!updateData || Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No se proporcionaron datos para actualizar'
+      });
+    }
+
+    const user = await userService.updateUser(id, updateData);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    // Usuario actualizado exitosamente
+
+    res.json({
+      success: true,
+      message: 'Usuario actualizado correctamente',
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+      isVerified: user.isVerified,
+      verification_in_progress: user.verification_in_progress,
+      role: user.role,
+      accountType: user.accountType,
+      verificationDocument: user.verificationDocument
+    });
+  } catch (error) {
+    // Error al actualizar usuario
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor al actualizar usuario',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
 };
 
 export const getUsers = async (req: Request, res: Response) => {
@@ -98,11 +200,11 @@ export const updateUserLastLogin = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const user = await userService.updateUserLastLogin(id);
-    
+
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
-    
+
     res.json({
       success: true,
       message: 'LastLogin actualizado correctamente',
@@ -111,16 +213,20 @@ export const updateUserLastLogin = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: `Error al actualizar lastLogin: ${error}` 
+      message: `Error al actualizar lastLogin: ${error}`
     });
   }
 };
 
 export const getUserProfiles = async (req: Request, res: Response) => {
   const userId = req.params.id;
-  const profiles = await userService.getUserProfiles(userId);
+
+  // Verificar si el usuario es administrador para incluir perfiles inactivos
+  const includeInactive = (req as any).user?.role === 'admin' || false;
+
+  const profiles = await userService.getUserProfiles(userId, includeInactive);
   res.json(profiles);
 }
 

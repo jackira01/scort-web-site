@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Crown, Plus, Edit, Trash2, Star, Users, DollarSign, Clock } from 'lucide-react';
-import { useMembershipConfigs, useCreateConfigParameter, useUpdateConfigParameter, useDeleteConfigParameter } from '../../../hooks/use-config-parameters';
+import { useMembershipConfig, useCreateConfigParameter, useUpdateConfigParameter, useDeleteConfigParameter } from '../../../hooks/use-config-parameters';
 import type { MembershipConfig, ConfigParameterFormData } from '../../../types/config-parameter.types';
 
 interface MembershipFormData {
@@ -30,7 +30,7 @@ const DEFAULT_MEMBERSHIP: MembershipFormData = {
     displayName: '',
     level: 1,
     price: 0,
-    currency: 'EUR',
+    currency: 'COP',
     duration: 1,
     durationType: 'months',
     features: [],
@@ -42,8 +42,9 @@ const DEFAULT_MEMBERSHIP: MembershipFormData = {
 };
 
 const CURRENCIES = [
+    { code: 'COP', symbol: '$', name: 'Peso Colombiano' },
+    { code: 'USD', symbol: 'US$', name: 'Dólar' },
     { code: 'EUR', symbol: '€', name: 'Euro' },
-    { code: 'USD', symbol: '$', name: 'Dólar' },
     { code: 'GBP', symbol: '£', name: 'Libra' },
     { code: 'JPY', symbol: '¥', name: 'Yen' }
 ];
@@ -95,7 +96,7 @@ export function MembershipManager() {
     const [newLimitKey, setNewLimitKey] = useState('');
     const [newLimitValue, setNewLimitValue] = useState('');
 
-    const { memberships, loading, error, refetch } = useMembershipConfigs();
+    const { memberships, loading, error, refetch } = useMembershipConfig();
     const createMutation = useCreateConfigParameter();
     const updateMutation = useUpdateConfigParameter();
     const deleteMutation = useDeleteConfigParameter();
@@ -137,7 +138,7 @@ export function MembershipManager() {
                 await deleteMutation.mutateAsync(membership._id);
                 refetch();
             } catch (error) {
-                console.error('Error deleting membership:', error);
+          
             }
         }
     };
@@ -231,7 +232,7 @@ export function MembershipManager() {
             setEditingMembership(null);
             refetch();
         } catch (error) {
-            console.error('Error saving membership:', error);
+      
         }
     };
 

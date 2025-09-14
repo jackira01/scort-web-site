@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '@/lib/axios';
 import type { BaseUser, User } from '@/types/user.types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -46,8 +46,12 @@ export const getUserProfiles = async (userId: string) => {
     return response.data;
 }
 
-export const createProfile = async (data: any) => {
-    const response = await axios.post(`${API_URL}/api/profile/`, data);
+export const createProfile = async (profileData: any, purchasedPlan: any) => {
+  const requestBody = {
+    profileData,
+    purchasedPlan
+  };
+    const response = await axios.post(`${API_URL}/api/profile/`, requestBody);
     return response.data;
 }
 
@@ -68,5 +72,47 @@ export const updateProfile = async (profileId: string, data: any) => {
 
 export const updateUserLastLogin = async (userId: string) => {
     const response = await axios.put(`${API_URL}/api/user/${userId}/last-login`);
+    return response.data;
+}
+
+// Ocultar perfil visualmente (para usuarios normales)
+export const hideProfile = async (profileId: string) => {
+    const response = await axios.patch(`${API_URL}/api/profile/${profileId}/hide`);
+    return response.data;
+}
+
+// Mostrar perfil oculto (para usuarios normales)
+export const showProfile = async (profileId: string) => {
+    const response = await axios.patch(`${API_URL}/api/profile/${profileId}/show`);
+    return response.data;
+}
+
+// Eliminar perfil (borrado lógico para usuarios normales)
+export const deleteProfile = async (profileId: string) => {
+    const response = await axios.patch(`${API_URL}/api/profile/${profileId}/delete`);
+    return response.data;
+}
+
+// Borrado lógico de perfil (para administradores)
+export const softDeleteProfile = async (profileId: string) => {
+    const response = await axios.patch(`${API_URL}/api/profile/${profileId}/soft-delete`);
+    return response.data;
+}
+
+// Borrado físico de perfil (para administradores)
+export const hardDeleteProfile = async (profileId: string) => {
+    const response = await axios.delete(`${API_URL}/api/profile/${profileId}/hard-delete`);
+    return response.data;
+}
+
+// Restaurar perfil (reactivar después de borrado lógico - solo administradores)
+export const restoreProfile = async (profileId: string) => {
+    const response = await axios.patch(`${API_URL}/api/profile/${profileId}/restore`);
+    return response.data;
+}
+
+// Obtener perfiles eliminados lógicamente (para administradores)
+export const getDeletedProfiles = async (page: number = 1, limit: number = 10) => {
+    const response = await axios.get(`${API_URL}/api/profile/deleted?page=${page}&limit=${limit}`);
     return response.data;
 }

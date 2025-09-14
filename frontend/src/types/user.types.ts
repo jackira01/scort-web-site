@@ -13,6 +13,15 @@ export interface BaseUser {
     isVerified?: boolean;
     verification_in_progress?: boolean;
     role?: 'admin' | 'user' | 'guest';
+    accountType?: 'common' | 'agency';
+    agencyInfo?: {
+        businessName?: string;
+        businessDocument?: string;
+        conversionRequestedAt?: Date | string;
+        conversionApprovedAt?: Date | string;
+        conversionApprovedBy?: string;
+        conversionStatus: 'pending' | 'approved' | 'rejected';
+    };
 }
 export interface User extends BaseUser {
     email?: string;
@@ -21,7 +30,15 @@ export interface User extends BaseUser {
     profiles?: Profile[];
     password?: string;
     role: 'admin' | 'user' | 'guest';
-
+    accountType: 'common' | 'agency';
+    agencyInfo?: {
+        businessName?: string;
+        businessDocument?: string;
+        conversionRequestedAt?: Date | string;
+        conversionApprovedAt?: Date | string;
+        conversionApprovedBy?: string;
+        conversionStatus: 'pending' | 'approved' | 'rejected';
+    };
 }
 
 
@@ -51,6 +68,29 @@ export type Profile = {
         stories: string[];
         audios?: string[];
     };
+    // Campos para sistema de planes y upgrades
+    planAssignment?: {
+        planCode: string;
+        variantDays: number;
+        startAt: string | Date;
+        expiresAt: string | Date;
+    };
+    upgrades?: {
+        code: string;
+        startAt: string | Date;
+        endAt: string | Date;
+        purchaseAt: string | Date;
+    }[];
+    activeUpgrades?: {
+        code: string;
+        startAt: string | Date;
+        endAt: string | Date;
+        purchaseAt: string | Date;
+    }[];
+    hasDestacadoUpgrade?: boolean;
+    hasImpulsoUpgrade?: boolean;
+    visible?: boolean;
+    isActive?: boolean;
 }
 
 export interface UserPaginatedResponse {

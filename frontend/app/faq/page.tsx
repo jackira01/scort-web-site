@@ -1,446 +1,373 @@
 'use client';
 
-import {
-  ChevronDown,
-  ChevronUp,
-  HelpCircle,
-  Mail,
-  MessageCircle,
-  Phone,
-  Search,
-} from 'lucide-react';
-import Link from 'next/link';
-import { useState } from 'react';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Accordion, 
+  AccordionContent, 
+  AccordionItem, 
+  AccordionTrigger 
+} from '@/components/ui/accordion';
+import { 
+  Search, 
+  HelpCircle, 
+  CreditCard, 
+  Shield, 
+  Users, 
+  Settings, 
+  MessageCircle,
+  Star,
+  Clock,
+  Mail,
+  Zap,
+  Globe,
+  UserCheck
+} from 'lucide-react';
 
-const faqCategories = [
-  {
-    id: 'general',
-    title: 'Preguntas Generales',
-    icon: HelpCircle,
-    questions: [
-      {
-        id: 1,
-        question: '¿Qué es Online Escorts?',
-        answer:
-          'Online Escorts es una plataforma digital que conecta a profesionales del acompañamiento con clientes potenciales. Proporcionamos un espacio seguro y profesional para que los usuarios publiquen sus perfiles y servicios.',
-      },
-      {
-        id: 2,
-        question: '¿Es legal utilizar esta plataforma?',
-        answer:
-          'Sí, nuestra plataforma opera dentro del marco legal aplicable. Todos nuestros usuarios deben ser mayores de 18 años y cumplir con las leyes locales y nacionales. No facilitamos actividades ilegales.',
-      },
-      {
-        id: 3,
-        question: '¿Cómo garantizan la seguridad de los usuarios?',
-        answer:
-          'Implementamos múltiples medidas de seguridad incluyendo verificación de identidad, moderación de contenido, sistemas de reporte, y protección de datos personales. También proporcionamos consejos de seguridad a nuestros usuarios.',
-      },
-      {
-        id: 4,
-        question: '¿Puedo usar la plataforma de forma anónima?',
-        answer:
-          'Aunque respetamos la privacidad, requerimos cierta información para verificación y seguridad. Puedes controlar qué información es visible públicamente en tu perfil.',
-      },
-    ],
-  },
-  {
-    id: 'account',
-    title: 'Cuenta y Perfil',
-    icon: MessageCircle,
-    questions: [
-      {
-        id: 5,
-        question: '¿Cómo creo una cuenta?',
-        answer:
-          "Para crear una cuenta, haz clic en 'Registrarse', completa el formulario con tu información básica, verifica tu email y sigue los pasos para configurar tu perfil. El proceso toma aproximadamente 10-15 minutos.",
-      },
-      {
-        id: 6,
-        question: '¿Qué información necesito para verificar mi perfil?',
-        answer:
-          'Para la verificación necesitas: documento de identidad válido, foto de verificación (selfie con documento), y completar el formulario de verificación. Este proceso puede tomar 24-48 horas.',
-      },
-      {
-        id: 7,
-        question: '¿Puedo tener múltiples perfiles?',
-        answer:
-          'Sí, puedes crear múltiples perfiles bajo una misma cuenta, especialmente útil para agencias. Cada perfil debe ser verificado individualmente y cumplir con nuestras políticas.',
-      },
-      {
-        id: 8,
-        question: '¿Cómo edito mi perfil?',
-        answer:
-          "Ve a tu dashboard, selecciona 'Mi Perfil', y haz clic en 'Editar'. Puedes modificar tu descripción, fotos, servicios, tarifas y disponibilidad en cualquier momento.",
-      },
-      {
-        id: 9,
-        question: '¿Qué hago si olvido mi contraseña?',
-        answer:
-          "En la página de inicio de sesión, haz clic en '¿Olvidaste tu contraseña?', ingresa tu email y recibirás un enlace para restablecer tu contraseña.",
-      },
-    ],
-  },
-  {
-    id: 'payments',
-    title: 'Pagos y Facturación',
-    icon: Mail,
-    questions: [
-      {
-        id: 10,
-        question: '¿Cuáles son los métodos de pago aceptados?',
-        answer:
-          'Aceptamos tarjetas de crédito y débito (Visa, Mastercard), transferencias bancarias, PSE, Nequi, Daviplata y otros métodos de pago digitales populares en Colombia.',
-      },
-      {
-        id: 11,
-        question: '¿Cuándo se cobra mi suscripción?',
-        answer:
-          'Las suscripciones se cobran al momento de la activación y luego automáticamente en cada período de renovación (mensual o anual) hasta que canceles tu suscripción.',
-      },
-      {
-        id: 12,
-        question: '¿Puedo cancelar mi suscripción en cualquier momento?',
-        answer:
-          'Sí, puedes cancelar tu suscripción en cualquier momento desde tu dashboard. La cancelación será efectiva al final del período de facturación actual.',
-      },
-      {
-        id: 13,
-        question: '¿Ofrecen reembolsos?',
-        answer:
-          'Los reembolsos se evalúan caso por caso. Generalmente, los servicios digitales utilizados no son reembolsables, pero consideramos situaciones especiales.',
-      },
-      {
-        id: 14,
-        question: '¿Qué incluye cada plan de suscripción?',
-        answer:
-          'Cada plan incluye diferentes características: Básico (perfil estándar, 5 fotos), Premium (verificación, 15 fotos, 2 videos), VIP (contenido ilimitado, promoción especial). Ve nuestra página de precios para detalles completos.',
-      },
-    ],
-  },
-  {
-    id: 'technical',
-    title: 'Soporte Técnico',
-    icon: Phone,
-    questions: [
-      {
-        id: 15,
-        question: '¿Por qué no puedo subir mis fotos?',
-        answer:
-          'Verifica que las imágenes sean JPG, PNG o GIF, no excedan 10MB cada una, y tengan buena resolución. Si el problema persiste, intenta desde otro navegador o dispositivo.',
-      },
-      {
-        id: 16,
-        question: 'Mi perfil no aparece en las búsquedas, ¿por qué?',
-        answer:
-          'Tu perfil puede estar en proceso de verificación, inactivo, o necesitar optimización. Asegúrate de tener fotos, descripción completa y que tu perfil esté activo.',
-      },
-      {
-        id: 17,
-        question: '¿Cómo reporto un problema técnico?',
-        answer:
-          'Puedes reportar problemas técnicos a través del chat de soporte, email a soporte@onlineescorts.com, o usando el formulario de contacto en tu dashboard.',
-      },
-      {
-        id: 18,
-        question: '¿La plataforma funciona en dispositivos móviles?',
-        answer:
-          'Sí, nuestra plataforma está optimizada para dispositivos móviles y tablets. También puedes descargar nuestra app móvil para una mejor experiencia.',
-      },
-    ],
-  },
-  {
-    id: 'safety',
-    title: 'Seguridad y Privacidad',
-    icon: HelpCircle,
-    questions: [
-      {
-        id: 19,
-        question: '¿Cómo protegen mi información personal?',
-        answer:
-          'Utilizamos encriptación SSL, servidores seguros, y cumplimos con estándares internacionales de protección de datos. Tu información nunca se comparte con terceros sin tu consentimiento.',
-      },
-      {
-        id: 20,
-        question: '¿Qué hago si recibo mensajes inapropiados?',
-        answer:
-          'Puedes bloquear usuarios, reportar mensajes inapropiados, y contactar a nuestro equipo de moderación. Tomamos muy en serio el acoso y comportamientos inapropiados.',
-      },
-      {
-        id: 21,
-        question: '¿Puedo controlar quién ve mi perfil?',
-        answer:
-          'Sí, puedes configurar la privacidad de tu perfil, bloquear usuarios específicos, y controlar qué información es visible públicamente.',
-      },
-      {
-        id: 22,
-        question: '¿Qué medidas de seguridad recomiendan para encuentros?',
-        answer:
-          'Recomendamos: verificar la identidad del cliente, encontrarse en lugares públicos primero, informar a alguien de confianza sobre tus citas, y confiar en tu instinto.',
-      },
-    ],
-  },
-];
-
-export default function FAQPage() {
+const FAQPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [openItems, setOpenItems] = useState<number[]>([]);
-  const [activeCategory, setActiveCategory] = useState('general');
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
-  const toggleItem = (id: number) => {
-    setOpenItems((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
-    );
-  };
+  const categories = [
+      { id: 'all', name: 'Todas', icon: <HelpCircle className="h-4 w-4" />, color: 'bg-gray-100 text-gray-800' },
+      { id: 'account', name: 'Acerca de PREPAGOSVIP', icon: <Users className="h-4 w-4" />, color: 'bg-blue-100 text-blue-800' },
+      { id: 'features', name: 'Planes y Ventajas', icon: <Star className="h-4 w-4" />, color: 'bg-orange-100 text-orange-800' },
+      { id: 'privacy', name: 'Verificación', icon: <Shield className="h-4 w-4" />, color: 'bg-purple-100 text-purple-800' },
+      { id: 'support', name: 'Soporte', icon: <MessageCircle className="h-4 w-4" />, color: 'bg-red-100 text-red-800' }
+    ];
 
-  const filteredQuestions =
-    faqCategories
-      .find((cat) => cat.id === activeCategory)
-      ?.questions.filter(
-        (q) =>
-          q.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          q.answer.toLowerCase().includes(searchTerm.toLowerCase()),
-      ) || [];
+  const faqs = [
+    {
+      id: 1,
+      category: 'account',
+      question: '¿Qué es PREPAGOSVIP?',
+      answer: 'PREPAGOSVIP es un portal web que se ha encargado de seleccionar e invitar para su lanzamiento a un grupo de acompañantes, inicialmente en las principales ciudades de Colombia, que consideramos cumplen con criterios de verificación, belleza y calidad elevados con el propósito que los usuarios puedan encontrar en un solo lugar a lo mejor de lo mejor.',
+      popular: true
+    },
+    {
+      id: 2,
+      category: 'account',
+      question: '¿Qué es un USUARIO?',
+      answer: 'Un USUARIO es toda persona que ingresa a nuestro portal, por ejemplo, en búsqueda de acompañantes. USUARIO REGISTRADO es aquella persona que se inscribe con su correo en PREPAGOSVIP y mínimo sube su documento de identidad y una foto con su documento para verificar que es mayor de edad.'
+    },
+    {
+      id: 3,
+      category: 'account',
+      question: '¿Qué es un PERFIL?',
+      answer: 'Una vez que el USUARIO REGISTRADO haya sido aprobado puede comenzar a crear sus perfiles. El PERFIL es el micrositio con la descripción del escort, escort gay, trans, gigoló, masajista o virtual que los visitantes podrán visualizar en las diferentes secciones del portal y contactar vía WhatsApp.'
+    },
+    {
+      id: 4,
+      category: 'account',
+      question: '¿Cuántos perfiles puede tener un usuario?',
+      answer: 'Un USUARIO REGISTRADO podrá tener hasta 3 perfiles AMATISTA (gratis) y hasta 10 perfiles con planes pagos. No basta con upgrade, debe ser plan pago. Cuando el plan venza, el perfil dejará de ser visible y solo se permitirán los 3 AMATISTA.',
+      popular: true
+    },
+    {
+      id: 5,
+      category: 'features',
+      question: '¿Cuáles son las CATEGORIAS disponibles?',
+      answer: 'Para crear un perfil debes escoger una CATEGORIA, es decir el tipo de servicio principal que prestas. En PREPAGOSVIP tenemos: ESCORT (Mujeres acompañantes), ESCORT GAY (Hombres acompañantes para hombres), TRANS (Personas trans), GIGOLÓ (Hombres acompañantes para mujeres), VIRTUAL (Servicios virtuales), IA (Contenido generado por inteligencia artificial).'
+    },
+    {
+      id: 6,
+      category: 'features',
+      question: '¿Cuántas categorías puede tener un perfil?',
+      answer: 'Un perfil solo puede tener una UNICA categoría. En caso de querer visualizarte en otras categorías debes crear otro perfil.'
+    },
+    {
+      id: 7,
+      category: 'privacy',
+      question: '¿Qué documentación se requiere para cada perfil?',
+      answer: 'Para cada perfil se pedirá foto de documento de identidad y foto de rostro con el documento de identidad y un cartel con el nombre y fecha de la solicitud de inscripción registrada en el sistema como mínima verificación.',
+      popular: true
+    },
+    {
+      id: 8,
+      category: 'privacy',
+      question: '¿Cómo garantizan la calidad de los perfiles?',
+      answer: 'Todos los acompañantes pasan por un proceso de verificación riguroso donde evaluamos criterios de verificación, belleza y calidad elevados. Iremos verificando a tod@s l@s acompañantes para que cumplan con los estándares necesarios.'
+    },
+    {
+      id: 9,
+      category: 'features',
+      question: '¿Cuáles son los PLANES de PREPAGOSVIP?',
+      answer: 'Los planes son los mismos para todos los tipos de usuarios registrados, con los mismos precios y ofrecen rotar DENTRO de su mismo tipo de usuario: DIAMANTE (Nivel 1): Apareces en el Home, sección SPONSORED, con DESTACADO e IMPULSO por 30 días. ORO (Nivel 2): Apareces en HOME y SPONSORED con DESTACADO, para 7, 15 o 30 días. ESMERALDA (Nivel 3): Apareces en SPONSORED, tercer nivel, puedes ascender 24h con upgrades, para 7, 15 o 30 días. ZAFIRO (Nivel 4): Apareces en HOME, cuarto nivel, puedes ascender 24h con upgrades, para 7, 15 o 30 días. AMATISTA (Nivel 5): Plan Gratuito, apareces en resultados después de planes pagos, puedes ascender 24h con upgrades, 180 días por defecto.',
+      popular: true
+    },
+    {
+      id: 10,
+      category: 'features',
+      question: '¿Cuáles son las UPGRADES de PREPAGOSVIP?',
+      answer: 'Como varios escorts pueden escoger el mismo plan, sus perfiles rotan dentro de su nivel. Para subir de nivel o regresar a primeros lugares puedes adquirir UPGRADES: DESTACADO: Apareces con recuadro alrededor del perfil y subes un nivel por 24 horas (ej: AMATISTA asciende a ZAFIRO). Si tienes plan DIAMANTE viene por defecto. IMPULSO: Si ya estás destacado pero bajando por rotación, te devuelve a primeros lugares del nivel por 24 horas. Requiere haber comprado primero DESTACADO.',
+      popular: true
+    },
+    {
+      id: 11,
+      category: 'features',
+      question: '¿Qué son NIVELES y PRIORIDADES?',
+      answer: 'Los niveles son: DIAMANTE (Nivel 1), ORO (Nivel 2), ESMERALDA (Nivel 3), ZAFIRO (Nivel 4), AMATISTA (Nivel 5). La PRIORIDAD dentro del nivel la da la duración del plan o si vienes ascendido por DESTACADO o DESTACADO más IMPULSO.'
+    },
+    {
+      id: 12,
+      category: 'features',
+      question: '¿Me puedes dar ejemplos de cómo funcionan las PRIORIDADES?',
+      answer: 'Todos los que adquieren plan ORO tienen nivel 2, pero la prioridad será mayor para ORO de 30 días vs uno de 15 días. Si eres ESMERALDA de 30 días y compras DESTACADO, subes a nivel ORO con prioridad de ORO de 7 días por 24 horas. Si después compras IMPULSO, subes a prioridad de ORO de 15 días por 24 horas.'
+    },
+    {
+      id: 13,
+      category: 'features',
+      question: '¿Aplica el derecho de RETRACTO EN COMPRA ONLINE?',
+      answer: 'El derecho de retracto (Ley 1480 de 2011, artículo 47) permite arrepentirse de compras a distancia, pero tiene excepciones para servicios cuya prestación haya comenzado con acuerdo del consumidor. El plan se activa al momento de aprobación escrita, antes del pago. El usuario acepta que "Una vez activado el plan no aplica retracto". Si desea retractarse, devolvemos el dinero SIEMPRE Y CUANDO haya ingresado a nuestras cuentas (para evitar fraudes).'
+    },
+    {
+      id: 14,
+      category: 'features',
+      question: '¿Cuáles son las ventajas de inscribirse con PREPAGOSVIP?',
+      answer: 'En nuestra etapa de lanzamiento vas a tener menos competencia dentro de nuestro mismo portal y por ende mayor visibilidad a menor precio, comparado con portales actuales. A diferencia de otros portales, nosotros estamos invirtiendo en publicidad para aparecer en los principales motores de búsqueda por palabras clave, todo para que tu perfil tenga mayor visibilidad.'
+    },
+    {
+      id: 15,
+      category: 'features',
+      question: '¿Qué optimizaciones realizan para mejorar la visibilidad?',
+      answer: 'Hacemos optimizaciones internas de programación y de SEO para que nuestro portal sea mejor rankeado en buscadores tales como Google. Tenemos diferentes planes y paquetes para que puedas escoger el que mas te convenga, bien sea por tu flujo de caja, por los tiempos en los que trabajas, las temporadas, si quieres tener presencia de manera constante pero poder mostrarte más algunos días que tu escojas, mostrarte en diferentes partes del portal, etc.'
+    },
+    {
+      id: 16,
+      category: 'features',
+      question: '¿Cómo funciona el sistema de posicionamiento de perfiles?',
+      answer: 'En los demás portales tu perfil rota constantemente e incluso puedes llegar a quedar en últimas posiciones de visualización. Con nosotros tienes diferentes opciones para que tu perfil: Se muestre en diferentes secciones del portal y con diseños para destacar tu perfil, Rote dentro de un mismo nivel sin caer a los últimos puestos totales, Suba de nivel por 24 horas al comprar el upgrade DESTACADO, Si estas bajando en el posicionamiento dentro de tu nivel, tienes una opción adicional para regresar a los primeros lugares de visualización dentro de tu nivel con el upgrade IMPULSO.',
+      popular: true
+    },
+    {
+      id: 17,
+      category: 'features',
+      question: '¿Cuál es la ventaja de buscar acompañantes en PREPAGOSVIP?',
+      answer: 'Usamos verificaciones y cada vez vamos a ser mas exigentes con esto, para que puedas estar tranquilo a la hora de contratar tu acompañante. Tenemos diferentes filtros para que puedas encontrar mas rápidamente el tipo de acompañante o prepago que tienes en mente. Constantemente estamos en la búsqueda de las mejores escorts, las transexuales mas bellas, los mejores gigolos para que cada vez tengas mejores opciones.'
+    },
+    {
+      id: 18,
+      category: 'features',
+      question: '¿Qué herramientas adicionales están desarrollando?',
+      answer: 'Estamos trabajando en diferentes formas en las que puedas monetizar tu contenido o tus servicios o para que puedas tener mayor visibilidad dentro y fuera de nuestro portal. Estas herramientas te serán comunicadas de manera interna.'
+    },
+    {
+      id: 19,
+      category: 'support',
+      question: '¿Cuál es la misión de PREPAGOSVIP?',
+      answer: 'Nuestra misión es publicar las principales características de nuestr@s afiliad@s para que el usuario final pueda tomar una decisión documentada, sin embargo, aclaramos que l@s acompañantes no trabajan para nosotros, ni somos responsables en manera alguna por su contratación o pagos.',
+      popular: true
+    },
+    {
+      id: 20,
+      category: 'support',
+      question: '¿Qué verificación se requiere para perfiles IA?',
+      answer: 'Para la categoría IA, el USUARIO REGISTRADO igualmente debe verificar que es mayor de edad, con la foto y documentación del creador de contenido, pero sus perfiles no lo necesitarán.'
+    },
+    {
+      id: 21,
+      category: 'support',
+      question: '¿Qué requisitos hay para los usuarios registrados?',
+      answer: 'Inicialmente solo tendremos usuarios inscritos con el fin de crear perfiles, posteriormente abriremos la opción de crear usuarios que puedan comentar los perfiles y realizar otras acciones. Solo hasta que el usuario cumpla con la verificación de mayoría de edad podrá crear perfiles.'
+    }
+  ];
+
+  const filteredFAQs = faqs.filter(faq => {
+    const matchesCategory = selectedCategory === 'all' || faq.category === selectedCategory;
+    const matchesSearch = searchTerm === '' || 
+      faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      faq.answer.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  const popularFAQs = faqs.filter(faq => faq.popular);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
-      {/* Header */}
-      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-b sticky top-0 z-50 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent hover:scale-105 transition-transform duration-200 cursor-pointer">
-                  Online Escorts
-                </h1>
-              </Link>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <ThemeToggle />
-              <Link href="/dashboard">
-                <Button
-                  variant="outline"
-                  className="hover:bg-muted/50 transition-colors duration-200"
-                >
-                  Dashboard
-                </Button>
-              </Link>
-              <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Soporte
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Hero Section */}
-        <div className="text-center mb-12 animate-in fade-in-50 slide-in-from-bottom-4 duration-500">
-          <h1 className="text-4xl lg:text-6xl font-bold text-foreground mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12">
+      <div className="container mx-auto px-4 max-w-4xl">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Preguntas Frecuentes
           </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Encuentra respuestas rápidas a las preguntas más comunes sobre
-            nuestra plataforma.
+          <p className="text-xl text-gray-600 mb-8">
+            Encuentra respuestas rápidas a las preguntas más comunes sobre PREPAGOSVIP y nuestros servicios.
           </p>
-
+          
           {/* Search Bar */}
-          <div className="max-w-2xl mx-auto relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+          <div className="relative max-w-md mx-auto mb-8">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <Input
-              placeholder="Buscar en preguntas frecuentes..."
+              type="text"
+              placeholder="Buscar en las preguntas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 h-12 text-lg bg-background border-2 focus:border-purple-500 transition-all duration-200"
+              className="pl-10 pr-4 py-3 text-lg"
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Categories Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-2 animate-in slide-in-from-left-4 duration-500">
-              <h3 className="font-semibold text-foreground mb-4">Categorías</h3>
-              {faqCategories.map((category, index) => (
-                <button
-                  key={category.id}
-                  onClick={() => setActiveCategory(category.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 animate-in slide-in-from-left-2 ${
-                    activeCategory === category.id
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                  }`}
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <category.icon className="h-5 w-5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <span className="font-medium text-sm">
-                      {category.title}
-                    </span>
-                    <p className="text-xs opacity-80 mt-1">
-                      {category.questions.length} preguntas
-                    </p>
-                  </div>
-                </button>
-              ))}
+        {/* Popular Questions */}
+        {searchTerm === '' && selectedCategory === 'all' && (
+          <Card className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Star className="h-5 w-5 text-yellow-500" />
+                <span>Preguntas Más Populares</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3">
+                {popularFAQs.map((faq) => {
+                  const category = categories.find(cat => cat.id === faq.category);
+                  return (
+                    <div key={faq.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                        <span className="font-medium text-gray-900 text-sm sm:text-base break-words">{faq.question}</span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="flex-shrink-0 w-full sm:w-auto"
+                        onClick={() => {
+                          setSelectedCategory(faq.category);
+                          document.getElementById(`faq-${faq.id}`)?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                      >
+                        Ver respuesta
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-              {/* Contact Support Card */}
-              <Card className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
-                <CardContent className="p-4 text-center">
-                  <MessageCircle className="h-8 w-8 mx-auto text-blue-600 mb-2" />
-                  <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
-                    ¿No encuentras tu respuesta?
-                  </h4>
-                  <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                    Nuestro equipo de soporte está aquí para ayudarte.
-                  </p>
-                  <Button
-                    size="sm"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    Contactar Soporte
-                  </Button>
-                </CardContent>
+        {/* Category Filters */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Filtrar por categoría:</h3>
+          <div className="flex flex-wrap gap-3">
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                variant={selectedCategory === category.id ? "default" : "outline"}
+                onClick={() => setSelectedCategory(category.id)}
+                className="flex items-center space-x-2"
+              >
+                {category.icon}
+                <span>{category.name}</span>
+                <Badge variant="secondary" className="ml-2">
+                  {category.id === 'all' ? faqs.length : faqs.filter(faq => faq.category === category.id).length}
+                </Badge>
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* FAQ Accordion */}
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Preguntas y Respuestas</span>
+              <Badge variant="outline">
+                {filteredFAQs.length} resultado{filteredFAQs.length !== 1 ? 's' : ''}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredFAQs.length > 0 ? (
+              <Accordion type="single" collapsible className="w-full">
+                {filteredFAQs.map((faq) => {
+                  const category = categories.find(cat => cat.id === faq.category);
+                  return (
+                    <AccordionItem key={faq.id} value={`faq-${faq.id}`} id={`faq-${faq.id}`}>
+                      <AccordionTrigger className="text-left hover:no-underline">
+                        <div className="flex items-center space-x-3">
+                          <span className="font-medium">{faq.question}</span>
+                          {faq.popular && (
+                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                          )}
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="pt-4 pb-2">
+                          <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{faq.answer}</p>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
+            ) : (
+              <div className="text-center py-12">
+                <HelpCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No se encontraron resultados</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  No encontramos preguntas que coincidan con tu búsqueda.
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedCategory('all');
+                  }}
+                >
+                  Limpiar filtros
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Contact Support */}
+        <Card className="mt-12 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center flex items-center justify-center space-x-2">
+              <MessageCircle className="h-6 w-6" />
+              <span>¿No encontraste lo que buscabas?</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              Nuestro equipo de soporte está aquí para ayudarte con cualquier pregunta adicional.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="p-4">
+                <MessageCircle className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+                <h4 className="font-semibold mb-2">Chat en Vivo</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Disponible 24/7</p>
+                <Button size="sm" className="w-full">
+                  Iniciar Chat
+                </Button>
+              </Card>
+              
+              <Card className="p-4">
+                <Mail className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                <h4 className="font-semibold mb-2">Email</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Respuesta en 24h</p>
+                <Button size="sm" variant="outline" className="w-full">
+                  Enviar Email
+                </Button>
+              </Card>
+              
+              <Card className="p-4">
+                <Clock className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+                <h4 className="font-semibold mb-2">Centro de Ayuda</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Guías detalladas</p>
+                <Button size="sm" variant="outline" className="w-full">
+                  Ver Guías
+                </Button>
               </Card>
             </div>
-          </div>
-
-          {/* FAQ Content */}
-          <div className="lg:col-span-3">
-            <div className="animate-in fade-in-50 slide-in-from-right-4 duration-500">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-foreground">
-                  {
-                    faqCategories.find((cat) => cat.id === activeCategory)
-                      ?.title
-                  }
-                </h2>
-                <Badge variant="outline" className="text-sm">
-                  {filteredQuestions.length} preguntas
-                </Badge>
-              </div>
-
-              {searchTerm && (
-                <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
-                    Mostrando {filteredQuestions.length} resultados para "
-                    {searchTerm}"
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                {filteredQuestions.map((question, index) => (
-                  <Card
-                    key={question.id}
-                    className="overflow-hidden transition-all duration-200 hover:shadow-md animate-in zoom-in-50"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    <Collapsible
-                      open={openItems.includes(question.id)}
-                      onOpenChange={() => toggleItem(question.id)}
-                    >
-                      <CollapsibleTrigger asChild>
-                        <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors duration-200">
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg font-semibold text-foreground text-left">
-                              {question.question}
-                            </CardTitle>
-                            {openItems.includes(question.id) ? (
-                              <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                            ) : (
-                              <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                            )}
-                          </div>
-                        </CardHeader>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <CardContent className="pt-0">
-                          <div className="border-t border-border pt-4">
-                            <p className="text-muted-foreground leading-relaxed">
-                              {question.answer}
-                            </p>
-                          </div>
-                        </CardContent>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </Card>
-                ))}
-              </div>
-
-              {filteredQuestions.length === 0 && (
-                <div className="text-center py-12">
-                  <HelpCircle className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    No se encontraron resultados
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    Intenta con otros términos de búsqueda o explora diferentes
-                    categorías.
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => setSearchTerm('')}
-                    className="hover:bg-muted/50 transition-colors duration-200"
-                  >
-                    Limpiar búsqueda
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Contact Section */}
-        <div className="mt-16 text-center animate-in fade-in-50 slide-in-from-bottom-8 duration-900">
-          <h2 className="text-3xl font-bold text-foreground mb-4">
-            ¿Aún tienes preguntas?
-          </h2>
-          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Nuestro equipo de soporte está disponible 24/7 para ayudarte con
-            cualquier consulta.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
-              <MessageCircle className="h-4 w-4 mr-2" />
-              Chat en Vivo
-            </Button>
-            <Button
-              variant="outline"
-              className="hover:bg-muted/50 transition-colors duration-200"
-            >
-              <Mail className="h-4 w-4 mr-2" />
-              Enviar Email
-            </Button>
-            <Button
-              variant="outline"
-              className="hover:bg-muted/50 transition-colors duration-200"
-            >
-              <Phone className="h-4 w-4 mr-2" />
-              Llamar Soporte
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer Badge */}
-      <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-500">
-        <Badge className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-700 dark:to-slate-800 text-white px-3 py-1 shadow-lg hover:scale-105 transition-transform duration-200">
-          🟢 NICOLAS ALVAREZ
-        </Badge>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
-}
+};
+
+export default FAQPage;

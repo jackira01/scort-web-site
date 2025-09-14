@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../lib/axios';
 import { API_URL } from '../lib/config';
 import type {
     ConfigParameter,
@@ -29,20 +29,21 @@ export class ConfigParameterService {
      * Obtener parámetros con filtros y paginación
      */
     static async getAll(query: ConfigParameterQuery = {}) {
-        const params = new URLSearchParams();
+        const queryParts: string[] = [];
         
         Object.entries(query).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
                 if (Array.isArray(value)) {
-                    params.append(key, value.join(','));
+                    queryParts.push(`${key}=${encodeURIComponent(value.join(','))}`);
                 } else {
-                    params.append(key, String(value));
+                    queryParts.push(`${key}=${encodeURIComponent(String(value))}`);
                 }
             }
         });
 
+        const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
         const response = await axios.get<ConfigParametersApiResponse>(
-            `${API_BASE_URL}?${params.toString()}`
+            `${API_BASE_URL}${queryString}`
         );
         return response.data.data;
     }
@@ -60,10 +61,34 @@ export class ConfigParameterService {
      */
     static async getByKey(key: string, activeOnly: boolean = true): Promise<ConfigParameter> {
         const params = activeOnly ? '?activeOnly=true' : '?activeOnly=false';
-        const response = await axios.get<ConfigParameterApiResponse>(
-            `${API_BASE_URL}/key/${key}${params}`
-        );
-        return response.data.data;
+        const url = `${API_BASE_URL}/key/${key}${params}`;
+        
+        // DEBUG ConfigParameterService.getByKey called
+        
+        try {
+            const response = await axios.get<ConfigParameterApiResponse>(url);
+            // DEBUG API Response info
+            
+            if (!response.data) {
+                // Response.data is undefined
+                throw new Error('Response data is undefined');
+            }
+            
+            if (!response.data.data) {
+                // Response.data.data is undefined
+                throw new Error('Response data.data is undefined');
+            }
+            
+            // DEBUG Returning parameter
+            return response.data.data;
+        } catch (error) {
+            // ConfigParameterService.getByKey error
+            if (error && typeof error === 'object' && 'response' in error) {
+                const axiosError = error as any;
+                // Error response info
+            }
+            throw error;
+        }
     }
 
     /**
@@ -135,7 +160,7 @@ export class ConfigParameterService {
             const response = await axios.get<ConfigValueApiResponse>(`${API_BASE_URL}/value/${key}`);
             return response.data.data.value;
         } catch (error) {
-            console.warn(`Configuration value not found for key: ${key}`);
+        
             return null;
         }
     }
@@ -151,7 +176,7 @@ export class ConfigParameterService {
             );
             return response.data.data;
         } catch (error) {
-            console.warn('Error fetching multiple configuration values:', error);
+        
             return {};
         }
     }
@@ -245,7 +270,7 @@ export class ConfigParameterService {
                 this.getSystemConfig()
             ]);
         } catch (error) {
-            console.warn('Error preloading common configurations:', error);
+        
         }
     }
 
@@ -270,7 +295,7 @@ export class ConfigParameterService {
                 const created = await this.create(config);
                 results.push(created);
             } catch (error) {
-                console.error(`Error importing config ${config.key}:`, error);
+          
             }
         }
         

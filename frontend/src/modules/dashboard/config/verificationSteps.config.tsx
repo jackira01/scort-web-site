@@ -15,34 +15,10 @@ export const verificationSteps: VerificationStep[] = [
     description: 'Verificación de documentos de identidad',
   },
   {
-    key: 'selfieWithPoster',
-    label: 'Selfie con Cartel',
-    icon: <Camera className="h-5 w-5" />,
-    description: 'Selfie sosteniendo un cartel con el nombre del perfil',
-  },
-  {
-    key: 'selfieWithDoc',
-    label: 'Selfie con Documento',
-    icon: <Camera className="h-5 w-5" />,
-    description: 'Selfie sosteniendo el documento de identidad',
-  },
-  {
-    key: 'fullBodyPhotos',
-    label: 'Fotos de Cuerpo Completo',
-    icon: <Users className="h-5 w-5" />,
-    description: 'Fotografías de cuerpo completo',
-  },
-  {
     key: 'video',
     label: 'Video de Verificación',
     icon: <Video className="h-5 w-5" />,
     description: 'Video de verificación',
-  },
-  {
-    key: 'videoCallRequested',
-    label: 'Videollamada',
-    icon: <Phone className="h-5 w-5" />,
-    description: 'Verificación por videollamada',
   },
   {
     key: 'socialMedia',
@@ -52,10 +28,22 @@ export const verificationSteps: VerificationStep[] = [
   },
 ];
 
-export const getVerifiedCount = (steps: any) => {
-  if (!steps) return 0;
+export const getVerifiedCount = (verification: any): number => {
+  if (!verification?.steps) return 0;
   
-  return Object.values(steps).filter(step => 
-    step && (step as any).isVerified === true
-  ).length;
+  let count = 0;
+  
+  // Contar solo los pasos simplificados verificados
+  verificationSteps.forEach(step => {
+    if (verification.steps[step.key]?.isVerified) {
+      count++;
+    }
+  });
+  
+  return count;
+};
+
+// Función para obtener el total de pasos simplificados
+export const getTotalSteps = (): number => {
+  return verificationSteps.length; // Siempre 3 pasos: documentos, video, redes sociales
 };

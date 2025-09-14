@@ -1,9 +1,21 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 import { authUser, updateUserLastLogin, getUserById } from "@/services/user.service";
+import axios from "@/lib/axios";
+
+// Función para generar JWT token personalizado
+const generateCustomJWT = async (userId, role) => {
+  try {
+    const response = await axios.post('/api/auth/generate-token', { userId, role });
+    return response.data.token;
+  } catch (error) {
+    return null;
+  }
+};
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [Google],
+  trustHost: true, // Permite hosts locales como localhost:3000
   callbacks: {
     async jwt({ token, user, account }) {
       if (account && account.provider === 'google') {
@@ -12,7 +24,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // Guarda datos del usuario en el token
         token.userId = userData._id;
         token.role = userData.role;
-        
+
+        // Generar JWT token personalizado
+        const customJWT = await generateCustomJWT(userData._id, userData.role);
+        if (customJWT) {
+          token.accessToken = customJWT;
+        }
+
         // Actualizar lastLogin del usuario
         try {
           await updateUserLastLogin(userData._id);
@@ -27,9 +45,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           // Actualizar otros campos que puedan haber cambiado
           token.isVerified = userData.isVerified;
           token.verification_in_progress = userData.verification_in_progress;
+
+          // Regenerar JWT token si es necesario (opcional)
+          if (!token.accessToken) {
+            const customJWT = await generateCustomJWT(token.userId, userData.role);
+            if (customJWT) {
+              token.accessToken = customJWT;
+            }
+          }
         } catch (error) {
           // Error obteniendo datos del usuario, mantener los datos del token
-          console.error('Error fetching updated user data:', error);
+
         }
       }
       return token;
@@ -40,6 +66,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.user.role = token.role;
       session.user.isVerified = token.isVerified;
       session.user.verification_in_progress = token.verification_in_progress;
+      session.accessToken = token.accessToken; // JWT token personalizado
       return session;
     },
     async redirect() {

@@ -35,7 +35,7 @@ export const useProfileVerificationMutation = ({
       return response.json();
     },
     onSuccess: () => {
-      toast.success('Cambios guardados exitosamente');
+      toast.success('Cambios guardados exitosamente. Se ha notificado a la empresa para revisión.');
       queryClient.invalidateQueries({
         queryKey: ['profileVerification', profileId],
       });

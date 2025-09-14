@@ -13,6 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useUpdateUser } from '@/hooks/use-user';
 import type { ProfileVerificationCarouselProps } from '@/modules/dashboard/types';
 
@@ -22,10 +24,12 @@ export default function ProfileVerificationCarousel({
   onOpenChange,
   profileName,
   images,
+  isUserVerified = false,
 }: ProfileVerificationCarouselProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [verifiedImages, setVerifiedImages] = useState<Set<number>>(new Set());
-  const { mutate: updateUserMutation } = useUpdateUser();
+  const [userVerificationStatus, setUserVerificationStatus] = useState(isUserVerified);
+  const updateUserMutation = useUpdateUser();
   const [isLoading, setIsLoading] = useState(false);
 
   const nextImage = () => {
@@ -48,21 +52,126 @@ export default function ProfileVerificationCarousel({
     });
   };
 
-  const onVerifyProfile = () => {
-    setIsLoading(true);
-    toast.loading('Verificando usuario...');
-    updateUserMutation({
-      userId,
-      data: {
-        verification_in_progress: false,
-        isVerified: true,
-      },
-    });
+  const handleUserVerificationToggle = async (checked: boolean) => {
+    try {
+      console.log(`🔄 [ProfileCarousel] Intentando actualizar verificación de usuario ${userId} a:`, checked);
+      
+      setIsLoading(true);
+      const loadingToast = toast.loading(
+        checked ? 'Verificando usuario...' : 'Removiendo verificación...'
+      );
+      
+      // Optimistic update
+      setUserVerificationStatus(checked);
+      
+      // Call the mutation with explicit data structure
+       const result = await updateUserMutation.mutateAsync({
+         userId,
+         data: {
+           isVerified: checked,
+           verification_in_progress: false,
+         },
+       });
 
-    toast.dismiss();
-    toast.success('Perfil verificado con exito');
-    setIsLoading(false);
-    onOpenChange(false);
+      console.log('📡 [ProfileCarousel] Respuesta del servidor:', result);
+
+      // Verify the update was successful - handle both old and new response formats
+      const isVerifiedValue = result?.isVerified ?? result?.data?.isVerified;
+      const success = result?.success !== false; // Default to true if success field is not present
+      
+      if (success && typeof isVerifiedValue === 'boolean') {
+        // Update local state to match server response
+        setUserVerificationStatus(isVerifiedValue);
+        
+        console.log(`✅ [ProfileCarousel] Actualización exitosa. Nuevo estado: ${isVerifiedValue}`);
+        
+        toast.dismiss(loadingToast);
+        toast.success(
+          isVerifiedValue ? 'Usuario verificado exitosamente' : 'Verificación removida exitosamente'
+        );
+      } else {
+        // If no proper response or explicit failure, revert
+        console.warn('⚠️ [ProfileCarousel] Respuesta inválida del servidor:', result);
+        setUserVerificationStatus(!checked);
+        toast.dismiss(loadingToast);
+        toast.error(result?.message || 'Error: Respuesta inválida del servidor');
+      }
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error('❌ [ProfileCarousel] Error updating user verification:', error);
+      
+      // Revert optimistic update on error
+      setUserVerificationStatus(!checked);
+      setIsLoading(false);
+      
+      // Extract error message from different possible error structures
+      let errorMessage = 'Error al actualizar el estado de verificación';
+      
+      if (error && typeof error === 'object') {
+        const err = error as any;
+        errorMessage = err?.response?.data?.message || 
+                      err?.message || 
+                      errorMessage;
+      }
+      
+      toast.error(errorMessage);
+    }
+  };
+
+  const onVerifyProfile = async () => {
+    try {
+      console.log(`🔄 [ProfileCarousel] Verificando perfil completo para usuario ${userId}`);
+      
+      setIsLoading(true);
+      const loadingToast = toast.loading('Verificando perfil completo...');
+      
+      // Optimistic update
+      setUserVerificationStatus(true);
+      
+      const result = await updateUserMutation.mutateAsync({
+        userId,
+        data: {
+          verification_in_progress: false,
+          isVerified: true,
+        },
+      });
+      
+      console.log('📡 [ProfileCarousel] Respuesta del servidor (verificación completa):', result);
+      
+      // Verify the update was successful
+      const isVerifiedValue = result?.isVerified ?? result?.data?.isVerified;
+      const success = result?.success !== false;
+      
+      if (success && typeof isVerifiedValue === 'boolean') {
+        setUserVerificationStatus(isVerifiedValue);
+        console.log(`✅ [ProfileCarousel] Perfil verificado completamente. Estado: ${isVerifiedValue}`);
+        
+        toast.dismiss(loadingToast);
+        toast.success('Perfil verificado exitosamente');
+      } else {
+        console.warn('⚠️ [ProfileCarousel] Respuesta inválida en verificación completa:', result);
+        setUserVerificationStatus(false);
+        toast.dismiss(loadingToast);
+        toast.error(result?.message || 'Error: Respuesta inválida del servidor');
+      }
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error('❌ [ProfileCarousel] Error en verificación completa:', error);
+      
+      // Revert optimistic update
+      setUserVerificationStatus(false);
+      setIsLoading(false);
+      
+      let errorMessage = 'Error al verificar el perfil';
+      if (error && typeof error === 'object') {
+        const err = error as any;
+        errorMessage = err?.response?.data?.message || err?.message || errorMessage;
+      }
+      
+      toast.error(errorMessage);
+    }
   };
 
   const allImagesVerified =
@@ -77,17 +186,53 @@ export default function ProfileVerificationCarousel({
               Verificación de Perfil - {profileName}
             </DialogTitle>
           </DialogHeader>
-          <div className="text-center py-8">
-            <p className="text-muted-foreground mb-4">
-              No hay imágenes disponibles para verificar este perfil.
-            </p>
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="hover:bg-purple-50 dark:hover:bg-purple-950/20"
-            >
-              Cerrar
-            </Button>
+          <div className="space-y-6">
+            {/* User Verification Toggle */}
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label htmlFor="user-verification-no-images" className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Estado de Verificación del Usuario
+                    </Label>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      Controla si este usuario está verificado en el sistema
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Badge 
+                      variant={userVerificationStatus ? 'default' : 'secondary'}
+                      className={userVerificationStatus 
+                        ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100' 
+                        : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100'
+                      }
+                    >
+                      {userVerificationStatus ? 'Verificado' : 'No Verificado'}
+                    </Badge>
+                    <Switch
+                      id="user-verification-no-images"
+                      checked={userVerificationStatus}
+                      onCheckedChange={handleUserVerificationToggle}
+                      disabled={isLoading}
+                      className="data-[state=checked]:bg-green-600"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">
+                No hay imágenes disponibles para verificar este perfil.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="hover:bg-purple-50 dark:hover:bg-purple-950/20"
+              >
+                Cerrar
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -104,6 +249,39 @@ export default function ProfileVerificationCarousel({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* User Verification Toggle */}
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label htmlFor="user-verification" className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    Estado de Verificación del Usuario
+                  </Label>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    Controla si este usuario está verificado en el sistema
+                  </p>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Badge 
+                    variant={userVerificationStatus ? 'default' : 'secondary'}
+                    className={userVerificationStatus 
+                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100' 
+                      : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100'
+                    }
+                  >
+                    {userVerificationStatus ? 'Verificado' : 'No Verificado'}
+                  </Badge>
+                  <Switch
+                    id="user-verification"
+                    checked={userVerificationStatus}
+                    onCheckedChange={handleUserVerificationToggle}
+                    disabled={isLoading}
+                    className="data-[state=checked]:bg-green-600"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           {/* Progress indicator */}
           <div className="flex items-center justify-center space-x-2">
             <span className="text-sm text-muted-foreground">

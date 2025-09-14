@@ -16,6 +16,10 @@ export interface SearchFilters {
     gender?: string;
     sex?: string[];
     age?: string[];
+    ageRange?: {
+      min?: number;
+      max?: number;
+    };
     height?: string[];
     weight?: string[];
     bodyType?: string[];
@@ -43,6 +47,8 @@ export interface SearchFilters {
   // Estados
   isActive?: boolean;
   isVerified?: boolean;
+  hasVideos?: boolean;
+  hasDestacadoUpgrade?: boolean;
 
   // Paginación y ordenamiento
   page?: number;
@@ -163,6 +169,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
       sortBy: 'createdAt',
       sortOrder: 'desc',
       isActive: true,
+      // No establecer isVerified por defecto para mostrar todos los perfiles
     });
   }, []);
 
@@ -177,21 +184,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
     return query;
   }, [filters]);
 
-  // Obtener conteo de filtros activos
-  const getActiveFiltersCount = useCallback(() => {
-    let count = 0;
 
-    if (filters.category) count++;
-    if (filters.location?.department || filters.location?.city) count++;
-    if (filters.features?.gender) count++;
-    if (filters.features?.sex && filters.features.sex.length > 0) count++;
-    if (filters.features?.age && filters.features.age.length > 0) count++;
-    if (filters.features?.ageRange?.min || filters.features?.ageRange?.max) count++;
-    if (filters.priceRange?.min || filters.priceRange?.max) count++;
-    if (filters.isVerified !== undefined) count++;
-
-    return count;
-  }, [filters]);
 
   // Método genérico para actualizar filtros
   const updateFilter = useCallback((key: string, value: any) => {
@@ -203,7 +196,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
 
       
       // Manejar filtros anidados en features
-      if (['gender', 'sex', 'age', 'height', 'weight', 'bodyType', 'ethnicity', 'hairColor', 'eyeColor', 'services'].includes(key)) {
+      if (['gender', 'sex', 'age', 'height', 'weight', 'bodyType', 'ethnicity', 'hairColor', 'eyeColor', 'services', 'ageRange'].includes(key)) {
         newFilters.features = {
           ...prev.features,
           [key]: value,
@@ -268,6 +261,6 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
     updateSorting,
     clearFilters,
     toFilterQuery,
-    getActiveFiltersCount,
+
   };
 };
