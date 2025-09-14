@@ -28,7 +28,7 @@ export const DashboardUserCard = ({
   return (
     <>
       <Card
-        className="group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card border-border hover:border-purple-500/50 animate-in zoom-in-50"
+        className="group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card border-border hover:border-purple-500/50 "
         style={{ animationDelay: `${index * 150}ms` }}
       >
         <CardContent className="p-6">

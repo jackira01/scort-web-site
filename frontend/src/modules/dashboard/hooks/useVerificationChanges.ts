@@ -6,9 +6,9 @@ interface UseVerificationChangesReturn {
   pendingChanges: Record<string, boolean>;
   pendingVideoLinks: Record<string, string>;
   handleToggleVerification: (stepKey: keyof ProfileVerificationData['steps'], isVerified: boolean) => void;
-  handleVideoLinkChange: (stepKey: 'video' | 'videoCallRequested', videoLink: string) => void;
+  handleVideoLinkChange: (stepKey: 'video', videoLink: string) => void;
   getCurrentVerificationStatus: (stepKey: keyof ProfileVerificationData['steps'], verificationData?: ProfileVerificationData) => boolean;
-  getCurrentVideoLink: (stepKey: 'video' | 'videoCallRequested', verificationData?: ProfileVerificationData) => string;
+  getCurrentVideoLink: (stepKey: 'video', verificationData?: ProfileVerificationData) => string;
   resetChanges: () => void;
   buildUpdatedSteps: (verificationData: ProfileVerificationData) => Record<string, any>;
 }
@@ -31,7 +31,7 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
   };
 
   const handleVideoLinkChange = (
-    stepKey: 'video' | 'videoCallRequested',
+    stepKey: 'video',
     videoLink: string,
   ) => {
     setPendingVideoLinks(prev => ({
@@ -53,7 +53,7 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
   };
 
   const getCurrentVideoLink = (
-    stepKey: 'video' | 'videoCallRequested',
+    stepKey: 'video',
     verificationData?: ProfileVerificationData
   ) => {
     if (stepKey in pendingVideoLinks) {

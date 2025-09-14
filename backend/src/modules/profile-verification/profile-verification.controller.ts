@@ -8,6 +8,7 @@ import {
   UpdateVerificationStepsDTO,
   ProfileVerificationFiltersDTO
 } from './profile-verification.types';
+import EmailService from '../../services/email.service';
 
 // Obtener verificación por ID de perfil
 export const getProfileVerificationByProfileId = async (req: Request, res: Response) => {
@@ -288,7 +289,34 @@ export const updateVerificationSteps = async (req: Request, res: Response): Prom
       return;
     }
 
+    // Enviar notificación por correo a la empresa sobre los cambios de verificación
+    try {
+      const emailService = new EmailService();
+      
+      // Obtener información completa del perfil para el email
+      const profileName = (updatedVerification.profile as any)?.name || 'Perfil sin nombre';
+      const profileId = updatedVerification.profile.toString();
+      
+      // Crear descripción detallada de los cambios
+      const changesDescription = `Se han actualizado los pasos de verificación del perfil.
 
+Estado actual: ${updatedVerification.verificationStatus}
+Progreso: ${updatedVerification.verificationProgress}%
+
+Pasos actualizados:
+${Object.entries(stepsData).map(([step, data]: [string, any]) => 
+        `- ${step}: ${data?.isVerified ? 'Verificado' : 'Pendiente'}`
+      ).join('\n')}`;
+      
+      await emailService.sendProfileVerificationNotification(
+        profileName,
+        profileId,
+        changesDescription
+      );
+    } catch (emailError) {
+      // Log del error pero no fallar la respuesta principal
+      console.error('Error al enviar notificación por correo:', emailError);
+    }
 
     res.status(200).json({
       success: true,

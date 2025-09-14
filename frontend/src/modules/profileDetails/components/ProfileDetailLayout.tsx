@@ -101,43 +101,9 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
     }
   };
 
-  // Verificar si fullBodyPhotos está verificado usando los datos de verificación
-  const isFullBodyPhotosVerified = verification?.data?.steps?.fullBodyPhotos?.isVerified || false;
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Banner de Verificación */}
-        {isFullBodyPhotosVerified && (
-          <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="flex-shrink-0">
-                  <div className="w-10 h-10 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center">
-                    <Shield className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    <h3 className="text-sm font-semibold text-green-800 dark:text-green-200">
-                      La identidad de este perfil ha sido verificada
-                    </h3>
-                  </div>
-                  <p className="text-xs text-green-600 dark:text-green-300 mt-1">
-                    Este perfil ha completado el proceso de verificación de identidad
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={scrollToVerifications}
-                className="text-xs text-green-700 dark:text-green-300 hover:text-green-800 dark:hover:text-green-200 font-medium underline transition-colors duration-200"
-              >
-                ¿Qué hace a este perfil confiable?
-              </button>
-            </div>
-          </div>
-        )}
         
         <div className="grid grid-cols-1 lg:grid-cols-7 gap-8">
           {/* Left Section - 80% */}

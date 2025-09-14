@@ -2,13 +2,15 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import type React from 'react';
 import '@/styles/globals.css';
-import { SessionProvider } from 'next-auth/react';
 import HeaderComponent from '@/components/header/Header';
-import Loader from '@/components/Loader';
-import { ThemeProvider } from '@/components/theme-provider';
 import { Providers } from '@/config/providers';
+import { Poppins } from "next/font/google";
 
-const inter = Inter({ subsets: ['latin'] });
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"], // elige los pesos que uses
+  variable: "--font-poppins", // define una CSS variable
+});
 
 export const metadata: Metadata = {
   title: 'Online Escorts - Premium Escort Services',
@@ -24,7 +26,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${poppins.variable} font-poppins`}>
         <Providers>
           <HeaderComponent />
 

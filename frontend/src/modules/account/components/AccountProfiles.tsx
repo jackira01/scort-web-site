@@ -252,7 +252,7 @@ export default function AccountProfiles({
             {paginatedProfiles.map((profile, index) => (
               <Card
                 key={profile._id}
-                className={`group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card animate-in zoom-in-50 ${profile.hasDestacadoUpgrade
+                className={`group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card  ${profile.hasDestacadoUpgrade
                   ? 'border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:border-yellow-300 ring-1 ring-yellow-400/50'
                   : 'border-border hover:border-purple-500/50'
                   }`}
@@ -697,10 +697,10 @@ export default function AccountProfiles({
         profileName={profiles.find(p => p._id === managePlansProfileId)?.name || ''}
         currentPlan={profiles.find(p => p._id === managePlansProfileId)?.planAssignment}
         onPlanChange={() => {
-            // Invalidar queries para actualizar los datos
-            queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
-            queryClient.invalidateQueries({ queryKey: ['profilePlan', managePlansProfileId] });
-          }}
+          // Invalidar queries para actualizar los datos
+          queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
+          queryClient.invalidateQueries({ queryKey: ['profilePlan', managePlansProfileId] });
+        }}
       />
     </div>
   );

@@ -34,30 +34,14 @@ const shouldRequireIndependentVerification = async (userId: string | Types.Objec
   }
 };
 
-// Función para obtener steps por defecto según el tipo de cuenta
+// Función para obtener steps por defecto - versión simplificada
 const getDefaultVerificationSteps = (accountType: string, requiresIndependentVerification: boolean, lastLoginVerified: boolean, userLastLoginDate: Date | null) => {
   const baseSteps = {
     documentPhotos: {
       documents: [],
       isVerified: false
     },
-    selfieWithPoster: {
-      photo: undefined,
-      isVerified: false
-    },
-    selfieWithDoc: {
-      photo: undefined,
-      isVerified: false
-    },
-    fullBodyPhotos: {
-      photos: [],
-      isVerified: false
-    },
     video: {
-      videoLink: undefined,
-      isVerified: false
-    },
-    videoCallRequested: {
       videoLink: undefined,
       isVerified: false
     },
@@ -79,10 +63,6 @@ const getDefaultVerificationSteps = (accountType: string, requiresIndependentVer
       documentPhotos: {
         documents: [],
         isVerified: true // Heredar verificación del usuario
-      },
-      selfieWithDoc: {
-        photo: undefined,
-        isVerified: true // Heredar verificación del usuario
       }
     };
   }
@@ -97,7 +77,7 @@ import {
   UpdateVerificationStepsDTO,
   ProfileVerificationFiltersDTO
 } from './profile-verification.types';
-import { calculateVerificationProgress, checkLastLoginVerification } from './verification-progress.utils';
+import { calculateVerificationProgress } from './verification-progress.utils';
 
 // Función auxiliar para recalcular el progreso de verificación
 const recalculateVerificationProgress = async (verification: IProfileVerification) => {
@@ -145,7 +125,14 @@ const recalculateVerificationProgress = async (verification: IProfileVerificatio
 export const getProfileVerificationByProfileId = async (profileId: string | Types.ObjectId) => {
   try {
     const verification = await ProfileVerification.findOne({ profile: profileId })
-      .populate('profile', 'name user')
+      .populate({
+        path: 'profile',
+        select: 'name user createdAt',
+        populate: {
+          path: 'user',
+          select: 'accountType lastLogin'
+        }
+      })
       .lean();
     
     return verification;
@@ -185,7 +172,7 @@ export const createProfileVerification = async (verificationData: CreateProfileV
         
         if (profile.user.lastLogin?.date) {
           userLastLoginDate = profile.user.lastLogin.date;
-          lastLoginVerified = checkLastLoginVerification(userLastLoginDate);
+          lastLoginVerified = true; // Simplificado: siempre consideramos verificado
         }
         
         // Para agencias, verificar si requiere verificación independiente
@@ -294,10 +281,20 @@ export const updateVerificationSteps = async (
     
 
     
-    // Actualizar con los steps completos
+    // Actualizar con los steps completos y resetear estado a pending
+    // Cuando se actualizan los pasos, el perfil debe volver a estado pendiente
+    // para requerir aprobación manual del administrador
     const verification = await ProfileVerification.findByIdAndUpdate(
       verificationId,
-      { $set: { steps: updatedSteps } },
+      { 
+        $set: { 
+          steps: updatedSteps,
+          verificationStatus: 'pending',
+          verifiedAt: null,
+          verificationFailedAt: null,
+          verificationFailedReason: null
+        } 
+      },
       { new: true, runValidators: true }
     ).lean();
 

@@ -58,93 +58,21 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
       );
     }
 
-    case 'selfieWithPoster':
-    case 'selfieWithDoc': {
-      const photo = (stepData as ProfileVerificationData['steps']['selfieWithPoster'] | ProfileVerificationData['steps']['selfieWithDoc']).photo;
-      
-      if (!photo) {
-        return (
-          <div className="mt-4 text-gray-500 text-center">
-            No hay foto disponible.
-          </div>
-        );
-      }
-      
-      return (
-        <div className="mt-4">
-          <div className="relative group inline-block">
-            <div className="relative">
-              <CloudinaryImage
-                src={photo}
-                alt={step.key === 'selfieWithPoster' ? 'Selfie con cartel' : 'Selfie con documento'}
-                width={200}
-                height={150}
-                className="rounded-lg object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => onPreviewImage(photo)}
-              />
-            </div>
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
-              <Eye className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    case 'fullBodyPhotos': {
-      const photos = (stepData as ProfileVerificationData['steps']['fullBodyPhotos']).photos || [];
-      
-      if (photos.length === 0) {
-        return (
-          <div className="mt-4 text-gray-500 text-center">
-            No hay fotos disponibles.
-          </div>
-        );
-      }
-      
-      return (
-        <div className="mt-4">
-          <div className="grid grid-cols-2 gap-2">
-            {photos.map((photo, index) => {
-              return (
-                <div key={index} className="relative group">
-                  <div className="relative">
-                    <CloudinaryImage
-                      src={photo}
-                      alt={`Foto ${index + 1}`}
-                      width={150}
-                      height={100}
-                      className="rounded-lg object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => onPreviewImage(photo)}
-                    />
-                  </div>
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
-                    <Eye className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
-    }
-
-    case 'video':
-    case 'videoCallRequested': {
-      const currentVideoLink = getCurrentVideoLink(step.key as 'video' | 'videoCallRequested');
+    case 'video': {
+      const currentVideoLink = getCurrentVideoLink(step.key as 'video');
       
       return (
         <div className="mt-4 space-y-4">
           {/* Input para editar el videoLink */}
           <div className="space-y-2">
             <label className="text-sm font-medium">
-              {step.key === 'videoCallRequested' ? 'Link de Videollamada' : 'Link de Video'}
+              Link de Video
             </label>
             <Input
               type="url"
-              placeholder={step.key === 'videoCallRequested' ? 'https://meet.google.com/...' : 'https://...'}
+              placeholder="https://..."
               value={currentVideoLink}
-              onChange={(e) => handleVideoLinkChange(step.key as 'video' | 'videoCallRequested', e.target.value)}
+              onChange={(e) => handleVideoLinkChange(step.key as 'video', e.target.value)}
               className="w-full"
             />
           </div>
@@ -174,9 +102,7 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
                   className="flex items-center gap-2"
                 >
                   <ExternalLink className="h-4 w-4" />
-                  {step.key === 'videoCallRequested'
-                    ? 'Abrir videollamada'
-                    : 'Ver video'}
+                  Ver video
                 </Button>
               )}
             </div>

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import UserModel from './User.model';
 import ProfileVerification from '../profile-verification/profile-verification.model';
-import { checkLastLoginVerification } from '../profile-verification/verification-progress.utils';
+
 
 export const createUser = (data: Record<string, any>) => UserModel.create(data);
 export const findUserByEmail = async (email: string) => {
@@ -115,7 +115,7 @@ export const updateUserLastLogin = async (userId: string) => {
     
     // Actualizar también las verificaciones de perfil asociadas
     if (user && user.profiles.length > 0) {
-      const isLastLoginVerified = checkLastLoginVerification(user.lastLogin.date);
+      const isLastLoginVerified = true; // Simplificado: siempre consideramos verificado
       
       // Actualizar todas las verificaciones de perfiles del usuario
       await ProfileVerification.updateMany(

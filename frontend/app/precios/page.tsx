@@ -205,9 +205,9 @@ export default function PricingPage() {
           {plans.map((plan, index) => (
             <Card
               key={plan.id}
-              className={`relative overflow-hidden transition-all duration-500 hover:shadow-2xl animate-in zoom-in-50 ${plan.popular
-                  ? 'border-purple-500 shadow-lg shadow-purple-500/25 scale-105'
-                  : 'hover:border-purple-300'
+              className={`relative overflow-hidden transition-all duration-500 hover:shadow-2xl  ${plan.popular
+                ? 'border-purple-500 shadow-lg shadow-purple-500/25 scale-105'
+                : 'hover:border-purple-300'
                 }`}
               style={{ animationDelay: `${index * 200}ms` }}
             >
@@ -223,8 +223,8 @@ export default function PricingPage() {
                 <div className="flex justify-center mb-4">
                   <div
                     className={`w-16 h-16 rounded-full flex items-center justify-center ${plan.popular
-                        ? 'bg-gradient-to-r from-purple-600 to-pink-600'
-                        : 'bg-muted'
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600'
+                      : 'bg-muted'
                       }`}
                   >
                     <plan.icon
@@ -276,8 +276,8 @@ export default function PricingPage() {
 
                 <Button
                   className={`w-full mt-6 ${plan.popular
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white'
-                      : 'bg-muted hover:bg-muted/80 text-foreground'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white'
+                    : 'bg-muted hover:bg-muted/80 text-foreground'
                     } transition-all duration-200 hover:scale-105`}
                 >
                   Elegir {plan.name}
@@ -304,7 +304,7 @@ export default function PricingPage() {
             {addOns.map((addon, index) => (
               <Card
                 key={addon.id}
-                className="hover:shadow-xl transition-all duration-300 hover:border-purple-300 animate-in zoom-in-50"
+                className="hover:shadow-xl transition-all duration-300 hover:border-purple-300 "
                 style={{ animationDelay: `${index * 150}ms` }}
               >
                 <CardHeader className="text-center pb-4">

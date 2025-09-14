@@ -25,11 +25,10 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
       {profiles.map((profile, index) => (
         <Card
           key={profile._id}
-          className={`group hover:shadow-2xl transition-all duration-500 overflow-hidden bg-card cursor-pointer animate-in zoom-in-50 ${
-            profile.hasDestacadoUpgrade 
-              ? 'border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:border-yellow-300 ring-1 ring-yellow-400/50' 
+          className={`group hover:shadow-2xl transition-all duration-500 overflow-hidden bg-card cursor-pointer  ${profile.hasDestacadoUpgrade
+              ? 'border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:border-yellow-300 ring-1 ring-yellow-400/50'
               : 'border-border hover:border-purple-500/50'
-          }`}
+            }`}
           style={{ animationDelay: `${index * 200}ms` }}
         >
           {/* Layout responsive: horizontal en mobile, vertical en desktop */}
@@ -80,18 +79,18 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                   <span className="flex items-center hover:text-foreground transition-colors duration-200">
                     <MapPin className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
                     <span className="line-clamp-1">
-                      {(typeof profile.location?.city === 'object' ? profile.location.city.label : profile.location?.city) || 
-                       (typeof profile.location?.department === 'object' ? profile.location.department.label : profile.location?.department) || 
-                       'Ubicación no disponible'}
+                      {(typeof profile.location?.city === 'object' ? profile.location.city.label : profile.location?.city) ||
+                        (typeof profile.location?.department === 'object' ? profile.location.department.label : profile.location?.department) ||
+                        'Ubicación no disponible'}
                     </span>
                   </span>
                 </div>
-                
+
                 {/* Barra de verificación */}
                 <div className="mt-2">
-                  <VerificationBar 
-                    verification={profile.verification} 
-                    size="sm" 
+                  <VerificationBar
+                    verification={profile.verification}
+                    size="sm"
                     className="w-full"
                   />
                 </div>
