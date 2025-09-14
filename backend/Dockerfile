@@ -7,7 +7,6 @@ RUN npm install -g pnpm@10.13.1
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 
-# Aquí instalamos todas las dependencias (incluye devDeps)
 RUN pnpm install --frozen-lockfile
 
 
@@ -15,11 +14,7 @@ RUN pnpm install --frozen-lockfile
 # Etapa de build
 # =======================
 FROM base AS builder
-
-# Copiar todo el código
 COPY . .
-
-# Compilar (usa las devDependencies disponibles)
 RUN pnpm run build:prod
 
 
@@ -28,26 +23,21 @@ RUN pnpm run build:prod
 # =======================
 FROM node:18-alpine AS production
 
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S backend -u 1001
+RUN npm install -g pnpm@10.13.1
 WORKDIR /app
 
-# Instalar solo dependencias de producción
+# Copiar solo package.json para deps mínimas
 COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm@10.13.1 \
-  && pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
-# Copiar dist ya compilado
-COPY --from=builder --chown=backend:nodejs /app/dist ./dist
+# Copiar el build desde builder
+COPY --from=builder /app/dist ./dist
 
-# Seguridad
+# Usuario no root
+RUN addgroup -g 1001 -S nodejs \
+ && adduser -S backend -u 1001
 USER backend
 
 EXPOSE 5000
 ENV NODE_ENV=production
-ENV PORT=5000
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:5000/ping', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
-
 CMD ["pnpm", "run", "start:prod"]
