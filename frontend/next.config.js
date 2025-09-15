@@ -1,12 +1,5 @@
 /** @type {import('next').NextConfig} */
 
-// Validar variables de entorno
-console.log(">>> BUILD ENV:", {
-  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-  NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
-  NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version,
-});
-
 const nextConfig = {
   // Configuración de compilación
   typescript: {
@@ -90,8 +83,8 @@ const nextConfig = {
   experimental: {
     optimizeCss: true,
     optimizePackageImports: [
-      'lucide-react', 
-      'date-fns', 
+      'lucide-react',
+      'date-fns',
       '@radix-ui/react-dialog',
       '@radix-ui/react-dropdown-menu',
       '@radix-ui/react-select',

@@ -19,23 +19,64 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user, account }) {
       if (account && account.provider === 'google') {
-        // Llama al backend para crear/obtener usuario
+        console.log('🔍 [AUTH-JS] Llamando authUser con:', { email: user.email, name: user.name });
         const userData = await authUser({ email: user.email, name: user.name });
+        
+        console.log('🔍 [AUTH-JS] DATOS COMPLETOS DEVUELTOS POR authUser:', JSON.stringify({
+          _id: userData?._id,
+          id: userData?.id,
+          userId: userData?.userId,
+          email: userData?.email,
+          name: userData?.name,
+          password: userData?.password,
+          role: userData?.role,
+          isVerified: userData?.isVerified,
+          provider: userData?.provider,
+          hasPassword: userData?.hasPassword,
+          action: userData?.action,
+          actionReason: userData?.actionReason
+        }, null, 2));
+        
         // Guarda datos del usuario en el token
-        token.userId = userData._id;
-        token.role = userData.role;
+        // Corregir mapeo: authUser devuelve userId, no _id
+        token.userId = userData.userId || userData._id || userData.id;
+        token.role = userData.role || 'user';
+        
+        // CRÍTICO: Agregar password y action al token para que el middleware los detecte
+        token.password = userData.password || null;
+        token.action = userData.action || null;
+        
+        console.log('🔍 [AUTH-JS] Token actualizado con userData:', {
+          tokenUserId: token.userId,
+          tokenRole: token.role,
+          tokenPassword: token.password,
+          tokenAction: token.action,
+          userDataUserId: userData.userId,
+          userDataId: userData._id,
+          userDataPassword: userData.password,
+          userDataAction: userData.action
+        });
 
         // Generar JWT token personalizado
         const customJWT = await generateCustomJWT(userData._id, userData.role);
         if (customJWT) {
           token.accessToken = customJWT;
+          console.log('🔍 [AUTH-JS] JWT personalizado generado');
         }
 
         // Actualizar lastLogin del usuario
         try {
-          await updateUserLastLogin(userData._id);
+          // Actualizar lastLogin solo si tenemos un userId válido
+          const userId = userData.userId || userData._id || userData.id;
+          if (userId) {
+            console.log('🔍 [AUTH-JS] Actualizando lastLogin para userId:', userId);
+            await updateUserLastLogin(userId);
+            console.log('✅ [AUTH-JS] LastLogin actualizado exitosamente');
+          } else {
+            console.warn('⚠️ [AUTH-JS] No se pudo obtener userId para actualizar lastLogin:', userData);
+          }
         } catch (error) {
-          // Error updating lastLogin
+          console.error('[AUTH-JS] Error updating lastLogin:', error);
         }
       } else if (token.userId) {
         // Si ya tenemos un userId, obtener los datos más recientes del usuario

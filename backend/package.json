@@ -28,8 +28,10 @@
   "dependencies": {
     "@types/cors": "^2.8.19",
     "@types/mongodb": "^4.0.7",
+    "bcryptjs": "^3.0.2",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "express-rate-limit": "^8.1.0",
     "express-validator": "^7.0.1",
@@ -41,10 +43,10 @@
     "mongoose-paginate-v2": "^1.9.1",
     "morgan": "^1.10.0",
     "node-mailjet": "^6.0.9",
-    "nodemailer": "^7.0.6",
-    "dotenv": "^17.2.0"
+    "nodemailer": "^7.0.6"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
     "@types/compression": "^1.8.1",
     "@types/express": "^5.0.3",
     "@types/ioredis": "^5.0.0",

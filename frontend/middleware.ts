@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { checkRateLimit, createRateLimitResponse } from '@/lib/rate-limit';
+import { getToken } from 'next-auth/jwt';
 
 // Lista de categorías válidas (debe coincidir con el backend)
 const VALID_CATEGORIES = ['escort', 'masajista', 'modelo', 'acompañante'];
@@ -29,8 +31,111 @@ const EXCLUDED_ROUTES = [
   'placeholder.jpg', 'placeholder.svg', 'installHook.js.map', 'installHook'
 ];
 
-export function middleware(request: NextRequest) {
+// ===== CONFIGURACIÓN DE AUTENTICACIÓN =====
+// Rutas protegidas por rate limiting
+const PROTECTED_ROUTES = [
+  '/api/auth/signin',
+  '/api/auth/callback/credentials',
+  '/api/auth/register',
+];
+
+// Rutas que requieren autenticación
+const AUTH_REQUIRED_ROUTES = [
+  '/dashboard',
+  '/profile',
+  '/settings',
+  '/cuenta',
+  '/perfil',
+  '/adminboard',
+];
+
+// Rutas que deben ser accesibles sin contraseña configurada
+const ALLOWED_WITHOUT_PASSWORD = [
+  '/autenticacion/post-register',
+  '/autenticacion/ingresar',
+  '/autenticacion/registrarse',
+  '/api/auth',
+  '/_next',
+  '/favicon.ico',
+  '/robots.txt',
+  '/sitemap.xml',
+];
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  
+  console.log('🔍 [MIDDLEWARE] Procesando ruta:', pathname);
+
+  // ===== CONFIGURACIÓN DE HEADERS DE SEGURIDAD =====
+  const response = NextResponse.next();
+  
+  // Content Security Policy
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self' http://localhost:5000; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' http://localhost:5000; frame-src 'self' https://accounts.google.com;"
+  );
+  
+  // ===== AUTENTICACIÓN DESHABILITADA TEMPORALMENTE =====
+  // TODO: Reactivar cuando se resuelvan los problemas de build
+  /*
+  // Rate limiting para rutas protegidas
+  if (PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
+    console.log('🔍 [MIDDLEWARE] Aplicando rate limiting...');
+    const rateLimitResult = await checkRateLimit(request);
+    if (!rateLimitResult.success) {
+      console.log('⚠️ [MIDDLEWARE] Rate limit excedido');
+      return createRateLimitResponse(rateLimitResult);
+    }
+  }
+
+  // Obtener token JWT
+  console.log('🔍 [MIDDLEWARE] Obteniendo token JWT...');
+  const token = await getToken({ 
+    req: request, 
+    secret: process.env.NEXTAUTH_SECRET 
+  });
+
+  console.log('🔍 [MIDDLEWARE] Token obtenido:', {
+    exists: !!token,
+    userId: token?.userId,
+    email: token?.email,
+    provider: token?.provider,
+    password: token?.password ? `[${typeof token.password}] ${typeof token.password === 'string' && token.password.length > 0 ? 'NO_EMPTY' : 'EMPTY'}` : 'undefined',
+    action: token?.action
+  });
+
+  // Log completo del token para debugging
+  if (token) {
+    console.log('🔍 [MIDDLEWARE] TOKEN COMPLETO PARA DEBUG:', JSON.stringify({
+      userId: token.userId,
+      email: token.email,
+      provider: token.provider,
+      password: token.password,
+      action: token.action,
+      iat: token.iat,
+      exp: token.exp,
+      jti: token.jti
+    }, null, 2));
+  }
+
+  // Verificar si la ruta requiere autenticación
+  const requiresAuth = AUTH_REQUIRED_ROUTES.some(route => pathname.startsWith(route));
+  
+  if (requiresAuth) {
+    console.log('🔍 [MIDDLEWARE] Ruta requiere autenticación');
+    
+    if (!token) {
+      console.log('❌ [MIDDLEWARE] No hay token, redirigiendo a login');
+      const loginUrl = new URL('/autenticacion/ingresar', request.url);
+      loginUrl.searchParams.set('callbackUrl', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    
+    console.log('✅ [MIDDLEWARE] Token válido, acceso permitido');
+  }
+  */
+
+  // ===== LÓGICA DE RUTAS DINÁMICAS (ORIGINAL) =====
 
   // Excluir archivos estáticos y rutas especiales inmediatamente
   if (pathname.includes('.') || 
@@ -80,7 +185,22 @@ export function middleware(request: NextRequest) {
   }
 
   // Continuar con la petición normal
-  return NextResponse.next();
+  console.log('🔍 [MIDDLEWARE] ===== RESUMEN FINAL =====');
+  console.log('🔍 [MIDDLEWARE] Ruta procesada:', pathname);
+  console.log('🔍 [MIDDLEWARE] Era ruta protegida:', AUTH_REQUIRED_ROUTES.some(route => pathname.startsWith(route)));
+  console.log('🔍 [MIDDLEWARE] ================================');
+  
+  // Headers de seguridad adicionales
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self' http://localhost:5000; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' http://localhost:5000; frame-src 'self' https://accounts.google.com;"
+  );
+
+  console.log('✅ [MIDDLEWARE] Procesamiento completado (autenticación deshabilitada), continuando con la request');
+  return response;
 }
 
 export const config = {
@@ -94,8 +214,8 @@ export const config = {
      * - public folder files
      * - .js.map files (source maps)
      * - other static assets
-     * - specific app routes that have their own pages
+     * - specific app routes that have their own pages (but NOT cuenta - we need auth there)
      */
-    '/((?!api|_next/static|_next/image|favicon\.ico|robots\.txt|sitemap\.xml|images|placeholder|autenticacion|cuenta|perfil|adminboard|buscar|faq|precios|terminos|terms|blog|plans|.*\.js\.map$|.*\.css\.map$|.*\.js$|.*\.css$|.*\.ico$|.*\.png$|.*\.jpg$|.*\.jpeg$|.*\.svg$|.*\.gif$|.*\.webp$|installHook).*)',
+    '/((?!api|_next/static|_next/image|favicon\.ico|robots\.txt|sitemap\.xml|images|placeholder|autenticacion|perfil|adminboard|buscar|faq|precios|terminos|terms|blog|plans|.*\.js\.map$|.*\.css\.map$|.*\.js$|.*\.css$|.*\.ico$|.*\.png$|.*\.jpg$|.*\.jpeg$|.*\.svg$|.*\.gif$|.*\.webp$|installHook).*)',
   ],
 };

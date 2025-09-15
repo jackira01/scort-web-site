@@ -3,11 +3,13 @@ import HomeProfiles from '@/modules/catalogs/components/HomeProfiles';
 import CategoriesFilter from '@/modules/filters/components/CategoriesFilter';
 import FilterBar from '@/modules/filters/components/FilterBar';
 import StoriesCards from '@/modules/stories/components/storiesCards';
+import AuthRedirectHandler from '@/components/authentication/AuthRedirectHandler';
 
 export default function HomePage() {
   return (
     <div className="min-h-screen dark:bg-background transition-all duration-500">
       <SeedUserCache />
+      <AuthRedirectHandler />
       {/* <CategoriesFilter /> */}
       <FilterBar />
 

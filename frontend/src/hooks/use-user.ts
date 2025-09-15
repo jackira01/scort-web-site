@@ -9,10 +9,23 @@ export const useUser = () => {
   const { data: session } = useSession();
   const userId = session?.user?._id;
 
+  console.log('🔍 [USE-USER] Hook ejecutado:', {
+    hasSession: !!session,
+    userId: userId,
+    userIdType: typeof userId,
+    userIdValue: userId === undefined ? 'undefined' : userId
+  });
+
   return useQuery({
     queryKey: ['user', userId],
-    queryFn: () => getUserById(userId || ''),
-    enabled: !!userId,
+    queryFn: () => {
+      console.log('🔍 [USE-USER] QueryFn ejecutado con userId:', userId);
+      if (!userId || userId === 'undefined') {
+        throw new Error('User ID not available in session');
+      }
+      return getUserById(userId);
+    },
+    enabled: !!userId && userId !== 'undefined',
     staleTime: 0, // Siempre considerar los datos como obsoletos
     refetchOnMount: true, // Refrescar cuando el componente se monta
     refetchOnWindowFocus: true, // Refrescar cuando la ventana recibe foco

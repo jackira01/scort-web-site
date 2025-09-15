@@ -1,4 +1,5 @@
 import axios from '@/lib/axios';
+import { isAxiosError } from 'axios';
 import type { BaseUser, User } from '@/types/user.types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -21,8 +22,23 @@ export const authUser = async (data: User): Promise<BaseUser> => {
 } */
 
 export const getUserById = async (userId: string | undefined): Promise<User> => {
+    if (!userId || userId === 'undefined') {
+        throw new Error('User ID is required and cannot be undefined');
+    }
     const response = await axios.get(`${API_URL}/api/user/${userId}`);
     return response.data;
+};
+
+export const getUserByEmail = async (email: string): Promise<User | null> => {
+    try {
+        const response = await axios.get(`${API_URL}/api/user/email/${email}`);
+        return response.data;
+    } catch (error) {
+        if (isAxiosError(error) && error.response?.status === 404) {
+            return null;
+        }
+        throw error;
+    }
 };
 
 export const updateUser = async (userId: string, data: any) => {
