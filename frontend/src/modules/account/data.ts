@@ -1,4 +1,4 @@
-import { Receipt, Settings, User, Tags, Newspaper } from 'lucide-react';
+import { Receipt, Settings, User, Tags, Newspaper, Ticket } from 'lucide-react';
 
 export const sidebarItems = [
   {
@@ -24,5 +24,11 @@ export const sidebarItems = [
     label: 'Tablero de Noticias',
     icon: Newspaper,
     description: 'Consulta las últimas actualizaciones y cambios del sistema',
+  },
+  {
+    id: 'cupones',
+    label: 'Cupones y Descuentos',
+    icon: Ticket,
+    description: 'Ingresa códigos de cupón para obtener descuentos en tus compras',
   },
 ];

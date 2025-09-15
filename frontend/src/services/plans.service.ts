@@ -267,3 +267,14 @@ export const validatePlanBusinessRules = {
     return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
   }
 };
+
+// Export service object for compatibility
+export const plansService = {
+  validatePlanOperations,
+  purchasePlan,
+  upgradePlan,
+  renewPlan,
+  getProfilePlanInfo,
+  getAvailablePlans,
+  validatePlanBusinessRules
+};

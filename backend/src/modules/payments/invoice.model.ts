@@ -9,12 +9,23 @@ export interface InvoiceItem {
   quantity: number;
 }
 
+export interface CouponInfo {
+  code: string;
+  name: string;
+  type: 'percentage' | 'fixed_amount' | 'plan_assignment';
+  value: number;
+  originalAmount: number;
+  discountAmount: number;
+  finalAmount: number;
+}
+
 export interface IInvoice extends Document {
   profileId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   status: 'pending' | 'paid' | 'cancelled' | 'expired';
   items: InvoiceItem[];
   totalAmount: number;
+  coupon?: CouponInfo; // Información del cupón aplicado
   createdAt: Date;
   expiresAt: Date;
   paidAt?: Date;
@@ -87,6 +98,19 @@ const invoiceSchema = new Schema<IInvoice>(
       type: Number,
       required: true,
       min: 0
+    },
+    coupon: {
+      code: { type: String },
+      name: { type: String },
+      type: { 
+        type: String, 
+        enum: ['percentage', 'fixed_amount', 'plan_assignment'] 
+      },
+      value: { type: Number },
+      originalAmount: { type: Number },
+      discountAmount: { type: Number },
+      finalAmount: { type: Number },
+      _id: false // Evitar que Mongoose genere automáticamente un _id para este subdocumento
     },
     expiresAt: {
       type: Date,

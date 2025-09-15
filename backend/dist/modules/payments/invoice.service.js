@@ -40,9 +40,10 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const invoice_model_1 = __importDefault(require("./invoice.model"));
 const plan_model_1 = require("../plans/plan.model");
 const upgrade_model_1 = require("../plans/upgrade.model");
+const coupon_service_1 = require("../coupons/coupon.service");
 class InvoiceService {
     async generateInvoice(data) {
-        const { profileId, userId, planCode, planDays, upgradeCodes = [], notes } = data;
+        const { profileId, userId, planCode, planDays, upgradeCodes = [], couponCode, notes } = data;
         if (!mongoose_1.default.Types.ObjectId.isValid(profileId)) {
             throw new Error('ID de perfil inválido');
         }
@@ -92,6 +93,48 @@ class InvoiceService {
         if (items.length === 0) {
             throw new Error('No se pueden crear facturas sin items');
         }
+        let finalAmount = totalAmount;
+        let couponInfo = undefined;
+        if (couponCode) {
+            const couponResult = await coupon_service_1.couponService.applyCoupon(couponCode, totalAmount, planCode);
+            if (couponResult.success) {
+                finalAmount = couponResult.finalPrice;
+                if (couponResult.planCode && couponResult.planCode !== planCode) {
+                    const newPlan = await plan_model_1.PlanDefinitionModel.findByCode(couponResult.planCode);
+                    if (newPlan && planDays) {
+                        const newVariant = newPlan.variants.find((v) => v.days === planDays);
+                        if (newVariant) {
+                            const planItemIndex = items.findIndex(item => item.type === 'plan');
+                            if (planItemIndex !== -1) {
+                                items[planItemIndex] = {
+                                    type: 'plan',
+                                    code: couponResult.planCode,
+                                    name: newPlan.name,
+                                    days: planDays,
+                                    price: newVariant.price,
+                                    quantity: 1
+                                };
+                            }
+                        }
+                    }
+                }
+                const couponData = await coupon_service_1.couponService.getCouponByCode(couponCode);
+                if (couponData) {
+                    couponInfo = {
+                        code: couponData.code,
+                        name: couponData.name,
+                        type: couponData.type,
+                        value: couponData.value,
+                        originalAmount: totalAmount,
+                        discountAmount: couponResult.discount,
+                        finalAmount: finalAmount
+                    };
+                }
+            }
+            else {
+                throw new Error(`Error al aplicar cupón: ${couponResult.error}`);
+            }
+        }
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 24);
         const invoiceData = {
@@ -99,7 +142,8 @@ class InvoiceService {
             userId: new mongoose_1.default.Types.ObjectId(userId),
             status: 'pending',
             items,
-            totalAmount,
+            totalAmount: finalAmount,
+            coupon: couponInfo,
             expiresAt,
             notes
         };
@@ -193,6 +237,14 @@ class InvoiceService {
         invoice.paidAt = new Date();
         if (paymentMethod) {
             invoice.paymentMethod = paymentMethod;
+        }
+        if (invoice.coupon && invoice.coupon.code) {
+            try {
+                await coupon_service_1.couponService.incrementCouponUsage(invoice.coupon.code);
+            }
+            catch (error) {
+                console.error(`Error al incrementar uso del cupón ${invoice.coupon.code}:`, error);
+            }
         }
         return await invoice.save();
     }

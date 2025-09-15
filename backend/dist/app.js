@@ -25,6 +25,7 @@ const auth_1 = __importDefault(require("./routes/auth"));
 const email_routes_1 = __importDefault(require("./routes/email.routes"));
 const email_inbox_1 = require("./modules/email-inbox");
 const invoice_routes_1 = __importDefault(require("./modules/payments/invoice.routes"));
+const coupons_1 = require("./modules/coupons");
 const user_routes_1 = __importDefault(require("./modules/user/user.routes"));
 const emails_1 = __importDefault(require("./routes/admin/emails"));
 const visibility_middleware_1 = require("./middlewares/visibility.middleware");
@@ -78,7 +79,10 @@ else {
     app.use((0, morgan_1.default)('dev'));
 }
 app.get('/ping', (req, res) => {
-    res.send('pong');
+    res.json({ message: 'pong', timestamp: new Date().toISOString() });
+});
+app.get('/', (req, res) => {
+    res.send('Backend API is running 🚀');
 });
 app.use('/api/attribute-groups', attribute_group_routes_1.default);
 app.use('/api/blogs', blog_routes_1.default);
@@ -95,6 +99,7 @@ app.use('/api/auth', security_middleware_1.authRateLimit, auth_1.default);
 app.use('/api/email', email_routes_1.default);
 app.use('/api/email-inbox', email_inbox_1.emailInboxRoutes);
 app.use('/api/invoices', invoice_routes_1.default);
+app.use('/api/coupons', coupons_1.couponRoutes);
 app.use('/api/user', user_routes_1.default);
 app.use('/api/admin/emails', emails_1.default);
 exports.default = app;

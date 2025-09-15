@@ -62,7 +62,6 @@ const userSchema = new mongoose_1.Schema({
         date: { type: Date, default: null },
     },
 });
-userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ isVerified: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ accountType: 1 });

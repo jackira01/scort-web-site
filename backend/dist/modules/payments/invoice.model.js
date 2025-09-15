@@ -95,6 +95,19 @@ const invoiceSchema = new mongoose_1.Schema({
         required: true,
         min: 0
     },
+    coupon: {
+        code: { type: String },
+        name: { type: String },
+        type: {
+            type: String,
+            enum: ['percentage', 'fixed_amount', 'plan_assignment']
+        },
+        value: { type: Number },
+        originalAmount: { type: Number },
+        discountAmount: { type: Number },
+        finalAmount: { type: Number },
+        _id: false
+    },
     expiresAt: {
         type: Date,
         required: true

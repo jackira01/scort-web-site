@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Invoice, { type IInvoice, type InvoiceItem } from './invoice.model';
 import { PlanDefinitionModel } from '../plans/plan.model';
 import { UpgradeDefinitionModel } from '../plans/upgrade.model';
+import { couponService } from '../coupons/coupon.service';
 
 export interface CreateInvoiceData {
   profileId: string;
@@ -9,6 +10,7 @@ export interface CreateInvoiceData {
   planCode?: string;
   planDays?: number;
   upgradeCodes?: string[];
+  couponCode?: string; // Código de cupón a aplicar
   notes?: string;
 }
 
@@ -26,7 +28,7 @@ class InvoiceService {
    * Genera una nueva factura basada en el plan y upgrades seleccionados
    */
   async generateInvoice(data: CreateInvoiceData): Promise<IInvoice> {
-    const { profileId, userId, planCode, planDays, upgradeCodes = [], notes } = data;
+    const { profileId, userId, planCode, planDays, upgradeCodes = [], couponCode, notes } = data;
 
     // Iniciando generación de factura
 
@@ -98,6 +100,58 @@ class InvoiceService {
 
     // Resumen de items procesados
 
+    let finalAmount = totalAmount;
+    let couponInfo: any = undefined;
+
+    // Aplicar cupón si se proporciona
+    if (couponCode) {
+      const couponResult = await couponService.applyCoupon(couponCode, totalAmount, planCode);
+      
+      if (couponResult.success) {
+        finalAmount = couponResult.finalPrice;
+        
+        // Si es un cupón de asignación de plan, actualizar el plan
+        if (couponResult.planCode && couponResult.planCode !== planCode) {
+          // Reemplazar el item del plan con el nuevo plan del cupón
+          const newPlan = await PlanDefinitionModel.findByCode(couponResult.planCode);
+          if (newPlan && planDays) {
+            const newVariant = newPlan.variants.find((v: any) => v.days === planDays);
+            if (newVariant) {
+              // Actualizar el item del plan existente
+              const planItemIndex = items.findIndex(item => item.type === 'plan');
+              if (planItemIndex !== -1) {
+                items[planItemIndex] = {
+                  type: 'plan' as const,
+                  code: couponResult.planCode,
+                  name: newPlan.name,
+                  days: planDays,
+                  price: newVariant.price,
+                  quantity: 1
+                };
+              }
+            }
+          }
+        }
+
+        // Obtener información del cupón para guardar en la factura
+        const couponData = await couponService.getCouponByCode(couponCode);
+        if (couponData) {
+          couponInfo = {
+            code: couponData.code,
+            name: couponData.name,
+            type: couponData.type,
+            value: couponData.value,
+            originalAmount: totalAmount,
+            discountAmount: couponResult.discount,
+            finalAmount: finalAmount
+          };
+        }
+      } else {
+        // Si el cupón no es válido, lanzar error
+        throw new Error(`Error al aplicar cupón: ${couponResult.error}`);
+      }
+    }
+
     // Crear fecha de expiración (24 horas desde ahora)
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
@@ -108,7 +162,8 @@ class InvoiceService {
       userId: new mongoose.Types.ObjectId(userId),
       status: 'pending',
       items,
-      totalAmount,
+      totalAmount: finalAmount, // Usar el precio final después del cupón
+      coupon: couponInfo,
       expiresAt,
       notes
     };
@@ -243,6 +298,16 @@ class InvoiceService {
     invoice.paidAt = new Date();
     if (paymentMethod) {
       invoice.paymentMethod = paymentMethod;
+    }
+
+    // Si la factura tiene un cupón aplicado, incrementar su uso
+    if (invoice.coupon && invoice.coupon.code) {
+      try {
+        await couponService.incrementCouponUsage(invoice.coupon.code);
+      } catch (error) {
+        // Log el error pero no fallar el pago
+        console.error(`Error al incrementar uso del cupón ${invoice.coupon.code}:`, error);
+      }
     }
 
     return await invoice.save();

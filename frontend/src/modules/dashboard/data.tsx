@@ -1,4 +1,4 @@
-import { Receipt, Settings, User, Cog, CreditCard, Zap, UserCheck, FileText, Mail, Tags, Newspaper } from "lucide-react";
+import { Receipt, Settings, User, Cog, CreditCard, Zap, UserCheck, FileText, Mail, Tags, Newspaper, Ticket } from "lucide-react";
 
 export const userProfiles = [
     {
@@ -207,6 +207,15 @@ export const sidebarItems = [
         badge: null,
         description:
             'Gestiona noticias y actualizaciones del sistema: crear, editar y publicar patch notes',
+        active: false,
+    },
+    {
+        id: 'cupones',
+        label: 'Cupones y Descuentos',
+        icon: Ticket,
+        badge: null,
+        description:
+            'Gestiona cupones de descuento: crear, editar, activar y administrar códigos promocionales',
         active: false,
     },
 ];
