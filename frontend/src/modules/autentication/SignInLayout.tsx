@@ -108,7 +108,10 @@ export default function SignInLayout() {
   };
 
   // Manejar creación de contraseña
-  const handleCreatePassword = async () => {
+  const handleCreatePassword = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevenir comportamiento por defecto
+    e.stopPropagation(); // Evitar propagación del evento
+    
     if (!formData.email) {
       setAuthError('Por favor ingresa tu email primero');
       return;
@@ -172,7 +175,12 @@ export default function SignInLayout() {
             case 'AccessDenied':
               setAuthError('Acceso denegado. Verifica tu cuenta.');
               break;
+            case 'CallbackRouteError':
+              setAuthError('Error en el servidor. Intenta nuevamente.');
+              break;
             default:
+              // Log del error específico para debugging
+              console.error('Error específico de NextAuth:', result.error);
               setAuthError('Error de autenticación. Intenta nuevamente.');
           }
         }
@@ -181,20 +189,34 @@ export default function SignInLayout() {
 
       // Login exitoso - redirigir
       setSuccess('¡Bienvenido! Redirigiendo...');
+      
+      // Usar window.location.href para una redirección más confiable
       setTimeout(() => {
-        router.push('/cuenta');
-        router.refresh();
+        window.location.href = '/';
       }, 1000);
     } catch (error) {
+      // Solo mostrar error de conexión si es realmente un error de red
       console.error('Error durante el login:', error);
-      setAuthError('Error de conexión. Verifica tu internet e intenta nuevamente.');
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        setAuthError('Error de conexión. Verifica tu internet e intenta nuevamente.');
+      } else {
+        setAuthError('Error inesperado. Por favor, intenta nuevamente.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   // Manejar login con Google
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevenir cualquier comportamiento por defecto
+    e.stopPropagation(); // Evitar propagación del evento
+    
+    // Limpiar errores previos
+    setAuthError(null);
+    setSuccess(null);
+    setInfo(null);
+    
     setIsLoading(true);
     try {
       await signIn('google', { callbackUrl: '/cuenta' });
@@ -298,6 +320,16 @@ export default function SignInLayout() {
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password}</p>
               )}
+            </div>
+
+            {/* Enlace de recuperación de contraseña */}
+            <div className="text-right">
+              <Link
+                href="/autenticacion/recuperar-contrasena"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
             </div>
 
             {/* Botón de envío */}

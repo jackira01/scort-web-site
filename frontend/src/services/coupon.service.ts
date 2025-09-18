@@ -11,7 +11,7 @@ import type {
 } from '@/types/coupon.types';
 
 class CouponService {
-  private readonly baseUrl = '/api/coupons';
+  private readonly baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/coupons`;
 
   /**
    * Crear nuevo cupón (Admin)
@@ -98,30 +98,78 @@ class CouponService {
   }
 
   /**
-   * Validar cupón por código (Público)
+   * Validar cupón
    */
   async validateCoupon(code: string, planCode?: string): Promise<CouponValidationResult> {
     try {
-      const params = planCode ? `?planCode=${encodeURIComponent(planCode)}` : '';
-      const response = await axios.get<CouponResponse>(
-        `${this.baseUrl}/validate/${encodeURIComponent(code)}${params}`
-      );
+      const response = await axios.get<CouponResponse>(`${this.baseUrl}/validate/${code}`, {
+        params: planCode ? { planCode } : {}
+      });
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Cupón no válido');
+      }
+      
+      return response.data.data as CouponValidationResult;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Error al validar cupón');
+    }
+  }
+
+  /**
+   * Validar cupón para el frontend (sin autenticación)
+   */
+  async validateCouponForFrontend(code: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: ICoupon;
+  }> {
+    try {
+      const response = await axios.post(`${this.baseUrl}/validate-frontend`, {
+        code: code.trim().toUpperCase()
+      });
       
       if (!response.data.success) {
         return {
-          isValid: false,
-          error: response.data.message || 'Cupón inválido'
+          success: false,
+          message: response.data.message || 'Cupón no válido'
         };
       }
+
+      // Mapear la respuesta del backend al formato ICoupon
+      const couponData = response.data.data;
+      const mappedCoupon: ICoupon = {
+        code: couponData.code,
+        name: couponData.name,
+        description: couponData.description,
+        type: couponData.type,
+        value: couponData.value,
+        planCode: couponData.planCode,
+        applicablePlans: couponData.applicablePlans || [],
+        maxUses: -1, // No se devuelve en la respuesta
+        currentUses: 0, // No se devuelve en la respuesta
+        remainingUses: couponData.remainingUses,
+        validFrom: '', // No se devuelve en la respuesta
+        validUntil: couponData.validUntil,
+        isActive: true, // Asumimos que es activo si es válido
+        createdBy: {
+          _id: '',
+          name: '',
+          email: ''
+        },
+        createdAt: '',
+        updatedAt: ''
+      };
       
       return {
-        isValid: true,
-        coupon: response.data.data as any
+        success: true,
+        message: response.data.message || 'Cupón válido',
+        data: mappedCoupon
       };
     } catch (error: any) {
       return {
-        isValid: false,
-        error: error.response?.data?.message || 'Error al validar cupón'
+        success: false,
+        message: error.response?.data?.message || 'Error al validar cupón'
       };
     }
   }
@@ -132,19 +180,50 @@ class CouponService {
   async applyCoupon(
     code: string, 
     originalPrice: number, 
-    planCode?: string
+    planCode?: string,
+    variantDays?: number
   ): Promise<CouponApplicationResult> {
+    console.log('🌐 [FRONTEND COUPON SERVICE] Iniciando aplicación de cupón:', {
+      code,
+      originalPrice,
+      planCode,
+      variantDays,
+      timestamp: new Date().toISOString(),
+      apiUrl: `${this.baseUrl}/apply`
+    });
+
     try {
+      const requestBody = {
+        code,
+        originalPrice,
+        planCode,
+        variantDays
+      };
+
+      console.log('📤 [FRONTEND COUPON SERVICE] Enviando petición:', {
+        method: 'POST',
+        url: `${this.baseUrl}/apply`,
+        body: requestBody,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
       const response = await axios.post<CouponResponse>(
         `${this.baseUrl}/apply`,
-        {
-          code,
-          originalPrice,
-          planCode
-        }
+        requestBody
       );
       
+      console.log('📥 [FRONTEND COUPON SERVICE] Respuesta recibida:', {
+        status: response.status,
+        statusText: response.statusText,
+        success: response.data.success,
+        data: response.data.data,
+        message: response.data.message
+      });
+      
       if (!response.data.success) {
+        console.log('⚠️ [FRONTEND COUPON SERVICE] Aplicación falló:', response.data.message);
         return {
           success: false,
           originalPrice,
@@ -156,7 +235,7 @@ class CouponService {
       }
       
       const data = response.data.data as any;
-      return {
+      const result = {
         success: true,
         originalPrice: data.originalPrice,
         finalPrice: data.finalPrice,
@@ -164,7 +243,24 @@ class CouponService {
         discountPercentage: data.discountPercentage,
         planCode: data.planCode
       };
+
+      console.log('✅ [FRONTEND COUPON SERVICE] Aplicación exitosa:', {
+        result,
+        savings: data.originalPrice - data.finalPrice,
+        discountAmount: data.discount
+      });
+
+      return result;
     } catch (error: any) {
+      console.log('💥 [FRONTEND COUPON SERVICE] Error en aplicación:', {
+        error: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        code,
+        originalPrice,
+        planCode
+      });
+
       return {
         success: false,
         originalPrice,

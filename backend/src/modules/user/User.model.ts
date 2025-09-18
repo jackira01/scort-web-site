@@ -29,6 +29,10 @@ export interface IUser {
     isVerified: boolean;
     date: Date;
   };
+  resetPasswordCode?: string; // Código de recuperación de contraseña
+  resetPasswordExpires?: Date; // Fecha de expiración del código
+  resetPasswordToken?: string; // Token temporal para cambio de contraseña
+  resetPasswordTokenExpires?: Date; // Fecha de expiración del token
 }
 
 export interface IUserDocument extends IUser, Document { }
@@ -61,6 +65,10 @@ const userSchema = new Schema<IUserDocument>({
     isVerified: { type: Boolean, default: false },
     date: { type: Date, default: null },
   },
+  resetPasswordCode: { type: String }, // Código de recuperación de contraseña
+  resetPasswordExpires: { type: Date }, // Fecha de expiración del código
+  resetPasswordToken: { type: String }, // Token temporal para cambio de contraseña
+  resetPasswordTokenExpires: { type: Date }, // Fecha de expiración del token
 
 });
 

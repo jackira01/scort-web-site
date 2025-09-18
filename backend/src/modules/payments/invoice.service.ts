@@ -105,13 +105,40 @@ class InvoiceService {
 
     // Aplicar cupón si se proporciona
     if (couponCode) {
+      console.log('🎫 [INVOICE SERVICE] Aplicando cupón:', {
+        couponCode,
+        totalAmountBeforeCoupon: totalAmount,
+        planCode,
+        timestamp: new Date().toISOString()
+      });
+
       const couponResult = await couponService.applyCoupon(couponCode, totalAmount, planCode);
+      
+      console.log('🎫 [INVOICE SERVICE] Resultado del cupón:', {
+        success: couponResult.success,
+        originalPrice: couponResult.originalPrice,
+        finalPrice: couponResult.finalPrice,
+        discount: couponResult.discount,
+        planCode: couponResult.planCode,
+        error: couponResult.error
+      });
       
       if (couponResult.success) {
         finalAmount = couponResult.finalPrice;
         
+        console.log('💰 [INVOICE SERVICE] Precio final actualizado:', {
+          totalAmountOriginal: totalAmount,
+          finalAmountAfterCoupon: finalAmount,
+          discountApplied: couponResult.discount
+        });
+        
         // Si es un cupón de asignación de plan, actualizar el plan
         if (couponResult.planCode && couponResult.planCode !== planCode) {
+          console.log('📋 [INVOICE SERVICE] Actualizando plan por cupón:', {
+            originalPlanCode: planCode,
+            newPlanCode: couponResult.planCode
+          });
+
           // Reemplazar el item del plan con el nuevo plan del cupón
           const newPlan = await PlanDefinitionModel.findByCode(couponResult.planCode);
           if (newPlan && planDays) {
@@ -120,6 +147,13 @@ class InvoiceService {
               // Actualizar el item del plan existente
               const planItemIndex = items.findIndex(item => item.type === 'plan');
               if (planItemIndex !== -1) {
+                console.log('🔄 [INVOICE SERVICE] Reemplazando item del plan:', {
+                  oldItem: items[planItemIndex],
+                  newPlanCode: couponResult.planCode,
+                  newPlanName: newPlan.name,
+                  newPrice: newVariant.price
+                });
+
                 items[planItemIndex] = {
                   type: 'plan' as const,
                   code: couponResult.planCode,
@@ -145,9 +179,12 @@ class InvoiceService {
             discountAmount: couponResult.discount,
             finalAmount: finalAmount
           };
+
+          console.log('📄 [INVOICE SERVICE] Información del cupón guardada:', couponInfo);
         }
       } else {
         // Si el cupón no es válido, lanzar error
+        console.error('❌ [INVOICE SERVICE] Error aplicando cupón:', couponResult.error);
         throw new Error(`Error al aplicar cupón: ${couponResult.error}`);
       }
     }
@@ -168,10 +205,38 @@ class InvoiceService {
       notes
     };
 
+    console.log('📋 [INVOICE SERVICE] Datos de factura antes de guardar:', {
+      totalAmount: invoiceData.totalAmount,
+      finalAmount,
+      couponApplied: !!couponInfo,
+      couponInfo: couponInfo ? {
+        code: couponInfo.code,
+        originalAmount: couponInfo.originalAmount,
+        finalAmount: couponInfo.finalAmount,
+        discountAmount: couponInfo.discountAmount
+      } : null,
+      itemsCount: items.length,
+      items: items.map(item => ({
+        type: item.type,
+        code: item.code,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity
+      }))
+    });
+
     // Creando factura con datos
 
     const invoice = new Invoice(invoiceData);
     const savedInvoice = await invoice.save();
+
+    console.log('✅ [INVOICE SERVICE] Factura guardada exitosamente:', {
+      invoiceId: savedInvoice._id,
+      totalAmountSaved: savedInvoice.totalAmount,
+      status: savedInvoice.status,
+      couponApplied: !!savedInvoice.coupon,
+      couponFinalAmount: savedInvoice.coupon?.finalAmount
+    });
 
     // Factura creada y guardada exitosamente
 
@@ -378,6 +443,19 @@ class InvoiceService {
         // Factura marcada como pagada, procesando planAssignment
         const PaymentProcessorService = await import('./payment-processor.service');
         const result = await PaymentProcessorService.PaymentProcessorService.processInvoicePayment(invoiceId);
+        
+        // INCREMENTAR CONTADOR DE USOS DEL CUPÓN SI LA FACTURA TIENE CUPÓN APLICADO
+        if (updatedInvoice.coupon && updatedInvoice.coupon.code) {
+          try {
+            const { couponService } = await import('../coupons/coupon.service');
+            await couponService.incrementCouponUsage(updatedInvoice.coupon.code);
+            console.log(`✅ Contador de cupón incrementado: ${updatedInvoice.coupon.code}`);
+          } catch (couponError) {
+            console.error(`❌ Error incrementando contador de cupón ${updatedInvoice.coupon.code}:`, couponError);
+            // No lanzar error para no afectar el proceso principal
+          }
+        }
+        
         // PlanAssignment procesado
       } else if (['cancelled', 'expired'].includes(newStatus) && oldStatus === 'pending') {
         // Factura cancelada o expirada - mantener plan actual (no hacer cambios)

@@ -69,6 +69,20 @@ const CouponSchema = new Schema<ICouponDocument>(
         message: 'El código de plan es requerido para cupones de asignación de plan'
       }
     },
+    variantDays: {
+      type: Number,
+      min: 1,
+      validate: {
+        validator: function(this: ICouponDocument, value: number) {
+          // variantDays es requerido solo para plan_assignment
+          if (this.type === 'plan_assignment') {
+            return !!value && value > 0;
+          }
+          return true;
+        },
+        message: 'Los días de variante son requeridos para cupones de asignación de plan'
+      }
+    },
     applicablePlans: {
       type: [String],
       default: [],

@@ -1,19 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, Edit, Trash2, Eye, TrendingUp, Ticket } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { couponService } from '@/services/coupon.service';
-import type { ICoupon, CouponStats } from '@/types/coupon.types';
+import { useCoupons, useCouponStats, useDeleteCoupon } from '@/hooks/use-coupons';
+import type { ICoupon } from '@/types/coupon.types';
 
 export default function CouponsManager() {
-  const [coupons, setCoupons] = useState<ICoupon[]>([]);
-  const [stats, setStats] = useState<CouponStats>({
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'expired' | 'exhausted'>('all');
+  const router = useRouter();
+
+  // Usar useQuery para obtener cupones y estadísticas
+  const { data: couponsResponse, isLoading: loadingCoupons, error: couponsError } = useCoupons();
+  const { data: stats, isLoading: loadingStats } = useCouponStats();
+  const deleteCoponMutation = useDeleteCoupon();
+
+  const coupons = couponsResponse?.data || [];
+  const loading = loadingCoupons || loadingStats;
+
+  // Valores por defecto para stats para evitar errores
+  const safeStats = stats || {
     total: 0,
     active: 0,
     expired: 0,
@@ -23,41 +34,6 @@ export default function CouponsManager() {
       fixed_amount: 0,
       plan_assignment: 0
     }
-  });
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'expired' | 'exhausted'>('all');
-  const router = useRouter();
-
-  useEffect(() => {
-    loadCoupons();
-  }, []);
-
-  const loadCoupons = async () => {
-    try {
-      setLoading(true);
-      const response = await couponService.getCoupons();
-      setCoupons(response.data);
-      
-      // Calcular estadísticas desde los datos
-      const stats = {
-        total: response.data.length,
-        active: response.data.filter(c => c.isActive && new Date(c.validUntil) > new Date()).length,
-        expired: response.data.filter(c => new Date(c.validUntil) <= new Date()).length,
-        exhausted: response.data.filter(c => c.currentUses >= c.maxUses && c.maxUses > 0).length,
-        byType: {
-          percentage: response.data.filter(c => c.type === 'percentage').length,
-          fixed_amount: response.data.filter(c => c.type === 'fixed_amount').length,
-          plan_assignment: response.data.filter(c => c.type === 'plan_assignment').length
-        }
-      };
-      setStats(stats);
-    } catch (error) {
-      console.error('Error loading coupons:', error);
-      toast.error('Error al cargar los cupones');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleDeleteCoupon = async (couponId: string) => {
@@ -65,21 +41,15 @@ export default function CouponsManager() {
       return;
     }
 
-    try {
-      await couponService.deleteCoupon(couponId);
-      toast.success('Cupón eliminado exitosamente');
-      loadCoupons();
-    } catch (error) {
-      console.error('Error deleting coupon:', error);
-      toast.error('Error al eliminar el cupón');
-    }
+    deleteCoponMutation.mutate(couponId);
   };
 
   const getStatusBadge = (coupon: ICoupon) => {
     const now = new Date();
     const expiryDate = new Date(coupon.validUntil);
     
-    if (coupon.currentUses >= coupon.maxUses) {
+    // Verificar si el cupón tiene usos ilimitados (-1) o si aún tiene usos disponibles
+    if (coupon.maxUses !== -1 && coupon.currentUses >= coupon.maxUses) {
       return <Badge variant="secondary">Agotado</Badge>;
     }
     if (expiryDate < now) {
@@ -158,7 +128,7 @@ export default function CouponsManager() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Cupones</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-2xl font-bold">{safeStats.total}</p>
               </div>
               <Ticket className="h-8 w-8 text-blue-600" />
             </div>
@@ -170,7 +140,7 @@ export default function CouponsManager() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Activos</p>
-                <p className="text-2xl font-bold text-green-600">{stats.active}</p>
+                <p className="text-2xl font-bold text-green-600">{safeStats.active}</p>
               </div>
               <TrendingUp className="h-8 w-8 text-green-600" />
             </div>
@@ -182,7 +152,7 @@ export default function CouponsManager() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Expirados</p>
-                <p className="text-2xl font-bold text-red-600">{stats.expired}</p>
+                <p className="text-2xl font-bold text-red-600">{safeStats.expired}</p>
               </div>
               <Trash2 className="h-8 w-8 text-red-600" />
             </div>
@@ -193,10 +163,10 @@ export default function CouponsManager() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Utilizados</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.exhausted}</p>
+                <p className="text-sm font-medium text-muted-foreground">Agotados</p>
+                <p className="text-2xl font-bold text-orange-600">{safeStats.exhausted}</p>
               </div>
-              <Eye className="h-8 w-8 text-purple-600" />
+              <Eye className="h-8 w-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
@@ -277,6 +247,22 @@ export default function CouponsManager() {
                         <span>Descuento: {coupon.type === 'percentage' ? `${coupon.value}%` : `$${coupon.value}`}</span>
                         <span>Usos: {coupon.currentUses}/{coupon.maxUses}</span>
                         <span>Expira: {new Date(coupon.validUntil).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 mt-2">
+                        <span className="text-sm text-muted-foreground">Planes aplicables:</span>
+                        {coupon.applicablePlans && coupon.applicablePlans.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {coupon.applicablePlans.map((plan) => (
+                              <Badge key={plan} variant="secondary" className="text-xs">
+                                {plan}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">
+                            Todos los planes
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">

@@ -19,6 +19,11 @@ router.post('/login', userController.loginUserController);
 router.post('/auth_google', userController.authGoogleUserController);
 router.post('/verify_user', userController.verifyUserController);
 
+// Rutas de recuperación de contraseña
+router.post('/request-password-reset', userController.requestPasswordResetController);
+router.post('/verify-reset-code', userController.verifyPasswordResetCodeController);
+router.post('/reset-password', userController.resetPasswordController);
+
 // Rutas de usuario
 router.post('/upload_user_document', userController.uploadUserDocumentController);
 router.get('/:id/profiles', userController.getUserProfiles);

@@ -26,8 +26,8 @@ const VALID_DEPARTMENTS = [
 const EXCLUDED_ROUTES = [
   'cuenta', 'perfil', 'autenticacion', 'adminboard', 'api',
   'buscar', 'faq', 'precios', 'terminos', 'terms', 'blog', 'plans',
-  '_next', 'favicon.ico', 'robots.txt', 'sitemap.xml', 'images', 
-  'placeholder-logo.png', 'placeholder-logo.svg', 'placeholder-user.jpg', 
+  '_next', 'favicon.ico', 'robots.txt', 'sitemap.xml', 'images',
+  'placeholder-logo.png', 'placeholder-logo.svg', 'placeholder-user.jpg',
   'placeholder.jpg', 'placeholder.svg', 'installHook.js.map', 'installHook'
 ];
 
@@ -63,95 +63,59 @@ const ALLOWED_WITHOUT_PASSWORD = [
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
-  console.log('🔍 [MIDDLEWARE] Procesando ruta:', pathname);
 
   // ===== CONFIGURACIÓN DE HEADERS DE SEGURIDAD =====
   const response = NextResponse.next();
-  
+
   // Content Security Policy
   response.headers.set(
     'Content-Security-Policy',
     "default-src 'self' http://localhost:5000; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' http://localhost:5000; frame-src 'self' https://accounts.google.com;"
   );
-  
-  // ===== AUTENTICACIÓN DESHABILITADA TEMPORALMENTE =====
-  // TODO: Reactivar cuando se resuelvan los problemas de build
-  /*
+
+  // ===== AUTENTICACIÓN ACTIVADA =====
   // Rate limiting para rutas protegidas
   if (PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
-    console.log('🔍 [MIDDLEWARE] Aplicando rate limiting...');
     const rateLimitResult = await checkRateLimit(request);
     if (!rateLimitResult.success) {
-      console.log('⚠️ [MIDDLEWARE] Rate limit excedido');
       return createRateLimitResponse(rateLimitResult);
     }
   }
 
   // Obtener token JWT
-  console.log('🔍 [MIDDLEWARE] Obteniendo token JWT...');
   const token = await getToken({ 
     req: request, 
-    secret: process.env.NEXTAUTH_SECRET 
+    secret: process.env.AUTH_SECRET 
   });
-
-  console.log('🔍 [MIDDLEWARE] Token obtenido:', {
-    exists: !!token,
-    userId: token?.userId,
-    email: token?.email,
-    provider: token?.provider,
-    password: token?.password ? `[${typeof token.password}] ${typeof token.password === 'string' && token.password.length > 0 ? 'NO_EMPTY' : 'EMPTY'}` : 'undefined',
-    action: token?.action
-  });
-
-  // Log completo del token para debugging
-  if (token) {
-    console.log('🔍 [MIDDLEWARE] TOKEN COMPLETO PARA DEBUG:', JSON.stringify({
-      userId: token.userId,
-      email: token.email,
-      provider: token.provider,
-      password: token.password,
-      action: token.action,
-      iat: token.iat,
-      exp: token.exp,
-      jti: token.jti
-    }, null, 2));
-  }
 
   // Verificar si la ruta requiere autenticación
   const requiresAuth = AUTH_REQUIRED_ROUTES.some(route => pathname.startsWith(route));
   
   if (requiresAuth) {
-    console.log('🔍 [MIDDLEWARE] Ruta requiere autenticación');
-    
     if (!token) {
-      console.log('❌ [MIDDLEWARE] No hay token, redirigiendo a login');
-      const loginUrl = new URL('/autenticacion/ingresar', request.url);
-      loginUrl.searchParams.set('callbackUrl', pathname);
-      return NextResponse.redirect(loginUrl);
+      // Redirigir al home en lugar de login para rutas protegidas sin sesión
+      const homeUrl = new URL('/', request.url);
+      return NextResponse.redirect(homeUrl);
     }
-    
-    console.log('✅ [MIDDLEWARE] Token válido, acceso permitido');
   }
-  */
 
   // ===== LÓGICA DE RUTAS DINÁMICAS (ORIGINAL) =====
 
   // Excluir archivos estáticos y rutas especiales inmediatamente
-  if (pathname.includes('.') || 
-      pathname.startsWith('/_next/') || 
-      pathname.startsWith('/api/') ||
-      pathname === '/favicon.ico' ||
-      pathname === '/robots.txt' ||
-      pathname === '/sitemap.xml' ||
-      pathname.includes('installHook') ||
-      pathname.endsWith('.js') ||
-      pathname.endsWith('.css') ||
-      pathname.endsWith('.map') ||
-      pathname.endsWith('.ico') ||
-      pathname.endsWith('.png') ||
-      pathname.endsWith('.jpg') ||
-      pathname.endsWith('.svg')
+  if (pathname.includes('.') ||
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/api/') ||
+    pathname === '/favicon.ico' ||
+    pathname === '/robots.txt' ||
+    pathname === '/sitemap.xml' ||
+    pathname.includes('installHook') ||
+    pathname.endsWith('.js') ||
+    pathname.endsWith('.css') ||
+    pathname.endsWith('.map') ||
+    pathname.endsWith('.ico') ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.jpg') ||
+    pathname.endsWith('.svg')
   ) {
     return NextResponse.next();
   }
@@ -184,12 +148,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Continuar con la petición normal
-  console.log('🔍 [MIDDLEWARE] ===== RESUMEN FINAL =====');
-  console.log('🔍 [MIDDLEWARE] Ruta procesada:', pathname);
-  console.log('🔍 [MIDDLEWARE] Era ruta protegida:', AUTH_REQUIRED_ROUTES.some(route => pathname.startsWith(route)));
-  console.log('🔍 [MIDDLEWARE] ================================');
-  
   // Headers de seguridad adicionales
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
@@ -199,7 +157,6 @@ export async function middleware(request: NextRequest) {
     "default-src 'self' http://localhost:5000; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' http://localhost:5000; frame-src 'self' https://accounts.google.com;"
   );
 
-  console.log('✅ [MIDDLEWARE] Procesamiento completado (autenticación deshabilitada), continuando con la request');
   return response;
 }
 

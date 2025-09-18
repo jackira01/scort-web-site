@@ -2,107 +2,116 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Lock, Mail, AlertCircle, CheckCircle, Shield } from 'lucide-react';
-import { useSession } from 'next-auth/react';
-
+import Link from 'next/link';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  setPasswordAfterGoogleRegister, 
-  postRegisterPasswordSchema
-} from '@/lib/account-linking';
+import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 
-type PostRegisterFormData = z.infer<typeof postRegisterPasswordSchema>;
+// Esquema de validación para nueva contraseña
+const newPasswordSchema = z.object({
+  email: z.string().email('Email inválido'),
+  token: z.string().min(1, 'Token es requerido'),
+  newPassword: z
+    .string()
+    .min(8, 'La contraseña debe tener al menos 8 caracteres')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'La contraseña debe contener al menos una mayúscula, una minúscula y un número'),
+  confirmPassword: z.string().min(1, 'Confirma tu contraseña')
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: 'Las contraseñas no coinciden',
+  path: ['confirmPassword']
+});
 
-export default function PostRegister() {
+type NewPasswordFormData = z.infer<typeof newPasswordSchema>;
+
+export function NewPasswordLayout() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session, status } = useSession();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
-  const form = useForm<PostRegisterFormData>({
-    resolver: zodResolver(postRegisterPasswordSchema),
+  const form = useForm<NewPasswordFormData>({
+    resolver: zodResolver(newPasswordSchema),
     defaultValues: {
       email: '',
-      password: '',
-      confirmPassword: '',
+      token: '',
+      newPassword: '',
+      confirmPassword: ''
     }
   });
 
-  // Verificar si el usuario está autenticado y obtener su email
+  // Obtener email y token de los parámetros de URL
   useEffect(() => {
-    if (status === 'loading') return;
+    const email = searchParams.get('email');
+    const token = searchParams.get('token');
     
-    if (status === 'unauthenticated') {
-      router.push('/autenticacion/ingresar');
+    if (!email || !token) {
+      setError('Enlace de recuperación inválido. Por favor, solicita un nuevo código de recuperación.');
       return;
     }
 
-    if (session?.user?.email) {
-      form.setValue('email', session.user.email);
-    }
-  }, [session, status, router, form]);
+    form.setValue('email', email);
+    form.setValue('token', token);
+  }, [searchParams, form]);
 
-  const handleSubmit = async (data: PostRegisterFormData) => {
+  const handleSubmit = async (data: NewPasswordFormData) => {
     setIsLoading(true);
-    setError(null);
-    
+    setError('');
+    setSuccess('');
+
     try {
-      const result = await setPasswordAfterGoogleRegister(data);
-      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+          token: data.token,
+          newPassword: data.newPassword
+        }),
+      });
+
+      const result = await response.json();
+
       if (result.success) {
-        setSuccess(result.message);
-        
-        // La sesión se actualizará automáticamente en la próxima verificación
-        
-        // Redirigir a la página principal después de 2 segundos
-        // El middleware y AuthRedirectHandler se encargarán de verificar el estado actualizado
+        setSuccess('¡Contraseña restablecida exitosamente! Redirigiendo al login...');
         setTimeout(() => {
-          router.push('/');
-          router.refresh(); // Refrescar para actualizar el estado de autenticación
+          router.push('/autenticacion/ingresar');
         }, 2000);
       } else {
-        setError(result.message);
+        setError(result.message || 'Error al restablecer la contraseña');
       }
     } catch (err) {
-      setError('Error al crear la contraseña');
+      setError('Error de conexión. Por favor, intenta nuevamente.');
     } finally {
       setIsLoading(false);
     }
   };
-
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center w-12 h-12 bg-pink-100 rounded-full mx-auto mb-4">
-            <Shield className="w-6 h-6 text-pink-600" />
+            <Lock className="w-6 h-6 text-pink-600" />
           </div>
           <CardTitle className="text-2xl font-bold text-center">
-            Crear Contraseña
+            Nueva Contraseña
           </CardTitle>
           <CardDescription className="text-center">
-            Para completar tu registro y acceder a todas las funciones, debes crear una contraseña.
+            Ingresa tu nueva contraseña para completar el proceso de recuperación
           </CardDescription>
         </CardHeader>
+        
         <CardContent>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             {error && (
@@ -119,30 +128,29 @@ export default function PostRegister() {
               </Alert>
             )}
 
+            {/* Campo de email (solo lectura) */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  className="pl-10 bg-gray-50"
-                  readOnly
-                  {...form.register('email')}
-                />
-              </div>
+              <Input
+                id="email"
+                type="email"
+                className="bg-gray-50"
+                readOnly
+                {...form.register('email')}
+              />
             </div>
 
+            {/* Campo de nueva contraseña */}
             <div className="space-y-2">
-              <Label htmlFor="password">Nueva Contraseña</Label>
+              <Label htmlFor="newPassword">Nueva Contraseña</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  id="password"
+                  id="newPassword"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Mínimo 8 caracteres"
                   className="pl-10 pr-10"
-                  {...form.register('password')}
+                  {...form.register('newPassword')}
                 />
                 <button
                   type="button"
@@ -152,13 +160,14 @@ export default function PostRegister() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {form.formState.errors.password && (
+              {form.formState.errors.newPassword && (
                 <p className="text-sm text-red-600">
-                  {form.formState.errors.password.message}
+                  {form.formState.errors.newPassword.message}
                 </p>
               )}
             </div>
 
+            {/* Campo de confirmar contraseña */}
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
               <div className="relative">
@@ -185,6 +194,7 @@ export default function PostRegister() {
               )}
             </div>
 
+            {/* Requisitos de contraseña */}
             <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
               <p className="font-medium mb-1">Requisitos de contraseña:</p>
               <ul className="text-xs space-y-1">
@@ -195,20 +205,24 @@ export default function PostRegister() {
               </ul>
             </div>
 
-            <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                <strong>⚠️ Paso obligatorio:</strong> No podrás acceder a la aplicación hasta que crees tu contraseña.
-              </p>
-            </div>
-
             <Button 
               type="submit" 
               className="w-full bg-pink-600 hover:bg-pink-700"
               disabled={isLoading}
             >
-              {isLoading ? 'Creando Contraseña...' : 'Crear Contraseña'}
+              {isLoading ? 'Restableciendo Contraseña...' : 'Restablecer Contraseña'}
             </Button>
           </form>
+
+          <div className="mt-6 text-center">
+            <Link 
+              href="/autenticacion/ingresar"
+              className="inline-flex items-center text-sm text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Volver al Login
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

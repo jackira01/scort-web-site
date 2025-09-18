@@ -1,1 +1,1 @@
-export { auth as middleware } from "@/config/auth"
+export { auth as middleware } from "@/auth"

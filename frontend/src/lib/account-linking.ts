@@ -443,42 +443,33 @@ export async function setPasswordAfterGoogleRegister(
   try {
     const { email, password } = data;
     
-    // Buscar el usuario
-    const user = await findUserByEmail(email);
-    if (!user) {
-      return {
-        success: false,
-        action: 'error',
-        message: 'Usuario no encontrado',
-      };
-    }
-    
-    // Verificar que el usuario no tenga contraseña configurada
-    if (user.hasPassword) {
-      return {
-        success: false,
-        action: 'error',
-        message: 'Este usuario ya tiene una contraseña configurada',
-      };
-    }
-    
-    // Crear hash de la contraseña
-    const hashedPassword = await hashPassword(password);
-    await savePasswordHash(email, hashedPassword);
-    
-    // Actualizar el usuario para marcar que tiene contraseña
-    const updatedUser = await updateUser(email, {
-      hasPassword: true,
-      providers: user.providers.includes('credentials') 
-        ? user.providers 
-        : [...user.providers, 'credentials']
+    // Hacer petición al endpoint del backend
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/set-password-after-google-register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
     });
-    
+
+    const result = await response.json();
+
+    if (!result.success) {
+      return {
+        success: false,
+        action: 'error',
+        message: result.message,
+      };
+    }
+
     return {
       success: true,
       action: 'login',
-      message: 'Contraseña configurada exitosamente. Ya puedes acceder a tu cuenta.',
-      user: updatedUser || undefined,
+      message: result.message || 'Contraseña configurada exitosamente. Ya puedes acceder a tu cuenta.',
+      user: result.user || undefined,
     };
     
   } catch (error) {

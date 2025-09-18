@@ -256,7 +256,8 @@ const PlansPage = () => {
                     </div>
                   )}
 
-                  {/* CTA Button */}
+                  {/* CTA Button - Removed as per requirements */}
+                  {/* 
                   <Button
                     className={`w-full bg-gradient-to-r ${getPlanColor(plan.level)} hover:opacity-90 transition-all duration-300 group`}
                     size="lg"
@@ -264,6 +265,7 @@ const PlansPage = () => {
                     Seleccionar Plan
                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
+                  */}
                 </CardContent>
               </Card>
             );

@@ -5,6 +5,7 @@ import '@/styles/globals.css';
 import HeaderComponent from '@/components/header/Header';
 import { Providers } from '@/config/providers';
 import { Poppins } from "next/font/google";
+import ConditionalHeader from '@/components/layout/ConditionalHeader';
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -28,8 +29,7 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body className={`${poppins.variable} font-poppins`}>
         <Providers>
-          <HeaderComponent />
-
+          <ConditionalHeader />
           {children}
         </Providers>
       </body>

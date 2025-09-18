@@ -1,8 +1,9 @@
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Ticket } from 'lucide-react';
 import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { useUser } from '@/hooks/use-user';
 import { sidebarItems } from '../data';
 import AccountVerificationModal from './AccountVerificationModal';
@@ -10,12 +11,37 @@ import AccountVerificationModal from './AccountVerificationModal';
 const AccountSidebar = ({
   activeSection,
   setActiveSection,
+  onCouponRedeem,
 }: {
   activeSection: string;
   setActiveSection: (id: string) => void;
+  onCouponRedeem?: (couponCode: string) => void;
 }) => {
   const { data: user } = useUser();
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [isRedeemingCoupon, setIsRedeemingCoupon] = useState(false);
+
+  const handleCouponRedeem = async () => {
+    if (!couponCode.trim()) return;
+    
+    setIsRedeemingCoupon(true);
+    try {
+      if (onCouponRedeem) {
+        await onCouponRedeem(couponCode.trim().toUpperCase());
+      }
+    } finally {
+      setIsRedeemingCoupon(false);
+      setCouponCode('');
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleCouponRedeem();
+    }
+  };
+
   return (
     <div className="w-80 space-y-2 animate-in slide-in-from-left-4 duration-500">
       <Card className="bg-card border-border shadow-sm">
@@ -35,6 +61,35 @@ const AccountSidebar = ({
               <p className="text-xs text-muted-foreground">
                 Agencia • tecnologico03@gmail.com
               </p>
+            </div>
+          </div>
+
+          {/* Sección de Canjear Cupón */}
+          <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-lg border border-purple-200/50 dark:border-purple-800/50">
+            <div className="flex items-center space-x-2 mb-3">
+              <Ticket className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              <h3 className="text-sm font-semibold text-purple-800 dark:text-purple-200">
+                Canjear Cupón
+              </h3>
+            </div>
+            <div className="flex space-x-2">
+              <Input
+                type="text"
+                placeholder="Ingresa tu código"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                onKeyPress={handleKeyPress}
+                className="flex-1 text-sm bg-white dark:bg-gray-800 border-purple-200 dark:border-purple-700 focus:border-purple-500 dark:focus:border-purple-400"
+                disabled={isRedeemingCoupon}
+                maxLength={50}
+              />
+              <Button
+                onClick={handleCouponRedeem}
+                disabled={!couponCode.trim() || isRedeemingCoupon}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                {isRedeemingCoupon ? 'Validando...' : 'Canjear'}
+              </Button>
             </div>
           </div>
 

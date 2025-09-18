@@ -14,50 +14,105 @@ import type {
 
 export class CouponService {
   /**
-   * Crear un nuevo cupón
+   * Crear un nuevo cupón - Con logging detallado
    */
   async createCoupon(input: CreateCouponInput, createdBy: string): Promise<ICoupon> {
+    const startTime = Date.now();
+    
     try {
+      logger.info('Iniciando createCoupon service...', {
+        code: input.code,
+        type: input.type,
+        createdBy
+      });
+
       // Validar que el código no exista
+      logger.info('Verificando si el código ya existe...');
+      const codeCheckStart = Date.now();
       const existingCoupon = await CouponModel.findByCode(input.code);
+      const codeCheckDuration = Date.now() - codeCheckStart;
+      logger.info(`Verificación de código completada en ${codeCheckDuration}ms - Existe: ${!!existingCoupon}`);
+      
       if (existingCoupon) {
         throw new AppError('El código de cupón ya existe', 400);
       }
 
+      // Optimizar validaciones de planes usando Promise.all para ejecutar en paralelo
+      const validationPromises: Promise<any>[] = [];
+
       // Validar plan si es de tipo plan_assignment
       if (input.type === 'plan_assignment' && input.planCode) {
-        const planExists = await PlanDefinitionModel.findByCode(input.planCode);
-        if (!planExists) {
-          throw new AppError('El plan especificado no existe', 400);
-        }
+        logger.info('Validando plan assignment...');
+        validationPromises.push(
+          PlanDefinitionModel.findByCode(input.planCode).then(plan => {
+            if (!plan) {
+              throw new AppError('El plan especificado no existe', 400);
+            }
+            
+            // Validar que la variante de días existe en el plan
+            if (input.variantDays) {
+              const variant = plan.variants.find(v => v.days === input.variantDays);
+              if (!variant) {
+                throw new AppError(`La variante de ${input.variantDays} días no existe en el plan ${input.planCode}`, 400);
+              }
+            }
+            
+            return plan;
+          })
+        );
       }
 
       // Validar planes aplicables si se especifican
       if (input.applicablePlans && input.applicablePlans.length > 0) {
-        for (const planCode of input.applicablePlans) {
-          const planExists = await PlanDefinitionModel.findByCode(planCode);
-          if (!planExists) {
-            throw new AppError(`El plan ${planCode} no existe`, 400);
-          }
-        }
+        logger.info(`Validando ${input.applicablePlans.length} planes aplicables...`);
+        // Usar Promise.all para validar todos los planes en paralelo
+        const planValidations = input.applicablePlans.map(planCode =>
+          PlanDefinitionModel.findByCode(planCode).then(plan => {
+            if (!plan) {
+              throw new AppError(`El plan ${planCode} no existe`, 400);
+            }
+            return plan;
+          })
+        );
+        validationPromises.push(...planValidations);
+      }
+
+      // Ejecutar todas las validaciones de planes en paralelo
+      if (validationPromises.length > 0) {
+        logger.info('Ejecutando validaciones de planes en paralelo...');
+        const validationStart = Date.now();
+        await Promise.all(validationPromises);
+        const validationDuration = Date.now() - validationStart;
+        logger.info(`Validaciones de planes completadas en ${validationDuration}ms`);
       }
 
       // Validar fechas
+      logger.info('Validando fechas...');
       if (new Date(input.validFrom) >= new Date(input.validUntil)) {
         throw new AppError('La fecha de inicio debe ser anterior a la fecha de vencimiento', 400);
       }
 
+      logger.info('Creando documento de cupón...');
+      const createStart = Date.now();
       const coupon = new CouponModel({
         ...input,
         createdBy: new Types.ObjectId(createdBy),
         currentUses: 0
       });
 
+      logger.info('Guardando cupón en base de datos...');
       await coupon.save();
-      logger.info(`Cupón creado: ${coupon.code} por usuario ${createdBy}`);
+      const createDuration = Date.now() - createStart;
+      logger.info(`Cupón guardado en ${createDuration}ms`);
+      
+      const totalDuration = Date.now() - startTime;
+      logger.info(`createCoupon service completado en ${totalDuration}ms - Cupón: ${coupon.code}`);
       
       return coupon.toObject();
     } catch (error) {
+      const errorDuration = Date.now() - startTime;
+      logger.error(`Error en createCoupon service después de ${errorDuration}ms:`, error);
+      
       if (error instanceof AppError) throw error;
       logger.error('Error al crear cupón:', error);
       throw new AppError('Error interno al crear el cupón', 500);
@@ -117,6 +172,9 @@ export class CouponService {
         limit = 20
       } = query;
 
+      // Validar límite máximo
+      const validLimit = Math.min(20, Math.max(1, limit));
+
       const filter: any = {};
 
       if (code) {
@@ -138,19 +196,24 @@ export class CouponService {
         filter.isActive = true;
       }
 
-      const skip = (page - 1) * limit;
+      const skip = (page - 1) * validLimit;
 
+      // Consulta simple y directa
       const [coupons, total] = await Promise.all([
         CouponModel.find(filter)
           .sort({ createdAt: -1 })
           .skip(skip)
-          .limit(limit)
-          .populate('createdBy', 'name email'),
+          .limit(validLimit)
+          .populate('createdBy', 'name email')
+          .lean(),
         CouponModel.countDocuments(filter)
       ]);
 
       return {
-        coupons: coupons.map(coupon => coupon.toObject()),
+        coupons: coupons.map(coupon => ({
+          ...coupon,
+          _id: coupon._id.toString()
+        })),
         total
       };
     } catch (error) {
@@ -173,22 +236,47 @@ export class CouponService {
         throw new AppError('Cupón no encontrado', 404);
       }
 
+      // Optimizar validaciones de planes usando Promise.all para ejecutar en paralelo
+      const validationPromises: Promise<any>[] = [];
+
       // Validar plan si se está actualizando y es de tipo plan_assignment
       if (input.planCode && coupon.type === 'plan_assignment') {
-        const planExists = await PlanDefinitionModel.findByCode(input.planCode);
-        if (!planExists) {
-          throw new AppError('El plan especificado no existe', 400);
-        }
+        validationPromises.push(
+          PlanDefinitionModel.findByCode(input.planCode).then(plan => {
+            if (!plan) {
+              throw new AppError('El plan especificado no existe', 400);
+            }
+            
+            // Validar que la variante de días existe en el plan
+            const variantDays = input.variantDays || coupon.variantDays;
+            if (variantDays) {
+              const variant = plan.variants.find(v => v.days === variantDays);
+              if (!variant) {
+                throw new AppError(`La variante de ${variantDays} días no existe en el plan ${input.planCode}`, 400);
+              }
+            }
+            
+            return plan;
+          })
+        );
       }
 
       // Validar planes aplicables si se están actualizando
       if (input.applicablePlans && input.applicablePlans.length > 0) {
-        for (const planCode of input.applicablePlans) {
-          const planExists = await PlanDefinitionModel.findByCode(planCode);
-          if (!planExists) {
-            throw new AppError(`El plan ${planCode} no existe`, 400);
-          }
-        }
+        const planValidations = input.applicablePlans.map(planCode =>
+          PlanDefinitionModel.findByCode(planCode).then(plan => {
+            if (!plan) {
+              throw new AppError(`El plan ${planCode} no existe`, 400);
+            }
+            return plan;
+          })
+        );
+        validationPromises.push(...planValidations);
+      }
+
+      // Ejecutar todas las validaciones de planes en paralelo
+      if (validationPromises.length > 0) {
+        await Promise.all(validationPromises);
       }
 
       // Validar fechas si se están actualizando
@@ -280,15 +368,17 @@ export class CouponService {
         };
       }
 
-      // Validar si el cupón es aplicable al plan especificado
-      if (planCode && coupon.applicablePlans && coupon.applicablePlans.length > 0) {
-        if (!coupon.applicablePlans.includes(planCode.toUpperCase())) {
-          return {
-            isValid: false,
-            error: 'Cupón no aplicable a este plan'
-          };
-        }
-      }
+      // NOTA: Se eliminó la validación de applicablePlans para permitir cambio de plan
+      // Los cupones ahora pueden aplicarse a cualquier plan, permitiendo upgrades/downgrades
+      // Validación original comentada:
+      // if (planCode && coupon.applicablePlans && coupon.applicablePlans.length > 0) {
+      //   if (!coupon.applicablePlans.includes(planCode.toUpperCase())) {
+      //     return {
+      //       isValid: false,
+      //       error: 'Cupón no aplicable a este plan'
+      //     };
+      //   }
+      // }
 
       return {
         isValid: true,
@@ -306,11 +396,26 @@ export class CouponService {
   /**
    * Aplicar cupón y calcular descuento
    */
-  async applyCoupon(code: string, originalPrice: number, planCode?: string): Promise<CouponApplicationResult> {
+  async applyCoupon(code: string, originalPrice: number, planCode?: string, variantDays?: number): Promise<CouponApplicationResult> {
+    console.log('🎫 [COUPON SERVICE] Iniciando aplicación de cupón:', {
+      code,
+      originalPrice,
+      planCode,
+      variantDays,
+      timestamp: new Date().toISOString()
+    });
+
     try {
       const validation = await this.validateCoupon(code, planCode);
       
+      console.log('🔍 [COUPON SERVICE] Resultado de validación:', {
+        isValid: validation.isValid,
+        error: validation.error,
+        couponFound: !!validation.coupon
+      });
+      
       if (!validation.isValid || !validation.coupon) {
+        console.log('❌ [COUPON SERVICE] Cupón no válido');
         return {
           success: false,
           originalPrice,
@@ -325,43 +430,174 @@ export class CouponService {
       let discount = 0;
       let assignedPlanCode: string | undefined;
 
+      console.log('💰 [COUPON SERVICE] Iniciando cálculo de descuento:', {
+        couponType: coupon.type,
+        couponValue: coupon.value,
+        originalPrice,
+        planCode: coupon.planCode
+      });
+
       switch (coupon.type) {
         case 'percentage':
           discount = (originalPrice * coupon.value) / 100;
           finalPrice = originalPrice - discount;
+          console.log('📊 [COUPON SERVICE] Cálculo porcentual:', {
+            percentage: coupon.value,
+            calculatedDiscount: discount,
+            finalPrice
+          });
+          
+          // Si se especifica un planCode, usar la variante seleccionada o la más económica
+          if (planCode) {
+            const plan = await PlanDefinitionModel.findByCode(planCode);
+            if (plan && plan.variants.length > 0) {
+              let selectedVariant;
+              
+              if (variantDays) {
+                // Usar la variante específica seleccionada por el usuario
+                selectedVariant = plan.variants.find(v => v.days === variantDays);
+                if (!selectedVariant) {
+                  console.log('⚠️ [COUPON SERVICE] Variante especificada no encontrada, usando la más económica:', {
+                    requestedVariantDays: variantDays,
+                    availableVariants: plan.variants.map(v => ({ days: v.days, price: v.price }))
+                  });
+                  selectedVariant = plan.variants.reduce((min, variant) => 
+                    variant.price < min.price ? variant : min
+                  );
+                }
+              } else {
+                // Si no se especifica variante, usar la más económica
+                selectedVariant = plan.variants.reduce((min, variant) => 
+                  variant.price < min.price ? variant : min
+                );
+              }
+              
+              assignedPlanCode = planCode;
+              console.log('💰 [COUPON SERVICE] Aplicando variante para cupón porcentual:', {
+                planCode,
+                selectedVariantDays: selectedVariant.days,
+                selectedVariantPrice: selectedVariant.price,
+                wasUserSelected: !!variantDays
+              });
+            }
+          }
           break;
 
         case 'fixed_amount':
-          finalPrice = coupon.value;
-          discount = originalPrice - finalPrice;
+          discount = coupon.value;
+          finalPrice = originalPrice - discount;
+          console.log('💵 [COUPON SERVICE] Cálculo monto fijo:', {
+            fixedAmount: coupon.value,
+            discount,
+            finalPrice
+          });
+          
+          // Si se especifica un planCode, usar la variante seleccionada o la más económica
+          if (planCode) {
+            const plan = await PlanDefinitionModel.findByCode(planCode);
+            if (plan && plan.variants.length > 0) {
+              let selectedVariant;
+              
+              if (variantDays) {
+                // Usar la variante específica seleccionada por el usuario
+                selectedVariant = plan.variants.find(v => v.days === variantDays);
+                if (!selectedVariant) {
+                  console.log('⚠️ [COUPON SERVICE] Variante especificada no encontrada, usando la más económica:', {
+                    requestedVariantDays: variantDays,
+                    availableVariants: plan.variants.map(v => ({ days: v.days, price: v.price }))
+                  });
+                  selectedVariant = plan.variants.reduce((min, variant) => 
+                    variant.price < min.price ? variant : min
+                  );
+                }
+              } else {
+                // Si no se especifica variante, usar la más económica
+                selectedVariant = plan.variants.reduce((min, variant) => 
+                  variant.price < min.price ? variant : min
+                );
+              }
+              
+              assignedPlanCode = planCode;
+              console.log('💰 [COUPON SERVICE] Aplicando variante para cupón de monto fijo:', {
+                planCode,
+                selectedVariantDays: selectedVariant.days,
+                selectedVariantPrice: selectedVariant.price,
+                wasUserSelected: !!variantDays
+              });
+            }
+          }
           break;
 
         case 'plan_assignment':
-          // Para asignación de plan, el precio se determina por el plan asignado
+          console.log('📋 [COUPON SERVICE] Procesando asignación de plan:', {
+            assignedPlanCode: coupon.planCode,
+            variantDays: coupon.variantDays
+          });
+          // Para asignación de plan, el descuento es del 100% (gratis)
           if (coupon.planCode) {
             const assignedPlan = await PlanDefinitionModel.findByCode(coupon.planCode);
+            console.log('🔍 [COUPON SERVICE] Plan asignado encontrado:', {
+              planFound: !!assignedPlan,
+              planCode: coupon.planCode,
+              variants: assignedPlan?.variants?.length || 0,
+              variantDays: coupon.variantDays
+            });
             if (assignedPlan && assignedPlan.variants.length > 0) {
-              // Tomar el primer variant como precio base
-              finalPrice = assignedPlan.variants[0].price;
-              discount = originalPrice - finalPrice;
+              // Para cupones de asignación de plan, el precio final es 0 (gratis)
+              finalPrice = 0;
+              discount = originalPrice; // El descuento es el precio completo
               assignedPlanCode = coupon.planCode;
+              console.log('💰 [COUPON SERVICE] Precio de plan asignado (100% descuento):', {
+                originalPrice,
+                finalPrice: 0,
+                discount: originalPrice,
+                assignedPlanCode,
+                variantDays: coupon.variantDays
+              });
             }
           }
           break;
       }
 
       // Asegurar que el precio final no sea negativo
+      const originalFinalPrice = finalPrice;
       finalPrice = Math.max(0, finalPrice);
       discount = originalPrice - finalPrice;
 
-      return {
+      if (originalFinalPrice !== finalPrice) {
+        console.log('⚠️ [COUPON SERVICE] Precio final ajustado (era negativo):', {
+          calculatedFinalPrice: originalFinalPrice,
+          adjustedFinalPrice: finalPrice,
+          adjustedDiscount: discount
+        });
+      }
+
+      const result = {
         success: true,
         originalPrice,
         finalPrice,
         discount,
-        planCode: assignedPlanCode
+        planCode: assignedPlanCode,
+        variantDays: coupon.type === 'plan_assignment' ? coupon.variantDays : 
+                    (assignedPlanCode && planCode ? (variantDays || await this.getCheapestVariantDays(assignedPlanCode)) : undefined)
       };
+
+      console.log('✅ [COUPON SERVICE] Aplicación de cupón exitosa:', {
+        result,
+        savings: originalPrice - finalPrice,
+        discountPercentage: originalPrice > 0 ? ((discount / originalPrice) * 100).toFixed(2) + '%' : '0%'
+      });
+
+      return result;
     } catch (error) {
+      console.log('💥 [COUPON SERVICE] Error en aplicación de cupón:', {
+        error: error instanceof Error ? error.message : String(error),
+        code,
+        originalPrice,
+        planCode,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
       logger.error('Error al aplicar cupón:', error);
       return {
         success: false,
@@ -370,6 +606,25 @@ export class CouponService {
         discount: 0,
         error: 'Error interno al aplicar el cupón'
       };
+    }
+  }
+
+  /**
+   * Obtener los días de la variante más económica de un plan
+   */
+  private async getCheapestVariantDays(planCode: string): Promise<number | undefined> {
+    try {
+      const plan = await PlanDefinitionModel.findByCode(planCode);
+      if (plan && plan.variants.length > 0) {
+        const cheapestVariant = plan.variants.reduce((min, variant) => 
+          variant.price < min.price ? variant : min
+        );
+        return cheapestVariant.days;
+      }
+      return undefined;
+    } catch (error) {
+      logger.error('Error al obtener variante más económica:', error);
+      return undefined;
     }
   }
 
@@ -396,11 +651,35 @@ export class CouponService {
   }
 
   /**
-   * Obtener estadísticas de cupones
+   * Obtener estadísticas de cupones (optimizado con logging detallado)
    */
   async getCouponStats(): Promise<any> {
+    const startTime = Date.now();
+    logger.info('Iniciando getCouponStats...');
+    
     try {
-      const [totalCoupons, activeCoupons, expiredCoupons, exhaustedCoupons] = await Promise.all([
+      // Verificar si hay documentos en la colección
+      const collectionCheckStart = Date.now();
+      const totalDocs = await CouponModel.estimatedDocumentCount();
+      const collectionCheckDuration = Date.now() - collectionCheckStart;
+      logger.info(`Verificación de colección completada en ${collectionCheckDuration}ms - Total documentos: ${totalDocs}`);
+
+      if (totalDocs === 0) {
+        logger.info('No hay cupones en la base de datos, retornando estadísticas vacías');
+        return {
+          total: 0,
+          active: 0,
+          expired: 0,
+          exhausted: 0,
+          byType: {}
+        };
+      }
+
+      // Usar consultas simples en lugar de agregación compleja
+      const queryStart = Date.now();
+      logger.info('Ejecutando consultas de estadísticas...');
+
+      const [total, active, expired, exhausted, typeStats] = await Promise.all([
         CouponModel.countDocuments({}),
         CouponModel.countDocuments({ isActive: true }),
         CouponModel.countDocuments({ 
@@ -411,26 +690,34 @@ export class CouponService {
           isActive: true,
           maxUses: { $ne: -1 },
           $expr: { $gte: ['$currentUses', '$maxUses'] }
-        })
+        }),
+        CouponModel.aggregate([
+          { $match: { isActive: true } },
+          { $group: { _id: '$type', count: { $sum: 1 } } }
+        ])
       ]);
 
-      const typeStats = await CouponModel.aggregate([
-        { $match: { isActive: true } },
-        { $group: { _id: '$type', count: { $sum: 1 } } }
-      ]);
+      const queryDuration = Date.now() - queryStart;
+      logger.info(`Consultas completadas en ${queryDuration}ms`);
 
-      return {
-        total: totalCoupons,
-        active: activeCoupons,
-        expired: expiredCoupons,
-        exhausted: exhaustedCoupons,
-        byType: typeStats.reduce((acc, stat) => {
+      const result = {
+        total,
+        active,
+        expired,
+        exhausted,
+        byType: typeStats.reduce((acc: any, stat: any) => {
           acc[stat._id] = stat.count;
           return acc;
         }, {})
       };
+
+      const totalDuration = Date.now() - startTime;
+      logger.info(`getCouponStats completado en ${totalDuration}ms - Resultado:`, result);
+      
+      return result;
     } catch (error) {
-      logger.error('Error al obtener estadísticas de cupones:', error);
+      const errorDuration = Date.now() - startTime;
+      logger.error(`Error en getCouponStats después de ${errorDuration}ms:`, error);
       throw new AppError('Error interno al obtener estadísticas', 500);
     }
   }

@@ -264,11 +264,9 @@ export default function ManagePlansModal({
       return false;
     }
 
-    const planHierarchy = ['AMATISTA', 'ESMERALDA', 'ORO', 'DIAMANTE'];
-    const currentIndex = planHierarchy.indexOf(planToUse.planCode);
-    const targetIndex = planHierarchy.indexOf(planCode);
-
-    return targetIndex > currentIndex; // Solo upgrades, no downgrades
+    // RESTRICCIÓN ELIMINADA: Ahora se permite cambiar a cualquier plan
+    // Ya no validamos jerarquía de planes, permitiendo tanto upgrades como downgrades
+    return true; // Permitir cambio a cualquier plan
   };
 
   // Obtener la variante seleccionada para un plan
@@ -293,11 +291,8 @@ export default function ManagePlansModal({
 
     // Validar restricciones específicas
     if (action === 'upgrade' && !validatePlanBusinessRules.canEditActivePlan()) {
-      // Los upgrades son la única excepción permitida para "editar" un plan activo
-      if (!canUpgradeTo(planCode)) {
-        toast.error('Solo se permiten upgrades a planes superiores');
-        return;
-      }
+      // RESTRICCIÓN ELIMINADA: Ahora se permite cambiar a cualquier plan
+      // Ya no validamos jerarquía de planes, permitiendo tanto upgrades como downgrades
     }
 
     setIsProcessing(true);

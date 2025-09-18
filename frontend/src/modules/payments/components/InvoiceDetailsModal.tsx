@@ -237,8 +237,39 @@ export function InvoiceDetailsModal({ open, onOpenChange, invoice }: InvoiceDeta
                 
                 <Separator />
                 
+                {/* Mostrar información de descuento si hay cupón aplicado */}
+                {invoice.coupon ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                          Cupón: {invoice.coupon.code}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-2">
+                      <p className="text-muted-foreground">Precio original:</p>
+                      <p className="line-through text-muted-foreground">
+                        ${invoice.coupon.originalAmount?.toLocaleString()}
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-2">
+                      <p className="text-green-600 dark:text-green-400 font-medium">Descuento aplicado:</p>
+                      <p className="text-green-600 dark:text-green-400 font-medium">
+                        -${invoice.coupon.discountAmount?.toLocaleString()}
+                      </p>
+                    </div>
+                    
+                    <Separator />
+                  </div>
+                ) : null}
+                
                 <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
-                  <p className="font-semibold text-lg">Total</p>
+                  <p className="font-semibold text-lg">
+                    {invoice.coupon ? 'Precio Final' : 'Total'}
+                  </p>
                   <p className="font-bold text-xl text-primary">
                     ${invoice.totalAmount.toLocaleString()}
                   </p>

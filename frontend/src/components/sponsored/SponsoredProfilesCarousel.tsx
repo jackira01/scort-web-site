@@ -193,10 +193,17 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
                           {profile.age && (
                             <span>{profile.age} años</span>
                           )}
-                          {profile.location?.city?.label && (
+                          {profile.location?.city && (
                             <>
                               <span>•</span>
-                              <span className="truncate">{profile.location.city.label}</span>
+                              <span className="truncate">
+                                {typeof profile.location.city === 'object' && profile.location.city !== null && 'label' in profile.location.city 
+                                  ? (profile.location.city as any).label 
+                                  : typeof profile.location.city === 'object' && profile.location.city !== null 
+                                    ? JSON.stringify(profile.location.city)
+                                    : profile.location.city || 'Ciudad no especificada'
+                                }
+                              </span>
                             </>
                           )}
                         </div>

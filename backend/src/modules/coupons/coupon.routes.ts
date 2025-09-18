@@ -1,9 +1,9 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { couponController } from './coupon.controller';
-import { authenticateToken } from '../../middlewares/auth.middleware';
+import { devAuthMiddleware } from '../../middlewares/auth.middleware';
 import { adminMiddleware } from '../../middlewares/admin.middleware';
 import { body, param, query } from 'express-validator';
-import { validateRequest, validateObjectId } from '../../middlewares/validation.middleware';
+import { validateRequest, validateObjectId, validateQuery } from '../../middlewares/validation.middleware';
 import {
   validateCouponExists,
   validateCouponAvailability,
@@ -48,8 +48,15 @@ const validateCreateCoupon = [
   body('planCode')
     .optional()
     .isString()
-    .matches(/^[A-Z0-9_-]+$/)
-    .withMessage('El código de plan debe contener solo letras mayúsculas, números, guiones y guiones bajos'),
+    .custom((value) => {
+      if (value === '' || value === null || value === undefined) {
+        return true; // Permitir valores vacíos
+      }
+      if (!/^[A-Z0-9_-]+$/.test(value)) {
+        throw new Error('El código de plan debe contener solo letras mayúsculas, números, guiones y guiones bajos');
+      }
+      return true;
+    }),
   body('applicablePlans')
     .optional()
     .isArray()
@@ -98,8 +105,15 @@ const validateUpdateCoupon = [
   body('planCode')
     .optional()
     .isString()
-    .matches(/^[A-Z0-9_-]+$/)
-    .withMessage('El código de plan debe contener solo letras mayúsculas, números, guiones y guiones bajos'),
+    .custom((value) => {
+      if (value === '' || value === null || value === undefined) {
+        return true; // Permitir valores vacíos
+      }
+      if (!/^[A-Z0-9_-]+$/.test(value)) {
+        throw new Error('El código de plan debe contener solo letras mayúsculas, números, guiones y guiones bajos');
+      }
+      return true;
+    }),
   body('applicablePlans')
     .optional()
     .isArray()
@@ -178,23 +192,20 @@ const validateQueryParams = [
     .withMessage('validOnly debe ser true o false')
 ];
 
-// Rutas públicas (para aplicar cupones)
+// Rutas públicas (sin autenticación)
 router.post('/apply', 
   couponRateLimit(5, 10 * 60 * 1000), // 5 intentos por 10 minutos
   sanitizeCouponCode,
-  validateApplyCoupon, 
-  validateRequest, 
+  validateRequest(validateApplyCoupon), 
   logCouponUsage,
   couponController.applyCoupon
 );
 
-
-
+// Validar cupón por código (endpoint original)
 router.get('/validate/:code', 
   couponRateLimit(10, 15 * 60 * 1000), // 10 intentos por 15 minutos
   sanitizeCouponCode,
-  validateCouponCode, 
-  validateRequest,
+  validateRequest([...validateCouponCode]), 
   validateCouponExists,
   validateCouponAvailability,
   validateCouponPlanCompatibility,
@@ -202,16 +213,37 @@ router.get('/validate/:code',
   couponController.validateCoupon
 );
 
+// Validar cupón para frontend (endpoint simplificado)
+router.post('/validate-frontend', 
+  couponRateLimit(10, 15 * 60 * 1000), // 10 intentos por 15 minutos
+  sanitizeCouponCode,
+  validateRequest([
+    body('code')
+      .isString()
+      .isLength({ min: 3, max: 50 })
+      .matches(/^[A-Z0-9_-]+$/i)
+      .withMessage('Código de cupón inválido')
+  ]), 
+  logCouponUsage,
+  couponController.validateCouponForFrontend
+);
+
 // Rutas de administración (requieren autenticación y permisos de admin)
-router.use(authenticateToken);
+router.use(devAuthMiddleware);
 router.use(adminMiddleware);
 
-// CRUD de cupones
-router.post('/', sanitizeCouponCode, validateCreateCoupon, validateRequest, couponController.createCoupon);
+// CRUD de cupones - Reordenando para debugging
 router.get('/stats', couponController.getCouponStats);
-router.get('/', validateQueryParams, validateRequest, couponController.getCoupons);
-router.get('/:id', validateObjectId('id'), validateRequest, couponController.getCouponById);
-router.put('/:id', sanitizeCouponCode, validateObjectId('id'), validateUpdateCoupon, validateRequest, couponController.updateCoupon);
-router.delete('/:id', validateObjectId('id'), validateRequest, couponController.deleteCoupon);
+router.get('/', (req: Request, res: Response, next: NextFunction) => {
+  console.log('🔍 Middleware antes de validateQueryParams - Query:', req.query);
+  next();
+}, validateQuery(validateQueryParams), (req: Request, res: Response, next: NextFunction) => {
+  console.log('🔍 Middleware después de validateQuery - Query:', req.query);
+  next();
+}, couponController.getCoupons);
+router.post('/', sanitizeCouponCode, validateRequest(validateCreateCoupon), couponController.createCoupon);
+router.get('/:id', validateRequest([validateObjectId('id')]), couponController.getCouponById);
+router.put('/:id', sanitizeCouponCode, validateRequest([validateObjectId('id'), ...validateUpdateCoupon]), couponController.updateCoupon);
+router.delete('/:id', validateRequest([validateObjectId('id')]), couponController.deleteCoupon);
 
 export default router;

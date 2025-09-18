@@ -98,7 +98,9 @@ const getDefaultPlanConfig = async (): Promise<{ planId: string | null; planCode
 const generateWhatsAppMessage = async (
   userId: string,
   profileId: string,
-  invoiceId?: string
+  invoiceId?: string,
+  planCode?: string,
+  variantDays?: number
 ): Promise<WhatsAppMessage | null> => {
   try {
     // Obtener parámetros de configuración de la empresa
@@ -112,10 +114,22 @@ const generateWhatsAppMessage = async (
       return null;
     }
 
+    // Obtener información del plan si no se proporciona
+    let planInfo = '';
+    if (planCode && variantDays) {
+      planInfo = `\n• Plan: ${planCode} (${variantDays} días)`;
+    } else {
+      // Intentar obtener información del plan desde el perfil
+      const profile = await ProfileModel.findById(profileId);
+      if (profile?.planAssignment?.planCode && profile?.planAssignment?.variantDays) {
+        planInfo = `\n• Plan: ${profile.planAssignment.planCode} (${profile.planAssignment.variantDays} días)`;
+      }
+    }
+
     // Generar mensaje elegante
     const message = invoiceId
-      ? `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n📋 **Detalles de mi compra:**\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención. 😊`
-      : `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n📋 **Detalles:**\n• ID de Perfil: ${profileId}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. 😊`;
+      ? `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n📋 **Detalles de mi compra:**\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención. 😊`
+      : `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n📋 **Detalles:**\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. 😊`;
 
     return {
       userId,
@@ -383,7 +397,9 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
   const whatsAppMessage = await generateWhatsAppMessage(
     profile.user.toString(),
     (profile._id as Types.ObjectId).toString(),
-    invoice?._id?.toString()
+    invoice?._id?.toString(),
+    planCode,
+    planDays
   );
 
   // Mensaje de WhatsApp procesado
@@ -1460,16 +1476,8 @@ export const upgradePlan = async (profileId: string, newPlanCode: string, varian
   const defaultPlanConfig = await getDefaultPlanConfig();
   const defaultPlanCode = defaultPlanConfig.enabled ? defaultPlanConfig.planCode : 'AMATISTA'; // Fallback
 
-  // Validar que es un upgrade (no downgrade)
-  // Construir jerarquía dinámica con el plan por defecto en la posición más baja
-  const planHierarchy = [defaultPlanCode, 'ESMERALDA', 'ORO', 'DIAMANTE'].filter((plan, index, arr) => arr.indexOf(plan) === index); // Eliminar duplicados
-  const currentPlanCode = profile.planAssignment.planCode || defaultPlanCode;
-  const currentIndex = planHierarchy.indexOf(currentPlanCode);
-  const newIndex = planHierarchy.indexOf(normalizedPlanCode);
-
-  if (newIndex <= currentIndex) {
-    throw new Error('Solo se permiten upgrades a planes superiores. No se pueden hacer downgrades.');
-  }
+  // RESTRICCIÓN ELIMINADA: Ahora se permite cambiar a cualquier plan
+  // Ya no validamos jerarquía de planes, permitiendo tanto upgrades como downgrades
 
   // Determinar la variante a usar
   let selectedVariant;

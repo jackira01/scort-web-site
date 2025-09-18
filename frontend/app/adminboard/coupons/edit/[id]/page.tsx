@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,40 +9,54 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { couponService } from '@/services/coupon.service';
+import { useCoupon, useUpdateCoupon } from '@/hooks/use-coupons';
 import { plansService } from '@/services/plans.service';
-import type { CreateCouponInput } from '@/types/coupon.types';
+import type { UpdateCouponInput } from '@/types/coupon.types';
 import type { IPlanDefinition } from '@/types/plans.types';
 
-interface CreateCouponState {
+interface EditCouponState {
   loading: boolean;
   plans: IPlanDefinition[];
-  formData: CreateCouponInput;
+  formData: UpdateCouponInput;
   errors: Record<string, string>;
 }
 
-export default function CreateCouponPage() {
+export default function EditCouponPage() {
   const router = useRouter();
-  const [state, setState] = useState<CreateCouponState>({
+  const params = useParams();
+  const couponId = params.id as string;
+  
+  const { data: coupon, isLoading: couponLoading, error: couponError } = useCoupon(couponId);
+  const updateCouponMutation = useUpdateCoupon();
+
+  const [state, setState] = useState<EditCouponState>({
     loading: false,
     plans: [],
-    formData: {
-      code: '',
-      name: '',
-      description: '',
-      type: 'percentage',
-      value: 0,
-      planCode: '',
-      variantDays: undefined,
-      maxUses: -1,
-      validFrom: new Date().toISOString().split('T')[0],
-      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 días
-      isActive: true
-    },
+    formData: {},
     errors: {}
   });
+
+  // Cargar datos del cupón en el formulario cuando se obtienen
+  useEffect(() => {
+    if (coupon) {
+      setState(prev => ({
+        ...prev,
+        formData: {
+          name: coupon.name,
+          description: coupon.description || '',
+          value: coupon.value,
+          planCode: coupon.planCode || '',
+          variantDays: coupon.variantDays,
+          maxUses: coupon.maxUses,
+          validFrom: coupon.validFrom ? new Date(coupon.validFrom).toISOString().split('T')[0] : '',
+          validUntil: coupon.validUntil ? new Date(coupon.validUntil).toISOString().split('T')[0] : '',
+          isActive: coupon.isActive
+        }
+      }));
+    }
+  }, [coupon]);
 
   const loadPlans = async () => {
     try {
@@ -54,43 +68,47 @@ export default function CreateCouponPage() {
     }
   };
 
+  const updateFormData = (field: keyof UpdateCouponInput, value: any) => {
+    setState(prev => ({
+      ...prev,
+      formData: { ...prev.formData, [field]: value },
+      errors: { ...prev.errors, [field]: '' }
+    }));
+  };
+
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
-    if (!state.formData.code.trim()) {
-      errors.code = 'El código es requerido';
-    } else if (!/^[A-Z0-9_-]+$/.test(state.formData.code)) {
-      errors.code = 'El código solo puede contener letras mayúsculas, números, guiones y guiones bajos';
-    }
-
-    if (!state.formData.name.trim()) {
+    if (!state.formData.name?.trim()) {
       errors.name = 'El nombre es requerido';
     }
 
-    if (state.formData.type === 'percentage') {
-      if (state.formData.value < 0 || state.formData.value > 100) {
+    if (state.formData.value !== undefined) {
+      if (coupon?.type === 'percentage' && (state.formData.value < 0 || state.formData.value > 100)) {
         errors.value = 'El porcentaje debe estar entre 0 y 100';
-      }
-    } else if (state.formData.type === 'fixed_amount') {
-      if (state.formData.value < 0) {
-        errors.value = 'El monto debe ser mayor o igual a 0';
+      } else if (coupon?.type === 'fixed_amount' && state.formData.value < 0) {
+        errors.value = 'El valor debe ser mayor o igual a 0';
       }
     }
 
-    if (state.formData.type === 'plan_assignment' && !state.formData.planCode) {
-      errors.planCode = 'Debe seleccionar un plan para asignación';
+    if (coupon?.type === 'plan_assignment' && !state.formData.planCode?.trim()) {
+      errors.planCode = 'Debe seleccionar un plan para cupones de asignación';
     }
 
-    if (state.formData.type === 'plan_assignment' && !state.formData.variantDays) {
-      errors.variantDays = 'Debe seleccionar una variante de días para asignación';
+    if (coupon?.type === 'plan_assignment' && !state.formData.variantDays) {
+      errors.variantDays = 'Debe seleccionar una variante de días para cupones de asignación';
     }
 
-    if (state.formData.maxUses !== -1 && state.formData.maxUses <= 0) {
-      errors.maxUses = 'Los usos máximos deben ser mayor a 0 o -1 para ilimitado';
+    if (state.formData.maxUses !== undefined && state.formData.maxUses < -1) {
+      errors.maxUses = 'Los usos máximos deben ser -1 (ilimitado) o mayor a 0';
     }
 
-    if (new Date(state.formData.validFrom) >= new Date(state.formData.validUntil)) {
-      errors.validUntil = 'La fecha de vencimiento debe ser posterior a la fecha de inicio';
+    if (state.formData.validFrom && state.formData.validUntil) {
+      const validFrom = new Date(state.formData.validFrom);
+      const validUntil = new Date(state.formData.validUntil);
+      if (validFrom >= validUntil) {
+        errors.validUntil = 'La fecha de vencimiento debe ser posterior a la fecha de inicio';
+      }
     }
 
     setState(prev => ({ ...prev, errors }));
@@ -101,34 +119,61 @@ export default function CreateCouponPage() {
     e.preventDefault();
     
     if (!validateForm()) {
+      toast.error('Por favor corrige los errores en el formulario');
       return;
     }
 
     setState(prev => ({ ...prev, loading: true }));
 
     try {
-      await couponService.createCoupon(state.formData);
-      toast.success('Cupón creado exitosamente');
+      await updateCouponMutation.mutateAsync({
+        id: couponId,
+        data: state.formData
+      });
+      
+      toast.success('Cupón actualizado exitosamente');
       router.push('/adminboard/coupons');
     } catch (error: any) {
-      console.error('Error creating coupon:', error);
-      toast.error(error.message || 'Error al crear cupón');
+      toast.error(error.message || 'Error al actualizar el cupón');
     } finally {
       setState(prev => ({ ...prev, loading: false }));
     }
   };
 
-  const updateFormData = (field: keyof CreateCouponInput, value: any) => {
-    setState(prev => ({
-      ...prev,
-      formData: { ...prev.formData, [field]: value },
-      errors: { ...prev.errors, [field]: '' }
-    }));
-  };
-
   useEffect(() => {
     loadPlans();
   }, []);
+
+  // Mostrar loading mientras se carga el cupón
+  if (couponLoading) {
+    return (
+      <div className="container mx-auto p-6 max-w-4xl">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Cargando cupón...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar error si no se encuentra el cupón
+  if (couponError || !coupon) {
+    return (
+      <div className="container mx-auto p-6 max-w-4xl">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="outline" onClick={() => router.back()}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Volver
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-red-600">Error: Cupón no encontrado</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
@@ -138,8 +183,8 @@ export default function CreateCouponPage() {
           Volver
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">Crear Cupón</h1>
-          <p className="text-muted-foreground">Crea un nuevo cupón de descuento</p>
+          <h1 className="text-3xl font-bold">Editar Cupón</h1>
+          <p className="text-muted-foreground">Modifica los datos del cupón {coupon.code}</p>
         </div>
       </div>
 
@@ -152,25 +197,22 @@ export default function CreateCouponPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="code">Código *</Label>
+                <Label htmlFor="code">Código</Label>
                 <Input
                   id="code"
-                  value={state.formData.code}
-                  onChange={(e) => updateFormData('code', e.target.value.toUpperCase())}
-                  placeholder="DESCUENTO20"
-                  className={state.errors.code ? 'border-red-500' : ''}
+                  value={coupon.code}
+                  disabled
+                  className="bg-muted"
                 />
-                {state.errors.code && (
-                  <p className="text-sm text-red-500">{state.errors.code}</p>
-                )}
+                <p className="text-sm text-muted-foreground">El código no se puede modificar</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre *</Label>
                 <Input
                   id="name"
-                  value={state.formData.name}
+                  value={state.formData.name || ''}
                   onChange={(e) => updateFormData('name', e.target.value)}
-                  placeholder="Descuento 20%"
+                  placeholder="Nombre descriptivo del cupón"
                   className={state.errors.name ? 'border-red-500' : ''}
                 />
                 {state.errors.name && (
@@ -182,9 +224,9 @@ export default function CreateCouponPage() {
               <Label htmlFor="description">Descripción</Label>
               <Textarea
                 id="description"
-                value={state.formData.description}
+                value={state.formData.description || ''}
                 onChange={(e) => updateFormData('description', e.target.value)}
-                placeholder="Descripción del cupón..."
+                placeholder="Descripción del cupón (opcional)"
                 rows={3}
               />
             </div>
@@ -199,49 +241,47 @@ export default function CreateCouponPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="type">Tipo de Cupón *</Label>
-                <Select
-                  value={state.formData.type}
-                  onValueChange={(value: any) => updateFormData('type', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="percentage">Porcentual</SelectItem>
-                    <SelectItem value="fixed_amount">Monto Fijo</SelectItem>
-                    <SelectItem value="plan_assignment">Asignación de Plan</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="type">Tipo de Cupón</Label>
+                <Input
+                  id="type"
+                  value={
+                    coupon.type === 'percentage' ? 'Porcentaje' :
+                    coupon.type === 'fixed_amount' ? 'Monto Fijo' :
+                    'Asignación de Plan'
+                  }
+                  disabled
+                  className="bg-muted"
+                />
+                <p className="text-sm text-muted-foreground">El tipo no se puede modificar</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="value">
-                  {state.formData.type === 'percentage' ? 'Porcentaje (%)' : 
-                   state.formData.type === 'fixed_amount' ? 'Monto ($)' : 'Valor'} *
+                  Valor *
+                  {coupon.type === 'percentage' && ' (%)'}
+                  {coupon.type === 'fixed_amount' && ' ($)'}
                 </Label>
                 <Input
                   id="value"
                   type="number"
-                  value={state.formData.value}
+                  value={state.formData.value || ''}
                   onChange={(e) => updateFormData('value', parseFloat(e.target.value) || 0)}
-                  placeholder={state.formData.type === 'percentage' ? '20' : '50000'}
+                  placeholder={coupon.type === 'percentage' ? '10' : '5000'}
                   min="0"
-                  max={state.formData.type === 'percentage' ? '100' : undefined}
+                  max={coupon.type === 'percentage' ? '100' : undefined}
+                  step={coupon.type === 'percentage' ? '0.01' : '1'}
                   className={state.errors.value ? 'border-red-500' : ''}
-                  disabled={state.formData.type === 'plan_assignment'}
                 />
                 {state.errors.value && (
                   <p className="text-sm text-red-500">{state.errors.value}</p>
                 )}
               </div>
             </div>
-
-            {state.formData.type === 'plan_assignment' && (
+            {coupon.type === 'plan_assignment' && (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="planCode">Plan a Asignar *</Label>
-                  <Select
-                    value={state.formData.planCode}
+                  <Select 
+                    value={state.formData.planCode || ''} 
                     onValueChange={(value) => {
                       updateFormData('planCode', value);
                       // Reset variant days when plan changes
@@ -294,8 +334,6 @@ export default function CreateCouponPage() {
           </CardContent>
         </Card>
 
-
-
         <Card>
           <CardHeader>
             <CardTitle>Configuración de Uso</CardTitle>
@@ -308,47 +346,34 @@ export default function CreateCouponPage() {
                 <Input
                   id="maxUses"
                   type="number"
-                  value={state.formData.maxUses}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value);
-                    // Permitir -1 para ilimitados o números positivos
-                    if (isNaN(value)) {
-                      updateFormData('maxUses', -1);
-                    } else if (value === 0) {
-                      updateFormData('maxUses', 1); // Cambiar 0 por 1 como mínimo válido
-                    } else {
-                      updateFormData('maxUses', value);
-                    }
-                  }}
+                  value={state.formData.maxUses || ''}
+                  onChange={(e) => updateFormData('maxUses', parseInt(e.target.value) || -1)}
                   placeholder="-1 para ilimitado"
                   min="-1"
-                  step="1"
                   className={state.errors.maxUses ? 'border-red-500' : ''}
                 />
                 {state.errors.maxUses && (
                   <p className="text-sm text-red-500">{state.errors.maxUses}</p>
                 )}
-                <p className="text-xs text-muted-foreground">-1 para usos ilimitados, números positivos para límite específico</p>
+                <p className="text-sm text-muted-foreground">
+                  Usos actuales: {coupon.currentUses}
+                </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="validFrom">Válido Desde *</Label>
+                <Label htmlFor="validFrom">Válido Desde</Label>
                 <Input
                   id="validFrom"
                   type="date"
-                  value={state.formData.validFrom}
+                  value={state.formData.validFrom || ''}
                   onChange={(e) => updateFormData('validFrom', e.target.value)}
-                  className={state.errors.validFrom ? 'border-red-500' : ''}
                 />
-                {state.errors.validFrom && (
-                  <p className="text-sm text-red-500">{state.errors.validFrom}</p>
-                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="validUntil">Válido Hasta *</Label>
                 <Input
                   id="validUntil"
                   type="date"
-                  value={state.formData.validUntil}
+                  value={state.formData.validUntil || ''}
                   onChange={(e) => updateFormData('validUntil', e.target.value)}
                   className={state.errors.validUntil ? 'border-red-500' : ''}
                 />
@@ -360,7 +385,7 @@ export default function CreateCouponPage() {
             <div className="flex items-center space-x-2">
               <Switch
                 id="isActive"
-                checked={state.formData.isActive}
+                checked={state.formData.isActive ?? true}
                 onCheckedChange={(checked) => updateFormData('isActive', checked)}
               />
               <Label htmlFor="isActive">Cupón activo</Label>
@@ -368,12 +393,27 @@ export default function CreateCouponPage() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => router.back()}>
+        <div className="flex justify-end space-x-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()}
+            disabled={state.loading}
+          >
             Cancelar
           </Button>
-          <Button type="submit" disabled={state.loading}>
-            {state.loading ? 'Creando...' : 'Crear Cupón'}
+          <Button
+            type="submit"
+            disabled={state.loading}
+          >
+            {state.loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Actualizando...
+              </>
+            ) : (
+              'Actualizar Cupón'
+            )}
           </Button>
         </div>
       </form>

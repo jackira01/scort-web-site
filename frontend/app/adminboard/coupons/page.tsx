@@ -287,7 +287,7 @@ export default function CouponsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => router.push(`/adminboard/coupons/${coupon._id}/edit`)}
+                            onClick={() => router.push(`/adminboard/coupons/edit/${coupon._id}`)}
                           >
                             <Edit className="w-4 h-4" />
                           </Button>

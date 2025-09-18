@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
@@ -9,56 +9,62 @@ import { useRouter } from 'next/navigation';
  * cuando el usuario necesita configurar su contraseña
  */
 export default function AuthRedirectHandler() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
+  const [hasCheckedSession, setHasCheckedSession] = useState(false);
 
   useEffect(() => {
-    // Solo procesar si la sesión está cargada
-    if (status === 'loading') {
-      console.log('🔍 [AUTH-REDIRECT] Sesión cargando...');
-      return;
-    }
-
-    console.log('🔍 [AUTH-REDIRECT] Verificando necesidad de redirección...');
-    console.log('🔍 [AUTH-REDIRECT] Status de sesión:', status);
-    console.log('🔍 [AUTH-REDIRECT] Sesión:', session ? 'Presente' : 'Ausente');
-
-    // Si no hay sesión, no hacer nada
-    if (status === 'unauthenticated' || !session?.user) {
-      console.log('🔍 [AUTH-REDIRECT] Usuario no autenticado, no se requiere redirección');
-      return;
-    }
-
-    // Verificar si el usuario necesita configurar contraseña
-    const user = session.user as any;
-    console.log('🔍 [AUTH-REDIRECT] Datos del usuario:', {
-      email: user.email,
-      password: user.password ? `[${typeof user.password}] ${user.password.length > 0 ? 'NO_EMPTY' : 'EMPTY'}` : 'undefined',
-      action: user.action,
-      provider: user.provider
-    });
-
-    // Verificar si necesita configurar contraseña
-    const hasValidPassword = user.password && 
-                           user.password !== '' && 
-                           user.password !== 'null' && 
-                           user.password !== 'undefined';
-
-    console.log('🔍 [AUTH-REDIRECT] ¿Tiene contraseña válida?:', hasValidPassword);
-    console.log('🔍 [AUTH-REDIRECT] Valor de password:', user.password);
-    console.log('🔍 [AUTH-REDIRECT] Tipo de password:', typeof user.password);
-
-    // Si no tiene contraseña válida, redirigir a post-register
-    if (!hasValidPassword) {
-      console.log('🚨 [AUTH-REDIRECT] ¡¡¡EJECUTANDO REDIRECCIÓN A POST-REGISTER!!!');
-      console.log('🔍 [AUTH-REDIRECT] Razón: Usuario sin contraseña configurada');
+    // Solo actualizar la sesión si el usuario está autenticado y no hemos verificado aún
+    if (status === 'authenticated' && session?.user && !hasCheckedSession) {
+      console.log('🔄 AuthRedirectHandler: Actualizando sesión para obtener datos más recientes...');
+      console.log('📊 Datos de sesión ANTES de actualizar:', {
+        userId: session.user.id,
+        email: session.user.email,
+        hasPassword: session.user.hasPassword,
+        hasPasswordType: typeof session.user.hasPassword,
+        fullUser: session.user
+      });
       
-      // Usar replace para evitar que el usuario pueda volver atrás
-      router.replace('/autenticacion/post-register');
-    } else {
-      console.log('✅ [AUTH-REDIRECT] Usuario tiene contraseña válida, no se requiere redirección');
+      update().then(() => {
+        setHasCheckedSession(true);
+      });
     }
-  }, [session, status, router]);
+  }, [session, status, update, hasCheckedSession]);
+
+  useEffect(() => {
+    // Solo proceder si hemos verificado la sesión actualizada
+    if (status === 'authenticated' && session?.user && hasCheckedSession) {
+      console.log('🔍 AuthRedirectHandler: Verificando datos de sesión actualizados...');
+      console.log('📊 Datos de sesión DESPUÉS de actualizar:', {
+        userId: session.user.id,
+        email: session.user.email,
+        hasPassword: session.user.hasPassword,
+        hasPasswordType: typeof session.user.hasPassword,
+        fullUser: session.user
+      });
+      
+      const userHasPassword = session.user.hasPassword;
+      
+      // Verificar si el usuario necesita configurar su contraseña
+      if (!userHasPassword) {
+        console.log('❌ Usuario sin contraseña configurada, redirigiendo a post-register');
+        console.log('🔍 Detalles de hasPassword:', {
+          value: userHasPassword,
+          type: typeof userHasPassword,
+          isFalse: userHasPassword === false,
+          isUndefined: userHasPassword === undefined,
+          isNull: userHasPassword === null
+        });
+        router.replace('/autenticacion/post-register');
+      } else {
+        console.log('✅ Usuario con contraseña configurada, no se requiere redirección');
+        console.log('🔍 hasPassword válido encontrado:', {
+          value: userHasPassword,
+          type: typeof userHasPassword
+        });
+      }
+    }
+  }, [session, status, router, hasCheckedSession]);
 
   // Este componente no renderiza nada visible
   return null;

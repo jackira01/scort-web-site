@@ -100,10 +100,7 @@ export const DashbProfileCard = ({
                 <Calendar className="h-3 w-3 mr-1" />
                 {profile.age || 'N/A'} años
               </span>
-              {/* <span className="flex items-center">
-                <MapPin className="h-3 w-3 mr-1" />
-                {profile.location || 'Sin ubicación'}
-              </span> */}
+
             </div>
 
             <div className="flex items-center space-x-4 text-sm">

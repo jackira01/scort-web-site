@@ -49,8 +49,10 @@ const getStatusText = (status: string) => {
 const InvoicesManager = ({ className }: InvoicesManagerProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [userIdFilter, setUserIdFilter] = useState<string>('');
-  const [profileIdFilter, setProfileIdFilter] = useState<string>('');
+  const [invoiceIdFilter, setInvoiceIdFilter] = useState<string>('');
+  const [invoiceIdSearch, setInvoiceIdSearch] = useState<string>(''); // Estado separado para la búsqueda
+  // const [userIdFilter, setUserIdFilter] = useState<string>('');
+  // const [profileIdFilter, setProfileIdFilter] = useState<string>('');
   const [pageSize] = useState(10);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -67,8 +69,9 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
     page: currentPage,
     limit: pageSize,
     status: statusFilter || undefined,
-    userId: userIdFilter || undefined,
-    profileId: profileIdFilter || undefined
+    _id: invoiceIdFilter || undefined,
+    // userId: userIdFilter || undefined,
+    // profileId: profileIdFilter || undefined
   });
 
   const handleStatusChange = (value: string) => {
@@ -76,15 +79,24 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
     setCurrentPage(1);
   };
 
-  const handleUserIdFilterChange = (value: string) => {
-    setUserIdFilter(value);
+  const handleInvoiceIdFilterChange = (value: string) => {
+    setInvoiceIdSearch(value); // Solo actualiza el estado de búsqueda, no el filtro
+  };
+
+  const handleSearchInvoice = () => {
+    setInvoiceIdFilter(invoiceIdSearch); // Aplica el filtro cuando se hace clic en buscar
     setCurrentPage(1);
   };
 
-  const handleProfileIdFilterChange = (value: string) => {
-    setProfileIdFilter(value);
-    setCurrentPage(1);
-  };
+  // const handleUserIdFilterChange = (value: string) => {
+  //   setUserIdFilter(value);
+  //   setCurrentPage(1);
+  // };
+
+  // const handleProfileIdFilterChange = (value: string) => {
+  //   setProfileIdFilter(value);
+  //   setCurrentPage(1);
+  // };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -92,8 +104,10 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
 
   const clearFilters = () => {
     setStatusFilter('');
-    setUserIdFilter('');
-    setProfileIdFilter('');
+    setInvoiceIdFilter('');
+    setInvoiceIdSearch(''); // Limpiar también el estado de búsqueda
+    // setUserIdFilter('');
+    // setProfileIdFilter('');
     setCurrentPage(1);
   };
 
@@ -222,6 +236,27 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
+                ID de Factura:
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Filtrar por ID de factura"
+                  value={invoiceIdSearch}
+                  onChange={(e) => handleInvoiceIdFilterChange(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearchInvoice()}
+                />
+                <Button 
+                  onClick={handleSearchInvoice} 
+                  variant="outline"
+                  className="px-3"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
                 ID de Usuario:
               </label>
               <Input
@@ -240,11 +275,13 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
                 value={profileIdFilter}
                 onChange={(e) => handleProfileIdFilterChange(e.target.value)}
               />
-            </div>
+            </div> */}
 
-            <Button onClick={clearFilters} variant="outline">
-              Limpiar Filtros
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={clearFilters} variant="outline">
+                Limpiar Filtros
+              </Button>
+            </div>
           </div>
 
           {total > 0 && (
@@ -276,7 +313,7 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
               <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 mb-2">No se encontraron facturas</p>
               <p className="text-sm text-gray-500">
-                {statusFilter || userIdFilter || profileIdFilter
+                {statusFilter || invoiceIdFilter
                   ? 'Intenta cambiar los filtros'
                   : 'Aún no hay facturas registradas'
                 }

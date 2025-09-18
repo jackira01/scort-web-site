@@ -20,6 +20,9 @@ export interface InvoiceWhatsAppData {
     name: string;
     price: number;
     quantity: number;
+    type?: string;
+    code?: string;
+    days?: number;
   }>;
   expiresAt: Date;
 }
@@ -48,7 +51,10 @@ export class WhatsAppService {
       items: invoice.items.map(item => ({
         name: item.name,
         price: item.price,
-        quantity: item.quantity
+        quantity: item.quantity,
+        type: item.type,
+        code: item.code,
+        days: item.days
       })),
       expiresAt: invoice.expiresAt
     };
@@ -66,6 +72,13 @@ export class WhatsAppService {
       .map(item => `• ${item.name} - $${item.price.toLocaleString()} x${item.quantity}`)
       .join('\n');
 
+    // Obtener información del plan desde los items
+    const planItem = data.items.find(item => item.type === 'plan');
+    let planInfo = '';
+    if (planItem && planItem.days) {
+      planInfo = `\n• Plan: ${planItem.code} (${planItem.days} días)`;
+    }
+
     const expirationDate = new Date(data.expiresAt).toLocaleDateString('es-CO', {
       year: 'numeric',
       month: 'long',
@@ -79,7 +92,7 @@ export class WhatsAppService {
            `• ID Factura: ${data.invoiceId}\n` +
            `• Perfil: ${data.profileName}\n` +
            `• Cliente: ${data.userName}\n` +
-           `• Email: ${data.userEmail}\n\n` +
+           `• Email: ${data.userEmail}${planInfo}\n\n` +
            `💰 *Productos/Servicios:*\n${itemsText}\n\n` +
            `💵 *Total a pagar: $${data.totalAmount.toLocaleString()}*\n\n` +
            `⏰ *Vence el:* ${expirationDate}\n\n` +

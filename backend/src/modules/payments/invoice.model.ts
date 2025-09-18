@@ -158,7 +158,9 @@ invoiceSchema.index({ createdAt: -1 });
 
 // Middleware para actualizar totalAmount antes de guardar
 invoiceSchema.pre('save', function(next) {
-  if (this.isModified('items')) {
+  // Solo recalcular totalAmount si no hay cupón aplicado
+  // Si hay cupón, respetar el totalAmount que ya fue calculado con el descuento
+  if (this.isModified('items') && !this.coupon) {
     this.totalAmount = this.items.reduce((total, item) => {
       return total + (item.price * item.quantity);
     }, 0);

@@ -5,6 +5,7 @@ export interface ICoupon {
   type: 'percentage' | 'fixed_amount' | 'plan_assignment';
   value: number; // Para percentage: 0-100, para fixed_amount: precio final, para plan_assignment: no aplica
   planCode?: string; // Solo para type: 'plan_assignment'
+  variantDays?: number; // Solo para type: 'plan_assignment' - días específicos de la variante
   applicablePlans?: string[]; // Códigos de planes donde se puede aplicar el cupón
   maxUses: number; // -1 para ilimitado
   currentUses: number;
@@ -23,6 +24,7 @@ export interface CreateCouponInput {
   type: 'percentage' | 'fixed_amount' | 'plan_assignment';
   value: number;
   planCode?: string;
+  variantDays?: number; // Solo para type: 'plan_assignment' - días específicos de la variante
   applicablePlans?: string[];
   maxUses: number;
   validFrom: Date;
@@ -35,6 +37,7 @@ export interface UpdateCouponInput {
   description?: string;
   value?: number;
   planCode?: string;
+  variantDays?: number; // Solo para type: 'plan_assignment' - días específicos de la variante
   applicablePlans?: string[];
   maxUses?: number;
   validFrom?: Date;
@@ -54,6 +57,7 @@ export interface CouponApplicationResult {
   finalPrice: number;
   discount: number;
   planCode?: string; // Para plan_assignment
+  variantDays?: number; // Para plan_assignment - días específicos de la variante
   error?: string;
 }
 

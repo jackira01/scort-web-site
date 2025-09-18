@@ -28,6 +28,7 @@ class InvoiceController {
         planCode: req.body.planCode,
         planDays: req.body.planDays,
         upgradeCodes: req.body.upgradeCodes || [],
+        couponCode: req.body.couponCode, // Agregar el campo couponCode
         notes: req.body.notes
       };
 

@@ -69,6 +69,8 @@ export interface QueryOptions {
 const generateWhatsAppMessage = async (
     userId: string,
     profileId: string,
+    planCode?: string,
+    variantDays?: number,
     invoiceId?: string
 ): Promise<WhatsAppMessage | null> => {
     try {
@@ -84,9 +86,17 @@ const generateWhatsAppMessage = async (
 
         let message: string;
         if (invoiceId) {
-            message = `¡Hola! 👋\n\nTu compra ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}\n\n¡Gracias por confiar en ${companyName}! 🙏\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+            const planInfo = planCode && variantDays 
+                ? `\n• Plan: ${planCode} (${variantDays} días)`
+                : '';
+            
+            message = `¡Hola! 👋\n\nTu compra ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n\n¡Gracias por confiar en ${companyName}! 🙏\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
         } else {
-            message = `¡Hola! 👋\n\nTu plan gratuito ha sido activado exitosamente. ✅\n\n📋 **Detalles:**\n• Perfil: ${profileId}\n\n¡Bienvenido a ${companyName}! 🎉\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+            const planInfo = planCode && variantDays 
+                ? `\n• Plan: ${planCode} (${variantDays} días)`
+                : '';
+            
+            message = `¡Hola! 👋\n\nTu plan gratuito ha sido activado exitosamente. ✅\n\n📋 **Detalles:**\n• Perfil: ${profileId}${planInfo}\n\n¡Bienvenido a ${companyName}! 🎉\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
         }
 
         return {
@@ -494,6 +504,8 @@ export class PlansService {
         const whatsAppMessage = await generateWhatsAppMessage(
             profile.user.toString(),
             profileId,
+            planCode,
+            variantDays,
             invoiceId
         );
 
@@ -595,6 +607,8 @@ export class PlansService {
         const whatsAppMessage = await generateWhatsAppMessage(
             profile.user.toString(),
             profileId,
+            planCode,
+            variantDays,
             invoiceId
         );
 

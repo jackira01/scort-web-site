@@ -137,13 +137,8 @@ export const upgradePlan = async (request: PlanUpgradeRequest) => {
     }
 
     // Validar que sea un upgrade (no downgrade)
-    const planHierarchy = ['AMATISTA', 'ESMERALDA', 'ORO', 'DIAMANTE'];
-    const currentIndex = planHierarchy.indexOf(currentPlan.planCode);
-    const newIndex = planHierarchy.indexOf(request.newPlanCode);
-
-    if (newIndex <= currentIndex) {
-      throw new Error('Solo se permiten upgrades a planes superiores. No se pueden hacer downgrades.');
-    }
+    // RESTRICCIÓN ELIMINADA: Ahora se permite cambiar a cualquier plan
+    // Ya no validamos jerarquía de planes, permitiendo tanto upgrades como downgrades
 
     const response = await axiosInstance.post(`/api/profile/${request.profileId}/upgrade-plan`, {
       newPlanCode: request.newPlanCode,

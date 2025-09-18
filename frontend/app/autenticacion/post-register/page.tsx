@@ -18,6 +18,6 @@ export default function PostRegisterPage() {
 }
 
 export const metadata = {
-  title: 'Configurar Contraseña | Scort Web Site',
-  description: 'Configura una contraseña para completar tu registro',
+  title: 'Crear Contraseña | Scort Web Site',
+  description: 'Crea una contraseña para completar tu registro',
 };

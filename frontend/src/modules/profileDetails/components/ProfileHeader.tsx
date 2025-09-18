@@ -13,7 +13,12 @@ export default function ProfielHeader({
         {name}
       </h2>
       <p className="text-muted-foreground">
-        {age} años • {typeof category === 'object' && category !== null && 'label' in category ? (category as any).label : category}
+        {age} años • {typeof category === 'object' && category !== null && 'label' in category 
+          ? (category as any).label 
+          : typeof category === 'object' && category !== null 
+            ? JSON.stringify(category)
+            : category || 'Categoría no especificada'
+        }
       </p>
     </div>
   );

@@ -94,44 +94,46 @@ const HeaderComponent = () => {
               </Button>
             </Link>
             <ThemeToggle />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
-                >
-                  <Menu className="h-4 w-4 mr-2" />
-                  Explorar
-                  <ChevronDown className="h-4 w-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {isAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/adminboard" className="flex items-center">
-                      <Shield className="h-4 w-4 mr-2" />
-                      Panel de administrador
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {status === 'authenticated' && (
-                  <>
+            {(status === 'authenticated' || isAdmin) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+                  >
+                    <Menu className="h-4 w-4 mr-2" />
+                    Explorar
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {isAdmin && (
                     <DropdownMenuItem asChild>
-                      <Link href="/cuenta" className="flex items-center">
-                        <UserRound className="h-4 w-4 mr-2" />
-                        Mi cuenta
+                      <Link href="/adminboard" className="flex items-center">
+                        <Shield className="h-4 w-4 mr-2" />
+                        Panel de administrador
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <div className="flex items-center w-full">
-                        <LogOut className="h-4 w-4 mr-2" />
-                        <SignOut />
-                      </div>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  )}
+                  {status === 'authenticated' && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/cuenta" className="flex items-center">
+                          <UserRound className="h-4 w-4 mr-2" />
+                          Mi cuenta
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <div className="flex items-center w-full">
+                          <LogOut className="h-4 w-4 mr-2" />
+                          <SignOut />
+                        </div>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             {status !== 'authenticated' && <SignIn />}
           </div>
 
@@ -208,44 +210,46 @@ const HeaderComponent = () => {
                 Contactanos
               </Button>
             </Link>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
-                >
-                  <Menu className="h-4 w-4 mr-2" />
-                  Explorar
-                  <ChevronDown className="h-4 w-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                {isAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/adminboard" className="flex items-center">
-                      <Shield className="h-4 w-4 mr-2" />
-                      Panel de administrador
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {status === 'authenticated' && (
-                  <>
+            {(status === 'authenticated' || isAdmin) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+                  >
+                    <Menu className="h-4 w-4 mr-2" />
+                    Explorar
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  {isAdmin && (
                     <DropdownMenuItem asChild>
-                      <Link href="/cuenta" className="flex items-center">
-                        <UserRound className="h-4 w-4 mr-2" />
-                        Mi cuenta
+                      <Link href="/adminboard" className="flex items-center">
+                        <Shield className="h-4 w-4 mr-2" />
+                        Panel de administrador
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <div className="flex items-center w-full">
-                        <LogOut className="h-4 w-4 mr-2" />
-                        <SignOut />
-                      </div>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  )}
+                  {status === 'authenticated' && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/cuenta" className="flex items-center">
+                          <UserRound className="h-4 w-4 mr-2" />
+                          Mi cuenta
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <div className="flex items-center w-full">
+                          <LogOut className="h-4 w-4 mr-2" />
+                          <SignOut />
+                        </div>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             {status !== 'authenticated' && <SignIn />}
             <div className="flex items-center justify-center pt-2">
               <Select defaultValue="español">

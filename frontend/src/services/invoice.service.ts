@@ -48,10 +48,12 @@ export interface CreateInvoiceData {
   userId: string;
   planCode: string;
   planDays?: number;
+  couponCode?: string; // Código de cupón a aplicar
   upgrades?: Array<{
     upgradeId: string;
     quantity: number;
   }>;
+  notes?: string;
 }
 
 export interface InvoiceFilters {

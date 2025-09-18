@@ -49,9 +49,14 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                 <h3 className="font-semibold text-sm mb-1">
                   {profile.name}
                 </h3>
-                {profile.location?.city?.label && (
+                {profile.location?.city && (
                   <p className="text-xs text-white/90">
-                    {profile.location.city.label}
+                    {typeof profile.location.city === 'object' && profile.location.city !== null && 'label' in profile.location.city 
+                      ? (profile.location.city as any).label 
+                      : typeof profile.location.city === 'object' && profile.location.city !== null 
+                        ? JSON.stringify(profile.location.city)
+                        : profile.location.city || 'Ciudad no especificada'
+                    }
                   </p>
                 )}
               </div>
