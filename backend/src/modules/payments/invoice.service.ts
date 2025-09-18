@@ -274,10 +274,17 @@ class InvoiceService {
     const query: any = {};
 
     if (filters._id) {
-      if (!mongoose.Types.ObjectId.isValid(filters._id)) {
-        throw new Error('ID de factura inválido');
+      // Búsqueda por aproximación para ID de factura
+      if (filters._id.length >= 8) {
+        // Si el ID tiene al menos 8 caracteres, buscar por coincidencia exacta
+        if (!mongoose.Types.ObjectId.isValid(filters._id)) {
+          throw new Error('ID de factura inválido');
+        }
+        query._id = new mongoose.Types.ObjectId(filters._id);
+      } else {
+        // Búsqueda por aproximación usando regex en los últimos 8 caracteres del ID
+        query._id = { $regex: new RegExp(filters._id, 'i') };
       }
-      query._id = new mongoose.Types.ObjectId(filters._id);
     }
 
     if (filters.profileId) {

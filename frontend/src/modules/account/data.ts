@@ -25,10 +25,11 @@ export const sidebarItems = [
     icon: Newspaper,
     description: 'Consulta las últimas actualizaciones y cambios del sistema',
   },
-  {
-    id: 'cupones',
-    label: 'Cupones y Descuentos',
-    icon: Ticket,
-    description: 'Ingresa códigos de cupón para obtener descuentos en tus compras',
-  },
+  // Sección de cupones temporalmente deshabilitada
+  // {
+  //   id: 'cupones',
+  //   label: 'Cupones y Descuentos',
+  //   icon: Ticket,
+  //   description: 'Ingresa códigos de cupón para obtener descuentos en tus compras',
+  // },
 ];

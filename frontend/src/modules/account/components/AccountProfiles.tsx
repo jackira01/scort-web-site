@@ -252,9 +252,9 @@ export default function AccountProfiles({
             {paginatedProfiles.map((profile, index) => (
               <Card
                 key={profile._id}
-                className={`group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card  ${profile.hasDestacadoUpgrade
-                  ? 'border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:border-yellow-300 ring-1 ring-yellow-400/50'
-                  : 'border-border hover:border-purple-500/50'
+                className={`group hover:shadow-xl transition-all duration-500 overflow-hidden  ${profile.hasDestacadoUpgrade
+                  ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50'
+                  : 'bg-card border-border hover:border-purple-500/50'
                   }`}
                 style={{ animationDelay: `${index * 100}ms` }}
               >

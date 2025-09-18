@@ -152,8 +152,8 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
                     <button
                         onClick={() => setViewMode('locations')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'locations'
-                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                     >
                         Ubicaciones
@@ -162,8 +162,8 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
                     <button
                         onClick={() => setViewMode('texts')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'texts'
-                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                     >
                         Textos
@@ -171,8 +171,7 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
 
                     <button
                         onClick={() => setViewMode('memberships')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            viewMode === 'memberships'
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'memberships'
                                 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                                 : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
@@ -182,8 +181,7 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
 
                     <button
                         onClick={() => setViewMode('profile-limits')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            viewMode === 'profile-limits'
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'profile-limits'
                                 ? 'bg-blue-100 text-blue-700'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
@@ -193,8 +191,7 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
 
                     <button
                         onClick={() => setViewMode('agency-limits')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            viewMode === 'agency-limits'
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'agency-limits'
                                 ? 'bg-blue-100 text-blue-700'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
@@ -205,8 +202,8 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
                     <button
                         onClick={() => setViewMode('list')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'list'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                     >
                         Todos los Parámetros
@@ -217,7 +214,7 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
     );
 
     const renderListControls = () => (
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="bg-white border-b border-gray-200 px-6 py-4 dark:bg-gray-800 dark:border-gray-700">
             <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                     {/* Búsqueda */}
@@ -236,8 +233,8 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
                     <button
                         onClick={() => setShowFilters(!showFilters)}
                         className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${showFilters
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                     >
                         <Filter className="w-4 h-4" />

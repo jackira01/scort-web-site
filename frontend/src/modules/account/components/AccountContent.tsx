@@ -55,9 +55,10 @@ export default function AccountContent({ activeSection }: Props) {
     return <NewsBoard />;
   }
 
-  if (activeSection === 'cupones') {
-    return <CouponSection />;
-  }
+  // Sección de cupones temporalmente deshabilitada
+  // if (activeSection === 'cupones') {
+  //   return <CouponSection />;
+  // }
 
   return null;
 }

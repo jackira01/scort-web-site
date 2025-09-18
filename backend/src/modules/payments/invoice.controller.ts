@@ -85,6 +85,7 @@ class InvoiceController {
   async getInvoices(req: Request, res: Response): Promise<void> {
     try {
       const filters: InvoiceFilters = {
+        _id: req.query._id as string,
         profileId: req.query.profileId as string,
         userId: req.query.userId as string,
         status: req.query.status as any,
@@ -103,6 +104,16 @@ class InvoiceController {
       });
     } catch (error: any) {
       console.error('Error getting invoices:', error);
+      
+      // Manejar error específico de ID inválido
+      if (error.message === 'ID de factura inválido') {
+        res.status(400).json({
+          success: false,
+          message: 'ID de factura inválido'
+        });
+        return;
+      }
+      
       res.status(500).json({
         success: false,
         message: error.message || 'Error interno del servidor'

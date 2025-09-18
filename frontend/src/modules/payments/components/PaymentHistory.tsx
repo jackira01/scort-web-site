@@ -118,9 +118,9 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
       </h1>
 
       {/* Filtros */}
-      <Card className="border-gray-200 bg-white/50 backdrop-blur-sm">
+      <Card className="backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-gray-800">
+          <CardTitle className="flex items-center gap-2 text-gray-800 dark:text-gray-300">
             <Search className="h-5 w-5" />
             Filtros
           </CardTitle>
@@ -128,7 +128,7 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Estado:
               </label>
               <Select value={statusFilter || 'all'} onValueChange={handleStatusChange}>
@@ -146,7 +146,7 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 ID de Factura:
               </label>
               <Input
@@ -157,7 +157,7 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 ID de Perfil:
               </label>
               <Input
@@ -174,7 +174,7 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
 
           {total > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 Mostrando {invoices.length} de {total} facturas
               </p>
             </div>
@@ -182,9 +182,9 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
         </CardContent>
       </Card>
 
-      <Card className="border-gray-200 bg-white/50 backdrop-blur-sm">
+      <Card className="backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-gray-800">
+          <CardTitle className="flex items-center gap-2 text-gray-800 dark:text-gray-300">
             <Receipt className="h-5 w-5" />
             Facturas
           </CardTitle>
@@ -192,14 +192,14 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-              <span className="ml-2 text-gray-600">Cargando facturas...</span>
+              <Loader2 className="h-6 w-6 animate-spin text-purple-600 dark:text-purple-300" />
+              <span className="ml-2 text-gray-600 dark:text-gray-300">Cargando facturas...</span>
             </div>
           ) : invoices.length === 0 ? (
             <div className="text-center py-8">
               <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-2">No se encontraron facturas</p>
-              <p className="text-sm text-gray-500">
+              <p className="text-gray-600 mb-2 dark:text-gray-300">No se encontraron facturas</p>
+              <p className="text-sm text-gray-500 dark:text-gray-300">
                 {statusFilter ? 'Intenta cambiar el filtro de estado' : 'Aún no tienes facturas registradas'}
               </p>
             </div>
@@ -208,15 +208,15 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
               {invoices.map((invoice) => (
                 <div
                   key={invoice._id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-gray-100 bg-white/70 hover:bg-white/90 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg border border-gray-100 bg-white dark:bg-gray-800/70 dark:border-gray-700 hover:bg-white/90 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="p-2 rounded-full bg-purple-100">
-                      <Receipt className="h-4 w-4 text-purple-600" />
+                    <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-800">
+                      <Receipt className="h-4 w-4 text-purple-600 dark:text-purple-300" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-gray-900 dark:text-gray-300">
                           {invoice.items[0]?.name || 'Factura'}
                         </p>
                         {invoice.profileId && (
@@ -226,7 +226,7 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-300">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
                           {new Date(invoice.createdAt).toLocaleDateString('es-ES')}
@@ -246,7 +246,7 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900 mb-1">
+                    <p className="font-semibold text-gray-900 mb-1 dark:text-gray-300">
                       {formatCurrency(invoice.totalAmount)}
                     </p>
                     <Badge

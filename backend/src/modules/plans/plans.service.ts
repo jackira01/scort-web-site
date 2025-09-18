@@ -71,7 +71,10 @@ const generateWhatsAppMessage = async (
     profileId: string,
     planCode?: string,
     variantDays?: number,
-    invoiceId?: string
+    invoiceId?: string,
+    isRenewal?: boolean,
+    price?: number,
+    expiresAt?: Date
 ): Promise<WhatsAppMessage | null> => {
     try {
         const [companyName, companyWhatsApp] = await Promise.all([
@@ -85,18 +88,45 @@ const generateWhatsAppMessage = async (
         }
 
         let message: string;
-        if (invoiceId) {
-            const planInfo = planCode && variantDays 
-                ? `\n• Plan: ${planCode} (${variantDays} días)`
-                : '';
-            
-            message = `¡Hola! 👋\n\nTu compra ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n\n¡Gracias por confiar en ${companyName}! 🙏\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+        if (isRenewal) {
+            // Mensaje específico para renovaciones
+            if (invoiceId) {
+                const planInfo = planCode && variantDays 
+                    ? `\n• Plan: ${planCode} (${variantDays} días)`
+                    : '';
+                
+                const totalPrice = (price || 0) * (variantDays || 1);
+                const expirationDate = expiresAt ? new Date(expiresAt).toLocaleDateString('es-ES', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : 'No disponible';
+                
+                message = `¡Hola! 👋\n\n🔄 **Quiero renovar mi plan** 🔄\n\nTu solicitud de renovación ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n• Total a pagar: $${(price || 0).toLocaleString()} x${variantDays || 0}\n\n💰 **"Total a pagar: $${totalPrice.toLocaleString()}"**\n\n📅 **"Vence el:"** ${expirationDate} 📅\n\nPor favor, confirma el pago para activar tu perfil. ¡Gracias! 💎`;
+            } else {
+                const planInfo = planCode && variantDays 
+                    ? `\n• Plan: ${planCode} (${variantDays} días)`
+                    : '';
+                
+                message = `¡Hola! 👋\n\n🔄 **Quiero renovar mi plan** 🔄\n\nTu plan gratuito ha sido renovado exitosamente. ✅\n\n📋 **Detalles:**\n• Perfil: ${profileId}${planInfo}\n\n¡Bienvenido de nuevo a ${companyName}! 🎉\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+            }
         } else {
-            const planInfo = planCode && variantDays 
-                ? `\n• Plan: ${planCode} (${variantDays} días)`
-                : '';
-            
-            message = `¡Hola! 👋\n\nTu plan gratuito ha sido activado exitosamente. ✅\n\n📋 **Detalles:**\n• Perfil: ${profileId}${planInfo}\n\n¡Bienvenido a ${companyName}! 🎉\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+            // Mensaje para compras normales
+            if (invoiceId) {
+                const planInfo = planCode && variantDays 
+                    ? `\n• Plan: ${planCode} (${variantDays} días)`
+                    : '';
+                
+                message = `¡Hola! 👋\n\nTu compra ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n\n¡Gracias por confiar en ${companyName}! 🙏\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+            } else {
+                const planInfo = planCode && variantDays 
+                    ? `\n• Plan: ${planCode} (${variantDays} días)`
+                    : '';
+                
+                message = `¡Hola! 👋\n\nTu plan gratuito ha sido activado exitosamente. ✅\n\n📋 **Detalles:**\n• Perfil: ${profileId}${planInfo}\n\n¡Bienvenido a ${companyName}! 🎉\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+            }
         }
 
         return {
@@ -500,13 +530,16 @@ export class PlansService {
             await profile.save();
         }
 
-        // Generar mensaje de WhatsApp
+        // Generar mensaje de WhatsApp para renovación
         const whatsAppMessage = await generateWhatsAppMessage(
             profile.user.toString(),
             profileId,
             planCode,
             variantDays,
-            invoiceId
+            invoiceId,
+            true, // isRenewal = true
+            variant.price,
+            expiresAt
         );
 
         return {
@@ -603,13 +636,14 @@ export class PlansService {
             // Plan renovado exitosamente para perfil
         }
 
-        // Generar mensaje de WhatsApp
+        // Generar mensaje de WhatsApp para compra
         const whatsAppMessage = await generateWhatsAppMessage(
             profile.user.toString(),
             profileId,
             planCode,
             variantDays,
-            invoiceId
+            invoiceId,
+            false // isRenewal = false
         );
 
         return {

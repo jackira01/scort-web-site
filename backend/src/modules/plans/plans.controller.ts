@@ -519,8 +519,23 @@ export class PlansController {
                 return;
             }
 
-            const { profileId, planCode, variantDays } = req.body;
-            const result = await plansService.renewPlan(profileId, planCode, variantDays);
+            const { profileId, extensionDays } = req.body;
+            
+            // Obtener el perfil para determinar el plan actual
+            const ProfileModel = require('../profile/profile.model').ProfileModel;
+            const profile = await ProfileModel.findById(profileId);
+            
+            if (!profile || !profile.planAssignment) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Plan no encontrado o inactivo',
+                    error: 'Plan no encontrado o inactivo'
+                });
+                return;
+            }
+
+            const planCode = profile.planAssignment.planCode;
+            const result = await plansService.renewPlan(profileId, planCode, extensionDays);
 
             res.status(200).json({
                 success: true,
