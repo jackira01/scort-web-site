@@ -8,8 +8,8 @@ export const steps: Step[] = [
     title: 'Detalles',
     description: 'Características físicas y contacto',
   },
-  { id: 4, title: 'Multimedia', description: 'Fotos, videos y audios' },
-  { id: 5, title: 'Finalizar', description: 'Selección de plan y publicación' },
+  { id: 4, title: 'Plan', description: 'Selección de plan y publicación' },
+  { id: 5, title: 'Multimedia', description: 'Fotos, videos y audios' },
 ];
 
 export const services = [

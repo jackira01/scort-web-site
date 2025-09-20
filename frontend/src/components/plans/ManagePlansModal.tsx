@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import toast from 'react-hot-toast';
+import { useSession } from 'next-auth/react';
 import {
   purchasePlan,
   renewPlan,
@@ -26,6 +27,7 @@ import {
   type PlanRenewalRequest,
   type PlanUpgradeRequest,
 } from '@/services/plans.service';
+import { invoiceService, type CreateInvoiceData } from '@/services/invoice.service';
 import { Plan } from '@/types/plans';
 import { useAvailablePlans } from '@/hooks/use-available-plans';
 import { useProfilePlan } from '@/hooks/use-profile-plan';
@@ -155,9 +157,13 @@ export default function ManagePlansModal({
   currentPlan,
   onPlanChange,
 }: ManagePlansModalProps) {
+  const { data: session } = useSession();
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeProfilesCount, setActiveProfilesCount] = useState(0);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, number>>({});
+
+  // Verificar si el usuario es administrador
+  const isAdmin = session?.user?.role === 'admin';
 
   // Usar React Query hooks para obtener datos
   const {
@@ -322,12 +328,58 @@ export default function ManagePlansModal({
           // Intentando renovar plan
 
           const renewSelectedVariant = getSelectedVariant(planCode, currentPlanData);
-          const renewRequest: PlanRenewalRequest = {
-            profileId,
-            extensionDays: renewSelectedVariant.days,
-          };
-          result = await renewPlan(renewRequest);
-          message = `Plan ${currentPlanData.name} renovado exitosamente`;
+          
+          // Diferenciar entre admin y usuario normal
+          if (isAdmin) {
+            // Admin: renovación directa usando el endpoint del backend
+            const renewRequest: PlanRenewalRequest = {
+              profileId,
+              extensionDays: renewSelectedVariant.days,
+            };
+            result = await renewPlan(renewRequest);
+            message = `Plan ${currentPlanData.name} renovado exitosamente`;
+          } else {
+            // Usuario normal: SOLO generar factura (NO llamar al endpoint de renovación)
+            if (!session?.user?._id) {
+              throw new Error('Usuario no autenticado');
+            }
+
+            const invoiceData: CreateInvoiceData = {
+              profileId,
+              userId: session.user._id,
+              planCode: currentPlanData.code,
+              planDays: renewSelectedVariant.days,
+              notes: `Renovación de plan ${currentPlanData.name} para perfil ${profileName}`
+            };
+
+            // Crear SOLO la factura (el plan se renovará cuando se confirme el pago)
+            const invoice = await invoiceService.createInvoice(invoiceData);
+            
+            // Generar mensaje de WhatsApp para el pago
+            const whatsappData = await invoiceService.getWhatsAppData(invoice._id);
+            
+            // Mensaje específico para renovación con factura
+            message = `Factura de renovación generada. Completa el pago para renovar tu plan.`;
+            
+            // Mostrar toast con información adicional
+            toast.success('Factura creada. El plan se renovará después del pago confirmado.', {
+              duration: 4000,
+            });
+            
+            // Abrir WhatsApp inmediatamente
+            window.open(whatsappData.whatsappUrl, '_blank');
+            
+            result = { 
+              invoice, 
+              whatsappData,
+              requiresPayment: true,
+              totalAmount: renewSelectedVariant.price
+            };
+            
+            // NO mostrar el toast de éxito general para usuarios normales
+            // porque el plan no se ha renovado aún
+            return;
+          }
           break;
 
         case 'upgrade':
@@ -477,7 +529,10 @@ export default function ManagePlansModal({
                         disabled={isProcessing}
                         className="w-full sm:w-auto"
                       >
-                        Renovar Plan ({formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})
+                        {isAdmin 
+                          ? `Renovar Plan (${formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})` 
+                          : `Generar Factura (${formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})`
+                        }
                       </Button>
                     </div>
                   </div>

@@ -44,8 +44,8 @@ import { SidebarContent } from './SidebarContent';
 import { Step1EssentialInfo } from './Step1EssentialInfo';
 import { Step2Description } from './Step2Description';
 import { Step3Details } from './Step3Details';
-import { Step4Multimedia } from './Step4Multimedia';
-import { Step5Finalize } from './Step5Finalize';
+import { Step4Plan } from './Step4Plan';
+import { Step5Multimedia } from './Step5Multimedia';
 
 
 export function CreateProfileLayout() {
@@ -73,6 +73,8 @@ export function CreateProfileLayout() {
       // Step 2 - Descripción
       description: '',
       selectedServices: [],
+      basicServices: [],
+      additionalServices: [],
 
       // Step 3 - Detalles
       contact: {
@@ -144,6 +146,8 @@ export function CreateProfileLayout() {
           const step2Data = {
             description: form.getValues('description') || '',
             selectedServices: form.getValues('selectedServices') || [],
+            basicServices: form.getValues('basicServices') || [],
+            additionalServices: form.getValues('additionalServices') || [],
           };
           return step2Schema.safeParse(step2Data);
         }
@@ -176,23 +180,43 @@ export function CreateProfileLayout() {
         }
 
         case 4: {
+          // Validamos plan selection y términos en paso 4
           const step4Data = {
-            photos: form.getValues('photos') || [],
-            videos: form.getValues('videos') || [],
-            audios: form.getValues('audios') || [],
-          };
-
-          return step4Schema.safeParse(step4Data);
-        }
-
-        case 5: {
-          const step5Data = {
-            acceptTerms: form.getValues('acceptTerms') || false,
             selectedUpgrades: form.getValues('selectedUpgrades') || [],
             selectedPlan: form.getValues('selectedPlan'),
             selectedVariant: form.getValues('selectedVariant'),
+            acceptTerms: form.getValues('acceptTerms') || false,
           };
-          return step5Schema.safeParse(step5Data);
+
+          console.log('🔍 [DEBUG] Validación Paso 4 - Datos:', step4Data);
+          const result = step4Schema.safeParse(step4Data);
+          console.log('🔍 [DEBUG] Validación Paso 4 - Resultado:', result);
+
+          if (!result.success) {
+            console.log('❌ [DEBUG] Errores de validación Paso 4:', result.error.issues);
+          }
+
+          return result;
+        }
+
+        case 5: {
+          // Validamos multimedia en paso 5
+          const step5Data = {
+            photos: form.getValues('photos') || [],
+            videos: form.getValues('videos') || [],
+            audios: form.getValues('audios') || [],
+            acceptTerms: form.getValues('acceptTerms') || false,
+          };
+
+          console.log('🔍 [DEBUG] Validación Paso 5 - Datos:', step5Data);
+          const result = step5Schema.safeParse(step5Data);
+          console.log('🔍 [DEBUG] Validación Paso 5 - Resultado:', result);
+
+          if (!result.success) {
+            console.log('❌ [DEBUG] Errores de validación Paso 5:', result.error.issues);
+          }
+
+          return result;
         }
 
 
@@ -227,19 +251,27 @@ export function CreateProfileLayout() {
 
   const handleNext = async () => {
     try {
+      console.log('🚀 [DEBUG] HandleNext - Paso actual:', currentStep);
+      console.log('🚀 [DEBUG] HandleNext - Datos del formulario:', form.getValues());
+
       const result = validateStep(currentStep);
+      console.log('🚀 [DEBUG] HandleNext - Resultado validación:', result);
 
       if (!result.success) {
+        console.log('❌ [DEBUG] HandleNext - Validación falló, estableciendo errores');
         setValidationErrors(result);
         toast.error('Por favor completa todos los campos requeridos');
         return;
       }
 
       if (currentStep < 5) {
+        console.log('✅ [DEBUG] HandleNext - Avanzando al paso:', currentStep + 1);
         setCurrentStep(currentStep + 1);
+      } else {
+        console.log('✅ [DEBUG] HandleNext - Ya en el último paso');
       }
     } catch (error) {
-      // Error in handleNext
+      console.error('💥 [DEBUG] HandleNext - Error inesperado:', error);
       toast.error('Error inesperado en la validación');
     }
   };
@@ -255,7 +287,7 @@ export function CreateProfileLayout() {
   const transformDataToBackendFormat = (
     formData: FormData & {
       photos?: string[];
-      videos?: string[];
+      videos?: { link: string; preview: string }[];
       audios?: string[];
     },
   ) => {
@@ -357,6 +389,10 @@ export function CreateProfileLayout() {
       age: formData.age,
       contact: formData.contact,
       height: formData.height,
+      socialMedia: formData.socialMedia,
+      // Nuevos campos de servicios clasificados
+      basicServices: formData.basicServices || [],
+      additionalServices: formData.additionalServices || [],
       media: {
         gallery: formData.photos || [],
         videos: formData.videos || [],
@@ -385,14 +421,27 @@ export function CreateProfileLayout() {
     try {
       setUploading(true);
 
+      // Debug: Log inicial de datos del formulario
+      console.log('🔍 [DEBUG] Datos del formulario recibidos:', {
+        photos: data.photos?.length || 0,
+        videos: data.videos?.length || 0,
+        audios: data.audios?.length || 0,
+        photosData: data.photos,
+        videosData: data.videos,
+        audiosData: data.audios
+      });
+
       // Subir archivos multimedia a Cloudinary
       let photoUrls: (string | null)[] = [];
       let videoUrls: (string | null)[] = [];
       let audioUrls: (string | null)[] = [];
 
       if (data.photos && data.photos.length > 0) {
+        console.log('📸 [DEBUG] Procesando fotos:', data.photos.length);
+
         // Si hay imágenes procesadas, usarlas exclusivamente
         if (data.processedImages && data.processedImages.length > 0) {
+          console.log('🖼️ [DEBUG] Usando imágenes procesadas:', data.processedImages.length);
           toast.loading('Subiendo fotos procesadas...', { id: 'upload-photos' });
           const processedUrls = await uploadProcessedImages(
             data.processedImages as ProcessedImageResult[],
@@ -401,11 +450,14 @@ export function CreateProfileLayout() {
             }
           );
           photoUrls = [...photoUrls, ...processedUrls.filter(url => url !== null)];
+          console.log('✅ [DEBUG] Fotos procesadas subidas:', processedUrls.filter(url => url !== null).length);
           toast.dismiss('upload-photos');
           toast.success(`${processedUrls.filter(url => url !== null).length} fotos procesadas subidas exitosamente`);
         } else {
           // Si no hay imágenes procesadas, usar el flujo original
           const photoFiles = data.photos.filter((photo): photo is File => photo instanceof File);
+          console.log('📷 [DEBUG] Archivos de fotos a subir:', photoFiles.length);
+
           if (photoFiles.length > 0) {
             toast.loading('Procesando y subiendo fotos...', { id: 'upload-photos' });
             const originalUrls = await uploadMultipleImages(
@@ -416,6 +468,7 @@ export function CreateProfileLayout() {
               }
             );
             photoUrls = [...photoUrls, ...originalUrls.filter(url => url !== null)];
+            console.log('✅ [DEBUG] Fotos originales subidas:', originalUrls.filter(url => url !== null).length);
             toast.dismiss('upload-photos');
             toast.success(`${originalUrls.filter(url => url !== null).length} fotos procesadas y subidas exitosamente`);
           }
@@ -424,45 +477,87 @@ export function CreateProfileLayout() {
         // Mantener URLs existentes (strings)
         const existingPhotoUrls = data.photos.filter((photo): photo is string => typeof photo === 'string');
         photoUrls = [...photoUrls, ...existingPhotoUrls];
+        console.log('🔗 [DEBUG] URLs de fotos existentes mantenidas:', existingPhotoUrls.length);
       }
 
       if (data.videos && data.videos.length > 0) {
+        console.log('🎥 [DEBUG] Procesando videos:', data.videos.length);
+
         // Filtrar solo archivos File, no strings (URLs existentes)
         const videoFiles = data.videos.filter((video): video is File => video instanceof File);
+        console.log('📹 [DEBUG] Archivos de videos a subir:', videoFiles.length);
+
         if (videoFiles.length > 0) {
           toast.loading('Subiendo videos...');
-          videoUrls = await uploadMultipleVideos(videoFiles);
+
+          // Obtener imágenes de preview de videos si existen
+          const videoCoverImages = data.videoCoverImages || {};
+
+          const uploadedVideos = await uploadMultipleVideos(videoFiles, videoCoverImages);
+          console.log('✅ [DEBUG] Videos subidos:', uploadedVideos.length);
           toast.dismiss();
-          toast.success(`${videoUrls.length} videos subidos exitosamente`);
+          toast.success(`${uploadedVideos.length} videos subidos exitosamente`);
+
+          // Convertir a formato de objetos con link y preview
+          videoUrls = uploadedVideos;
         }
-        // Mantener URLs existentes
+
+        // Mantener URLs existentes (convertir strings a objetos si es necesario)
         const existingVideoUrls = data.videos.filter((video): video is string => typeof video === 'string');
-        videoUrls = [...videoUrls, ...existingVideoUrls];
+        const existingVideoObjects = existingVideoUrls.map(url => ({
+          link: url,
+          preview: '' // Las URLs existentes no tienen preview por ahora
+        }));
+
+        videoUrls = [...(videoUrls as { link: string; preview: string }[]), ...existingVideoObjects];
+        console.log('🔗 [DEBUG] URLs de videos existentes mantenidas:', existingVideoUrls.length);
       }
 
       if (data.audios && data.audios.length > 0) {
+        console.log('🎵 [DEBUG] Procesando audios:', data.audios.length);
+
         // Filtrar solo archivos File, no strings (URLs existentes)
         const audioFiles = data.audios.filter((audio): audio is File => audio instanceof File);
+        console.log('🎧 [DEBUG] Archivos de audios a subir:', audioFiles.length);
+
         if (audioFiles.length > 0) {
           toast.loading('Subiendo audios...');
           audioUrls = await uploadMultipleAudios(audioFiles);
+          console.log('✅ [DEBUG] Audios subidos:', audioUrls.length);
           toast.dismiss();
           toast.success(`${audioUrls.length} audios subidos exitosamente`);
         }
         // Mantener URLs existentes
         const existingAudioUrls = data.audios.filter((audio): audio is string => typeof audio === 'string');
         audioUrls = [...audioUrls, ...existingAudioUrls];
+        console.log('🔗 [DEBUG] URLs de audios existentes mantenidas:', existingAudioUrls.length);
       }
 
       // Crear datos con URLs de Cloudinary (filtrar valores null)
       const dataWithUrls = {
         ...data,
         photos: photoUrls.filter((url): url is string => url !== null),
-        videos: videoUrls.filter((url): url is string => url !== null),
+        videos: videoUrls, // Ya son objetos con link y preview
         audios: audioUrls.filter((url): url is string => url !== null),
       };
 
+      console.log('🔄 [DEBUG] Datos con URLs procesadas:', {
+        photos: dataWithUrls.photos.length,
+        videos: dataWithUrls.videos.length,
+        audios: dataWithUrls.audios.length,
+        photosUrls: dataWithUrls.photos,
+        videosUrls: dataWithUrls.videos,
+        audiosUrls: dataWithUrls.audios
+      });
+
       const backendData = transformDataToBackendFormat(dataWithUrls);
+
+      console.log('🚀 [DEBUG] Datos transformados para backend:', {
+        mediaGallery: backendData.media?.gallery?.length || 0,
+        mediaVideos: backendData.media?.videos?.length || 0,
+        mediaAudios: backendData.media?.audios?.length || 0,
+        fullMediaObject: backendData.media
+      });
 
       // Preparar purchasedPlan si se seleccionó un plan de pago
       const purchasedPlan = data.selectedPlan && data.selectedVariant ? {
@@ -470,12 +565,15 @@ export function CreateProfileLayout() {
         variantDays: data.selectedVariant.days
       } : null;
 
-
+      console.log('💳 [DEBUG] Plan de compra:', purchasedPlan);
 
       // Crear el perfil usando el servicio
       const loadingToast = toast.loading('Creando perfil...');
       try {
+        console.log('📤 [DEBUG] Enviando datos al servicio createProfile...');
         const response = await createProfile(backendData, purchasedPlan);
+        console.log('📥 [DEBUG] Respuesta del servicio createProfile:', response);
+
         toast.dismiss(loadingToast);
 
         // Invalidar la query de userProfiles para refrescar los datos
@@ -570,9 +668,9 @@ export function CreateProfileLayout() {
           />
         );
       case 4:
-        return <Step4Multimedia />;
+        return <Step4Plan />; // Plan selection es paso 4
       case 5:
-        return <Step5Finalize />;
+        return <Step5Multimedia />; // Multimedia es paso 5
 
       default:
         return null;

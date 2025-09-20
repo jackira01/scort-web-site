@@ -47,13 +47,14 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
         setIsLoading(true);
         setError(null);
 
-        // Obtener perfiles destacados
+        // Obtener perfiles destacados con showInSponsored: true
         const response = await getProfilesForCards({
           limit: 10,
           page: 1,
           sortBy: 'createdAt',
           sortOrder: 'desc',
-          featured: true // Filtrar solo perfiles destacados
+          featured: true, // Filtrar solo perfiles destacados
+          showInSponsored: true // Filtrar solo perfiles con planes que tengan showInSponsored: true
         });
 
         setFeaturedProfiles(response.profiles);
@@ -84,12 +85,12 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
   if (isLoading) {
     return (
       <div className={`border border-gray-200 rounded-lg p-6 ${className}`}>
-        <div className="flex items-center justify-between mb-4">
+        {/* <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <Star className="h-5 w-5 text-yellow-500" />
             PERFILES DESTACADOS
           </h2>
-        </div>
+        </div> */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {Array.from({ length: visibleCount }).map((_, index) => (
             <div key={index} className="animate-pulse">
@@ -111,10 +112,10 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
     <div className={`border border-gray-200 rounded-lg p-6 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+        {/* <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
           <Star className="h-5 w-5 text-yellow-500" />
           PERFILES DESTACADOS
-        </h2>
+        </h2> */}
 
         {/* Navigation buttons */}
         {featuredProfiles.length > visibleCount && (

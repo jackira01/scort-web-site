@@ -73,3 +73,23 @@ export const getProfileImage = (profile: Profile): string => {
 export const hasProfileVideo = (profile: Profile): boolean => {
   return (profile.media?.videos?.length || 0) > 0;
 };
+
+/**
+ * Verifica si un perfil tiene el upgrade DESTACADO activo
+ * basándose en los upgrades incluidos en su plan asignado
+ */
+export const hasDestacadoUpgrade = (profile: Profile): boolean => {
+  // Verificar si el perfil tiene un plan asignado
+  if (!profile.planAssignment?.plan) {
+    return false;
+  }
+
+  // Verificar si el plan tiene upgrades incluidos
+  const includedUpgrades = profile.planAssignment.plan.includedUpgrades;
+  if (!includedUpgrades || !Array.isArray(includedUpgrades)) {
+    return false;
+  }
+
+  // Verificar si 'DESTACADO' está en los upgrades incluidos
+  return includedUpgrades.includes('DESTACADO');
+};

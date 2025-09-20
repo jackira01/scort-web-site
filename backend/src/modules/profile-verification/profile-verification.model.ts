@@ -20,31 +20,20 @@ const ProfileVerificationSchema = new Schema<IProfileVerification>({
     },
     steps: {
         documentPhotos: {
-            documents: { type: [String], default: [] }, // required
+            frontPhoto: { type: String, default: undefined }, // Paso 1: Foto frontal del documento
+            backPhoto: { type: String, default: undefined }, // Paso 2: Foto reverso del documento
+            selfieWithDocument: { type: String, default: undefined }, // Paso 3: Selfie con documento
             isVerified: { type: Boolean, default: false },
         },
-        selfieWithPoster: {
-            photo: { type: String, default: undefined }, // required
+        videoVerification: {
+            videoLink: { type: String, default: undefined }, // Paso 4: Video de verificación (opcional)
             isVerified: { type: Boolean, default: false },
-        }, // required
-        selfieWithDoc: {
-            photo: { type: String, default: undefined }, // required
-            isVerified: { type: Boolean, default: false },
-        }, // required
-        fullBodyPhotos: {
-            photos: { type: [String], default: [] }, // required
-            isVerified: { type: Boolean, default: false },
-        }, // required. at least 2 full body images. at least 2 face images. Face images verification. Full body images verification.
-        video: {
-            videoLink: { type: String, default: undefined }, // required
-            isVerified: { type: Boolean, default: false },
-        }, // required. Video verification.
+        }, // Video verification.
         videoCallRequested: {
             videoLink: { type: String, default: undefined }, // required
             isVerified: { type: Boolean, default: false },
         }, // Meet with profile
         socialMedia: {
-            accounts: { type: [String], default: [] }, // required. At least 1 social media account.
             isVerified: { type: Boolean, default: false },
         },
         phoneChangeDetected: {

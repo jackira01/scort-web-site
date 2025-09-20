@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
 import { useFilterOptions } from '@/hooks/use-filter-options';
+import { getCitiesByDepartment } from '@/utils/colombiaData';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -31,6 +32,8 @@ const FilterBar = () => {
   // Obtener opciones de filtros de la API
   const { data: filterOptions, loading: optionsLoading, error: optionsError } = useFilterOptions();
   
+  // Obtener ciudades filtradas por departamento seleccionado
+  const availableCities = departamento ? getCitiesByDepartment(departamento) : [];
 
 
   const handleSearch = () => {
@@ -114,9 +117,9 @@ const FilterBar = () => {
                 <SelectValue placeholder="Seleccionar ciudad" />
               </SelectTrigger>
               <SelectContent>
-                 {filterOptions?.locations?.cities?.map((city) => (
-                   <SelectItem key={typeof city === 'string' ? city : city.value} value={typeof city === 'string' ? city : city.value}>
-                     {typeof city === 'string' ? city : city.label}
+                 {availableCities.map((city) => (
+                   <SelectItem key={city.value} value={city.value}>
+                     {city.label}
                    </SelectItem>
                  ))}
                </SelectContent>

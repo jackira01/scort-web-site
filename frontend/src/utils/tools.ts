@@ -250,27 +250,64 @@ export const uploadMixedImages = async (
 
 export const uploadMultipleVideos = async (
   filesArray: File[],
-): Promise<(string | null)[]> => {
-  const uploadedUrls: (string | null)[] = [];
-  for (const file of filesArray) {
+  videoCoverImages?: { [key: number]: File | string }
+): Promise<{ link: string; preview: string }[]> => {
+  const uploadedVideos: { link: string; preview: string }[] = [];
+  
+  for (let i = 0; i < filesArray.length; i++) {
+    const file = filesArray[i];
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', upload_preset);
-      formData.append('resource_type', 'video');
+      // Subir el video
+      const videoFormData = new FormData();
+      videoFormData.append('file', file);
+      videoFormData.append('upload_preset', upload_preset);
+      videoFormData.append('resource_type', 'video');
 
-      const response = await axios.post(
+      const videoResponse = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`,
-        formData,
+        videoFormData,
       );
-      uploadedUrls.push(response.data.secure_url);
+
+      let previewUrl = '';
+      
+      // Si hay imagen de preview personalizada, subirla
+      if (videoCoverImages && videoCoverImages[i]) {
+        const coverImage = videoCoverImages[i];
+        
+        if (coverImage instanceof File) {
+          // Subir imagen de preview personalizada
+          const previewFormData = new FormData();
+          previewFormData.append('file', coverImage);
+          previewFormData.append('upload_preset', upload_preset);
+          previewFormData.append('resource_type', 'image');
+
+          const previewResponse = await axios.post(
+            `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
+            previewFormData,
+          );
+          previewUrl = previewResponse.data.secure_url;
+        } else if (typeof coverImage === 'string') {
+          // Ya es una URL de imagen
+          previewUrl = coverImage;
+        }
+      } else {
+        // Generar preview automático desde el video usando Cloudinary
+        const videoUrl = videoResponse.data.secure_url;
+        const publicId = videoResponse.data.public_id;
+        previewUrl = `https://res.cloudinary.com/${cloud_name}/video/upload/so_1.0,w_400,h_300,c_fill/${publicId}.jpg`;
+      }
+
+      uploadedVideos.push({
+        link: videoResponse.data.secure_url,
+        preview: previewUrl
+      });
     } catch (error) {
-      // Error al subir video
-      uploadedUrls.push(null);
+      console.error('Error al subir video:', error);
+      // En caso de error, no agregamos el video a la lista
     }
   }
 
-  return uploadedUrls;
+  return uploadedVideos;
 };
 
 export const uploadMultipleAudios = async (

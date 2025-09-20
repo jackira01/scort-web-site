@@ -6,9 +6,9 @@ interface UseVerificationChangesReturn {
   pendingChanges: Record<string, boolean>;
   pendingVideoLinks: Record<string, string>;
   handleToggleVerification: (stepKey: keyof ProfileVerificationData['steps'], isVerified: boolean) => void;
-  handleVideoLinkChange: (stepKey: 'video', videoLink: string) => void;
+  handleVideoLinkChange: (stepKey: 'videoVerification', videoLink: string) => void;
   getCurrentVerificationStatus: (stepKey: keyof ProfileVerificationData['steps'], verificationData?: ProfileVerificationData) => boolean;
-  getCurrentVideoLink: (stepKey: 'video', verificationData?: ProfileVerificationData) => string;
+  getCurrentVideoLink: (stepKey: 'videoVerification', verificationData?: ProfileVerificationData) => string;
   resetChanges: () => void;
   buildUpdatedSteps: (verificationData: ProfileVerificationData) => ProfileVerificationData['steps'];
 }
@@ -31,7 +31,7 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
   };
 
   const handleVideoLinkChange = (
-    stepKey: 'video',
+    stepKey: 'videoVerification',
     videoLink: string,
   ) => {
     setPendingVideoLinks(prev => ({
@@ -53,7 +53,7 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
   };
 
   const getCurrentVideoLink = (
-    stepKey: 'video',
+    stepKey: 'videoVerification',
     verificationData?: ProfileVerificationData
   ) => {
     if (stepKey in pendingVideoLinks) {
@@ -72,15 +72,16 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
     const currentSteps = verificationData.steps;
     const updatedSteps: ProfileVerificationData['steps'] = {
       documentPhotos: {
-        documents: currentSteps.documentPhotos?.documents || [],
+        frontPhoto: currentSteps.documentPhotos?.frontPhoto || '',
+        backPhoto: currentSteps.documentPhotos?.backPhoto || '',
+        selfieWithDocument: currentSteps.documentPhotos?.selfieWithDocument || '',
         isVerified: currentSteps.documentPhotos?.isVerified || false
       },
-      video: {
-        videoLink: currentSteps.video?.videoLink,
-        isVerified: currentSteps.video?.isVerified || false
+      videoVerification: {
+        videoLink: currentSteps.videoVerification?.videoLink,
+        isVerified: currentSteps.videoVerification?.isVerified || false
       },
       socialMedia: {
-        accounts: currentSteps.socialMedia?.accounts || [],
         isVerified: currentSteps.socialMedia?.isVerified || false
       }
     };
@@ -89,8 +90,8 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
     Object.entries(pendingChanges).forEach(([stepKey, isVerified]) => {
       if (stepKey === 'documentPhotos') {
         updatedSteps.documentPhotos.isVerified = isVerified;
-      } else if (stepKey === 'video') {
-        updatedSteps.video.isVerified = isVerified;
+      } else if (stepKey === 'videoVerification') {
+        updatedSteps.videoVerification.isVerified = isVerified;
       } else if (stepKey === 'socialMedia') {
         updatedSteps.socialMedia.isVerified = isVerified;
       }
@@ -98,8 +99,8 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
 
     // Aplicar los cambios pendientes de videoLink
     Object.entries(pendingVideoLinks).forEach(([stepKey, videoLink]) => {
-      if (stepKey === 'video') {
-        updatedSteps.video.videoLink = videoLink;
+      if (stepKey === 'videoVerification') {
+        updatedSteps.videoVerification.videoLink = videoLink;
       }
     });
 

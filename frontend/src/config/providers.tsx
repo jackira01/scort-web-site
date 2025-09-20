@@ -6,6 +6,7 @@ import { SessionProvider } from 'next-auth/react';
 import { type PropsWithChildren, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from '@/components/theme-provider';
+import AuthRedirectHandler from '@/components/authentication/AuthRedirectHandler';
 
 const enviroment = process.env.NODE_ENV;
 
@@ -60,7 +61,12 @@ export function Providers({ children }: PropsWithChildren) {
         enableSystem
         disableTransitionOnChange
       >
-        <SessionProvider>
+        <SessionProvider
+          refetchInterval={0}
+          refetchOnWindowFocus={false}
+          refetchWhenOffline={false}
+        >
+          <AuthRedirectHandler />
           <Toaster position="top-right" />
           {children}
         </SessionProvider>

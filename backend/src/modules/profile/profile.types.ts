@@ -52,6 +52,16 @@ export interface IProfile extends Document {
         changedAt: Date;
     };
     height: string;
+    // Nuevos campos para clasificación de servicios
+    basicServices?: string[];
+    additionalServices?: string[];
+    socialMedia?: {
+        instagram?: string;
+        facebook?: string;
+        tiktok?: string;
+        twitter?: string;
+        onlyFans?: string;
+    };
     media: {
         gallery: string[];
         videos: string[];
@@ -91,6 +101,9 @@ export interface CreateProfileDTO {
     user: Types.ObjectId | string;
     name: string;
     description?: string;
+    // Nuevos campos para clasificación de servicios
+    basicServices?: string[];
+    additionalServices?: string[];
     location: {
         country: {
             value: string;
@@ -116,6 +129,13 @@ export interface CreateProfileDTO {
         telegram?: string;
     };
     height: string;
+    socialMedia?: {
+        instagram?: string;
+        facebook?: string;
+        tiktok?: string;
+        twitter?: string;
+        onlyFans?: string;
+    };
     media?: {
         gallery?: string[];
         videos?: string[];
@@ -176,6 +196,13 @@ export interface IProfileInput {
         telegram?: string;
     };
     height: string;
+    socialMedia?: {
+        instagram?: string;
+        facebook?: string;
+        tiktok?: string;
+        twitter?: string;
+        onlyFans?: string;
+    };
     media?: {
         gallery?: string[];
         videos?: string[];
@@ -204,33 +231,22 @@ export interface IProfileVerification extends Document {
     requiresIndependentVerification: boolean;
     steps: {
         documentPhotos: {
-            documents: string[]
+            frontPhoto: string;
+            backPhoto: string;
+            selfieWithDocument: string;
             isVerified: boolean;
         }; // required
-        selfieWithPoster: {
-            photo: string;
-            isVerified: boolean;
-        }; // required
-        selfieWithDoc: {
-            photo: string;
-            isVerified: boolean;
-        }; // required
-        fullBodyPhotos: {
-            photos: string[];
-            isVerified: boolean;
-        }; // required. at least 2 full body images.at least 2 face images. Face images verification. Full body images verification.
-        video: {
+        videoVerification: {
             videoLink: string;
             isVerified: boolean;
-        }; // required. Video verification.
+        }; // Video verification.
         videoCallRequested: {
             videoLink: string;
             isVerified: boolean;
         }; // Meet with profile
         socialMedia: {
-            accounts: string[];
             isVerified: boolean;
-        }; // required. At least 1 social media account.
+        }; // Social media verification status only
         phoneChangeDetected: boolean;
         lastLogin: {
             isVerified: boolean;

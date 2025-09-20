@@ -14,20 +14,21 @@ export const calculateVerificationProgress = (
   const totalSteps = 3; // Siempre 3 pasos en la versión simplificada
 
   // 1. Fotos de documentos - Solo cuenta si está verificado
-  if (verification.steps?.documentPhotos?.documents?.length > 0 &&
+  if ((verification.steps?.documentPhotos?.frontPhoto || 
+       verification.steps?.documentPhotos?.backPhoto || 
+       verification.steps?.documentPhotos?.selfieWithDocument) &&
     verification.steps?.documentPhotos?.isVerified === true) {
     completedSteps++;
   }
 
   // 2. Video de verificación - Solo cuenta si está verificado
-  if (verification.steps?.video?.videoLink &&
-    verification.steps?.video?.isVerified === true) {
+  if (verification.steps?.videoVerification?.videoLink &&
+    verification.steps?.videoVerification?.isVerified === true) {
     completedSteps++;
   }
 
   // 3. Redes sociales - Solo cuenta si está verificado
-  if (verification.steps?.socialMedia?.accounts?.length > 0 &&
-    verification.steps?.socialMedia?.isVerified === true) {
+  if (verification.steps?.socialMedia?.isVerified === true) {
     completedSteps++;
   }
 

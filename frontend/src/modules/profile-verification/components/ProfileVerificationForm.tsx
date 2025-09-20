@@ -130,27 +130,31 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
                 <span className="font-medium">Fotos de Documentos</span>
               </div>
               <span className="text-sm text-gray-500">
-                {verification.steps.documentPhotos.documents.length} archivo(s)
+                {[
+                  verification.steps.documentPhotos.frontPhoto,
+                  verification.steps.documentPhotos.backPhoto,
+                  verification.steps.documentPhotos.selfieWithDocument
+                ].filter(Boolean).length} archivo(s)
               </span>
             </div>
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
-                {getStatusIcon(verification.steps.video.isVerified)}
+                {getStatusIcon(verification.steps.videoVerification.isVerified)}
                 <span className="font-medium">Video de Verificación</span>
               </div>
               <span className="text-sm text-gray-500">
-                {verification.steps.video.videoLink ? 'Completado' : 'Pendiente'}
+                {verification.steps.videoVerification.videoLink ? 'Completado' : 'Pendiente'}
               </span>
             </div>
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
                 {getStatusIcon(verification.steps.socialMedia.isVerified)}
-                <span className="font-medium">Redes Sociales</span>
+                <span className="font-medium">Verificación Social</span>
               </div>
               <span className="text-sm text-gray-500">
-                {verification.steps.socialMedia.accounts.length} cuenta(s)
+                {verification.steps.socialMedia.isVerified ? 'Verificado' : 'Pendiente'}
               </span>
             </div>
           </div>

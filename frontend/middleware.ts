@@ -49,6 +49,16 @@ const AUTH_REQUIRED_ROUTES = [
   '/adminboard',
 ];
 
+// Rutas que requieren que el usuario tenga contraseña configurada
+const PASSWORD_REQUIRED_ROUTES = [
+  '/cuenta/crear-perfil',
+  '/cuenta/configuracion',
+  '/cuenta/facturacion',
+  '/cuenta/suscripcion',
+  '/perfil',
+  '/adminboard',
+];
+
 // Rutas que deben ser accesibles sin contraseña configurada
 const ALLOWED_WITHOUT_PASSWORD = [
   '/autenticacion/post-register',
@@ -93,9 +103,56 @@ export async function middleware(request: NextRequest) {
   
   if (requiresAuth) {
     if (!token) {
-      // Redirigir al home en lugar de login para rutas protegidas sin sesión
+      // Redirigir a la ruta raíz para rutas protegidas sin sesión
       const homeUrl = new URL('/', request.url);
       return NextResponse.redirect(homeUrl);
+    }
+  }
+
+  // ===== PROTECCIÓN ESPECÍFICA PARA POST-REGISTER =====
+  if (pathname === '/autenticacion/post-register') {
+    console.log('🔍 Middleware - Verificando acceso a post-register:', {
+      timestamp: new Date().toISOString(),
+      hasToken: !!token,
+      tokenHasPassword: token?.hasPassword,
+      tokenHasPasswordType: typeof token?.hasPassword
+    });
+
+    if (!token) {
+      // Usuario no autenticado, redirigir al login
+      console.log('🚫 Middleware - Usuario no autenticado intentando acceder a post-register, redirigiendo a login');
+      const loginUrl = new URL('/autenticacion/ingresar', request.url);
+      return NextResponse.redirect(loginUrl);
+    }
+    
+    if (token.hasPassword === true) {
+      // Usuario ya tiene contraseña, redirigir al home
+      console.log('🔒 Middleware - Usuario con contraseña intentando acceder a post-register:', {
+        timestamp: new Date().toISOString(),
+        hasPassword: token.hasPassword,
+        type: typeof token.hasPassword,
+        userId: token.id,
+        email: token.email
+      });
+      console.log('🚀 Middleware - Redirigiendo a home desde post-register');
+      const homeUrl = new URL('/', request.url);
+      return NextResponse.redirect(homeUrl);
+    }
+    
+    console.log('✅ Middleware - Usuario sin contraseña puede acceder a post-register:', {
+      timestamp: new Date().toISOString(),
+      hasPassword: token.hasPassword,
+      type: typeof token.hasPassword,
+      userId: token.id
+    });
+  }
+
+  // Verificar si el usuario está en una ruta que requiere password
+  if (PASSWORD_REQUIRED_ROUTES.some(route => pathname.startsWith(route))) {
+    if (!token?.hasPassword) {
+      // Redirigir a post-register si no tiene password
+      const postRegisterUrl = new URL('/auth/post-register', request.url);
+      return NextResponse.redirect(postRegisterUrl);
     }
   }
 
@@ -168,11 +225,15 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public folder files
-     * - .js.map files (source maps)
-     * - other static assets
-     * - specific app routes that have their own pages (but NOT cuenta - we need auth there)
+     * - robots.txt, sitemap.xml (SEO files)
+     * - images (static images)
+     * - placeholder files
+     * - autenticacion (auth pages)
+     * - perfil, adminboard (protected pages)
+     * - buscar, faq, precios, etc. (static pages)
+     * - file extensions (.js, .css, .map, etc.)
+     * - installHook
      */
-    '/((?!api|_next/static|_next/image|favicon\.ico|robots\.txt|sitemap\.xml|images|placeholder|autenticacion|perfil|adminboard|buscar|faq|precios|terminos|terms|blog|plans|.*\.js\.map$|.*\.css\.map$|.*\.js$|.*\.css$|.*\.ico$|.*\.png$|.*\.jpg$|.*\.jpeg$|.*\.svg$|.*\.gif$|.*\.webp$|installHook).*)',
+    '/((?!api/auth|_next/static|_next/image|favicon\.ico|robots\.txt|sitemap\.xml|images|placeholder|autenticacion|perfil|adminboard|buscar|faq|precios|terminos|terms|blog|plans|.*\.js\.map$|.*\.css\.map$|.*\.js$|.*\.css$|.*\.ico$|.*\.png$|.*\.jpg$|.*\.jpeg$|.*\.svg$|.*\.gif$|.*\.webp$|installHook).*)',
   ],
 };

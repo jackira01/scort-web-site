@@ -168,20 +168,28 @@ export default function SignInLayout() {
           setInfo('Para usar email/contraseña, primero debes crear una contraseña para tu cuenta.');
           setShowCreatePassword(true);
         } else {
-          switch (result.error) {
-            case 'CredentialsSignin':
-              setAuthError('Email o contraseña incorrectos');
-              break;
-            case 'AccessDenied':
-              setAuthError('Acceso denegado. Verifica tu cuenta.');
-              break;
-            case 'CallbackRouteError':
-              setAuthError('Error en el servidor. Intenta nuevamente.');
-              break;
-            default:
-              // Log del error específico para debugging
-              console.error('Error específico de NextAuth:', result.error);
-              setAuthError('Error de autenticación. Intenta nuevamente.');
+          // Manejar mensajes específicos del backend
+          if (result.error.includes('Credenciales inválidas')) {
+            setAuthError('Email o contraseña incorrectos. Verifica tus datos e intenta nuevamente.');
+          } else if (result.error.includes('no tiene contraseña configurada')) {
+            setInfo('Esta cuenta fue creada con Google. Puedes crear una contraseña o usar Google para iniciar sesión.');
+            setShowCreatePassword(true);
+          } else {
+            switch (result.error) {
+              case 'CredentialsSignin':
+                setAuthError('Email o contraseña incorrectos. Verifica tus datos e intenta nuevamente.');
+                break;
+              case 'AccessDenied':
+                setAuthError('Acceso denegado. Verifica tu cuenta o contacta al administrador.');
+                break;
+              case 'CallbackRouteError':
+                setAuthError('Error en el servidor. Por favor, intenta nuevamente en unos momentos.');
+                break;
+              default:
+                // Log del error específico para debugging
+                console.error('Error específico de NextAuth:', result.error);
+                setAuthError('Error de autenticación. Por favor, verifica tus credenciales e intenta nuevamente.');
+            }
           }
         }
         return;
@@ -219,7 +227,7 @@ export default function SignInLayout() {
     
     setIsLoading(true);
     try {
-      await signIn('google', { callbackUrl: '/cuenta' });
+      await signIn('google', { callbackUrl: '/' });
     } catch (error) {
       console.error('Error con Google Sign-In:', error);
       setAuthError('Error al conectar con Google. Intenta nuevamente.');

@@ -22,7 +22,7 @@ export default function Login() {
 export function SignOut() {
   return (
     <Button
-      onClick={() => signOut()}
+      onClick={() => signOut({ callbackUrl: "/" })}
       variant="ghost"
       className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
     >

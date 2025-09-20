@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { Gem, Star, Zap, Crown, Shield } from 'lucide-react';
 import AgencyConversionCard from './AgencyConversionCard';
 import { useUser } from '@/hooks/use-user';
+import ChangePasswordCard from './ChangePasswordCard';
 
 // Tipo para el plan actual
 interface CurrentPlan {
@@ -79,6 +80,9 @@ const AccountSettings = () => {
 
         {/* Componente de conversión a agencia */}
         {user && <AgencyConversionCard user={user} />}
+
+        {/* Componente de cambiar contraseña */}
+        <ChangePasswordCard />
 
         {/* Secciones comentadas según requerimientos */}
         {/* 

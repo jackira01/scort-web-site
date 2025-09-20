@@ -14,9 +14,8 @@ export default function ConditionalHeader() {
   
   // Rutas donde NO se debe mostrar el header
   const hideHeaderRoutes = [
-    '/autenticacion/post-register',
-    '/autenticacion/crear-contrasena',
-    '/autenticacion/verificar-email'
+    '/autenticacion/verificar-email',
+    '/autenticacion/post-register'
   ];
   
   // Asegurar que solo se renderice en el cliente para evitar problemas de hidratación

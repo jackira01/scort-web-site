@@ -73,7 +73,7 @@ export function Step3Details({
             {/* Número de contacto */}
             <div>
               <Label htmlFor="phone" className="text-foreground">
-                Número de contacto <span className="text-red-500">*</span>
+                Número de contacto
               </Label>
               <div className="flex mt-2">
                 <div className="flex items-center px-3 bg-muted border border-r-0 rounded-l-md">
@@ -348,6 +348,139 @@ export function Step3Details({
                   {errors.height.message}
                 </p>
               )}
+            </div>
+          </div>
+
+          {/* Social Media Section */}
+          <div className="mt-6">
+            <Label className="text-foreground text-lg font-semibold mb-4 block">
+              Redes Sociales (opcional)
+            </Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Instagram */}
+              <div>
+                <Label htmlFor="instagram" className="text-foreground">
+                  Instagram
+                </Label>
+                <div className="flex mt-2">
+                  <div className="flex items-center px-3 bg-muted border border-r-0 rounded-l-md">
+                    <span className="text-sm">📷</span>
+                  </div>
+                  <Controller
+                    name="socialMedia.instagram"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="instagram"
+                        placeholder="@tu_usuario"
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        className="rounded-l-none"
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Facebook */}
+              <div>
+                <Label htmlFor="facebook" className="text-foreground">
+                  Facebook
+                </Label>
+                <div className="flex mt-2">
+                  <div className="flex items-center px-3 bg-muted border border-r-0 rounded-l-md">
+                    <span className="text-sm">📘</span>
+                  </div>
+                  <Controller
+                    name="socialMedia.facebook"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="facebook"
+                        placeholder="tu.perfil"
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        className="rounded-l-none"
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* TikTok */}
+              <div>
+                <Label htmlFor="tiktok" className="text-foreground">
+                  TikTok
+                </Label>
+                <div className="flex mt-2">
+                  <div className="flex items-center px-3 bg-muted border border-r-0 rounded-l-md">
+                    <span className="text-sm">🎵</span>
+                  </div>
+                  <Controller
+                    name="socialMedia.tiktok"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="tiktok"
+                        placeholder="@tu_usuario"
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        className="rounded-l-none"
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Twitter */}
+              <div>
+                <Label htmlFor="twitter" className="text-foreground">
+                  Twitter/X
+                </Label>
+                <div className="flex mt-2">
+                  <div className="flex items-center px-3 bg-muted border border-r-0 rounded-l-md">
+                    <span className="text-sm">🐦</span>
+                  </div>
+                  <Controller
+                    name="socialMedia.twitter"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="twitter"
+                        placeholder="@tu_usuario"
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        className="rounded-l-none"
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* OnlyFans */}
+              <div className="md:col-span-2">
+                <Label htmlFor="onlyFans" className="text-foreground">
+                  OnlyFans
+                </Label>
+                <div className="flex mt-2">
+                  <div className="flex items-center px-3 bg-muted border border-r-0 rounded-l-md">
+                    <span className="text-sm">🔞</span>
+                  </div>
+                  <Controller
+                    name="socialMedia.onlyFans"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="onlyFans"
+                        placeholder="tu_usuario"
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        className="rounded-l-none"
+                      />
+                    )}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

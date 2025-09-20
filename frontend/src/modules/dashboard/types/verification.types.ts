@@ -7,15 +7,16 @@ export interface ProfileVerificationData {
   verificationProgress: number;
   steps: {
     documentPhotos: {
-      documents: string[];
+      frontPhoto?: string;
+      backPhoto?: string;
+      selfieWithDocument?: string;
       isVerified: boolean;
     };
-    video: {
+    videoVerification: {
       videoLink?: string;
       isVerified: boolean;
     };
     socialMedia: {
-      accounts: string[];
       isVerified: boolean;
     };
   };
@@ -39,6 +40,6 @@ export interface VerificationStepRenderProps {
   step: VerificationStep;
   stepData: any;
   onPreviewImage: (image: string) => void;
-  getCurrentVideoLink: (stepKey: 'video') => string;
-  handleVideoLinkChange: (stepKey: 'video', videoLink: string) => void;
+  getCurrentVideoLink: (stepKey: 'videoVerification') => string;
+  handleVideoLinkChange: (stepKey: 'videoVerification', videoLink: string) => void;
 }

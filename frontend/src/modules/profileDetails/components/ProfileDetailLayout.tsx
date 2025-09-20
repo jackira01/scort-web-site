@@ -5,6 +5,7 @@ import { useProfile } from '@/hooks/use-profile';
 import { ProfileGallery } from '@/modules/profileDetails/components/GaleryProfile';
 import { Shield, CheckCircle } from 'lucide-react';
 import { useProfileVerification } from '@/hooks/use-profile-verification';
+import { useSession } from 'next-auth/react';
 
 // Mock data for the profile
 import AudioPlayer from './AudioPlayer';
@@ -18,6 +19,7 @@ import { VerificationStatus } from './VerificationStatus';
 import VideoPlayer from './VideoPlayer';
 
 export default function ProfileDetailLayout({ id }: { id: string }) {
+  const { data: session } = useSession();
   const { data: profile, isLoading, error } = useProfile(id);
 
   // Obtener datos de verificación por separado
@@ -46,6 +48,27 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
     );
   }
 
+  // Control de acceso basado en visibilidad y ownership
+  const isAdmin = session?.user?.role === 'admin';
+  const isOwner = session?.user?.id === profile.user?._id;
+  const isVisible = profile.visible;
+
+  // Si el perfil no es visible y el usuario no es admin ni propietario, denegar acceso
+  if (!isVisible && !isAdmin && !isOwner) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Perfil no disponible
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            Este perfil no está disponible públicamente.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Adaptar los datos del perfil de la API al formato esperado por los componentes
   const adaptedProfileData = {
     id: profile._id,
@@ -58,7 +81,9 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
     description: profile.description,
     images: profile.media?.gallery || ['/placeholder.svg?height=400&width=600'],
     videos: profile.media?.videos || [],
-    services: profile.services || [],
+    services: profile.services || [], // Mantenemos para compatibilidad hacia atrás
+    basicServices: profile.basicServices || [], // Nuevos campos de clasificación
+    additionalServices: profile.additionalServices || [], // Nuevos campos de clasificación
     physicalTraits: {
       edad: profile.age?.toString() || '',
       ...Object.fromEntries(
@@ -87,9 +112,10 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
     },
     socialMedia: {
       instagram: profile.socialMedia?.instagram || null,
-      onlyfans: profile.socialMedia?.onlyfans || null,
+      onlyfans: profile.socialMedia?.onlyFans || null,
       twitter: profile.socialMedia?.twitter || null,
       facebook: profile.socialMedia?.facebook || null,
+      tiktok: profile.socialMedia?.tiktok || null,
     },
     videoUrl: '/placeholder-video.mp4',
   };
@@ -114,6 +140,8 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
             <DescriptionProfile
               description={adaptedProfileData.description}
               services={adaptedProfileData.services}
+              basicServices={adaptedProfileData.basicServices}
+              additionalServices={adaptedProfileData.additionalServices}
             />
             {/* Rates - Moved from right side */}
             <RatesProfile rates={adaptedProfileData.rates} />

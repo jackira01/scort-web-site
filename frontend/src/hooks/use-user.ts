@@ -18,9 +18,9 @@ export const useUser = () => {
       return getUserById(userId);
     },
     enabled: !!userId && userId !== 'undefined',
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 

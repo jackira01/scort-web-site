@@ -68,24 +68,24 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
   // Definir los pasos de verificación con sus etiquetas
   const verificationSteps: VerificationStep[] = [
     {
-      label: "Documentación de edad validada",
+      label: "Mayoria de edad",
       isVerified: steps?.documentPhotos?.isVerified || false,
-      hasData: (steps?.documentPhotos?.documents?.length || 0) > 0
+      hasData: !!(steps?.documentPhotos?.frontPhoto || steps?.documentPhotos?.backPhoto || steps?.documentPhotos?.selfieWithDocument)
     },
     {
-      label: "Autenticidad de identidad confirmada",
+      label: "Identidad confirmada",
       isVerified: steps?.selfieWithDoc?.isVerified || false,
       hasData: !!steps?.selfieWithDoc?.photo
     },
     {
-      label: "Validación por videollamada completada",
+      label: "Verificación por videollamada",
       isVerified: steps?.video?.isVerified || false,
       hasData: !!steps?.video?.videoLink
     },
     {
       label: "Verificación por redes sociales",
       isVerified: steps?.socialMedia?.isVerified || false,
-      hasData: !!steps?.socialMedia?.accounts && steps.socialMedia.accounts.length > 0
+      hasData: true // Always show as having data since we only track verification status
     },
     {
       label: "Miembro establecido con antigüedad",
@@ -110,9 +110,6 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
   }
 
   const getStatusIcon = (step: VerificationStep) => {
-    if (!step.hasData) {
-      return <Clock className="h-4 w-4 text-gray-400" />;
-    }
     if (step.isVerified) {
       return <CheckCircle className="h-4 w-4 text-green-500" />;
     }
@@ -120,13 +117,6 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
   };
 
   const getStatusBadge = (step: VerificationStep) => {
-    if (!step.hasData) {
-      return (
-        <Badge variant="secondary" className="text-xs">
-          Pendiente
-        </Badge>
-      );
-    }
     if (step.isVerified) {
       return (
         <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
@@ -135,7 +125,7 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
       );
     }
     return (
-      <Badge variant="destructive" className="text-xs">
+      <Badge variant="outline" className="text-xs">
         No verificado
       </Badge>
     );
@@ -161,31 +151,25 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
                 </p>
                 {getStatusBadge(step)}
               </div>
-              {step.label === "Documentación de edad validada" && (
+              {step.label === "Mayoria de edad" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified
                     ? "El documento de identidad del usuario ha sido verificado correctamente y confirma que es mayor de edad."
-                    : step.hasData
-                      ? "El documento de identidad está en proceso de revisión por nuestro equipo de verificación."
-                      : "Este usuario aún no ha enviado su documento de identidad para verificación de edad."}
+                    : "Este usuario aún no ha enviado su documento de identidad para verificación de edad."}
                 </p>
               )}
-              {step.label === "Autenticidad de identidad confirmada" && (
+              {step.label === "Identidad confirmada" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified
-                    ? "La identidad ha sido autenticada exitosamente mediante documentos oficiales que coinciden con las fotografías de verificación."
-                    : step.hasData
-                      ? "La fotografía con documento está siendo revisada para confirmar la autenticidad de la identidad."
-                      : "Este usuario aún no ha enviado una fotografía sosteniendo su documento de identidad."}
+                    ? "Las fotos del documento de identidad coinciden con el video o foto de verificacion."
+                    : "La identidad de este perfil no ha sido confirmada aun."}
                 </p>
               )}
-              {step.label === "Validación por videollamada completada" && (
+              {step.label === "Verificación por videollamada" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified
-                    ? "Se ha completado exitosamente la verificación en tiempo real mediante videollamada con identificación visual y cartel de validación."
-                    : step.hasData
-                      ? "El video de verificación está siendo revisado por nuestro equipo especializado."
-                      : "Este usuario aún no ha completado el proceso de verificación por videollamada."}
+                    ? "Se ha verificado en tiempo real mediante videollamada la identidad de este perfil."
+                    : "Este usuario aún no ha completado el proceso de verificación por videollamada."}
                 </p>
               )}
               {step.label === "Miembro establecido con antigüedad" && (
@@ -206,16 +190,14 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified
                     ? "El perfil ha proporcionado sus redes sociales y han sido verificadas como auténticas, coincidiendo con la información de la cuenta."
-                    : step.hasData
-                      ? "Las redes sociales proporcionadas están siendo verificadas por nuestro equipo."
-                      : "Este perfil aún no ha proporcionado información de redes sociales para verificación."}
+                    : "Este perfil aún no ha proporcionado información de redes sociales para verificación."}
                 </p>
               )}
-              {step.label === "Pide depósito anticipado" && (
+              {/* {step.label === "Pide depósito anticipado" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   Pide depósito anticipado, hay usuarios que piden depósitos para confirmar su cita, esto no quiere decir que sea un mal usuario, valore usted el resto de factores de confiabilidad antes de quedar con él
                 </p>
-              )}
+              )} */}
             </div>
           </div>
         ))}

@@ -113,7 +113,7 @@ export const { handlers, auth } = NextAuth({
 
           return true;
         } catch (error) {
-          console.error('Error en signIn callback de Google:', error);
+          // Mantener solo logs de error críticos
           return false;
         }
       }
@@ -121,8 +121,8 @@ export const { handlers, auth } = NextAuth({
       return true;
     },
     
-    async jwt({ token, user, account }) {
-      // Si hay un usuario (primera vez o actualización), actualizar el token
+    async jwt({ token, user, account, trigger }) {
+      // Solo mantener logs críticos para debugging de producción
       if (user) {
         token.id = user.id;
         token.email = user.email;
@@ -132,9 +132,41 @@ export const { handlers, auth } = NextAuth({
         token.verification_in_progress = user.verification_in_progress;
         token.role = user.role;
         token.hasPassword = user.hasPassword;
+        token.profileId = user.profileId;
+        token.profileStatus = user.profileStatus;
+        token.profileVerificationStatus = user.profileVerificationStatus;
+        token.isHighlighted = user.isHighlighted;
+        token.highlightedUntil = user.highlightedUntil;
       }
 
-      // Agregar información del proveedor si está disponible
+      // CRÍTICO: Solo actualizar en trigger 'update' explícito, no en cada petición
+      if (trigger === 'update' && token.id) {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/${token.id}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            const userData = await response.json();
+            
+            token.hasPassword = userData.hasPassword;
+            token.isVerified = userData.isVerified;
+            token.verification_in_progress = userData.verification_in_progress;
+            token.role = userData.role;
+            token.profileId = userData.profileId;
+            token.profileStatus = userData.profileStatus;
+            token.profileVerificationStatus = userData.profileVerificationStatus;
+            token.isHighlighted = userData.isHighlighted;
+            token.highlightedUntil = userData.highlightedUntil;
+          }
+        } catch (error) {
+          // Error crítico en actualización de sesión
+        }
+      }
+
       if (account?.provider) {
         token.provider = account.provider;
       }
@@ -161,36 +193,8 @@ export const { handlers, auth } = NextAuth({
     },
     
     async redirect({ url, baseUrl }) {
-      // Manejar redirecciones de forma segura
-      
-      // Validar que tenemos valores válidos
-      if (!url || !baseUrl) {
-        return baseUrl || 'http://localhost:3000';
-      }
-
-      // Si la URL es solo la raíz, redirigir al home
-      if (url === '/' || url === baseUrl) {
-        return baseUrl;
-      }
-
-      // Si es una URL relativa, construir la URL completa
-      if (url.startsWith('/')) {
-        return `${baseUrl}${url}`;
-      }
-
-      // Si es una URL completa, verificar que sea del mismo dominio
-      try {
-        const urlObj = new URL(url);
-        const baseUrlObj = new URL(baseUrl);
-        
-        if (urlObj.origin === baseUrlObj.origin) {
-          return url;
-        } else {
-          return baseUrl;
-        }
-      } catch (error) {
-        return baseUrl;
-      }
+      // Siempre redirigir a / después del login exitoso
+      return `${baseUrl}/`;
     },
   },
 

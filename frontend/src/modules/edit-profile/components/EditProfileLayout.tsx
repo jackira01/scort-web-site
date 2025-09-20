@@ -184,6 +184,8 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       // Step 2 - Descripción y servicios
       form.setValue('description', formData.description);
       form.setValue('selectedServices', formData.selectedServices);
+      form.setValue('basicServices', profileDetails.basicServices || []);
+      form.setValue('additionalServices', profileDetails.additionalServices || []);
       
       // Step 3 - Detalles y contacto
       form.setValue('contact.number', formData.contact.number);
@@ -280,20 +282,22 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         }
 
         case 4: {
+          // Cambio: Ahora validamos plan selection en paso 4
           const step4Data = {
+            selectedUpgrades: form.getValues('selectedUpgrades') || [],
+            acceptTerms: form.getValues('acceptTerms') || false,
+          };
+          return step5Schema.safeParse(step4Data); // Usamos step5Schema para validar plan selection
+        }
+
+        case 5: {
+          // Cambio: Ahora validamos multimedia en paso 5
+          const step5Data = {
             photos: form.getValues('photos') || [],
             videos: form.getValues('videos') || [],
             audios: form.getValues('audios') || [],
           };
-          return step4Schema.safeParse(step4Data);
-        }
-
-        case 5: {
-          const step5Data = {
-            selectedUpgrades: form.getValues('selectedUpgrades') || [],
-            acceptTerms: form.getValues('acceptTerms') || false,
-          };
-          return step5Schema.safeParse(step5Data);
+          return step4Schema.safeParse(step5Data); // Usamos step4Schema para validar multimedia
         }
 
         default:
@@ -398,6 +402,9 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       age: formData.age,
       contact: formData.contact,
       height: formData.height,
+      // Nuevos campos de servicios clasificados
+      basicServices: formData.basicServices || [],
+      additionalServices: formData.additionalServices || [],
       rates,
       media: {
         gallery: formData.photos || [],
@@ -468,10 +475,11 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
 
       if (newVideos.length > 0) {
         toast.loading('Subiendo videos nuevos...');
-        const newVideoUrls = await uploadMultipleVideos(newVideos);
-        videoUrls = [...existingVideoUrls, ...newVideoUrls.filter((url): url is string => url !== null)];
+        const newVideoResults = await uploadMultipleVideos(newVideos);
+        const newVideoUrls = newVideoResults.map(result => result.link);
+        videoUrls = [...existingVideoUrls, ...newVideoUrls];
         toast.dismiss();
-        toast.success(`${newVideoUrls.filter(url => url !== null).length} videos nuevos subidos exitosamente`);
+        toast.success(`${newVideoResults.length} videos nuevos subidos exitosamente`);
       } else {
         videoUrls = existingVideoUrls;
       }
@@ -552,9 +560,10 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
           />
         );
       case 4:
-        return <Step4Multimedia />;
+        return <Step5Finalize />; // Cambio: Plan selection ahora es paso 4
       case 5:
-        return <Step5Finalize />;
+        return <Step4Multimedia />; // Cambio: Multimedia ahora es paso 5
+
       default:
         return null;
     }

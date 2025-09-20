@@ -222,22 +222,37 @@ const upgradesApi = {
   getAll: async (filters: UpgradesFilters & PaginationParams = {}): Promise<UpgradesResponse> => {
     const queryParts: string[] = [];
     if (filters.page) queryParts.push(`page=${filters.page}`);
-    if (filters.limit) queryParts.push(`limit=${filters.limit}`);
+    // Limitar el límite máximo a 100 según la validación del backend
+    if (filters.limit) {
+      const limitValue = Math.min(filters.limit, 100);
+      queryParts.push(`limit=${limitValue}`);
+    }
     if (filters.active !== undefined) queryParts.push(`active=${filters.active}`);
     if (filters.search) queryParts.push(`search=${encodeURIComponent(filters.search)}`);
 
     const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
-    const response = await fetch(`${API_BASE_URL}/api/plans/upgrades${queryString}`);
-    if (!response.ok) throw new Error('Error al obtener upgrades');
-    const result = await response.json();
     
-    // Transformar la respuesta del backend al formato esperado por el frontend
-    return {
-      upgrades: result.data || [],
-      total: result.pagination?.total || 0,
-      page: result.pagination?.page || 1,
-      limit: result.pagination?.limit || 10
-    };
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/plans/upgrades${queryString}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Error al obtener upgrades. ${JSON.stringify(errorData)}`);
+      }
+      
+      const result = await response.json();
+      
+      // Transformar la respuesta del backend al formato esperado por el frontend
+      return {
+        upgrades: result.data || [],
+        total: result.pagination?.total || 0,
+        page: result.pagination?.page || 1,
+        limit: result.pagination?.limit || 10
+      };
+    } catch (error) {
+      console.error('Error en upgradesApi.getAll:', error);
+      throw error;
+    }
   },
 
   getById: async (id: string): Promise<Upgrade> => {
@@ -383,6 +398,16 @@ export const useUpgrades = (filters: UpgradesFilters & PaginationParams = {}) =>
     queryKey: ['upgrades', filters],
     queryFn: () => upgradesApi.getAll(filters),
     staleTime: 5 * 60 * 1000, // 5 minutos
+    retry: (failureCount, error) => {
+      // No reintentar si es un error de validación (400)
+      if (error?.message?.includes('validación')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    onError: (error) => {
+      console.error('Error en useUpgrades:', error);
+    }
   });
 };
 

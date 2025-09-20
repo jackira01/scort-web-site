@@ -548,6 +548,11 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
       model: 'ProfileVerification',
       select: 'verificationProgress verificationStatus'
     })
+    .populate({
+      path: 'planAssignment.planId',
+      model: 'PlanDefinition',
+      select: 'name code level features includedUpgrades'
+    })
     .lean();
 
   // Perfiles encontrados antes del filtro
@@ -682,12 +687,50 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
         return -1; // a va primero
       }
 
-      // Ambos tienen upgrades, ordenar por prioridad del plan (nivel menor = mayor prioridad)
-      if (aInfo.planLevel !== bInfo.planLevel) {
-        return aInfo.planLevel - bInfo.planLevel;
+      // Ambos tienen upgrades, ordenar por nivel efectivo del plan
+      let aEffectiveLevel = aInfo.planLevel;
+      let bEffectiveLevel = bInfo.planLevel;
+
+      // Aplicar efectos de upgrades
+      if (aInfo.hasHighlightUpgrade && aInfo.planLevel > 1) {
+        aEffectiveLevel = Math.max(1, aInfo.planLevel - 1); // DESTACADO sube un nivel
+      }
+      if (bInfo.hasHighlightUpgrade && bInfo.planLevel > 1) {
+        bEffectiveLevel = Math.max(1, bInfo.planLevel - 1); // DESTACADO sube un nivel
       }
 
-      // Si hay empate en plan, ordenar por fecha de inicio del upgrade más reciente
+      // Si tienen IMPULSO, van a nivel 1 pero con menor prioridad que DESTACADO solo
+      if (aInfo.hasBoostUpgrade) {
+        aEffectiveLevel = 1;
+      }
+      if (bInfo.hasBoostUpgrade) {
+        bEffectiveLevel = 1;
+      }
+
+      // Ordenar por nivel efectivo
+      if (aEffectiveLevel !== bEffectiveLevel) {
+        return aEffectiveLevel - bEffectiveLevel;
+      }
+
+      // Mismo nivel efectivo: priorizar por duración del plan (durationRank mayor = mayor prioridad)
+      const aPlanDurationRank = a.planAssignment?.variantDays ? 
+        planDefinitions.find(p => p.code === aInfo.planCode)?.variants.find(v => v.days === a.planAssignment?.variantDays)?.durationRank || 0 : 0;
+      const bPlanDurationRank = b.planAssignment?.variantDays ? 
+        planDefinitions.find(p => p.code === bInfo.planCode)?.variants.find(v => v.days === b.planAssignment?.variantDays)?.durationRank || 0 : 0;
+
+      if (aPlanDurationRank !== bPlanDurationRank) {
+        return bPlanDurationRank - aPlanDurationRank; // Mayor durationRank = mayor prioridad
+      }
+
+      // Si tienen IMPULSO, van al final dentro de su grupo
+      if (aInfo.hasBoostUpgrade && !bInfo.hasBoostUpgrade) {
+        return 1; // a va después
+      }
+      if (bInfo.hasBoostUpgrade && !aInfo.hasBoostUpgrade) {
+        return -1; // b va después
+      }
+
+      // Empate final: por fecha de inicio del upgrade más reciente
       const aLatestUpgrade = Math.max(...aInfo.activeUpgrades.map(u => new Date(u.startAt).getTime()));
       const bLatestUpgrade = Math.max(...bInfo.activeUpgrades.map(u => new Date(u.startAt).getTime()));
       return bLatestUpgrade - aLatestUpgrade;
@@ -702,7 +745,17 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
       return aInfo.planLevel - bInfo.planLevel;
     }
 
-    // 3. Mismo nivel de plan, aplicar criterios específicos
+    // 3. Mismo nivel de plan: ordenar por duración (durationRank mayor = mayor prioridad)
+    const aPlanDurationRank = a.planAssignment?.variantDays ? 
+      planDefinitions.find(p => p.code === aInfo.planCode)?.variants.find(v => v.days === a.planAssignment?.variantDays)?.durationRank || 0 : 0;
+    const bPlanDurationRank = b.planAssignment?.variantDays ? 
+      planDefinitions.find(p => p.code === bInfo.planCode)?.variants.find(v => v.days === b.planAssignment?.variantDays)?.durationRank || 0 : 0;
+
+    if (aPlanDurationRank !== bPlanDurationRank) {
+      return bPlanDurationRank - aPlanDurationRank; // Mayor durationRank = mayor prioridad
+    }
+
+    // 4. Mismo nivel y duración: aplicar criterios específicos
     if (aInfo.planLevel <= 2) {
       // Planes Premium (DIAMANTE/ORO): ordenar por última actividad
       const aActivity = new Date(aInfo.lastActivity).getTime();

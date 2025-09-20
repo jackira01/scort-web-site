@@ -16,20 +16,49 @@ const apiClient: AxiosInstance = axios.create({
   decompress: true,
 });
 
+// Cache para evitar llamadas repetidas a getSession
+let sessionCache: any = null;
+let sessionCacheTime = 0;
+const SESSION_CACHE_DURATION = 30000; // 30 segundos
+
 // Interceptor para agregar cabeceras de autenticación
 apiClient.interceptors.request.use(
   async (config) => {
-    try {
-      // Importar dinámicamente para evitar problemas de SSR
-      const { getSession } = await import('next-auth/react');
-      const session = await getSession();
+    // Evitar bucle infinito: no procesar peticiones a /api/auth/session
+    if (config.url?.includes('/api/auth/session')) {
+      return config;
+    }
 
-      if (session?.accessToken) {
-        config.headers['Authorization'] = `Bearer ${session.accessToken}`;
-      } else if (session?.user && session.user._id) {
-        config.headers['X-User-ID'] = session.user._id;
-      } else if (process.env.NODE_ENV === 'development') {
-        config.headers['X-User-ID'] = '507f1f77bcf86cd799439011';
+    try {
+      const now = Date.now();
+      
+      // Usar cache si está disponible y no ha expirado
+      if (sessionCache && (now - sessionCacheTime) < SESSION_CACHE_DURATION) {
+        const session = sessionCache;
+        
+        if (session?.accessToken) {
+          config.headers['Authorization'] = `Bearer ${session.accessToken}`;
+        } else if (session?.user && session.user._id) {
+          config.headers['X-User-ID'] = session.user._id;
+        } else if (process.env.NODE_ENV === 'development') {
+          config.headers['X-User-ID'] = '507f1f77bcf86cd799439011';
+        }
+      } else {
+        // Obtener nueva sesión solo si el cache ha expirado
+        const { getSession } = await import('next-auth/react');
+        const session = await getSession();
+        
+        // Actualizar cache
+        sessionCache = session;
+        sessionCacheTime = now;
+
+        if (session?.accessToken) {
+          config.headers['Authorization'] = `Bearer ${session.accessToken}`;
+        } else if (session?.user && session.user._id) {
+          config.headers['X-User-ID'] = session.user._id;
+        } else if (process.env.NODE_ENV === 'development') {
+          config.headers['X-User-ID'] = '507f1f77bcf86cd799439011';
+        }
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {

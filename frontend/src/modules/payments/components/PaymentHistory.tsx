@@ -195,12 +195,28 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
               <Loader2 className="h-6 w-6 animate-spin text-purple-600 dark:text-purple-300" />
               <span className="ml-2 text-gray-600 dark:text-gray-300">Cargando facturas...</span>
             </div>
+          ) : error && error.message.includes('ID de factura inválido') ? (
+            <div className="text-center py-8">
+              <Receipt className="h-12 w-12 text-red-400 mx-auto mb-4" />
+              <p className="text-red-600 mb-2 dark:text-red-400 font-medium">Factura no encontrada o inexistente</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                El ID de factura ingresado no existe o es inválido
+              </p>
+              <Button 
+                onClick={clearFilters} 
+                variant="outline" 
+                size="sm" 
+                className="mt-4"
+              >
+                Limpiar filtros
+              </Button>
+            </div>
           ) : invoices.length === 0 ? (
             <div className="text-center py-8">
               <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 mb-2 dark:text-gray-300">No se encontraron facturas</p>
               <p className="text-sm text-gray-500 dark:text-gray-300">
-                {statusFilter ? 'Intenta cambiar el filtro de estado' : 'Aún no tienes facturas registradas'}
+                {statusFilter || invoiceIdFilter || profileIdFilter ? 'Intenta cambiar los filtros aplicados' : 'Aún no tienes facturas registradas'}
               </p>
             </div>
           ) : (

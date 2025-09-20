@@ -74,6 +74,7 @@ export const getProfilesForCards = async (
       'media',
       'verification',
       'isActive',
+      'planAssignment',
     ],
     limit: params.limit || 12,
     page: params.page || 1,

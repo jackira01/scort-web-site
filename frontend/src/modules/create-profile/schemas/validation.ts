@@ -56,6 +56,8 @@ export const formSchema = z.object({
   videos: z.array(z.union([z.string(), z.instanceof(File)])).optional(),
   audios: z.array(z.union([z.string(), z.instanceof(File)])).optional(),
   processedImages: z.array(z.any()).optional(), // Array de ProcessedImageResult
+  coverImageIndex: z.number().optional(), // Índice de la imagen de portada seleccionada
+  videoCoverImages: z.record(z.number(), z.union([z.string(), z.instanceof(File)])).optional(), // Imágenes de portada para videos
 
   // Step 5 - Finalizar
   selectedUpgrades: z.array(z.string()).optional(),

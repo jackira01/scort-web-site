@@ -254,7 +254,7 @@ export const getFilteredProfiles = async (
     // Debug: Log para verificar la query
     // DEBUG getFilteredProfiles - Query inicial
 
-    // Usar agregación para filtrar perfiles con usuarios verificados (alineado con homeFeed)
+    // Usar agregación para obtener todos los perfiles con información de usuario
     const aggregationPipeline: any[] = [
       {
         $match: query
@@ -267,11 +267,6 @@ export const getFilteredProfiles = async (
           as: 'userInfo'
         }
       },
-      {
-      $match: {
-        'userInfo.isVerified': true
-      }
-    },
       {
         $addFields: {
           user: { $arrayElemAt: ['$userInfo', 0] }
@@ -303,6 +298,26 @@ export const getFilteredProfiles = async (
       });
     }
 
+    // Agregar lookup para planAssignment.plan
+    aggregationPipeline.push({
+      $lookup: {
+        from: 'plandefinitions',
+        localField: 'planAssignment.plan',
+        foreignField: '_id',
+        as: 'planAssignmentPlan'
+      }
+    });
+    aggregationPipeline.push({
+      $addFields: {
+        'planAssignment.plan': { $arrayElemAt: ['$planAssignmentPlan', 0] }
+      }
+    });
+    aggregationPipeline.push({
+      $project: {
+        planAssignmentPlan: 0
+      }
+    });
+
     // Agregar lookup para features si es necesario
     if (fields && fields.includes('features')) {
       aggregationPipeline.push({
@@ -328,11 +343,6 @@ export const getFilteredProfiles = async (
             localField: 'user',
             foreignField: '_id',
             as: 'userInfo'
-          }
-        },
-        {
-          $match: {
-            'userInfo.isVerified': true
           }
         },
         { $count: 'total' }

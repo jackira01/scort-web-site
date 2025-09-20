@@ -49,17 +49,17 @@ const AccountSidebar = ({
           <div className="flex items-center space-x-4 mb-6">
             <Avatar className="h-10 w-10 border-2 border-purple-500/20">
               <AvatarImage
-                src="/placeholder.svg?height=40&width=40"
-                alt="Nicolas Alvarez"
+                src={user?.image || "/placeholder.svg?height=40&width=40"}
+                alt={user?.name || "Usuario"}
               />
               <AvatarFallback className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 font-semibold">
-                NA
+                {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h2 className="font-semibold text-foreground">NICOLAS ALVAREZ</h2>
+              <h2 className="font-semibold text-foreground">{user?.name?.toUpperCase() || 'USUARIO'}</h2>
               <p className="text-xs text-muted-foreground">
-                Agencia • tecnologico03@gmail.com
+                {user?.role === 'admin' ? 'Administrador' : user?.role === 'user' ? 'Usuario' : 'Agencia'} • {user?.email || 'email@ejemplo.com'}
               </p>
             </div>
           </div>

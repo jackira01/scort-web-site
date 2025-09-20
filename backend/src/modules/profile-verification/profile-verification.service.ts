@@ -38,15 +38,16 @@ const shouldRequireIndependentVerification = async (userId: string | Types.Objec
 const getDefaultVerificationSteps = (accountType: string, requiresIndependentVerification: boolean, lastLoginVerified: boolean, userLastLoginDate: Date | null) => {
   const baseSteps = {
     documentPhotos: {
-      documents: [],
+      frontPhoto: undefined,
+      backPhoto: undefined,
+      selfieWithDocument: undefined,
       isVerified: false
     },
-    video: {
+    videoVerification: {
       videoLink: undefined,
       isVerified: false
     },
     socialMedia: {
-      accounts: [],
       isVerified: false
     },
     phoneChangeDetected: false,
@@ -61,7 +62,9 @@ const getDefaultVerificationSteps = (accountType: string, requiresIndependentVer
     return {
       ...baseSteps,
       documentPhotos: {
-        documents: [],
+        frontPhoto: undefined,
+        backPhoto: undefined,
+        selfieWithDocument: undefined,
         isVerified: true // Heredar verificación del usuario
       }
     };

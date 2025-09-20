@@ -42,55 +42,77 @@ export interface User extends BaseUser {
 }
 
 
-export type Profile = {
-    _id: string;
-    user: string;
-    name: string;
-    description?: string;
-    location: {
-        country: string;
-        state: string;
-        city: string;
+export interface Profile {
+  _id: string;
+  user: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  location: {
+    country: {
+      value: string;
+      label: string;
     };
-    features: {
-        bodyType: string;
-        hairColor: string;
-        sex: string;
-        gender: string;
-        age: number;
-        eyes: string;
-        height: number;
+    department: {
+      value: string;
+      label: string;
     };
-    services?: string[]; // Servicios separados de features
-    media: {
-        gallery: string[];
-        videos: string[];
-        stories: string[];
-        audios?: string[];
+    city: {
+      value: string;
+      label: string;
     };
-    // Campos para sistema de planes y upgrades
-    planAssignment?: {
-        planCode: string;
-        variantDays: number;
-        startAt: string | Date;
-        expiresAt: string | Date;
-    };
-    upgrades?: {
-        code: string;
-        startAt: string | Date;
-        endAt: string | Date;
-        purchaseAt: string | Date;
-    }[];
-    activeUpgrades?: {
-        code: string;
-        startAt: string | Date;
-        endAt: string | Date;
-        purchaseAt: string | Date;
-    }[];
-    hasDestacadoUpgrade?: boolean;
-    hasImpulsoUpgrade?: boolean;
-    visible?: boolean;
-    isActive?: boolean;
+  };
+  features: Array<{
+    group_id: string;
+    value: string[];
+  }>;
+  age: string;
+  contact: {
+    number?: string;
+    whatsapp?: string;
+    telegram?: string;
+    changedAt?: Date;
+  };
+  height: string;
+  basicServices: string[];
+  additionalServices: string[];
+  socialMedia: {
+    instagram?: string;
+    facebook?: string;
+    tiktok?: string;
+    twitter?: string;
+    onlyFans?: string;
+  };
+  media: {
+    gallery: string[];
+    videos: Array<{
+      url: string;
+      thumbnail: string;
+    }>;
+    profilePicture: string;
+  };
+  services: string[];
+  planAssignment: {
+    planId: string;
+    planCode: string;
+    variantDays: number;
+    startAt: Date;
+    expiresAt: Date;
+  };
+  upgrades: Array<{
+    code: string;
+    startAt: Date;
+    endAt: Date;
+  }>;
+  activeUpgrades: Array<{
+    code: string;
+    startAt: Date;
+    endAt: Date;
+  }>;
+  hasDestacadoUpgrade: boolean;
+  hasImpulsoUpgrade: boolean;
+  visible: boolean;
+  isActive: boolean;
 }
 
 export interface UserPaginatedResponse {

@@ -48,9 +48,9 @@ interface DefaultPlanConfig {
   planCode: string | null;
 }
 
-interface Step5FinalizeProps { }
+interface Step4PlanProps { }
 
-export function Step5Finalize({ }: Step5FinalizeProps) {
+export function Step4Plan({ }: Step4PlanProps) {
   const { watch, setValue, formState: { errors } } = useFormContext();
   const formData = watch();
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
@@ -291,10 +291,10 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
                     </>
                   )}
                 </div>
-
-                <Separator />
-
                 {/* Jerarquía del Plan */}
+                {/* <Separator />
+
+                
                 <div>
                   <h4 className="font-semibold text-foreground mb-3 flex items-center">
                     {selectedPlan.level === 1 && <Crown className="h-5 w-5 text-purple-500 mr-2" />}
@@ -314,7 +314,7 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
                     </p>
 
                   </div>
-                </div>
+                </div> */}
 
                 <Separator />
 
@@ -512,45 +512,6 @@ export function Step5Finalize({ }: Step5FinalizeProps) {
         )}
 
 
-
-        {/* Terms and Conditions */}
-        <div className="space-y-4">
-          <Label className="text-foreground text-lg font-semibold">
-            Términos & Condiciones <span className="text-red-500">*</span>
-          </Label>
-          <div className="flex items-start space-x-2">
-            <Checkbox
-              id="terms"
-              checked={formData.acceptTerms}
-              onCheckedChange={(checked) => setValue('acceptTerms', !!checked)}
-              className={errors.acceptTerms ? 'border-red-500' : ''}
-            />
-            <Label
-              htmlFor="terms"
-              className="text-sm text-muted-foreground cursor-pointer"
-            >
-              I accept the website{' '}
-              <Link
-                href="/terms"
-                className="text-blue-600 hover:underline"
-              >
-                terms & conditions
-              </Link>{' '}
-              and{' '}
-              <Link
-                href="/privacy"
-                className="text-blue-600 hover:underline"
-              >
-                privacy policy
-              </Link>
-            </Label>
-          </div>
-          {errors.acceptTerms && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.acceptTerms.message}
-            </p>
-          )}
-        </div>
       </div>
     </div>
   );

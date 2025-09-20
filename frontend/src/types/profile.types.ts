@@ -146,6 +146,7 @@ export interface FilterQuery {
   isActive?: boolean;
   isVerified?: boolean;
   featured?: boolean;
+  showInSponsored?: boolean; // Filtrar por perfiles con planes que tengan showInSponsored: true
   page?: number;
   limit?: number;
   sortBy?: string;

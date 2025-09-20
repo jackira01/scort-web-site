@@ -6,6 +6,10 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Instagram,
+  Facebook,
+  Twitter,
+  ExternalLink,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -240,6 +244,8 @@ const AdminProfileVerificationCarousel: React.FC<
           </DialogHeader>
 
           <div className="space-y-6">
+            {/* Social Media Section */}
+
             {/* Progress indicator */}
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
@@ -328,15 +334,186 @@ const AdminProfileVerificationCarousel: React.FC<
                 </div>
 
                 {/* Document preview section */}
-                <div className="border rounded-lg p-4">
-                  <VerificationStepRenderer
-                    step={currentStep}
-                    stepData={verificationData?.steps?.[currentStep.key]}
-                    onPreviewImage={setPreviewImage}
-                    getCurrentVideoLink={(stepKey) => getCurrentVideoLink(stepKey, verificationData)}
-                    handleVideoLinkChange={handleVideoLinkChange}
-                  />
-                </div>
+                {currentStep.label === 'Redes Sociales' ?
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Redes Sociales</h3>
+
+                    {(() => {
+                      // Obtener los datos de socialMedia del perfil
+                      const socialMedia = profileData.data?.socialMedia;
+
+                      return socialMedia && (
+                        socialMedia.instagram ||
+                        socialMedia.facebook ||
+                        socialMedia.tiktok ||
+                        socialMedia.twitter ||
+                        socialMedia.onlyFans
+                      ) ? (
+                        <div className="grid gap-4 md:grid-cols-2">
+                          {socialMedia.instagram && (
+                            <Card className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="p-2 bg-pink-100 dark:bg-pink-900 rounded-lg">
+                                    <Instagram className="h-6 w-6 text-pink-600 dark:text-pink-400" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <h4 className="font-medium">Instagram</h4>
+                                    <p className="text-sm text-muted-foreground break-all">
+                                      {socialMedia.instagram}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      window.open(`https://www.instagram.com/${socialMedia.instagram}`, "_blank")
+                                    }
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {socialMedia.facebook && (
+                            <Card className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                                    <Facebook className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <h4 className="font-medium">Facebook</h4>
+                                    <p className="text-sm text-muted-foreground break-all">
+                                      {socialMedia.facebook}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      window.open(`https://www.facebook.com/${socialMedia.facebook}`, "_blank")
+                                    }
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {socialMedia.tiktok && (
+                            <Card className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                                    <ExternalLink className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <h4 className="font-medium">TikTok</h4>
+                                    <p className="text-sm text-muted-foreground break-all">
+                                      {socialMedia.tiktok}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      window.open(`https://www.tiktok.com/@${socialMedia.tiktok}`, "_blank")
+                                    }
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {socialMedia.twitter && (
+                            <Card className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="p-2 bg-sky-100 dark:bg-sky-900 rounded-lg">
+                                    <Twitter className="h-6 w-6 text-sky-600 dark:text-sky-400" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <h4 className="font-medium">Twitter</h4>
+                                    <p className="text-sm text-muted-foreground break-all">
+                                      {socialMedia.twitter}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      window.open(`https://twitter.com/${socialMedia.twitter}`, "_blank")
+                                    }
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {socialMedia.onlyFans && (
+                            <Card className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                                    <ExternalLink className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <h4 className="font-medium">OnlyFans</h4>
+                                    <p className="text-sm text-muted-foreground break-all">
+                                      {socialMedia.onlyFans}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      window.open(`https://onlyfans.com/${socialMedia.onlyFans}`, "_blank")
+                                    }
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                        </div>
+                      ) : (
+                        <Card>
+                          <CardContent className="p-8 text-center">
+                            <div className="space-y-3">
+                              <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-full w-fit mx-auto">
+                                <ExternalLink className="h-8 w-8 text-gray-400" />
+                              </div>
+                              <h4 className="font-medium text-gray-600 dark:text-gray-400">
+                                No hay redes sociales configuradas
+                              </h4>
+                              <p className="text-sm text-muted-foreground">
+                                Este perfil no ha configurado ninguna red social
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })()}
+                  </div> :
+                  (<div className="border rounded-lg p-4">
+                    <VerificationStepRenderer
+                      step={currentStep}
+                      stepData={verificationData?.steps?.[currentStep.key]}
+                      onPreviewImage={setPreviewImage}
+                      getCurrentVideoLink={(stepKey) => getCurrentVideoLink(stepKey, verificationData)}
+                      handleVideoLinkChange={handleVideoLinkChange}
+                    />
+                  </div>)}
               </CardContent>
             </Card>
 

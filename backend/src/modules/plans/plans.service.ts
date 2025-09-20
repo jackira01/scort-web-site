@@ -636,14 +636,16 @@ export class PlansService {
             // Plan renovado exitosamente para perfil
         }
 
-        // Generar mensaje de WhatsApp para compra
+        // Generar mensaje de WhatsApp para renovación
         const whatsAppMessage = await generateWhatsAppMessage(
             profile.user.toString(),
             profileId,
             planCode,
             variantDays,
             invoiceId,
-            false // isRenewal = false
+            true, // isRenewal = true
+            variant.price,
+            newExpiresAt
         );
 
         return {

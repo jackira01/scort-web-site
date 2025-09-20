@@ -23,7 +23,7 @@ type PostRegisterFormData = z.infer<typeof postRegisterPasswordSchema>;
 export default function PostRegister() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,43 +39,64 @@ export default function PostRegister() {
     }
   });
 
-  // Verificar si el usuario está autenticado y obtener su email
   useEffect(() => {
     if (status === 'loading') return;
-    
+
     if (status === 'unauthenticated') {
-      router.push('/autenticacion/ingresar');
+      router.push('/autenticacion/iniciar-sesion');
       return;
     }
 
     if (session?.user?.email) {
       form.setValue('email', session.user.email);
     }
-  }, [session, status, router, form]);
+  }, [status, session, router, form]);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (!session?.user?.id) return;
+
+    const hasPassword = session.user.hasPassword;
+
+    if (hasPassword === true) {
+      router.push('/');
+      return;
+    }
+
+    if (hasPassword !== false) {
+      // Valor inesperado, mantener en la página
+      return;
+    }
+  }, [status, session, router]);
 
   const handleSubmit = async (data: PostRegisterFormData) => {
+    if (!session?.user?.id) return;
+
     setIsLoading(true);
     setError(null);
     
     try {
-      const result = await setPasswordAfterGoogleRegister(data);
-      
-      if (result.success) {
-        setSuccess(result.message);
+      const response = await setPasswordAfterGoogleRegister({
+        email: data.email,
+        password: data.password
+      });
+
+      if (response.success) {
+        setSuccess('Contraseña configurada exitosamente. Redirigiendo...');
         
-        // La sesión se actualizará automáticamente en la próxima verificación
+        // Una sola actualización de sesión después del éxito
+        await update();
         
-        // Redirigir a la página principal después de 2 segundos
-        // El middleware y AuthRedirectHandler se encargarán de verificar el estado actualizado
+        // Redirigir después de un breve delay
         setTimeout(() => {
           router.push('/');
-          router.refresh(); // Refrescar para actualizar el estado de autenticación
-        }, 2000);
+        }, 1500);
       } else {
-        setError(result.message);
+        setError(response.message || 'Error al configurar la contraseña');
       }
-    } catch (err) {
-      setError('Error al crear la contraseña');
+    } catch (error) {
+      console.error('Error al crear la contraseña:', error);
+      setError('Error al crear la contraseña. Por favor, intenta de nuevo.');
     } finally {
       setIsLoading(false);
     }
