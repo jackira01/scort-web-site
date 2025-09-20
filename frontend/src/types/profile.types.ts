@@ -156,8 +156,10 @@ export interface FilterQuery {
 
 
 
+import type { Profile as UserProfile } from '@/types/user.types';
+
 export interface ProfilesResponse {
-  profiles: Profile[];
+  profiles: UserProfile[];
   pagination: {
     currentPage: number;
     totalPages: number;
@@ -165,7 +167,6 @@ export interface ProfilesResponse {
     hasNextPage: boolean;
     hasPrevPage: boolean;
   };
-
 }
 
 export interface ProfileCardData {

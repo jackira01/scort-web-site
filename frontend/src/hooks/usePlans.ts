@@ -398,16 +398,13 @@ export const useUpgrades = (filters: UpgradesFilters & PaginationParams = {}) =>
     queryKey: ['upgrades', filters],
     queryFn: () => upgradesApi.getAll(filters),
     staleTime: 5 * 60 * 1000, // 5 minutos
-    retry: (failureCount, error) => {
+    retry: (failureCount, error: any) => {
       // No reintentar si es un error de validación (400)
       if (error?.message?.includes('validación')) {
         return false;
       }
       return failureCount < 3;
     },
-    onError: (error) => {
-      console.error('Error en useUpgrades:', error);
-    }
   });
 };
 

@@ -253,7 +253,7 @@ export default function AccountProfiles({
             {paginatedProfiles.map((profile, index) => (
               <Card
                 key={profile._id}
-                className={`group hover:shadow-xl transition-all duration-500 overflow-hidden  ${hasDestacadoUpgrade(profile)
+                className={`group hover:shadow-xl transition-all duration-500 overflow-hidden  ${hasDestacadoUpgrade(profile as any)
                   ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50'
                   : 'bg-card border-border hover:border-purple-500/50'
                   }`}
@@ -269,7 +269,7 @@ export default function AccountProfiles({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="absolute top-3 left-3 flex space-x-2">
-                    {hasDestacadoUpgrade(profile) && (
+                    {hasDestacadoUpgrade(profile as any) && (
                       <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white animate-pulse">
                         <Star className="h-3 w-3 mr-1" />
                         DESTACADO
@@ -439,19 +439,19 @@ export default function AccountProfiles({
                               <TooltipTrigger asChild>
                                 <Button
                                   size="sm"
-                                  variant={hasDestacadoUpgrade(profile) ? "default" : "outline"}
-                                  className={`p-2 ${hasDestacadoUpgrade(profile)
+                                  variant={hasDestacadoUpgrade(profile as any) ? "default" : "outline"}
+                                  className={`p-2 ${hasDestacadoUpgrade(profile as any)
                                     ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white'
                                     : 'hover:bg-yellow-50 dark:hover:bg-yellow-950/20 hover:border-yellow-500'
                                     } transition-all duration-200`}
                                   onClick={() => handleUpgradePurchase(profile._id, 'DESTACADO')}
-                                  disabled={isPurchasing || hasDestacadoUpgrade(profile)}
+                                  disabled={isPurchasing || hasDestacadoUpgrade(profile as any)}
                                 >
                                   <Star className="h-3 w-3" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>{hasDestacadoUpgrade(profile) ? 'Destacado Activo' : 'Activar Destacado'}</p>
+                                <p>{hasDestacadoUpgrade(profile as any) ? 'Destacado Activo' : 'Activar Destacado'}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>

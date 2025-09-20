@@ -58,7 +58,7 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
           showInSponsored: true // Filtrar solo perfiles con planes que tengan showInSponsored: true
         });
 
-        setSponsoredProfiles(response.profiles);
+        setSponsoredProfiles(response.profiles as any);
       } catch (err) {
         setError('Error al cargar perfiles patrocinados');
       } finally {

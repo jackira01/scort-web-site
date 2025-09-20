@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { VerificationBar } from '@/components/VerificationBar/VerificationBar';
-import type { Profile, ProfileCardData } from '@/types/profile.types';
+import type { Profile } from '@/types/user.types';
+import type { ProfileCardData } from '@/types/profile.types';
 import {
   formatLocation,
   isProfileVerified,
@@ -19,9 +20,9 @@ import {
 } from '@/utils/profile.utils';
 
 interface ProfileCardProps {
-  profile: Profile & Partial<Pick<ProfileCardData, 'featured' | 'online' | 'hasVideo'>>;
-  viewMode: 'grid' | 'list';
-  variant?: 'default' | 'featured';
+  profile: ProfileCardData;
+  viewMode?: 'grid' | 'list';
+  variant?: 'default' | 'featured' | 'compact';
 }
 
 export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileCardProps) {
@@ -68,7 +69,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
   return (
     <Link href={`/perfil/${profile._id}`} className="block">
       <Card className={`group hover:shadow-xl transition-all duration-300 overflow-hidden relative ${
-        hasDestacadoUpgrade(profile) 
+        hasDestacadoUpgrade(profile as any) 
           ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30'
           : 'bg-card border-border'
       }`}>
@@ -87,7 +88,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                   : 'sm:h-40 md:h-48'
                 }`}
             />
-            {hasDestacadoUpgrade(profile) && (
+            {hasDestacadoUpgrade(profile as any) && (
               <Badge className="absolute top-1 left-1 sm:top-2 lg:top-3 sm:left-2 lg:left-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs">
                 <Star className="h-2 w-2 lg:h-3 lg:w-3 mr-1" />
                 <span className="hidden sm:inline">PRESENTADO</span>
@@ -95,7 +96,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
               </Badge>
             )}
             <div className="absolute top-1 right-1 sm:top-2 lg:top-3 sm:right-2 lg:right-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-1 lg:space-x-2">
-              {isProfileVerified(profile) && (
+              {profile.verification?.isVerified && (
                 <Badge
                   variant="secondary"
                   className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 p-1"
@@ -138,7 +139,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                 </div>
                 
                 {/* Barra de verificación */}
-                {profile.verification && (
+                {profile.verification?.isVerified && (
                   <div className="mt-2">
                     <VerificationBar 
                       verification={profile.verification} 

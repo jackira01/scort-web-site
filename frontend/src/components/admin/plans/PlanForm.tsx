@@ -79,17 +79,6 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
     limit: 100 // Usar el límite máximo permitido por el backend
   });
 
-  // Debug: Log para verificar los datos de upgrades
-  useEffect(() => {
-    if (upgradesData) {
-      console.log('Upgrades data loaded:', upgradesData);
-      console.log('Number of upgrades:', upgradesData.upgrades?.length || 0);
-    }
-    if (upgradesError) {
-      console.error('Error loading upgrades:', upgradesError);
-    }
-  }, [upgradesData, upgradesError]);
-
   useEffect(() => {
     if (plan && mode === 'edit') {
       // Asegurar que cada variante tenga la estructura correcta
@@ -204,7 +193,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
     // Validar que el upgrade existe en la lista de upgrades disponibles
     const availableUpgrades = upgradesData?.upgrades || [];
     const upgradeExists = availableUpgrades.some(upgrade => 
-      upgrade.code === newUpgrade.trim() || upgrade.id === newUpgrade.trim()
+      upgrade.code === newUpgrade.trim() || upgrade._id === newUpgrade.trim()
     );
     
     if (!upgradeExists) {

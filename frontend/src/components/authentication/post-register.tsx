@@ -79,7 +79,7 @@ export default function PostRegister() {
       const response = await setPasswordAfterGoogleRegister({
         email: data.email,
         password: data.password
-      });
+      } as any);
 
       if (response.success) {
         setSuccess('Contraseña configurada exitosamente. Redirigiendo...');

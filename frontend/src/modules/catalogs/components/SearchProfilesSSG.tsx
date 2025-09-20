@@ -149,7 +149,7 @@ export default function SearchProfilesSSG({
         {profiles.map((profile) => (
           <ProfileCard 
             key={profile._id} 
-            profile={profile} 
+            profile={profile as any} 
             viewMode={viewMode}
           />
         ))}

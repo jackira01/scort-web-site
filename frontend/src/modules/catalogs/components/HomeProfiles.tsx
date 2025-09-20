@@ -55,7 +55,7 @@ const HomeProfiles = () => {
 
       {/* Renderizar perfiles en el orden jerárquico del backend */}
       <div>
-        <CardComponent profiles={profiles} />
+        <CardComponent profiles={profiles as any} />
       </div>
     </div>
   );

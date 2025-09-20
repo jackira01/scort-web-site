@@ -184,9 +184,14 @@ export const { handlers, auth } = NextAuth({
         session.user.image = token.image as string;
         session.user.isVerified = token.isVerified as boolean;
         session.user.verification_in_progress = token.verification_in_progress as boolean;
-        session.user.role = token.role as string;
+        session.user.role = token.role as 'admin' | 'user' | 'guest';
         session.user.hasPassword = token.hasPassword as boolean;
         session.user.provider = token.provider as string;
+        session.user.profileId = token.profileId as string;
+        session.user.profileStatus = token.profileStatus as string;
+        session.user.profileVerificationStatus = token.profileVerificationStatus as string;
+        session.user.isHighlighted = token.isHighlighted as boolean;
+        session.user.highlightedUntil = token.highlightedUntil as string;
       }
 
       return session;

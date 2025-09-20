@@ -31,6 +31,7 @@ import { ProcessedImageResult } from '@/utils/imageProcessor';
 import { FormProvider } from '../context/FormContext';
 import { steps } from '../data';
 import type { FormData } from '../schemas';
+import type { AttributeGroup, Rate } from '../types';
 import { normalizeSimpleText } from '@/utils/normalize-text';
 import {
   step1Schema,
@@ -39,7 +40,6 @@ import {
   step4Schema,
   step5Schema,
 } from '../schemas';
-import type { AttributeGroup, Rate } from '../types';
 import { SidebarContent } from './SidebarContent';
 import { Step1EssentialInfo } from './Step1EssentialInfo';
 import { Step2Description } from './Step2Description';
@@ -287,7 +287,7 @@ export function CreateProfileLayout() {
   const transformDataToBackendFormat = (
     formData: FormData & {
       photos?: string[];
-      videos?: { link: string; preview: string }[];
+      videos?: (string | { link: string; preview: string })[];
       audios?: string[];
     },
   ) => {
@@ -484,7 +484,7 @@ export function CreateProfileLayout() {
         console.log('🎥 [DEBUG] Procesando videos:', data.videos.length);
 
         // Filtrar solo archivos File, no strings (URLs existentes)
-        const videoFiles = data.videos.filter((video): video is File => video instanceof File);
+        const videoFiles = data.videos.filter((video): video is File => video instanceof File && video !== null);
         console.log('📹 [DEBUG] Archivos de videos a subir:', videoFiles.length);
 
         if (videoFiles.length > 0) {
@@ -499,17 +499,17 @@ export function CreateProfileLayout() {
           toast.success(`${uploadedVideos.length} videos subidos exitosamente`);
 
           // Convertir a formato de objetos con link y preview
-          videoUrls = uploadedVideos;
+          videoUrls = uploadedVideos as any;
         }
 
         // Mantener URLs existentes (convertir strings a objetos si es necesario)
-        const existingVideoUrls = data.videos.filter((video): video is string => typeof video === 'string');
+        const existingVideoUrls = data.videos.filter((video): video is string => typeof video === 'string' && video !== null);
         const existingVideoObjects = existingVideoUrls.map(url => ({
           link: url,
           preview: '' // Las URLs existentes no tienen preview por ahora
         }));
 
-        videoUrls = [...(videoUrls as { link: string; preview: string }[]), ...existingVideoObjects];
+        videoUrls = [...(videoUrls as any), ...existingVideoObjects];
         console.log('🔗 [DEBUG] URLs de videos existentes mantenidas:', existingVideoUrls.length);
       }
 
@@ -537,7 +537,7 @@ export function CreateProfileLayout() {
       const dataWithUrls = {
         ...data,
         photos: photoUrls.filter((url): url is string => url !== null),
-        videos: videoUrls, // Ya son objetos con link y preview
+        videos: videoUrls.filter(video => video !== null), // Filtrar null y asegurar tipo correcto
         audios: audioUrls.filter((url): url is string => url !== null),
       };
 
@@ -550,7 +550,7 @@ export function CreateProfileLayout() {
         audiosUrls: dataWithUrls.audios
       });
 
-      const backendData = transformDataToBackendFormat(dataWithUrls);
+      const backendData = transformDataToBackendFormat(dataWithUrls as any);
 
       console.log('🚀 [DEBUG] Datos transformados para backend:', {
         mediaGallery: backendData.media?.gallery?.length || 0,

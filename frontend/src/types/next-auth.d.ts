@@ -11,6 +11,11 @@ declare module "next-auth" {
         verification_in_progress?: boolean;
         hasPassword: boolean;
         provider?: string;
+        profileId?: string;
+        profileStatus?: string;
+        profileVerificationStatus?: string;
+        isHighlighted?: boolean;
+        highlightedUntil?: string;
     }
 
     interface Session {
@@ -27,6 +32,11 @@ declare module "next-auth" {
             verification_in_progress?: boolean;
             hasPassword: boolean;
             provider?: string;
+            profileId?: string;
+            profileStatus?: string;
+            profileVerificationStatus?: string;
+            isHighlighted?: boolean;
+            highlightedUntil?: string;
         };
         accessToken?: string; // JWT token personalizado
     }
@@ -43,5 +53,10 @@ declare module "next-auth/jwt" {
         verification_in_progress?: boolean;
         hasPassword: boolean;
         provider?: string;
+        profileId?: string;
+        profileStatus?: string;
+        profileVerificationStatus?: string;
+        isHighlighted?: boolean;
+        highlightedUntil?: string;
     }
 }

@@ -41,6 +41,12 @@ export interface Invoice {
   isExpired: boolean;
   id: string;
   __v: number;
+  coupon?: {
+    originalAmount?: number;
+    discountAmount?: number;
+    code?: string;
+    name?: string;
+  };
 }
 
 export interface CreateInvoiceData {

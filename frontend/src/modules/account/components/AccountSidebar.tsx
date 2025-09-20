@@ -49,7 +49,7 @@ const AccountSidebar = ({
           <div className="flex items-center space-x-4 mb-6">
             <Avatar className="h-10 w-10 border-2 border-purple-500/20">
               <AvatarImage
-                src={user?.image || "/placeholder.svg?height=40&width=40"}
+                src={"/placeholder.svg?height=40&width=40"}
                 alt={user?.name || "Usuario"}
               />
               <AvatarFallback className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 font-semibold">

@@ -34,8 +34,8 @@ import { SidebarContent } from '../../create-profile/components/SidebarContent';
 import { Step1EssentialInfo } from '../../create-profile/components/Step1EssentialInfo';
 import { Step2Description } from '../../create-profile/components/Step2Description';
 import { Step3Details } from '../../create-profile/components/Step3Details';
-import { Step4Multimedia } from '../../create-profile/components/Step4Multimedia';
-import { Step5Finalize } from '../../create-profile/components/Step5Finalize';
+import { Step5Multimedia } from '../../create-profile/components/Step5Multimedia';
+import { Step4Plan } from '../../create-profile/components/Step4Plan';
 
 interface EditProfileLayoutProps {
   profileId: string;
@@ -100,10 +100,10 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
   useEffect(() => {
     if (profileDetails && attributeGroups) {
       // Cargando datos del perfil
-      
+
       // Función para obtener el valor de una característica por grupo
       const getFeatureValue = (groupKey: string) => {
-        const feature = profileDetails.features?.find((f: any) => 
+        const feature = profileDetails.features?.find((f: any) =>
           f.group?.key === groupKey
         );
         const value = feature?.value?.[0] || '';
@@ -122,7 +122,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
 
       // Obtener servicios seleccionados
       const getSelectedServices = () => {
-        const servicesFeature = profileDetails.features?.find((f: any) => 
+        const servicesFeature = profileDetails.features?.find((f: any) =>
           f.group?.key === 'services'
         );
         return servicesFeature?.value || [];
@@ -180,13 +180,13 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       form.setValue('location.country', formData.location.country);
       form.setValue('location.department', formData.location.department);
       form.setValue('location.city', formData.location.city);
-      
+
       // Step 2 - Descripción y servicios
       form.setValue('description', formData.description);
       form.setValue('selectedServices', formData.selectedServices);
       form.setValue('basicServices', profileDetails.basicServices || []);
       form.setValue('additionalServices', profileDetails.additionalServices || []);
-      
+
       // Step 3 - Detalles y contacto
       form.setValue('contact.number', formData.contact.number);
       form.setValue('contact.whatsapp', formData.contact.whatsapp);
@@ -200,19 +200,19 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       form.setValue('height', formData.height);
       form.setValue('rates', formData.rates);
       form.setValue('availability', formData.availability);
-      
+
       // Step 4 - Multimedia
       form.setValue('photos', formData.photos);
       form.setValue('videos', formData.videos);
       form.setValue('audios', formData.audios);
-      
+
       // Step 5 - Finalizar
       form.setValue('selectedUpgrades', formData.selectedUpgrades);
       form.setValue('acceptTerms', formData.acceptTerms);
-      
+
       // Forzar re-render de los campos controlados
       form.trigger();
-      
+
       // Valores establecidos en el formulario
     }
   }, [profileDetails, form, attributeGroups]);
@@ -456,10 +456,10 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       // Separar archivos nuevos de URLs existentes
       const newPhotos = data.photos?.filter(photo => photo instanceof File) || [];
       const existingPhotoUrls = data.photos?.filter(photo => typeof photo === 'string') || [];
-      
+
       const newVideos = data.videos?.filter(video => video instanceof File) || [];
       const existingVideoUrls = data.videos?.filter(video => typeof video === 'string') || [];
-      
+
       const newAudios = data.audios?.filter(audio => audio instanceof File) || [];
       const existingAudioUrls = data.audios?.filter(audio => typeof audio === 'string') || [];
 
@@ -560,9 +560,9 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
           />
         );
       case 4:
-        return <Step5Finalize />; // Cambio: Plan selection ahora es paso 4
+        return <Step4Plan />; // Cambio: Plan selection ahora es paso 4
       case 5:
-        return <Step4Multimedia />; // Cambio: Multimedia ahora es paso 5
+        return <Step5Multimedia />; // Cambio: Multimedia ahora es paso 5
 
       default:
         return null;

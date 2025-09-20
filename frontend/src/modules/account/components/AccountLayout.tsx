@@ -76,7 +76,7 @@ export default function AccountLayout() {
 
         setIsApplyingCoupon(true);
         try {
-            const selectedProfile = userProfiles?.find(p => p._id === selectedProfileId);
+            const selectedProfile = userProfiles?.find((p: any) => p._id === selectedProfileId);
             if (!selectedProfile) {
                 toast.error('Perfil no encontrado');
                 return;
@@ -217,9 +217,9 @@ export default function AccountLayout() {
                 window.open(whatsappData.data.whatsappUrl, '_blank');
                 
                 // Mostrar mensaje de éxito con detalles del descuento
-                const discountTypeText = validatedCoupon.discountType === 'percentage' 
-                    ? `${validatedCoupon.discountValue}% de descuento`
-                    : validatedCoupon.discountType === 'fixed_amount'
+                const discountTypeText = validatedCoupon.type === 'percentage' 
+                    ? `${validatedCoupon.value}% de descuento`
+                    : validatedCoupon.type === 'fixed_amount'
                     ? `Precio final: $${finalPrice.toLocaleString()}`
                     : 'Asignación de plan gratuito';
                 
@@ -321,10 +321,10 @@ export default function AccountLayout() {
                 onClose={handleCloseConfirmationModal}
                 onConfirm={handleConfirmApplication}
                 isProcessing={isApplyingCoupon}
-                profileName={userProfiles?.find(p => p._id === selectedProfileId)?.name || ''}
+                profileName={userProfiles?.find((p: any) => p._id === selectedProfileId)?.name || ''}
                 couponCode={validatedCoupon?.code || ''}
-                couponType={validatedCoupon?.discountType}
-                couponValue={validatedCoupon?.discountValue}
+                couponType={validatedCoupon?.type}
+                couponValue={validatedCoupon?.value}
             />
         </div>
     );

@@ -47,7 +47,6 @@ export interface Profile {
   user: string;
   name: string;
   description?: string;
-  isActive: boolean;
   location: {
     country: {
       value: string;
@@ -92,9 +91,9 @@ export interface Profile {
     profilePicture: string;
   };
   services: string[];
-  planAssignment: {
-    planId: string;
-    planCode: string;
+  planAssignment?: {
+    planId?: string;
+    planCode?: string;
     variantDays: number;
     startAt: Date;
     expiresAt: Date;

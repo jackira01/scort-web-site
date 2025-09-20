@@ -107,12 +107,29 @@ class CouponService {
       });
       
       if (!response.data.success) {
-        throw new Error(response.data.message || 'Cupón no válido');
+        return {
+          isValid: false,
+          error: response.data.message || 'Cupón no válido'
+        };
       }
       
-      return response.data.data as CouponValidationResult;
+      // Transformar la respuesta del backend al formato esperado
+      const couponData = response.data.data as ICoupon;
+      return {
+        isValid: true,
+        coupon: {
+          code: couponData.code,
+          name: couponData.name,
+          type: couponData.type,
+          value: couponData.value,
+          planCode: couponData.planCode
+        }
+      };
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Error al validar cupón');
+      return {
+        isValid: false,
+        error: error.response?.data?.message || 'Error al validar cupón'
+      };
     }
   }
 

@@ -20,6 +20,8 @@ export const formSchema = z.object({
   // Step 2 - Descripción
   description: z.string().optional(),
   selectedServices: z.array(z.string()).optional(),
+  basicServices: z.array(z.string()).optional(),
+  additionalServices: z.array(z.string()).optional(),
 
   // Step 3 - Detalles
   contact: z.object({
@@ -47,13 +49,20 @@ export const formSchema = z.object({
   hairColor: z.string().optional(),
   bodyType: z.string().optional(),
   height: z.string().optional(),
+  socialMedia: z.object({
+    instagram: z.string().optional(),
+    facebook: z.string().optional(),
+    tiktok: z.string().optional(),
+    twitter: z.string().optional(),
+    onlyFans: z.string().optional(),
+  }).optional(),
   // bustSize: z.string().optional(),
   rates: z.array(z.any()).optional(),
   availability: z.array(z.any()).optional(),
 
   // Step 4 - Multimedia
   photos: z.array(z.union([z.string(), z.instanceof(File)])).optional(),
-  videos: z.array(z.union([z.string(), z.instanceof(File)])).optional(),
+  videos: z.array(z.union([z.string(), z.instanceof(File), z.null()])).optional(),
   audios: z.array(z.union([z.string(), z.instanceof(File)])).optional(),
   processedImages: z.array(z.any()).optional(), // Array de ProcessedImageResult
   coverImageIndex: z.number().optional(), // Índice de la imagen de portada seleccionada

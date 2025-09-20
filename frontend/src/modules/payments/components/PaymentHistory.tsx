@@ -195,7 +195,7 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
               <Loader2 className="h-6 w-6 animate-spin text-purple-600 dark:text-purple-300" />
               <span className="ml-2 text-gray-600 dark:text-gray-300">Cargando facturas...</span>
             </div>
-          ) : error && error.message.includes('ID de factura inválido') ? (
+          ) : error && (error as Error).message?.includes('ID de factura inválido') ? (
             <div className="text-center py-8">
               <Receipt className="h-12 w-12 text-red-400 mx-auto mb-4" />
               <p className="text-red-600 mb-2 dark:text-red-400 font-medium">Factura no encontrada o inexistente</p>

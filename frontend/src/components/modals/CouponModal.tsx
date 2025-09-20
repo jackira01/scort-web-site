@@ -8,13 +8,13 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ICoupon } from '@/types/coupon.types';
-import { UserProfile } from '@/types/user.types';
+import { Profile } from '@/types/user.types';
 
 interface CouponModalProps {
   isOpen: boolean;
   onClose: () => void;
   coupon: ICoupon | null;
-  userProfiles: UserProfile[];
+  userProfiles: Profile[];
   onApplyCoupon: (profileId: string) => void;
   isApplying?: boolean;
 }
@@ -162,9 +162,9 @@ export default function CouponModal({
                           {/* Avatar rectangular */}
                           <div className="relative">
                             <div className="w-16 h-20 rounded-lg overflow-hidden bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900">
-                              {profile.photos?.[0]?.url ? (
+                              {(profile as any).photos?.[0]?.url ? (
                                 <img
-                                  src={profile.photos[0].url}
+                                  src={(profile as any).photos[0].url}
                                   alt={profile.name}
                                   className="w-full h-full object-cover"
                                 />

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import type { Profile } from '@/types/profile.types';
+import type { ProfileCardData } from '@/types/profile.types';
 import { ProfileCard } from '@/modules/catalogs/components/ProfileCard';
 import { useFeaturedSponsoredProfiles } from '@/hooks/use-sponsored-profiles';
 
@@ -143,7 +143,7 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
               style={{ width: `${100 / visibleCount}%` }}
             >
               <ProfileCard
-                profile={profile}
+                profile={profile as any}
                 viewMode="grid"
                 variant="featured"
               />

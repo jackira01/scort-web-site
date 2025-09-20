@@ -340,13 +340,13 @@ export default function SearchPageClient({
 
                       <Separator />
 
-                      <SexFilter
+                      {/* <SexFilter
                         selectedSex={filters.features?.sex}
                         onSexChange={(sex) => updateFilter('sex', sex)}
                         category={categoria}
                       />
 
-                      <Separator />
+                      <Separator /> */}
 
                       <AgeFilter
                         ageRange={filters.features?.ageRange}

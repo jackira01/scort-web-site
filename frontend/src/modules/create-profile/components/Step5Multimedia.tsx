@@ -117,7 +117,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
     const fileArray = Array.from(files);
     const currentFiles: (File | string)[] =
-      type === 'photos' ? photos : type === 'videos' ? videos : audios;
+      type === 'photos' ? photos : type === 'videos' ? videos.filter(v => v !== null) : audios;
 
     // Validar límites dinámicos
     const limits = {
@@ -223,7 +223,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     index: number,
   ) => {
     const currentFiles: (File | string)[] =
-      type === 'photos' ? photos : type === 'videos' ? videos : audios;
+      type === 'photos' ? photos : type === 'videos' ? videos.filter(v => v !== null) : audios;
     const newFiles = currentFiles.filter((_, i) => i !== index);
 
     // Liberar URL de objeto si es un archivo File
@@ -784,7 +784,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                     Videos seleccionados:
                   </h4>
                   <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto">
-                    {videos.map((file, index) =>
+                    {videos.filter(file => file !== null).map((file, index) =>
                       renderFilePreview(file, 'videos', index),
                     )}
                   </div>
