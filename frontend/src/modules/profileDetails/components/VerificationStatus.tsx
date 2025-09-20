@@ -74,13 +74,13 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
     },
     {
       label: "Identidad confirmada",
-      isVerified: steps?.selfieWithDoc?.isVerified || false,
-      hasData: !!steps?.selfieWithDoc?.photo
+      isVerified: steps?.videoVerification?.isVerified || false,
+      hasData: !!steps?.videoVerification?.videoLink
     },
     {
       label: "Verificación por videollamada",
-      isVerified: steps?.video?.isVerified || false,
-      hasData: !!steps?.video?.videoLink
+      isVerified: steps?.videoCallRequested?.isVerified || false,
+      hasData: !!steps?.videoCallRequested?.videoLink
     },
     {
       label: "Verificación por redes sociales",
@@ -161,8 +161,8 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
               {step.label === "Identidad confirmada" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified
-                    ? "Las fotos del documento de identidad coinciden con el video o foto de verificacion."
-                    : "La identidad de este perfil no ha sido confirmada aun."}
+                    ? "La identidad del usuario ha sido confirmada mediante video de verificación."
+                    : "Este usuario aún no ha completado el video de verificación de identidad."}
                 </p>
               )}
               {step.label === "Verificación por videollamada" && (

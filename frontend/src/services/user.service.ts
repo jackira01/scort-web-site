@@ -63,10 +63,10 @@ export const getUserProfiles = async (userId: string) => {
 }
 
 export const createProfile = async (profileData: any, purchasedPlan: any) => {
-  const requestBody = {
-    profileData,
-    purchasedPlan
-  };
+    const requestBody = {
+        profileData,
+        purchasedPlan
+    };
     const response = await axios.post(`${API_URL}/api/profile/`, requestBody);
     return response.data;
 }
@@ -77,8 +77,53 @@ export const getProfileById = async (profileId: string) => {
 }
 
 export const getProfileVerification = async (profileId: string) => {
-    const response = await axios.get(`${API_URL}/api/profile-verification/profile/${profileId}`);
-    return response.data;
+    try {
+        console.log('🔍 Fetching profile verification for profileId:', profileId);
+        const response = await axios.get(`${API_URL}/api/profile-verification/profile/${profileId}`);
+        console.log('📊 Profile verification response:', response.data);
+
+        // Si el backend devuelve { success: true, data: {} } pero data está vacío,
+        // crear una estructura de verificación por defecto
+        if (response.data.success && (!response.data.data || Object.keys(response.data.data).length === 0)) {
+            console.log('⚠️ No verification data found, creating default structure');
+
+            // Crear un nuevo registro de verificación
+            const createResponse = await axios.post(`${API_URL}/api/profile-verification`, {
+                profile: profileId,
+                verificationStatus: 'pending',
+                verificationProgress: 0,
+                data: {
+                    steps: {
+                        documentPhotos: {
+                            frontPhoto: '',
+                            backPhoto: '',
+                            selfieWithDocument: '',
+                            isVerified: false
+                        },
+                        videoVerification: {
+                            videoLink: '',
+                            isVerified: false
+                        },
+                        videoCallRequested: {
+                            videoLink: '',
+                            isVerified: false
+                        },
+                        socialMedia: {
+                            isVerified: false
+                        }
+                    }
+                }
+            });
+
+            console.log('✅ Created new verification record:', createResponse.data);
+            return createResponse.data;
+        }
+
+        return response.data;
+    } catch (error) {
+        console.error('❌ Error fetching profile verification:', error);
+        throw error;
+    }
 }
 
 export const updateProfile = async (profileId: string, data: any) => {

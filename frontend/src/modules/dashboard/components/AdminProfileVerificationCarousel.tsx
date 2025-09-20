@@ -12,6 +12,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,6 +53,13 @@ const AdminProfileVerificationCarousel: React.FC<
     error: any;
   };
 
+  // Debug: Verificar el estado de la carga de datos
+  console.log('🔍 DEBUG useProfileVerification:');
+  console.log('🆔 profileId:', profileId);
+  console.log('📊 verificationData:', verificationData);
+  console.log('📋 isLoading:', isLoading);
+  console.log('❌ error:', error);
+
   // Fetch profile data using the hook
   const profileData = useProfile(profileId);
 
@@ -69,7 +77,7 @@ const AdminProfileVerificationCarousel: React.FC<
   // Mutation hook for updating verification
   const updateVerificationMutation = useProfileVerificationMutation({
     profileId,
-    verificationId: verificationData?._id,
+    verificationId: verificationData?.data?._id,
     onSuccess: () => {
       // Callback adicional si es necesario
     }
@@ -98,18 +106,32 @@ const AdminProfileVerificationCarousel: React.FC<
 
   // Función personalizada para guardar todos los cambios
   const handleSaveAllChanges = async () => {
+    console.log('🔍 DEBUG handleSaveAllChanges:');
+    console.log('🔄 hasIsActiveChanged:', hasIsActiveChanged);
+    console.log('🔄 hasChanges:', hasChanges);
+    console.log('📊 profileData.data?.isActive:', profileData.data?.isActive);
+    console.log('📊 isActiveLocal:', isActiveLocal);
+    
     try {
       // Guardar cambios de isActive si han cambiado
       if (hasIsActiveChanged) {
-        await updateProfileMutation.mutateAsync({ isActive: isActiveLocal });
+        console.log("🚀 Iniciando actualización de isActive...");
+        console.log("📤 Enviando datos:", { isActive: isActiveLocal });
+        
+        const profileResult = await updateProfileMutation.mutateAsync({ isActive: isActiveLocal });
+        console.log("✅ Respuesta de actualización de perfil:", profileResult);
       }
 
       // Guardar cambios de verificación si los hay
       if (hasChanges) {
+        console.log("🚀 Iniciando guardado de cambios de verificación...");
         await handleSaveChanges();
       }
+      
+      console.log("✅ Todos los cambios guardados exitosamente");
     } catch (error) {
-      // Los errores se manejan en los hooks de mutación
+      console.error("❌ Error en handleSaveAllChanges:", error);
+      toast.error('Error al guardar los cambios');
     }
   };
 
@@ -142,10 +164,46 @@ const AdminProfileVerificationCarousel: React.FC<
 
   // Save and cancel functions
   const handleSaveChanges = async () => {
-    if (!verificationData) return;
-    const updatedSteps = buildUpdatedSteps(verificationData);
-    await updateVerificationMutation.mutateAsync(updatedSteps);
-    resetChanges();
+    // Debug: Verificar datos antes de guardar
+    console.log('🔍 DEBUG handleSaveChanges:');
+    console.log('📊 verificationData:', verificationData);
+    console.log('📊 verificationData?.data:', verificationData?.data);
+    console.log('📊 verificationData?.data?.steps:', verificationData?.data?.steps);
+    console.log('🆔 verificationData?.data?._id:', verificationData?.data?._id);
+    console.log('📋 isLoading:', isLoading);
+    console.log('❌ error:', error);
+
+    // Verificar si tenemos datos de verificación válidos
+    if (!verificationData?.data?._id) {
+      console.log('❌ Error: ID de verificación no disponible');
+      toast.error('No se puede guardar: ID de verificación no disponible');
+      return;
+    }
+
+    // Verificar si tenemos steps válidos
+    if (!verificationData?.data?.steps) {
+      console.log('❌ Error: steps de verificación no disponibles');
+      toast.error('No se puede guardar: datos de steps no disponibles');
+      return;
+    }
+
+    try {
+      console.log('🚀 Iniciando guardado de cambios de verificación...');
+      console.log('📋 verificationData.data.steps antes de buildUpdatedSteps:', verificationData.data.steps);
+      
+      const updatedSteps = buildUpdatedSteps(verificationData);
+      console.log('📦 updatedSteps generados:', updatedSteps);
+      
+      console.log('🌐 Enviando petición de actualización...');
+      const result = await updateVerificationMutation.mutateAsync(updatedSteps);
+      console.log('✅ Respuesta de la petición:', result);
+      
+      resetChanges();
+      console.log('🔄 Cambios reseteados exitosamente');
+    } catch (error) {
+      console.error('❌ Error en handleSaveChanges:', error);
+      toast.error('Error al guardar los cambios de verificación');
+    }
   };
 
   const handleCancelChanges = () => {
@@ -188,6 +246,25 @@ const AdminProfileVerificationCarousel: React.FC<
               >
                 Cerrar
               </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Validación adicional para asegurar que verificationData esté completamente cargado
+  if (!verificationData?.data?.steps) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Verificación de Perfil</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p>Cargando estructura de verificación...</p>
             </div>
           </div>
         </DialogContent>
@@ -271,7 +348,7 @@ const AdminProfileVerificationCarousel: React.FC<
                   onClick={() => setCurrentStepIndex(index)}
                   className={`h-2 w-2 rounded-full transition-colors ${index === currentStepIndex
                     ? 'bg-primary'
-                    : verificationData?.steps?.[verificationSteps[index].key]
+                    : verificationData?.data?.steps?.[verificationSteps[index].key]
                       ?.isVerified
                       ? 'bg-green-500'
                       : 'bg-muted'
@@ -288,14 +365,15 @@ const AdminProfileVerificationCarousel: React.FC<
                     {currentStep.icon}
                     {currentStep.label}
                   </div>
+
                   <Badge
                     variant={
-                      verificationData?.steps?.[currentStep.key]?.isVerified
+                      verificationData?.data?.steps?.[currentStep.key]?.isVerified
                         ? 'default'
                         : 'secondary'
                     }
                   >
-                    {verificationData?.steps?.[currentStep.key]?.isVerified ? (
+                    {verificationData?.data?.steps?.[currentStep.key]?.isVerified ? (
                       <>
                         <Check className="h-3 w-3 mr-1" /> Verificado
                       </>
@@ -305,6 +383,13 @@ const AdminProfileVerificationCarousel: React.FC<
                       </>
                     )}
                   </Badge>
+                  <Switch
+                    checked={getCurrentVerificationStatus(currentStep.key, verificationData?.data)}
+                    onCheckedChange={(checked) =>
+                      handleToggleVerification(currentStep.key, checked)
+                    }
+                    disabled={updateVerificationMutation.isPending}
+                  />
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -314,7 +399,7 @@ const AdminProfileVerificationCarousel: React.FC<
                   </p>
                 )}
 
-                <div className="flex items-center justify-between p-4 border rounded-lg">
+                {/* <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center gap-3">
                     {currentStep.icon}
                     <div>
@@ -325,13 +410,13 @@ const AdminProfileVerificationCarousel: React.FC<
                     </div>
                   </div>
                   <Switch
-                    checked={getCurrentVerificationStatus(currentStep.key, verificationData)}
+                    checked={getCurrentVerificationStatus(currentStep.key, verificationData?.data)}
                     onCheckedChange={(checked) =>
                       handleToggleVerification(currentStep.key, checked)
                     }
                     disabled={updateVerificationMutation.isPending}
                   />
-                </div>
+                </div> */}
 
                 {/* Document preview section */}
                 {currentStep.label === 'Redes Sociales' ?
@@ -506,13 +591,20 @@ const AdminProfileVerificationCarousel: React.FC<
                     })()}
                   </div> :
                   (<div className="border rounded-lg p-4">
-                    <VerificationStepRenderer
-                      step={currentStep}
-                      stepData={verificationData?.steps?.[currentStep.key]}
-                      onPreviewImage={setPreviewImage}
-                      getCurrentVideoLink={(stepKey) => getCurrentVideoLink(stepKey, verificationData)}
-                      handleVideoLinkChange={handleVideoLinkChange}
-                    />
+                    {(() => {
+                      // Obtener los datos del paso actual desde el objeto steps
+                      const stepData = verificationData?.data?.steps?.[currentStep.key as keyof typeof verificationData.data.steps];
+
+                      return (
+                        <VerificationStepRenderer
+                          step={currentStep}
+                          stepData={stepData}
+                          onPreviewImage={setPreviewImage}
+                          getCurrentVideoLink={(stepKey) => getCurrentVideoLink(stepKey, verificationData)}
+                          handleVideoLinkChange={handleVideoLinkChange}
+                        />
+                      );
+                    })()}
                   </div>)}
               </CardContent>
             </Card>

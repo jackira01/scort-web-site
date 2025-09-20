@@ -32,8 +32,6 @@ export const UserDocumentVerificationModal = ({
 
   const handleUserVerificationToggle = async (checked: boolean) => {
     try {
-      console.log(`🔄 Intentando actualizar verificación de usuario ${user._id} a:`, checked);
-
       // Optimistic update
       setUserVerificationStatus(checked);
 
@@ -45,8 +43,6 @@ export const UserDocumentVerificationModal = ({
         },
       });
 
-      console.log('📡 Respuesta del servidor:', result);
-
       // Verify the update was successful - handle both old and new response formats
       const isVerifiedValue = result?.isVerified ?? result?.data?.isVerified;
       const success = result?.success !== false; // Default to true if success field is not present
@@ -55,8 +51,6 @@ export const UserDocumentVerificationModal = ({
         // Update local state to match server response
         setUserVerificationStatus(isVerifiedValue);
 
-        console.log(`✅ Actualización exitosa. Nuevo estado: ${isVerifiedValue}`);
-
         toast.success(
           isVerifiedValue
             ? 'Usuario verificado exitosamente'
@@ -64,7 +58,6 @@ export const UserDocumentVerificationModal = ({
         );
       } else {
         // If no proper response or explicit failure, revert
-        console.warn('⚠️ Respuesta inválida del servidor:', result);
         setUserVerificationStatus(!checked);
         toast.error(result?.message || 'Error: Respuesta inválida del servidor');
       }

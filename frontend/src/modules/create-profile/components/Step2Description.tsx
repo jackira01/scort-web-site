@@ -41,7 +41,7 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
     if (!updatedServices.includes(serviceValue)) {
       const currentBasic = getValues('basicServices') || [];
       const currentAdditional = getValues('additionalServices') || [];
-      
+
       setValue('basicServices', currentBasic.filter((s: string) => s !== serviceValue));
       setValue('additionalServices', currentAdditional.filter((s: string) => s !== serviceValue));
     }
@@ -53,10 +53,10 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
 
     if (type === 'basic') {
       // Agregar a básicos y remover de adicionales
-      const updatedBasic = currentBasic.includes(serviceValue) 
+      const updatedBasic = currentBasic.includes(serviceValue)
         ? currentBasic.filter((s: string) => s !== serviceValue)
         : [...currentBasic.filter((s: string) => s !== serviceValue), serviceValue];
-      
+
       setValue('basicServices', updatedBasic);
       setValue('additionalServices', currentAdditional.filter((s: string) => s !== serviceValue));
     } else {
@@ -64,7 +64,7 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
       const updatedAdditional = currentAdditional.includes(serviceValue)
         ? currentAdditional.filter((s: string) => s !== serviceValue)
         : [...currentAdditional.filter((s: string) => s !== serviceValue), serviceValue];
-      
+
       setValue('additionalServices', updatedAdditional);
       setValue('basicServices', currentBasic.filter((s: string) => s !== serviceValue));
     }
@@ -132,7 +132,7 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
                 onClick={() => setShowClassification(!showClassification)}
                 className="text-xs"
               >
-                <Star className="h-3 w-3 mr-1" />
+                <Plus className="h-3 w-3 mr-1" />
                 {showClassification ? 'Ocultar clasificación' : 'Seleccionar servicios adicionales/básicos'}
               </Button>
             )}
@@ -145,7 +145,7 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
                 .map((variant) => {
                   const isSelected = selectedServices.includes(variant.value);
                   const classification = getServiceClassification(variant.value);
-                  
+
                   return (
                     <div key={variant._id} className="space-y-2">
                       <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
@@ -161,7 +161,7 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
                           {variant.label}
                         </Label>
                         {classification && (
-                          <Badge 
+                          <Badge
                             variant={classification === 'basic' ? 'default' : 'secondary'}
                             className="text-xs"
                           >
@@ -212,7 +212,7 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
           {showClassification && (basicServices.length > 0 || additionalServices.length > 0) && (
             <div className="mt-4 p-4 bg-muted/30 rounded-lg space-y-3">
               <h4 className="text-sm font-medium">Resumen de clasificación:</h4>
-              
+
               {basicServices.length > 0 && (
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Servicios básicos ({basicServices.length}):</p>

@@ -5,12 +5,12 @@ interface UseVerificationChangesReturn {
   hasChanges: boolean;
   pendingChanges: Record<string, boolean>;
   pendingVideoLinks: Record<string, string>;
-  handleToggleVerification: (stepKey: keyof ProfileVerificationData['steps'], isVerified: boolean) => void;
-  handleVideoLinkChange: (stepKey: 'videoVerification', videoLink: string) => void;
-  getCurrentVerificationStatus: (stepKey: keyof ProfileVerificationData['steps'], verificationData?: ProfileVerificationData) => boolean;
-  getCurrentVideoLink: (stepKey: 'videoVerification', verificationData?: ProfileVerificationData) => string;
+  handleToggleVerification: (stepKey: keyof ProfileVerificationData['data']['steps'], isVerified: boolean) => void;
+  handleVideoLinkChange: (stepKey: 'videoVerification' | 'videoCallRequested', videoLink: string) => void;
+  getCurrentVerificationStatus: (stepKey: keyof ProfileVerificationData['data']['steps'], verificationData?: ProfileVerificationData) => boolean;
+  getCurrentVideoLink: (stepKey: 'videoVerification' | 'videoCallRequested', verificationData?: ProfileVerificationData) => string;
   resetChanges: () => void;
-  buildUpdatedSteps: (verificationData: ProfileVerificationData) => ProfileVerificationData['steps'];
+  buildUpdatedSteps: (verificationData: ProfileVerificationData) => ProfileVerificationData['data']['steps'];
 }
 
 export const useVerificationChanges = (): UseVerificationChangesReturn => {
@@ -19,8 +19,8 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
   const [pendingVideoLinks, setPendingVideoLinks] = useState<Record<string, string>>({});
 
   const handleToggleVerification = (
-    stepKey: keyof ProfileVerificationData['steps'],
-    isVerified: boolean,
+    stepKey: keyof ProfileVerificationData['data']['steps'],
+    isVerified: boolean
   ) => {
     setPendingChanges(prev => ({
       ...prev,
@@ -31,8 +31,8 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
   };
 
   const handleVideoLinkChange = (
-    stepKey: 'videoVerification',
-    videoLink: string,
+    stepKey: 'videoVerification' | 'videoCallRequested',
+    videoLink: string
   ) => {
     setPendingVideoLinks(prev => ({
       ...prev,
@@ -43,23 +43,23 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
   };
 
   const getCurrentVerificationStatus = (
-    stepKey: keyof ProfileVerificationData['steps'],
+    stepKey: keyof ProfileVerificationData['data']['steps'],
     verificationData?: ProfileVerificationData
   ) => {
     if (stepKey in pendingChanges) {
       return pendingChanges[stepKey];
     }
-    return verificationData?.steps?.[stepKey]?.isVerified || false;
+    return verificationData?.data?.steps?.[stepKey]?.isVerified || false;
   };
 
   const getCurrentVideoLink = (
-    stepKey: 'videoVerification',
+    stepKey: 'videoVerification' | 'videoCallRequested',
     verificationData?: ProfileVerificationData
   ) => {
     if (stepKey in pendingVideoLinks) {
       return pendingVideoLinks[stepKey];
     }
-    return verificationData?.steps?.[stepKey]?.videoLink || '';
+    return verificationData?.data?.steps?.[stepKey]?.videoLink || '';
   };
 
   const resetChanges = () => {
@@ -69,38 +69,30 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
   };
 
   const buildUpdatedSteps = (verificationData: ProfileVerificationData) => {
-    const currentSteps = verificationData.steps;
-    const updatedSteps: ProfileVerificationData['steps'] = {
-      documentPhotos: {
-        frontPhoto: currentSteps.documentPhotos?.frontPhoto || '',
-        backPhoto: currentSteps.documentPhotos?.backPhoto || '',
-        selfieWithDocument: currentSteps.documentPhotos?.selfieWithDocument || '',
-        isVerified: currentSteps.documentPhotos?.isVerified || false
-      },
-      videoVerification: {
-        videoLink: currentSteps.videoVerification?.videoLink,
-        isVerified: currentSteps.videoVerification?.isVerified || false
-      },
-      socialMedia: {
-        isVerified: currentSteps.socialMedia?.isVerified || false
-      }
+    // Comenzar con los steps actuales
+    const updatedSteps: ProfileVerificationData['data']['steps'] = {
+      ...verificationData.data.steps
     };
 
-    // Aplicar los cambios pendientes de verificación
+    // Aplicar cambios pendientes de verificación
     Object.entries(pendingChanges).forEach(([stepKey, isVerified]) => {
-      if (stepKey === 'documentPhotos') {
-        updatedSteps.documentPhotos.isVerified = isVerified;
-      } else if (stepKey === 'videoVerification') {
-        updatedSteps.videoVerification.isVerified = isVerified;
-      } else if (stepKey === 'socialMedia') {
-        updatedSteps.socialMedia.isVerified = isVerified;
+      const key = stepKey as keyof ProfileVerificationData['data']['steps'];
+      if (updatedSteps[key]) {
+        updatedSteps[key] = {
+          ...updatedSteps[key],
+          isVerified
+        };
       }
     });
 
-    // Aplicar los cambios pendientes de videoLink
+    // Aplicar cambios pendientes de video links
     Object.entries(pendingVideoLinks).forEach(([stepKey, videoLink]) => {
-      if (stepKey === 'videoVerification') {
-        updatedSteps.videoVerification.videoLink = videoLink;
+      const key = stepKey as 'videoVerification' | 'videoCallRequested';
+      if (updatedSteps[key] && 'videoLink' in updatedSteps[key]) {
+        updatedSteps[key] = {
+          ...updatedSteps[key],
+          videoLink
+        };
       }
     });
 

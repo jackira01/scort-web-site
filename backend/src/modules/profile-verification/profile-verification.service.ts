@@ -47,6 +47,10 @@ const getDefaultVerificationSteps = (accountType: string, requiresIndependentVer
       videoLink: undefined,
       isVerified: false
     },
+    videoCallRequested: {
+      videoLink: undefined,
+      isVerified: false
+    },
     socialMedia: {
       isVerified: false
     },
@@ -57,7 +61,7 @@ const getDefaultVerificationSteps = (accountType: string, requiresIndependentVer
     }
   };
 
-  // Para usuarios comunes con múltiples perfiles, heredar verificación del usuario
+  // Para usuarios comunes con múltiples perfiles, mantener verificación manual
   if (accountType === 'common' && !requiresIndependentVerification) {
     return {
       ...baseSteps,
@@ -65,7 +69,7 @@ const getDefaultVerificationSteps = (accountType: string, requiresIndependentVer
         frontPhoto: undefined,
         backPhoto: undefined,
         selfieWithDocument: undefined,
-        isVerified: true // Heredar verificación del usuario
+        isVerified: false // Mantener false hasta verificación manual del admin
       }
     };
   }

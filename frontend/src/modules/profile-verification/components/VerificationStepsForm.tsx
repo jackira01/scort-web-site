@@ -20,7 +20,7 @@ const verificationSchema = z.object({
     backPhoto: z.string().optional(),
     selfieWithDocument: z.string().optional(),
   }),
-  video: z.object({
+  videoVerification: z.object({
     videoLink: z.string().optional(),
   }),
 });
@@ -38,6 +38,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<{ [key: string]: boolean }>({});
   const [currentStep, setCurrentStep] = useState(1);
+  const [pendingFiles, setPendingFiles] = useState<{ [key: string]: File }>({});
   const queryClient = useQueryClient();
 
   const form = useForm<VerificationFormData>({
@@ -48,8 +49,8 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
         backPhoto: initialData.documentPhotos?.backPhoto || '',
         selfieWithDocument: initialData.documentPhotos?.selfieWithDocument || '',
       },
-      video: {
-        videoLink: initialData.video?.videoLink || '',
+      videoVerification: {
+        videoLink: initialData.videoVerification?.videoLink || '',
       },
     },
   });
@@ -89,31 +90,19 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
   const handleFileUpload = async (files: File[], fieldName: string) => {
     if (files.length === 0) return;
 
-    setUploadingFiles(prev => ({ ...prev, [fieldName]: true }));
-
-    try {
-      let uploadedUrls: string[] = [];
-
-      if (fieldName === 'video') {
-        const videoResults = await uploadMultipleVideos(files);
-        uploadedUrls = videoResults.map(result => result.link);
-      } else {
-        uploadedUrls = (await uploadMultipleImages(files)).filter((url): url is string => url !== null);
-      }
-
-      if (uploadedUrls.length > 0) {
-        if (fieldName === 'video') {
-          form.setValue('video.videoLink', uploadedUrls[0]);
-        } else {
-          form.setValue(`documentPhotos.${fieldName}` as any, uploadedUrls[0]);
-        }
-        toast.success('Archivo subido exitosamente');
-      }
-    } catch (error) {
-      toast.error('Error al subir archivo');
-    } finally {
-      setUploadingFiles(prev => ({ ...prev, [fieldName]: false }));
+    // Almacenar el archivo temporalmente sin subirlo a Cloudinary
+    setPendingFiles(prev => ({ ...prev, [fieldName]: files[0] }));
+    
+    // Crear una URL temporal para mostrar preview
+    const tempUrl = URL.createObjectURL(files[0]);
+    
+    if (fieldName === 'videoVerification') {
+      form.setValue('videoVerification.videoLink', tempUrl);
+    } else {
+      form.setValue(`documentPhotos.${fieldName}` as any, tempUrl);
     }
+    
+    toast.success('Archivo seleccionado. Se subirá al guardar la verificación.');
   };
 
   const onSubmit = async (data: VerificationFormData) => {
@@ -128,10 +117,46 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
     setIsSubmitting(true);
 
     try {
+      // Subir archivos pendientes a Cloudinary
+      const uploadedData = { ...data };
+      
+      for (const [fieldName, file] of Object.entries(pendingFiles)) {
+        if (file) {
+          setUploadingFiles(prev => ({ ...prev, [fieldName]: true }));
+          
+          try {
+            let uploadedUrls: string[] = [];
+
+            if (fieldName === 'videoVerification') {
+              const videoResults = await uploadMultipleVideos([file]);
+              uploadedUrls = videoResults.map(result => result.link);
+              if (uploadedUrls.length > 0) {
+                uploadedData.videoVerification.videoLink = uploadedUrls[0];
+              }
+            } else {
+              uploadedUrls = (await uploadMultipleImages([file])).filter((url): url is string => url !== null);
+              if (uploadedUrls.length > 0) {
+                (uploadedData.documentPhotos as any)[fieldName] = uploadedUrls[0];
+              }
+            }
+          } catch (error) {
+            toast.error(`Error al subir ${fieldName}`);
+            throw error;
+          } finally {
+            setUploadingFiles(prev => ({ ...prev, [fieldName]: false }));
+          }
+        }
+      }
+
+      // Actualizar la verificación con los datos subidos
       await updateVerificationMutation.mutateAsync({
-        documentPhotos: data.documentPhotos,
-        video: data.video,
+        documentPhotos: uploadedData.documentPhotos,
+        videoVerification: uploadedData.videoVerification,
       });
+
+      // Limpiar archivos pendientes después del éxito
+      setPendingFiles({});
+      
     } catch (error) {
       console.error('Error submitting verification:', error);
     } finally {
@@ -149,6 +174,8 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
   ) => {
     const isUploading = uploadingFiles[fieldName];
     const hasValue = !!currentValue;
+    const hasPendingFile = !!pendingFiles[fieldName];
+    const isPendingUrl = currentValue?.startsWith('blob:');
 
     return (
       <Card className={`transition-all duration-300 ${isEnabled ? 'border-purple-200 bg-white' : 'border-gray-200 bg-gray-50'}`}>
@@ -156,41 +183,61 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
           <CardTitle className="flex items-center gap-2 text-lg">
             {icon}
             {label}
-            {hasValue && <CheckCircle className="h-5 w-5 text-green-500" />}
+            {hasValue && !isPendingUrl && <CheckCircle className="h-5 w-5 text-green-500" />}
+            {hasPendingFile && <Upload className="h-5 w-5 text-orange-500" />}
           </CardTitle>
           <p className="text-sm text-gray-600">{description}</p>
         </CardHeader>
         <CardContent>
           {hasValue ? (
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className={`flex items-center justify-between p-3 border rounded-lg ${
+                isPendingUrl ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'
+              }`}>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span className="text-sm text-green-700">Archivo subido correctamente</span>
+                  {isPendingUrl ? (
+                    <>
+                      <Upload className="h-4 w-4 text-orange-500" />
+                      <span className="text-sm text-orange-700">Archivo seleccionado (se subirá al guardar)</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span className="text-sm text-green-700">Archivo subido correctamente</span>
+                    </>
+                  )}
                 </div>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open(currentValue, '_blank')}
+                  onClick={() => {
+                    if (isPendingUrl) {
+                      // Para archivos pendientes, mostrar en una nueva ventana
+                      window.open(currentValue, '_blank');
+                    } else {
+                      // Para archivos ya subidos, abrir la URL de Cloudinary
+                      window.open(currentValue, '_blank');
+                    }
+                  }}
                 >
                   Ver
                 </Button>
               </div>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                 <Input
-                  type="file"
-                  accept={fieldName === 'video' ? 'video/*' : 'image/*'}
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    if (files.length > 0) {
-                      handleFileUpload(files, fieldName);
-                    }
-                  }}
-                  disabled={!isEnabled || isUploading}
-                  className="hidden"
-                  id={`${fieldName}-replace`}
-                />
+                type="file"
+                accept={fieldName === 'videoVerification' ? 'video/*' : 'image/*'}
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  if (files.length > 0) {
+                    handleFileUpload(files, fieldName);
+                  }
+                }}
+                disabled={!isEnabled || isUploading}
+                className="hidden"
+                id={`${fieldName}-replace`}
+              />
                 <label
                   htmlFor={`${fieldName}-replace`}
                   className={`cursor-pointer text-sm text-gray-600 ${!isEnabled ? 'cursor-not-allowed opacity-50' : ''}`}
@@ -205,7 +252,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
             }`}>
               <Input
                 type="file"
-                accept={fieldName === 'video' ? 'video/*' : 'image/*'}
+                accept={fieldName === 'videoVerification' ? 'video/*' : 'image/*'}
                 onChange={(e) => {
                   const files = Array.from(e.target.files || []);
                   if (files.length > 0) {
@@ -224,10 +271,10 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               >
                 <Upload className="h-8 w-8 text-gray-400" />
                 <span className="text-sm font-medium text-gray-700">
-                  {isUploading ? 'Subiendo...' : 'Haz clic para subir'}
+                  {isUploading ? 'Subiendo...' : 'Haz clic para seleccionar'}
                 </span>
                 <span className="text-xs text-gray-500">
-                  {fieldName === 'video' ? 'Formatos: MP4, MOV, AVI' : 'Formatos: JPG, PNG, WEBP'}
+                  {fieldName === 'videoVerification' ? 'Formatos: MP4, MOV, AVI' : 'Formatos: JPG, PNG, WEBP'}
                 </span>
               </label>
             </div>

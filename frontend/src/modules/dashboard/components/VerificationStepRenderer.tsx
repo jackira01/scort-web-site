@@ -11,17 +11,18 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
   getCurrentVideoLink,
   handleVideoLinkChange,
 }) => {
-  if (!stepData) {
+
+  if (!stepData || typeof stepData !== 'object') {
     return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-        <p className="text-red-600 text-sm">No hay datos de verificación disponibles</p>
+      <div className="text-center py-8 text-muted-foreground">
+        <p>No hay datos disponibles para este paso de verificación.</p>
       </div>
     );
   }
 
   switch (step.key) {
     case 'documentPhotos': {
-      const documentData = stepData as ProfileVerificationData['steps']['documentPhotos'];
+      const documentData = stepData as ProfileVerificationData['data']['steps']['documentPhotos'];
       const photos = [
         { key: 'frontPhoto', label: 'Documento (frontal)', url: documentData.frontPhoto },
         { key: 'backPhoto', label: 'Documento (reverso)', url: documentData.backPhoto },
@@ -69,20 +70,20 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
     }
 
     case 'videoVerification': {
-      const currentVideoLink = getCurrentVideoLink(step.key as 'videoVerification');
+      const currentVideoLink = getCurrentVideoLink('videoVerification');
 
       return (
         <div className="mt-4 space-y-4">
           {/* Input para editar el videoLink */}
           <div className="space-y-2">
             <label className="text-sm font-medium">
-              Link de Video
+              Link de Video de Verificación
             </label>
             <Input
               type="url"
               placeholder="https://..."
               value={currentVideoLink}
-              onChange={(e) => handleVideoLinkChange(step.key as 'videoVerification', e.target.value)}
+              onChange={(e) => handleVideoLinkChange('videoVerification', e.target.value)}
               className="w-full"
             />
           </div>
@@ -112,7 +113,7 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
                   className="flex items-center gap-2"
                 >
                   <ExternalLink className="h-4 w-4" />
-                  Ver video
+                  Ver video de verificación
                 </Button>
               )}
             </div>
@@ -121,8 +122,49 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
       );
     }
 
+    case 'videoCallRequested': {
+      const currentVideoLink = getCurrentVideoLink(step.key as 'videoCallRequested');
+
+      return (
+        <div className="mt-4 space-y-4">
+          {/* Input para editar el videoLink de videollamada */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Link de Videollamada
+            </label>
+            <Input
+              type="url"
+              placeholder="https://meet.google.com/... o https://zoom.us/..."
+              value={currentVideoLink}
+              onChange={(e) => handleVideoLinkChange(step.key as 'videoCallRequested', e.target.value)}
+              className="w-full"
+            />
+            <p className="text-xs text-gray-500">
+              Ingresa el enlace de la videollamada programada para verificación en tiempo real
+            </p>
+          </div>
+
+          {/* Mostrar el link actual si existe */}
+          {currentVideoLink && (
+            <div>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  window.open(currentVideoLink, '_blank');
+                }}
+                className="flex items-center gap-2"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Abrir videollamada
+              </Button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     case 'socialMedia': {
-      const socialMediaData = stepData as ProfileVerificationData['steps']['socialMedia'];
+      const socialMediaData = stepData as ProfileVerificationData['data']['steps']['socialMedia'];
 
       return (
         <div className="mt-4">

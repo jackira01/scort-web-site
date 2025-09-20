@@ -4,6 +4,7 @@ import {
   Phone,
   Users,
   Video,
+  VideoIcon,
 } from 'lucide-react';
 import type { VerificationStep } from '../types/verification.types';
 
@@ -15,10 +16,16 @@ export const verificationSteps: VerificationStep[] = [
     description: 'Verificación de documentos de identidad',
   },
   {
-    key: 'video',
+    key: 'videoVerification',
     label: 'Video de Verificación',
     icon: <Video className="h-5 w-5" />,
-    description: 'Video de verificación',
+    description: 'Video de verificación de identidad',
+  },
+  {
+    key: 'videoCallRequested',
+    label: 'Verificación por Videollamada',
+    icon: <VideoIcon className="h-5 w-5" />,
+    description: 'Verificación mediante videollamada en tiempo real',
   },
   {
     key: 'socialMedia',
@@ -33,7 +40,7 @@ export const getVerifiedCount = (verification: any): number => {
 
   let count = 0;
 
-  // Contar solo los pasos simplificados verificados
+  // Contar solo los pasos verificados
   verificationSteps.forEach(step => {
     if (verification.steps[step.key]?.isVerified) {
       count++;
@@ -43,7 +50,7 @@ export const getVerifiedCount = (verification: any): number => {
   return count;
 };
 
-// Función para obtener el total de pasos simplificados
+// Función para obtener el total de pasos
 export const getTotalSteps = (): number => {
-  return verificationSteps.length; // Siempre 3 pasos: documentos, video, redes sociales
+  return verificationSteps.length; // Ahora 4 pasos: documentos, video, videollamada, redes sociales
 };
