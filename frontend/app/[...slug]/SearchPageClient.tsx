@@ -189,10 +189,11 @@ export default function SearchPageClient({
                   <span className="font-medium text-purple-600">{locationInfo.city}</span>
                 </>
               )}
+
             </div>
 
             {/* Título principal */}
-            <div className="flex flex-col gap-2">
+            {/* <div className="flex flex-col gap-2">
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
                 <span className="capitalize font-medium text-gray-800 dark:text-gray-200">{categoria}</span>
                 {locationInfo?.city && locationInfo?.department && (
@@ -208,7 +209,7 @@ export default function SearchPageClient({
                   {currentProfilesData.pagination.totalProfiles} perfiles encontrados
                 </p>
               )}
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

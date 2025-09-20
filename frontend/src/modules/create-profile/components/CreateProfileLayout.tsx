@@ -408,9 +408,9 @@ export function CreateProfileLayout() {
           .filter((video): video is string | { link: string; preview: string } => video !== null)
           .map(video => {
             if (typeof video === 'string') {
-              return { url: video, thumbnail: '' };
+              return { link: video, preview: '' };
             } else {
-              return { url: video.link, thumbnail: video.preview };
+              return { link: video.link, preview: video.preview };
             }
           }),
         audios: formData.audios || [],
@@ -426,7 +426,9 @@ export function CreateProfileLayout() {
 
   const handleCreateProfileClick = () => {
     const formData = form.getValues();
-    const hasPaidPlan = formData.selectedPlan && formData.selectedPlan.code !== 'FREE';
+    const hasPaidPlan = formData.selectedPlan && 
+      formData.selectedPlan.code !== 'FREE' && 
+      formData.selectedPlan.price > 0;
 
     if (hasPaidPlan) {
       setShowConfirmModal(true);

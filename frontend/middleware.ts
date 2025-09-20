@@ -78,9 +78,13 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
   // Content Security Policy
+  const backendUrl = process.env.NODE_ENV === 'production' 
+    ? process.env.NEXT_PUBLIC_API_URL || 'https://api.midominio.com'
+    : 'http://localhost:5000';
+    
   response.headers.set(
     'Content-Security-Policy',
-    "default-src 'self' http://localhost:5000; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' http://localhost:5000; frame-src 'self' https://accounts.google.com;"
+    `default-src 'self' ${backendUrl}; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob: https://res.cloudinary.com https://lh3.googleusercontent.com; media-src 'self' blob: https://res.cloudinary.com; connect-src 'self' ${backendUrl} https://api.cloudinary.com https://accounts.google.com https://oauth2.googleapis.com https://apis.google.com; worker-src 'self' blob:; frame-src 'self' https://accounts.google.com;`
   );
 
   // ===== AUTENTICACIÓN ACTIVADA =====
@@ -209,10 +213,6 @@ export async function middleware(request: NextRequest) {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
-  response.headers.set(
-    'Content-Security-Policy',
-    "default-src 'self' http://localhost:5000; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' http://localhost:5000; frame-src 'self' https://accounts.google.com;"
-  );
 
   return response;
 }

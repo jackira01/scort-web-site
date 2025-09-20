@@ -10,7 +10,7 @@ export const transformProfileToCard = (profile: Profile): ProfileCardData => {
   // Obtener la primera imagen disponible
 
   // Verificar si tiene videos - usando la estructura actual de Profile
-  const checkHasVideo = (media: { gallery: string[]; videos: { url: string; thumbnail: string; }[]; profilePicture: string; }): boolean => {
+  const checkHasVideo = (media: { gallery: string[]; videos: { link: string; preview: string; }[]; profilePicture: string; }): boolean => {
     return (media.videos?.length || 0) > 0;
   };
 
@@ -22,7 +22,7 @@ export const transformProfileToCard = (profile: Profile): ProfileCardData => {
     description: profile.description || '',
     media: {
       gallery: profile.media.gallery || [],
-      videos: profile.media.videos?.map(v => ({ link: v.url, type: 'video' as const })) || [],
+      videos: profile.media.videos?.map(v => ({ link: v.link, type: 'video' as const })) || [],
       audios: [],
       stories: []
     },

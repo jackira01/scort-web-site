@@ -409,8 +409,8 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       media: {
         gallery: formData.photos || [],
         videos: formData.videos?.map(url => ({ 
-          url: typeof url === 'string' ? url : '', 
-          thumbnail: typeof url === 'string' ? url : '' 
+          link: typeof url === 'string' ? url : '', 
+          preview: typeof url === 'string' ? url : '' 
         })) || [],
         profilePicture: formData.photos?.[0] || '',
       },

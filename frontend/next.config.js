@@ -91,14 +91,6 @@ const nextConfig = {
       '@tanstack/react-query',
       'framer-motion'
     ],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
     webVitalsAttribution: ['CLS', 'LCP'],
     optimizeServerReact: true,
     serverMinification: true,
@@ -121,6 +113,7 @@ const nextConfig = {
       new webpack.DefinePlugin({
         global: 'globalThis',
         self: 'globalThis',
+        'typeof self': JSON.stringify('object'),
       })
     );
 
@@ -134,6 +127,14 @@ const nextConfig = {
       config.externals.push('@editorjs/image');
       config.externals.push('@editorjs/quote');
       config.externals.push('@editorjs/embed');
+      
+      // Agregar polyfill para self en el servidor
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          self: 'global',
+          'typeof self': JSON.stringify('object'),
+        })
+      );
     }
 
     // Optimizaciones para producción

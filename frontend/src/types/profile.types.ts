@@ -1,6 +1,7 @@
 export interface ProfileMediaItem {
   _id?: string;
   link?: string;
+  preview?: string;
   type?: 'image' | 'video';
 }
 
