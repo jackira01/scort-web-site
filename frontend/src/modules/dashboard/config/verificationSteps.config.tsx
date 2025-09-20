@@ -8,6 +8,14 @@ import {
 } from 'lucide-react';
 import type { VerificationStep } from '../types/verification.types';
 
+interface ProfileVerificationSteps {
+  steps: {
+    [key: string]: {
+      isVerified: boolean;
+    };
+  };
+}
+
 export const verificationSteps: VerificationStep[] = [
   {
     key: 'documentPhotos',
@@ -35,14 +43,17 @@ export const verificationSteps: VerificationStep[] = [
   },
 ];
 
-export const getVerifiedCount = (verification: any): number => {
-  if (!verification?.steps) return 0;
+export const getVerifiedCount = (verification: ProfileVerificationSteps | unknown): number => {
+  if (!verification || typeof verification !== 'object') return 0;
+  
+  const verificationData = verification as ProfileVerificationSteps;
+  if (!verificationData?.steps) return 0;
 
   let count = 0;
 
   // Contar solo los pasos verificados
   verificationSteps.forEach(step => {
-    if (verification.steps[step.key]?.isVerified) {
+    if (verificationData.steps[step.key]?.isVerified) {
       count++;
     }
   });

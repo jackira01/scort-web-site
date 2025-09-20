@@ -161,7 +161,7 @@ export default function PlanSelectorModal({
                   onValueChange={(value) => setSelectedVariantDays(Number(value))}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Seleccionar duración" />
                   </SelectTrigger>
                   <SelectContent>
                     {selectedPlan.variants.map((variant) => (

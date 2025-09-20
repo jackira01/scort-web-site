@@ -97,6 +97,6 @@ export interface UseNewsResult {
 export interface NewsMutationResult {
   isLoading: boolean;
   error: Error | null;
-  mutate: (data: any) => void;
+  mutate: (data: CreateNewsRequest | UpdateNewsRequest) => void;
   reset: () => void;
 }

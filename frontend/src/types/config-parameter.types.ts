@@ -19,11 +19,11 @@ export interface UIConfig {
     rich_text?: boolean;
     price_editable?: boolean;
     feature_management?: boolean;
-    custom_props?: Record<string, any>;
+    custom_props?: Record<string, unknown>;
     input_type?: string;
     placeholder?: string;
     help_text?: string;
-    options?: any[];
+    options?: Array<{ label: string; value: string | number }>;
     min?: number;
     max?: number;
     step?: number | string;
@@ -33,7 +33,7 @@ export interface UIConfig {
 
 export interface ConfigMetadata {
     description?: string;
-    validation?: Record<string, any>;
+    validation?: Record<string, unknown>;
     ui_config?: UIConfig;
     cache_ttl?: number; // TTL en segundos
     requires_restart?: boolean;
@@ -46,7 +46,7 @@ export interface ConfigParameter {
     name: string;
     type: ConfigParameterType;
     category: string;
-    value: any;
+    value: unknown;
     metadata?: ConfigMetadata;
     isActive: boolean;
     version: number;
@@ -69,7 +69,7 @@ export interface CreateConfigParameterInput {
     name: string;
     type: ConfigParameterType;
     category: string;
-    value: any;
+    value: unknown;
     metadata?: ConfigMetadata;
     tags?: string[];
     dependencies?: string[];
@@ -77,7 +77,7 @@ export interface CreateConfigParameterInput {
 
 export interface UpdateConfigParameterInput {
     name?: string;
-    value?: any;
+    value?: unknown;
     metadata?: ConfigMetadata;
     isActive?: boolean;
     tags?: string[];
@@ -153,7 +153,7 @@ export interface MembershipPlan {
     metadata?: {
         stripe_price_id?: string;
         paypal_plan_id?: string;
-        [key: string]: any;
+        [key: string]: unknown;
     };
 }
 
@@ -188,18 +188,13 @@ export interface ConfigParameterResponse {
 }
 
 // API Response types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
     success: boolean;
     message: string;
     data: T;
 }
 
-export interface ConfigParameterApiResponse extends ApiResponse<ConfigParameter> {}
-export interface ConfigParametersApiResponse extends ApiResponse<ConfigParameterResponse> {}
-export interface ConfigValueApiResponse extends ApiResponse<{ key: string; value: any }> {}
-export interface ConfigValuesApiResponse extends ApiResponse<Record<string, any>> {}
-export interface CategoriesApiResponse extends ApiResponse<string[]> {}
-export interface TagsApiResponse extends ApiResponse<string[]> {}
+// Usando directamente ApiResponse<T> en lugar de interfaces vacías
 
 // Form types para componentes
 export interface ConfigParameterFormData {
@@ -207,7 +202,7 @@ export interface ConfigParameterFormData {
     name: string;
     type: ConfigParameterType;
     category: string;
-    value: any;
+    value: unknown;
     description?: string;
     tags?: string[];
     dependencies?: string[];
@@ -222,9 +217,9 @@ export interface ConfigParameterFormData {
 // Validation types
 export interface ValidationRule {
     type: 'required' | 'minLength' | 'maxLength' | 'min' | 'max' | 'pattern' | 'custom';
-    value?: any;
+    value?: unknown;
     message?: string;
-    validator?: (value: any) => boolean | Promise<boolean>;
+    validator?: (value: unknown) => boolean | Promise<boolean>;
 }
 
 export interface ConfigParameterValidation {
@@ -311,7 +306,7 @@ export interface UseConfigParameterResult {
     refetch: () => void;
 }
 
-export interface UseConfigValueResult<T = any> {
+export interface UseConfigValueResult<T = unknown> {
     value: T | null;
     loading: boolean;
     error: string | null;
@@ -319,7 +314,7 @@ export interface UseConfigValueResult<T = any> {
 }
 
 export interface UseConfigValuesResult {
-    values: Record<string, any>;
+    values: Record<string, unknown>;
     loading: boolean;
     error: string | null;
     refetch: () => void;
@@ -336,7 +331,7 @@ export interface ConfigParameterMutations {
 // Cache types
 export interface ConfigParameterCache {
     key: string;
-    value: any;
+    value: unknown;
     ttl: number;
     lastUpdated: Date;
 }
@@ -346,5 +341,5 @@ export interface ConfigParameterError {
     code: string;
     message: string;
     field?: string;
-    details?: any;
+    details?: unknown;
 }

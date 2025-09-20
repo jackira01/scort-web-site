@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertTriangle, Building2, Info } from 'lucide-react';
-import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import type { User } from '@/types/user.types';
 import { useRequestAgencyConversion, type AgencyConversionRequest } from '@/hooks/useAgencyConversion';
@@ -63,7 +62,7 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
         </Badge>
       );
     }
-    
+
     // Si tiene solicitud rechazada
     if (isRejected) {
       return (
@@ -72,7 +71,7 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
         </Badge>
       );
     }
-    
+
     // Si tiene solicitud pendiente Y existe una fecha de solicitud
     if (hasPendingRequest && user.agencyInfo?.conversionRequestedAt) {
       return (
@@ -81,7 +80,7 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
         </Badge>
       );
     }
-    
+
     // Por defecto, usuario común (incluso si tiene agencyInfo sin solicitud válida)
     return (
       <Badge variant="outline" className="text-blue-600">
@@ -95,17 +94,17 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
     if (isAgency || isApproved) {
       return 'Como agencia, cada perfil requiere verificación independiente de documentos.';
     }
-    
+
     // Si tiene solicitud rechazada
     if (isRejected) {
       return 'Tu solicitud fue rechazada. Puedes enviar una nueva solicitud con información actualizada.';
     }
-    
+
     // Si tiene solicitud pendiente Y existe una fecha de solicitud
     if (hasPendingRequest && user.agencyInfo?.conversionRequestedAt) {
       return 'Tu solicitud de conversión está siendo revisada por nuestro equipo administrativo.';
     }
-    
+
     // Por defecto, usuario común
     return 'Como usuario común, todos tus perfiles comparten la misma verificación de identidad.';
   };

@@ -420,7 +420,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
                     onValueChange={(value) => handleInputChange('level', parseInt(value))}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Seleccionar nivel del plan" />
                     </SelectTrigger>
                     <SelectContent>
                       {Object.entries(PLAN_LEVELS).map(([name, level]) => (

@@ -408,20 +408,11 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       rates,
       media: {
         gallery: formData.photos || [],
-        videos: formData.videos || [],
-        audios: formData.audios || [],
-        stories: [
-          // Agregar fotos como stories de tipo 'image'
-          ...(formData.photos || []).map((photoUrl) => ({
-            link: photoUrl,
-            type: 'image',
-          })),
-          // Agregar videos como stories de tipo 'video'
-          ...(formData.videos || []).map((videoUrl) => ({
-            link: videoUrl,
-            type: 'video',
-          })),
-        ],
+        videos: formData.videos?.map(url => ({ 
+          url: typeof url === 'string' ? url : '', 
+          thumbnail: typeof url === 'string' ? url : '' 
+        })) || [],
+        profilePicture: formData.photos?.[0] || '',
       },
       availability: formData.availability,
     };

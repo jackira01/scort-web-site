@@ -64,9 +64,11 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
   }, [filters, currentPage]);
 
   const handleFilterChange = (key: keyof InvoiceFilters, value: string) => {
+    // Si el valor es "all", tratarlo como undefined para mostrar todos
+    const actualValue = value === "all" ? undefined : value;
     setFilters(prev => ({
       ...prev,
-      [key]: value || undefined,
+      [key]: actualValue,
     }));
     setCurrentPage(1);
   };
@@ -163,14 +165,14 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
               <div>
                 <Label htmlFor="status">Estado</Label>
                 <Select
-                  value={filters.status || ''}
+                  value={filters.status || 'all'}
                   onValueChange={(value) => handleFilterChange('status', value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Todos los estados" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los estados</SelectItem>
+                    <SelectItem value="all">Todos los estados</SelectItem>
                     <SelectItem value="pending">Pendiente</SelectItem>
                     <SelectItem value="paid">Pagada</SelectItem>
                     <SelectItem value="cancelled">Cancelada</SelectItem>

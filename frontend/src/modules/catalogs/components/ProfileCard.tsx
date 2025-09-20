@@ -12,10 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { VerificationBar } from '@/components/VerificationBar/VerificationBar';
 import type { Profile } from '@/types/user.types';
-import type { ProfileCardData } from '@/types/profile.types';
+import type { ProfileCardData, LocationValue } from '@/types/profile.types';
 import {
   formatLocation,
-  isProfileVerified,
   hasDestacadoUpgrade,
 } from '@/utils/profile.utils';
 
@@ -50,7 +49,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                 {profile.location?.city && (
                   <p className="text-xs text-white/90">
                     {typeof profile.location.city === 'object' && profile.location.city !== null && 'label' in profile.location.city 
-                      ? (profile.location.city as any).label 
+                      ? (profile.location.city as LocationValue).label 
                       : typeof profile.location.city === 'object' && profile.location.city !== null 
                         ? JSON.stringify(profile.location.city)
                         : profile.location.city || 'Ciudad no especificada'
@@ -69,7 +68,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
   return (
     <Link href={`/perfil/${profile._id}`} className="block">
       <Card className={`group hover:shadow-xl transition-all duration-300 overflow-hidden relative ${
-        hasDestacadoUpgrade(profile as any) 
+        profile.featured 
           ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30'
           : 'bg-card border-border'
       }`}>
@@ -88,7 +87,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                   : 'sm:h-40 md:h-48'
                 }`}
             />
-            {hasDestacadoUpgrade(profile as any) && (
+            {hasDestacadoUpgrade(profile as Profile) && (
               <Badge className="absolute top-1 left-1 sm:top-2 lg:top-3 sm:left-2 lg:left-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs">
                 <Star className="h-2 w-2 lg:h-3 lg:w-3 mr-1" />
                 <span className="hidden sm:inline">PRESENTADO</span>

@@ -48,9 +48,7 @@ interface DefaultPlanConfig {
   planCode: string | null;
 }
 
-interface Step4PlanProps { }
-
-export function Step4Plan({ }: Step4PlanProps) {
+export function Step4Plan() {
   const { watch, setValue, formState: { errors } } = useFormContext();
   const formData = watch();
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');

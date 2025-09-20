@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-export const { handlers, auth } = NextAuth({
+export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     GoogleProvider({
       clientId: process.env.AUTH_GOOGLE_ID!,
@@ -106,6 +106,7 @@ export const { handlers, auth } = NextAuth({
 
           // Actualizar el objeto user con los datos del backend
           user.id = result.user._id;
+          user._id = result.user._id;
           user.isVerified = result.user.isVerified;
           user.verification_in_progress = result.user.verification_in_progress;
           user.role = result.user.role;
@@ -125,6 +126,7 @@ export const { handlers, auth } = NextAuth({
       // Solo mantener logs críticos para debugging de producción
       if (user) {
         token.id = user.id;
+        token._id = user._id || user.id;
         token.email = user.email;
         token.name = user.name;
         token.image = user.image;

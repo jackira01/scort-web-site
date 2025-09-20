@@ -1,6 +1,5 @@
 import type {
   ProfileCardData,
-  ProfileMedia,
 } from '@/types/profile.types';
 import type { Profile } from '@/types/user.types';
 
@@ -65,7 +64,7 @@ export const formatLocation = (location: {
 /**
  * Verifica si un perfil está verificado
  */
-export const isProfileVerified = (profile: Profile): boolean => {
+export const isProfileVerified = (): boolean => {
   // La interfaz Profile actual no tiene verification ni user.isVerified
   // Por ahora retornamos false hasta que se defina la estructura correcta
   return false;

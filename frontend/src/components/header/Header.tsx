@@ -254,7 +254,7 @@ const HeaderComponent = () => {
             <div className="flex items-center justify-center pt-2">
               <Select defaultValue="español">
                 <SelectTrigger className="w-32">
-                  <SelectValue />
+                  <SelectValue placeholder="Idioma" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="español">🇪🇸 Español</SelectItem>

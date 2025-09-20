@@ -306,10 +306,10 @@ const AdminProfileVerificationCarousel: React.FC<
 
             {/* Navigation dots */}
             <div className="flex justify-center gap-2">
-              {verificationSteps.map((_, index) => (
+              {verificationSteps.map((step, index) => (
                 <button
                   type="button"
-                  key={`verification-step-${_.key}`}
+                  key={`verification-step-${step.key}`}
                   onClick={() => setCurrentStepIndex(index)}
                   className={`h-2 w-2 rounded-full transition-colors ${index === currentStepIndex
                     ? 'bg-primary'

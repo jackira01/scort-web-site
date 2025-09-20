@@ -5,12 +5,7 @@ import type {
     CreateConfigParameterInput,
     UpdateConfigParameterInput,
     ConfigParameterQuery,
-    ConfigParameterApiResponse,
-    ConfigParametersApiResponse,
-    ConfigValueApiResponse,
-    ConfigValuesApiResponse,
-    CategoriesApiResponse,
-    TagsApiResponse,
+    ConfigParameterResponse,
     ApiResponse
 } from '../types/config-parameter.types';
 
@@ -21,8 +16,13 @@ export class ConfigParameterService {
      * Crear nuevo parámetro de configuración
      */
     static async create(data: CreateConfigParameterInput): Promise<ConfigParameter> {
-        const response = await axios.post<ConfigParameterApiResponse>(API_BASE_URL, data);
-        return response.data.data;
+        try {
+            const response = await axios.post<ApiResponse<ConfigParameter>>(API_BASE_URL, data);
+            return response.data.data;
+        } catch {
+            // ConfigParameterService.create error
+            throw new Error('Error al crear parámetro de configuración');
+        }
     }
 
     /**
@@ -42,7 +42,7 @@ export class ConfigParameterService {
         });
 
         const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
-        const response = await axios.get<ConfigParametersApiResponse>(
+        const response = await axios.get<ApiResponse<ConfigParameterResponse>>(
             `${API_BASE_URL}${queryString}`
         );
         return response.data.data;
@@ -52,7 +52,7 @@ export class ConfigParameterService {
      * Obtener parámetro por ID
      */
     static async getById(id: string): Promise<ConfigParameter> {
-        const response = await axios.get<ConfigParameterApiResponse>(`${API_BASE_URL}/${id}`);
+        const response = await axios.get<ApiResponse<ConfigParameter>>(`${API_BASE_URL}/${id}`);
         return response.data.data;
     }
 
@@ -66,7 +66,7 @@ export class ConfigParameterService {
         // DEBUG ConfigParameterService.getByKey called
         
         try {
-            const response = await axios.get<ConfigParameterApiResponse>(url);
+            const response = await axios.get<ApiResponse<ConfigParameter>>(url);
             // DEBUG API Response info
             
             if (!response.data) {
@@ -81,13 +81,9 @@ export class ConfigParameterService {
             
             // DEBUG Returning parameter
             return response.data.data;
-        } catch (error) {
+        } catch {
             // ConfigParameterService.getByKey error
-            if (error && typeof error === 'object' && 'response' in error) {
-                const axiosError = error as any;
-                // Error response info
-            }
-            throw error;
+            throw new Error('Error al obtener parámetro de configuración');
         }
     }
 
@@ -95,44 +91,64 @@ export class ConfigParameterService {
      * Obtener parámetros por categoría
      */
     static async getByCategory(category: string, activeOnly: boolean = true): Promise<ConfigParameter[]> {
-        const params = activeOnly ? '?activeOnly=true' : '?activeOnly=false';
-        const response = await axios.get<ApiResponse<ConfigParameter[]>>(
-            `${API_BASE_URL}/category/${category}${params}`
-        );
-        return response.data.data;
+        try {
+            const params = activeOnly ? '?activeOnly=true' : '?activeOnly=false';
+            const response = await axios.get<ApiResponse<ConfigParameter[]>>(
+                `${API_BASE_URL}/category/${category}${params}`
+            );
+            return response.data.data;
+        } catch {
+            // ConfigParameterService.getByCategory error
+            throw new Error('Error al obtener parámetros por categoría');
+        }
     }
 
     /**
      * Obtener parámetros por tipo
      */
     static async getByType(type: string, activeOnly: boolean = true): Promise<ConfigParameter[]> {
-        const params = activeOnly ? '?activeOnly=true' : '?activeOnly=false';
-        const response = await axios.get<ApiResponse<ConfigParameter[]>>(
-            `${API_BASE_URL}/type/${type}${params}`
-        );
-        return response.data.data;
+        try {
+            const params = activeOnly ? '?activeOnly=true' : '?activeOnly=false';
+            const response = await axios.get<ApiResponse<ConfigParameter[]>>(
+                `${API_BASE_URL}/type/${type}${params}`
+            );
+            return response.data.data;
+        } catch {
+            // ConfigParameterService.getByType error
+            throw new Error('Error al obtener parámetros por tipo');
+        }
     }
 
     /**
      * Actualizar parámetro de configuración
      */
     static async update(id: string, data: UpdateConfigParameterInput): Promise<ConfigParameter> {
-        const response = await axios.put<ConfigParameterApiResponse>(`${API_BASE_URL}/${id}`, data);
-        return response.data.data;
+        try {
+            const response = await axios.put<ApiResponse<ConfigParameter>>(`${API_BASE_URL}/${id}`, data);
+            return response.data.data;
+        } catch {
+            // ConfigParameterService.update error
+            throw new Error('Error al actualizar parámetro de configuración');
+        }
     }
 
     /**
      * Eliminar parámetro de configuración (soft delete)
      */
     static async delete(id: string): Promise<void> {
-        await axios.delete(`${API_BASE_URL}/${id}`);
+        try {
+            await axios.delete(`${API_BASE_URL}/${id}`);
+        } catch {
+            // ConfigParameterService.delete error
+            throw new Error('Error al eliminar parámetro de configuración');
+        }
     }
 
     /**
      * Activar/Desactivar parámetro
      */
     static async toggleActive(id: string): Promise<ConfigParameter> {
-        const response = await axios.patch<ConfigParameterApiResponse>(`${API_BASE_URL}/${id}/toggle`);
+        const response = await axios.patch<ApiResponse<ConfigParameter>>(`${API_BASE_URL}/${id}/toggle`);
         return response.data.data;
     }
 
@@ -140,7 +156,7 @@ export class ConfigParameterService {
      * Obtener todas las categorías disponibles
      */
     static async getCategories(): Promise<string[]> {
-        const response = await axios.get<CategoriesApiResponse>(`${API_BASE_URL}/meta/categories`);
+        const response = await axios.get<ApiResponse<string[]>>(`${API_BASE_URL}/meta/categories`);
         return response.data.data;
     }
 
@@ -148,19 +164,18 @@ export class ConfigParameterService {
      * Obtener todos los tags disponibles
      */
     static async getTags(): Promise<string[]> {
-        const response = await axios.get<TagsApiResponse>(`${API_BASE_URL}/meta/tags`);
+        const response = await axios.get<ApiResponse<string[]>>(`${API_BASE_URL}/meta/tags`);
         return response.data.data;
     }
 
     /**
      * Obtener valor de configuración por key (método público)
      */
-    static async getValue<T = any>(key: string): Promise<T | null> {
+    static async getValue<T = unknown>(key: string): Promise<T | null> {
         try {
-            const response = await axios.get<ConfigValueApiResponse>(`${API_BASE_URL}/value/${key}`);
-            return response.data.data.value;
-        } catch (error) {
-        
+            const response = await axios.get<ApiResponse<{ key: string; value: unknown }>>(`${API_BASE_URL}/value/${key}`);
+            return response.data.data.value as T;
+        } catch {
             return null;
         }
     }
@@ -168,15 +183,14 @@ export class ConfigParameterService {
     /**
      * Obtener múltiples valores por keys
      */
-    static async getValues(keys: string[]): Promise<Record<string, any>> {
+    static async getValues(keys: string[]): Promise<Record<string, unknown>> {
         try {
-            const response = await axios.post<ConfigValuesApiResponse>(
+            const response = await axios.post<ApiResponse<Record<string, unknown>>>(
                 `${API_BASE_URL}/values`,
                 { keys }
             );
             return response.data.data;
-        } catch (error) {
-        
+        } catch {
             return {};
         }
     }
@@ -184,7 +198,7 @@ export class ConfigParameterService {
     /**
      * Validar estructura de configuración
      */
-    static async validate(type: string, value: any, metadata?: any): Promise<{
+    static async validate(type: string, value: unknown, metadata?: Record<string, unknown>): Promise<{
         isValid: boolean;
         errors: string[];
     }> {
@@ -194,7 +208,7 @@ export class ConfigParameterService {
                 { type, value, metadata }
             );
             return response.data.data;
-        } catch (error) {
+        } catch {
             return {
                 isValid: false,
                 errors: ['Validation service unavailable']
@@ -247,7 +261,7 @@ export class ConfigParameterService {
     /**
      * Obtener configuraciones críticas (con cache)
      */
-    static async getCriticalConfigs(): Promise<Record<string, any>> {
+    static async getCriticalConfigs(): Promise<Record<string, unknown>> {
         const criticalKeys = [
             'app.name',
             'app.version',
@@ -269,7 +283,7 @@ export class ConfigParameterService {
                 this.getMembershipConfig(),
                 this.getSystemConfig()
             ]);
-        } catch (error) {
+        } catch (_) {
         
         }
     }
@@ -294,7 +308,7 @@ export class ConfigParameterService {
             try {
                 const created = await this.create(config);
                 results.push(created);
-            } catch (error) {
+            } catch (_) {
           
             }
         }
@@ -309,7 +323,7 @@ export class ConfigParameterService {
         try {
             await this.getCategories();
             return true;
-        } catch (error) {
+        } catch (_) {
             return false;
         }
     }

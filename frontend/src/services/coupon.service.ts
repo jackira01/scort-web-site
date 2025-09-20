@@ -125,10 +125,17 @@ class CouponService {
           planCode: couponData.planCode
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      let errorMessage = 'Error al validar cupón';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'response' in error) {
+        const responseError = error as { response?: { data?: { message?: string } } };
+        errorMessage = responseError.response?.data?.message || errorMessage;
+      }
       return {
         isValid: false,
-        error: error.response?.data?.message || 'Error al validar cupón'
+        error: errorMessage
       };
     }
   }
@@ -183,11 +190,12 @@ class CouponService {
         message: response.data.message || 'Cupón válido',
         data: mappedCoupon
       };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Error al validar cupón'
-      };
+    } catch (error: unknown) {
+      let errorMessage = 'Error al validar cupón';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -251,7 +259,13 @@ class CouponService {
         };
       }
       
-      const data = response.data.data as any;
+      const data = response.data.data as {
+        originalPrice: number;
+        finalPrice: number;
+        discount: number;
+        discountPercentage: number;
+        planCode: string;
+      };
       const result = {
         success: true,
         originalPrice: data.originalPrice,
@@ -268,11 +282,14 @@ class CouponService {
       });
 
       return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      let errorMessage = 'Error al aplicar cupón';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       console.log('💥 [FRONTEND COUPON SERVICE] Error en aplicación:', {
-        error: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
+        error: errorMessage,
         code,
         originalPrice,
         planCode
@@ -284,7 +301,7 @@ class CouponService {
         finalPrice: originalPrice,
         discount: 0,
         discountPercentage: 0,
-        error: error.response?.data?.message || 'Error al aplicar cupón'
+        error: errorMessage
       };
     }
   }

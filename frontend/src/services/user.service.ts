@@ -1,6 +1,6 @@
 import axios from '@/lib/axios';
 import { isAxiosError } from 'axios';
-import type { BaseUser, User } from '@/types/user.types';
+import type { BaseUser, User, Profile } from '@/types/user.types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -41,12 +41,12 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
     }
 };
 
-export const updateUser = async (userId: string, data: any) => {
+export const updateUser = async (userId: string, data: Partial<User>) => {
     const response = await axios.put(`${API_URL}/api/user/${userId}`, data);
     return response.data;
 };
 
-export const getUsers = async (page: number, limit: number, filters: any) => {
+export const getUsers = async (page: number, limit: number, filters: Record<string, unknown>) => {
     const response = await axios.post(`${API_URL}/api/user/?page=${page}&limit=${limit}`, filters);
 
     return response.data;
@@ -62,7 +62,7 @@ export const getUserProfiles = async (userId: string) => {
     return response.data;
 }
 
-export const createProfile = async (profileData: any, purchasedPlan: any) => {
+export const createProfile = async (profileData: Partial<Profile>, purchasedPlan: Record<string, unknown>) => {
     const requestBody = {
         profileData,
         purchasedPlan
@@ -126,7 +126,7 @@ export const getProfileVerification = async (profileId: string) => {
     }
 }
 
-export const updateProfile = async (profileId: string, data: any) => {
+export const updateProfile = async (profileId: string, data: Partial<Profile>) => {
     const response = await axios.put(`${API_URL}/api/profile/${profileId}`, data);
     return response.data;
 }

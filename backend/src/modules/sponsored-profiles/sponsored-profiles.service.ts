@@ -33,8 +33,7 @@ export const getSponsoredProfiles = async (
   query: SponsoredProfilesQuery = {}
 ): Promise<SponsoredProfilesResponse> => {
   try {
-    console.log('🔍 [DEBUG] getSponsoredProfiles - Iniciando con query:', query);
-    
+
     const {
       page = 1,
       limit = 20,
@@ -48,8 +47,6 @@ export const getSponsoredProfiles = async (
     const limitNum = Math.min(Math.max(1, limit), 100); // Máximo 100 perfiles por página
     const skip = (pageNum - 1) * limitNum;
 
-    console.log('📊 [DEBUG] Parámetros procesados:', { pageNum, limitNum, skip, sortBy, sortOrder });
-
     // Construir filtros base para perfiles válidos
     const baseFilters = {
       isActive: true,
@@ -59,38 +56,14 @@ export const getSponsoredProfiles = async (
       'planAssignment.planId': { $exists: true, $ne: null } // Debe tener plan asignado
     };
 
-    console.log('🔧 [DEBUG] Filtros base:', baseFilters);
-
-    // Obtener todos los planes que tienen showInSponsored: true
-    console.log('🔍 [DEBUG] Buscando planes con showInSponsored: true...');
-    
-    // Primero, obtener TODOS los planes para ver su estructura
-    const allPlans = await PlanDefinitionModel.find({ active: true }).select('_id code name features active');
-    console.log('📋 [DEBUG] Todos los planes activos:', allPlans.map(p => ({
-      id: p._id,
-      code: p.code,
-      name: p.name,
-      features: p.features,
-      active: p.active
-    })));
-
     const sponsoredPlans = await PlanDefinitionModel.find({
       'features.showInSponsored': true,
       active: true
     }).select('_id code name features');
 
-    console.log('📋 [DEBUG] Planes patrocinados encontrados:', sponsoredPlans.length);
-    console.log('📋 [DEBUG] Detalles de planes patrocinados:', sponsoredPlans.map(p => ({
-      id: p._id,
-      code: p.code,
-      name: p.name,
-      showInSponsored: p.features?.showInSponsored
-    })));
-
     const sponsoredPlanIds = sponsoredPlans.map(plan => plan._id);
 
     if (sponsoredPlanIds.length === 0) {
-      console.log('⚠️ [DEBUG] No hay planes patrocinados activos');
       // No hay planes patrocinados activos
       return {
         profiles: [],
@@ -109,15 +82,10 @@ export const getSponsoredProfiles = async (
       ...baseFilters,
       'planAssignment.planId': { $in: sponsoredPlanIds }
     };
-
-    console.log('🎯 [DEBUG] Filtros finales:', finalFilters);
-    console.log('🎯 [DEBUG] IDs de planes patrocinados:', sponsoredPlanIds);
-
     // Construir ordenamiento
     const sortOptions: Record<string, 1 | -1> = {};
     sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
-    console.log('📈 [DEBUG] Opciones de ordenamiento:', sortOptions);
 
     // Construir proyección de campos si se especifica
     let projection = {};
@@ -128,19 +96,13 @@ export const getSponsoredProfiles = async (
       }, {} as Record<string, number>);
     }
 
-    console.log('🔍 [DEBUG] Proyección de campos:', projection);
-
     // Primero, verificar cuántos perfiles cumplen solo los filtros base
     const baseProfilesCount = await ProfileModel.countDocuments(baseFilters);
-    console.log('📊 [DEBUG] Perfiles que cumplen filtros base:', baseProfilesCount);
-
     // Verificar cuántos perfiles tienen planAssignment
     const profilesWithPlan = await ProfileModel.countDocuments({
       ...baseFilters,
       'planAssignment.planId': { $exists: true, $ne: null }
     });
-    console.log('📊 [DEBUG] Perfiles con plan asignado:', profilesWithPlan);
-
     // Ejecutar consultas en paralelo
     const [profiles, totalCount] = await Promise.all([
       ProfileModel
@@ -154,22 +116,6 @@ export const getSponsoredProfiles = async (
         .lean(),
       ProfileModel.countDocuments(finalFilters)
     ]);
-
-    console.log('✅ [DEBUG] Perfiles encontrados:', profiles.length);
-    console.log('✅ [DEBUG] Total de perfiles patrocinados:', totalCount);
-    
-    // Log detallado de los primeros perfiles encontrados
-    if (profiles.length > 0) {
-      console.log('📋 [DEBUG] Primeros perfiles encontrados:', profiles.slice(0, 3).map(p => ({
-        id: p._id,
-        name: p.name,
-        isActive: p.isActive,
-        visible: p.visible,
-        isDeleted: p.isDeleted,
-        planAssignment: p.planAssignment,
-        planDetails: p.planAssignment?.planId
-      })));
-    }
 
     // Calcular paginación
     const totalPages = Math.ceil(totalCount / limitNum);

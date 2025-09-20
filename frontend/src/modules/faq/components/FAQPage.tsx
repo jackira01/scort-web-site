@@ -251,7 +251,7 @@ const FAQPage = () => {
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Filtrar por categoría:</h3>
           <div className="flex flex-wrap gap-3">
-            {categories.map((category) => (
+            {categories && Array.isArray(categories) ? categories.map((category) => (
               <Button
                 key={category.id}
                 variant={selectedCategory === category.id ? "default" : "outline"}
@@ -264,7 +264,9 @@ const FAQPage = () => {
                   {category.id === 'all' ? faqs.length : faqs.filter(faq => faq.category === category.id).length}
                 </Badge>
               </Button>
-            ))}
+            )) : (
+              <div className="text-gray-500">Cargando categorías...</div>
+            )}
           </div>
         </div>
 

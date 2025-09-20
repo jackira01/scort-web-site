@@ -149,7 +149,7 @@ export async function applyWatermarkToFiles(
       if (onProgress) {
         onProgress(i + 1, files.length);
       }
-    } catch (error) {
+    } catch {
       // Error aplicando marca de agua
       // En caso de error, usar el archivo original
       watermarkedFiles.push(file);

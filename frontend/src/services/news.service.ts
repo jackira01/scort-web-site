@@ -3,8 +3,6 @@ import {
   NewsFilters,
   CreateNewsRequest,
   UpdateNewsRequest,
-  NewsListResponse,
-  NewsResponse,
   NewsPaginationParams
 } from '../types/news.types';
 
@@ -99,8 +97,15 @@ class NewsService {
         page: result.pagination?.page || 1,
         totalPages: result.pagination?.totalPages || 1
       };
-    } catch (error: any) {
-      throw error;
+    } catch (error: unknown) {
+      let errorMessage = 'Error al obtener últimas noticias';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'response' in error) {
+        const responseError = error as { response?: { data?: { message?: string } } };
+        errorMessage = responseError.response?.data?.message || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -111,8 +116,15 @@ class NewsService {
     try {
       const response = await fetch(`${this.baseUrl}/${id}`);
       return await this.handleResponse<News>(response);
-    } catch (error: any) {
-      throw error;
+    } catch (error: unknown) {
+      let errorMessage = 'Error al obtener noticia';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'response' in error) {
+        const responseError = error as { response?: { data?: { message?: string } } };
+        errorMessage = responseError.response?.data?.message || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -123,8 +135,15 @@ class NewsService {
     try {
       const response = await fetch(`${this.baseUrl}/latest?limit=${limit}`);
       return await this.handleResponse<News[]>(response);
-    } catch (error: any) {
-      throw error;
+    } catch (error: unknown) {
+      let errorMessage = 'Error al obtener últimas noticias';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'response' in error) {
+        const responseError = error as { response?: { data?: { message?: string } } };
+        errorMessage = responseError.response?.data?.message || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -140,8 +159,15 @@ class NewsService {
 
       const response = await fetch(`${this.baseUrl}/search?${params}`);
       return await this.handleResponse<News[]>(response);
-    } catch (error: any) {
-      throw error;
+    } catch (error: unknown) {
+      let errorMessage = 'Error al buscar noticias';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'response' in error) {
+        const responseError = error as { response?: { data?: { message?: string } } };
+        errorMessage = responseError.response?.data?.message || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -159,8 +185,15 @@ class NewsService {
       });
 
       return await this.handleResponse<News>(response);
-    } catch (error: any) {
-      throw error;
+    } catch (error: unknown) {
+      let errorMessage = 'Error al crear noticia';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'response' in error) {
+        const responseError = error as { response?: { data?: { message?: string } } };
+        errorMessage = responseError.response?.data?.message || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -176,8 +209,15 @@ class NewsService {
       });
 
       return await this.handleResponse<News>(response);
-    } catch (error: any) {
-      throw error;
+    } catch (error: unknown) {
+      let errorMessage = 'Error al actualizar noticia';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'response' in error) {
+        const responseError = error as { response?: { data?: { message?: string } } };
+        errorMessage = responseError.response?.data?.message || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -192,8 +232,15 @@ class NewsService {
       });
 
       return await this.handleResponse<News>(response);
-    } catch (error: any) {
-      throw error;
+    } catch (error: unknown) {
+      let errorMessage = 'Error al alternar estado de noticia';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'response' in error) {
+        const responseError = error as { response?: { data?: { message?: string } } };
+        errorMessage = responseError.response?.data?.message || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -213,8 +260,15 @@ class NewsService {
         }));
         throw new Error(errorData.message || 'Error al eliminar noticia');
       }
-    } catch (error: any) {
-      throw error;
+    } catch (error: unknown) {
+      let errorMessage = 'Error al eliminar noticia';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'response' in error) {
+        const responseError = error as { response?: { data?: { message?: string } } };
+        errorMessage = responseError.response?.data?.message || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -247,8 +301,15 @@ class NewsService {
         page: result.pagination?.page || 1,
         totalPages: result.pagination?.totalPages || 1
       };
-    } catch (error: any) {
-      throw error;
+    } catch (error: unknown) {
+      let errorMessage = 'Error al obtener noticias para admin';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'response' in error) {
+        const responseError = error as { response?: { data?: { message?: string } } };
+        errorMessage = responseError.response?.data?.message || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -262,8 +323,15 @@ class NewsService {
       });
 
       return await this.handleResponse<News>(response);
-    } catch (error: any) {
-      throw error;
+    } catch (error: unknown) {
+      let errorMessage = 'Error al obtener noticia para admin';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'response' in error) {
+        const responseError = error as { response?: { data?: { message?: string } } };
+        errorMessage = responseError.response?.data?.message || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -282,7 +350,7 @@ class NewsService {
         hour: '2-digit',
         minute: '2-digit'
       });
-    } catch (error) {
+    } catch {
       return dateString;
     }
   }

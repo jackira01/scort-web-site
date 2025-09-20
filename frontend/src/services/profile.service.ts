@@ -29,7 +29,7 @@ export const getProfilesWithStories = async (page: number = 1, limit: number = 1
 };
 
 export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 10, fields?: string) => {
-  const params: any = {
+  const params: Record<string, string | number> = {
     page,
     limit
   };

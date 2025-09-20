@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { VerificationBar } from '@/components/VerificationBar/VerificationBar';
 import type { ProfileCardData } from '@/types/profile.types';
+import type { Profile } from '@/types/user.types';
 import { hasDestacadoUpgrade } from '@/utils/profile.utils';
 
 interface CardComponentProps {
@@ -46,7 +47,7 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
               <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
-                {hasDestacadoUpgrade(profile as any) && (
+                {hasDestacadoUpgrade(profile as Profile) && (
                   <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white animate-pulse text-xs">
                     <Star className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
                     <span className="hidden sm:inline">DESTACADO</span>

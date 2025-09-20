@@ -27,3 +27,5 @@ export function SeedUserCache() {
 
   return null;
 }
+
+export default SeedUserCache;

@@ -132,7 +132,7 @@ export default function UpgradesList({ onEdit }: UpgradesListProps) {
           onValueChange={(value) => handleFilterChange('limit', parseInt(value))}
         >
           <SelectTrigger className="w-[100px]">
-            <SelectValue />
+            <SelectValue placeholder="Límite" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="5">5</SelectItem>

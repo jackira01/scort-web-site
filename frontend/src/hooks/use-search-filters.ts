@@ -44,6 +44,13 @@ export interface SearchFilters {
     };
   };
 
+  // Verificación
+  verification?: {
+    identityVerified?: boolean;
+    hasVideo?: boolean;
+    documentVerified?: boolean;
+  };
+
   // Estados
   isActive?: boolean;
   isVerified?: boolean;
@@ -115,17 +122,23 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
     [],
   );
 
-  // Actualizar disponibilidad
-  const updateAvailability = useCallback(
-    (availability: SearchFilters['availability']) => {
-      setFilters((prev) => ({
-        ...prev,
-        availability,
-        page: 1,
-      }));
-    },
-    [],
-  );
+  // Método para actualizar disponibilidad
+  const updateAvailability = useCallback((availability: SearchFilters['availability']) => {
+    setFilters((prev) => ({
+      ...prev,
+      availability,
+      page: 1, // Reset page when changing filters
+    }));
+  }, []);
+
+  // Método para actualizar filtros de verificación
+  const updateVerification = useCallback((verificationFilters: SearchFilters['verification']) => {
+    setFilters((prev) => ({
+      ...prev,
+      verification: verificationFilters,
+      page: 1, // Reset page when changing filters
+    }));
+  }, []);
 
   // Actualizar estados (verificado, activo)
   const updateStates = useCallback(
@@ -188,8 +201,6 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
 
   // Método genérico para actualizar filtros
   const updateFilter = useCallback((key: string, value: any) => {
-
-    
     setFilters((prev) => {
       const newFilters = { ...prev };
       
@@ -230,6 +241,13 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
         };
         
       }
+      // Manejar filtros de verificación
+      else if (['identityVerified', 'hasVideo', 'documentVerified'].includes(key)) {
+        newFilters.verification = {
+          ...prev.verification,
+          [key]: value,
+        };
+      }
       // Manejar filtros directos
       else {
         (newFilters as any)[key] = value;
@@ -256,6 +274,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
     updateFeatures,
     updatePriceRange,
     updateAvailability,
+    updateVerification,
     updateStates,
     updatePagination,
     updateSorting,

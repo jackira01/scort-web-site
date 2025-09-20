@@ -7,6 +7,30 @@ export interface LocationValue {
     value: string;
 }
 
+// Tipos para los valores de configuración de ubicaciones
+export interface CountryConfigValue {
+    name: string;
+    code: string;
+    currency: string;
+    language: string;
+    timezone: string;
+}
+
+export interface DepartmentConfigValue {
+    name: string;
+    normalizedName: string;
+    country: string;
+    coordinates?: { lat: number; lng: number };
+}
+
+export interface CityConfigValue {
+    name: string;
+    normalizedName: string;
+    department: string;
+    departmentNormalized: string;
+    coordinates?: { lat: number; lng: number };
+}
+
 export interface CityData extends LocationValue {
     department: string;
     departmentNormalized: string;
@@ -48,16 +72,18 @@ export class LocationHierarchyService {
             const countryConfig = result.docs[0];
             const departments = await LocationHierarchyService.getDepartments();
 
+            const countryValue = countryConfig.value as CountryConfigValue;
+
             return {
-                label: countryConfig.value.name,
-                value: countryConfig.value.code || countryConfig.key,
+                label: countryValue.name,
+                value: countryValue.code || countryConfig.key,
                 departments,
-                code: countryConfig.value.code || 'CO',
-                currency: countryConfig.value.currency || 'COP',
-                language: countryConfig.value.language || 'es',
-                timezone: countryConfig.value.timezone || 'America/Bogota',
+                code: countryValue.code || 'CO',
+                currency: countryValue.currency || 'COP',
+                language: countryValue.language || 'es',
+                timezone: countryValue.timezone || 'America/Bogota',
             };
-        } catch (error) {
+        } catch {
 
             return null;
         }
@@ -79,21 +105,22 @@ export class LocationHierarchyService {
             const departments: DepartmentData[] = [];
 
             for (const dept of result.docs) {
+                const deptValue = dept.value as DepartmentConfigValue;
                 const cities = await LocationHierarchyService.getCitiesByDepartment(
-                    dept.value.normalizedName,
+                    deptValue.normalizedName,
                 );
 
                 departments.push({
-                    label: dept.value.name,
-                    value: dept.value.normalizedName,
+                    label: deptValue.name,
+                    value: deptValue.normalizedName,
                     cities,
-                    coordinates: dept.value.coordinates,
+                    coordinates: deptValue.coordinates,
                     cityCount: cities.length,
                 });
             }
 
             return departments;
-        } catch (error) {
+        } catch {
 
             return [];
         }
@@ -114,14 +141,17 @@ export class LocationHierarchyService {
                 sortOrder: 'asc',
             });
 
-            return result.docs.map((city) => ({
-                label: city.value.name,
-                value: city.value.normalizedName,
-                department: city.value.department,
-                departmentNormalized: city.value.departmentNormalized,
-                coordinates: city.value.coordinates,
-            }));
-        } catch (error) {
+            return result.docs.map((city) => {
+                const cityValue = city.value as CityConfigValue;
+                return {
+                    label: cityValue.name,
+                    value: cityValue.normalizedName,
+                    department: cityValue.department,
+                    departmentNormalized: cityValue.departmentNormalized,
+                    coordinates: cityValue.coordinates,
+                };
+            });
+        } catch {
 
             return [];
         }
@@ -147,30 +177,31 @@ export class LocationHierarchyService {
 
             for (const location of result.docs) {
                 if (location.tags?.includes('department')) {
-                    const departmentCities =
-                        await LocationHierarchyService.getCitiesByDepartment(
-                            location.value.normalizedName,
+                    const deptValue = location.value as DepartmentConfigValue;
+                    const departmentCities = await LocationHierarchyService.getCitiesByDepartment(
+                        deptValue.normalizedName,
                         );
                     departments.push({
-                        label: location.value.name,
-                        value: location.value.normalizedName,
+                        label: deptValue.name,
+                        value: deptValue.normalizedName,
                         cities: departmentCities,
-                        coordinates: location.value.coordinates,
+                        coordinates: deptValue.coordinates,
                         cityCount: departmentCities.length,
                     });
                 } else if (location.tags?.includes('city')) {
+                    const cityValue = location.value as CityConfigValue;
                     cities.push({
-                        label: location.value.name,
-                        value: location.value.normalizedName,
-                        department: location.value.department,
-                        departmentNormalized: location.value.departmentNormalized,
-                        coordinates: location.value.coordinates,
+                        label: cityValue.name,
+                        value: cityValue.normalizedName,
+                        department: cityValue.department,
+                        departmentNormalized: cityValue.departmentNormalized,
+                        coordinates: cityValue.coordinates,
                     });
                 }
             }
 
             return { departments, cities };
-        } catch (error) {
+        } catch {
 
             return { departments: [], cities: [] };
         }
@@ -182,7 +213,7 @@ export class LocationHierarchyService {
     static async getLocationByKey(key: string): Promise<ConfigParameter | null> {
         try {
             return await ConfigParameterService.getByKey(key);
-        } catch (error) {
+        } catch {
 
             return null;
         }
@@ -224,7 +255,7 @@ export class LocationHierarchyService {
                     })),
                 },
             ];
-        } catch (error) {
+        } catch {
 
             return [];
         }
@@ -252,7 +283,7 @@ export class LocationHierarchyService {
             }
 
             return true;
-        } catch (error) {
+        } catch {
 
             return false;
         }
@@ -286,7 +317,7 @@ export class LocationHierarchyService {
                 totalCities,
                 departmentWithMostCities,
             };
-        } catch (error) {
+        } catch {
 
             return {
                 totalDepartments: 0,

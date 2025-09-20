@@ -1,4 +1,5 @@
 import axios from '@/lib/axios';
+import type { Profile } from '@/types/user.types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -10,7 +11,7 @@ export interface PurchaseUpgradeRequest {
 export interface PurchaseUpgradeResponse {
   success: boolean;
   message: string;
-  profile?: any;
+  profile?: Profile;
 }
 
 /**
@@ -29,12 +30,15 @@ export const purchaseUpgrade = async (profileId: string, upgradeCode: string): P
       message: 'Upgrade comprado exitosamente',
       profile: response.data
     };
-  } catch (error: any) {
-    if (error.response?.data?.message) {
-      return {
-        success: false,
-        message: error.response.data.message
-      };
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      if (axiosError.response?.data?.message) {
+        return {
+          success: false,
+          message: axiosError.response.data.message
+        };
+      }
     }
 
     return {

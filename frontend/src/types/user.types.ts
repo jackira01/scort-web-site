@@ -9,7 +9,7 @@
     verificationImages?: string[];
 } */
 export interface BaseUser {
-    _id?: string;
+    _id: string;
     isVerified?: boolean;
     verification_in_progress?: boolean;
     role?: 'admin' | 'user' | 'guest';

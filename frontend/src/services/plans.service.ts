@@ -42,8 +42,15 @@ export const validatePlanOperations = async (profileId: string): Promise<PlanVal
   try {
     const response = await axiosInstance.get(`/api/profile/${profileId}/plan/validate`);
     return response.data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'Error al validar operaciones de plan');
+  } catch (error: unknown) {
+    let errorMessage = 'Error al validar operaciones de plan';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null && 'response' in error) {
+      const responseError = error as { response?: { data?: { message?: string } } };
+      errorMessage = responseError.response?.data?.message || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
 };
 
@@ -54,11 +61,15 @@ export const getProfilePlanInfo = async (profileId: string): Promise<ProfilePlan
   try {
     const response = await axiosInstance.get(`api/profile/${profileId}/plan`);
     return response.data;
-  } catch (error: any) {
-    if (error.response?.status === 404) {
-      return null; // No tiene plan activo
+  } catch (error: unknown) {
+    if (error instanceof Error && 'response' in error) {
+      const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
+      if (axiosError.response?.status === 404) {
+        return null; // No tiene plan activo
+      }
+      throw new Error(axiosError.response?.data?.message || 'Error al obtener información del plan');
     }
-    throw new Error(error.response?.data?.message || 'Error al obtener información del plan');
+    throw new Error('Error al obtener información del plan');
   }
 };
 
@@ -80,8 +91,15 @@ export const purchasePlan = async (request: PlanPurchaseRequest) => {
 
     const response = await axiosInstance.post('/api/plans/purchase', request);
     return response.data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.message || error.message || 'Error al comprar el plan');
+  } catch (error: unknown) {
+    let errorMessage = 'Error al comprar plan';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null && 'response' in error) {
+      const responseError = error as { response?: { data?: { message?: string } } };
+      errorMessage = responseError.response?.data?.message || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
 };
 
@@ -112,9 +130,15 @@ export const renewPlan = async (request: PlanRenewalRequest) => {
 
     // Frontend: Plan renovado exitosamente
     return response.data;
-  } catch (error: any) {
-    // Frontend: Error completo en renewPlan
-    throw new Error(error.response?.data?.message || error.message || 'Error al renovar el plan');
+  } catch (error: unknown) {
+    let errorMessage = 'Error al crear plan';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null && 'response' in error) {
+      const responseError = error as { response?: { data?: { message?: string } } };
+      errorMessage = responseError.response?.data?.message || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
 };
 
@@ -145,8 +169,15 @@ export const upgradePlan = async (request: PlanUpgradeRequest) => {
       variantDays: request.variantDays
     });
     return response.data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.message || error.message || 'Error al hacer upgrade del plan');
+  } catch (error: unknown) {
+    let errorMessage = 'Error al actualizar plan';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null && 'response' in error) {
+      const responseError = error as { response?: { data?: { message?: string } } };
+      errorMessage = responseError.response?.data?.message || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
 };
 
@@ -159,7 +190,7 @@ export const getActiveProfilesCount = async (userId?: string): Promise<number> =
       params: userId ? { userId } : undefined
     });
     return response.data.count || 0;
-  } catch (error: any) {
+  } catch {
     // Error al obtener conteo de perfiles activos
     return 0;
   }
@@ -196,11 +227,14 @@ export const getAvailablePlans = async () => {
     // Planes procesados
     return response.data.data;
 
-  } catch (error: any) {
-    // Error detallado en getAvailablePlans
-
-    // Proporcionar mensaje de error más específico
-    const errorMessage = error.response?.data?.message || error.message || 'Error al obtener planes disponibles';
+  } catch (error: unknown) {
+    let errorMessage = 'Error al obtener planes';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null && 'response' in error) {
+      const responseError = error as { response?: { data?: { message?: string } } };
+      errorMessage = responseError.response?.data?.message || errorMessage;
+    }
     throw new Error(errorMessage);
   }
 };

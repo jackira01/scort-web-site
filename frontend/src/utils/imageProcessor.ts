@@ -1,5 +1,15 @@
-import imageCompression from 'browser-image-compression';
 import { applyWatermarkToImage } from './watermark';
+
+/**
+ * Carga dinámica de browser-image-compression solo en el cliente
+ */
+const loadImageCompression = async () => {
+  if (typeof window === 'undefined') {
+    throw new Error('browser-image-compression solo puede usarse en el cliente');
+  }
+  const { default: imageCompression } = await import('browser-image-compression');
+  return imageCompression;
+};
 
 export interface ImageProcessingOptions {
   maxSizeMB?: number;
@@ -72,8 +82,8 @@ export const processImageAfterCrop = async (
   } = options;
 
   try {
-    // Obtener dimensiones originales
-    const originalDimensions = await getImageDimensions(croppedBlob);
+    // Obtener dimensiones originales para validación
+    await getImageDimensions(croppedBlob);
     const originalSize = croppedBlob.size;
 
     // Convertir blob a file para el procesamiento
@@ -86,6 +96,7 @@ export const processImageAfterCrop = async (
     }
 
     // Comprimir la imagen
+    const imageCompression = await loadImageCompression();
     const compressedFile = await imageCompression(processedFile, {
       maxSizeMB,
       maxWidthOrHeight,
@@ -168,8 +179,7 @@ export const processMultipleImagesAfterCrop = async (
  * Calcula el tamaño óptimo de compresión basado en las dimensiones
  */
 export const calculateOptimalCompression = (
-  dimensions: { width: number; height: number },
-  targetSizeKB = 600
+  dimensions: { width: number; height: number }
 ): ImageProcessingOptions => {
   const { width, height } = dimensions;
   const totalPixels = width * height;

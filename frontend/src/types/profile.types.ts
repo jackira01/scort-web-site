@@ -122,7 +122,8 @@ export interface FilterQuery {
     city?: string;
   };
   features?: {
-    gender?: string;
+    gender?: string[];
+    sex?: string[];
     age?: string[];
     height?: string[];
     weight?: string[];
@@ -142,6 +143,11 @@ export interface FilterQuery {
       start?: string;
       end?: string;
     };
+  };
+  verification?: {
+    identityVerified?: boolean;
+    hasVideo?: boolean;
+    documentVerified?: boolean;
   };
   isActive?: boolean;
   isVerified?: boolean;

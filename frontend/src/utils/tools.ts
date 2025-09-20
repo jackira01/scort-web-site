@@ -1,10 +1,20 @@
-import imageCompression from 'browser-image-compression';
 import axios from 'axios';
 import { applyWatermarkToImage } from './watermark';
 import { ProcessedImageResult } from './imageProcessor';
 
 const upload_preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "";
 const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_NAME || "";
+
+/**
+ * Carga dinámica de browser-image-compression solo en el cliente
+ */
+const loadImageCompression = async () => {
+  if (typeof window === 'undefined') {
+    throw new Error('browser-image-compression solo puede usarse en el cliente');
+  }
+  const { default: imageCompression } = await import('browser-image-compression');
+  return imageCompression;
+};
 
 /**
  * Normaliza el tamaño de una imagen a un máximo de 1000px manteniendo la proporción
@@ -81,15 +91,16 @@ export const normalizeImageSize = async (file: File): Promise<File> => {
 
 export const compressImage = async (file: File): Promise<File> => {
   const options = {
-    maxSizeMB: 0.6, // máximo 600KB
+    maxSizeMB: 1, // máximo 1MB
     maxWidthOrHeight: 1280, // permitir hasta 1280px para mantener la resolución original
     useWebWorker: true,
     preserveExif: false, // remover metadatos para reducir tamaño
     initialQuality: 0.9, // calidad inicial más alta
   };
   try {
+    const imageCompression = await loadImageCompression();
     return await imageCompression(file, options);
-  } catch (error) {
+  } catch {
     // Error al comprimir imagen
     return file; // si falla, sigue con el original
   }
@@ -130,7 +141,7 @@ export const uploadMultipleImages = async (
       if (onProgress) {
         onProgress(i + 1, filesArray.length);
       }
-    } catch (error) {
+    } catch {
       // Error en cualquier paso del proceso
       uploadedUrls.push(null);
 
@@ -292,7 +303,6 @@ export const uploadMultipleVideos = async (
         }
       } else {
         // Generar preview automático desde el video usando Cloudinary
-        const videoUrl = videoResponse.data.secure_url;
         const publicId = videoResponse.data.public_id;
         previewUrl = `https://res.cloudinary.com/${cloud_name}/video/upload/so_1.0,w_400,h_300,c_fill/${publicId}.jpg`;
       }
@@ -326,7 +336,7 @@ export const uploadMultipleAudios = async (
         formData,
       );
       uploadedUrls.push(response.data.secure_url);
-    } catch (error) {
+    } catch {
       // Error al subir audio
       uploadedUrls.push(null);
     }

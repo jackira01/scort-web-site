@@ -42,7 +42,7 @@ const DEFAULT_LOCATION: LocationFormData = {
 
 export function LocationManager() {
     const [showForm, setShowForm] = useState(false);
-    const [editingLocation, setEditingLocation] = useState<any>(null);
+    const [editingLocation, setEditingLocation] = useState<ConfigParameter | null>(null);
     const [formData, setFormData] = useState<LocationFormData>(DEFAULT_LOCATION);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -58,7 +58,7 @@ export function LocationManager() {
         setErrors({});
     };
 
-    const handleEdit = (location: any) => {
+    const handleEdit = (location: ConfigParameter) => {
         const locationValue = location.value as LocationConfig;
         setFormData({
             key: location.key,
@@ -80,7 +80,7 @@ export function LocationManager() {
         setErrors({});
     };
 
-    const handleDelete = async (location: any) => {
+    const handleDelete = async (location: ConfigParameter) => {
         if (window.confirm(`¿Estás seguro de que quieres eliminar la ubicación "${location.name}"?`)) {
             try {
                 await deleteMutation.mutateAsync(location._id);

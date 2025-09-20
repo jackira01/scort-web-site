@@ -6,12 +6,28 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import toast from 'react-hot-toast';
 
-// Importaciones dinámicas para evitar errores de tipos
-const Header = require("@editorjs/header");
-const List = require("@editorjs/list");
-const ImageTool = require("@editorjs/image");
-const Quote = require("@editorjs/quote");
-const Embed = require("@editorjs/embed");
+// Función para cargar dinámicamente las herramientas de EditorJS
+const loadEditorTools = async () => {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+  
+  const [Header, List, ImageTool, Quote, Embed] = await Promise.all([
+    import("@editorjs/header"),
+    import("@editorjs/list"),
+    import("@editorjs/image"),
+    import("@editorjs/quote"),
+    import("@editorjs/embed")
+  ]);
+
+  return {
+    Header: Header.default,
+    List: List.default,
+    ImageTool: ImageTool.default,
+    Quote: Quote.default,
+    Embed: Embed.default
+  };
+};
 // Nota: Paragraph ya está incluido en el core de EditorJS, no necesita importación
 
 type BlogEditorProps = {
@@ -59,11 +75,18 @@ const BlogEditor = forwardRef<BlogEditorRef, BlogEditorProps>((
     if (typeof window === "undefined" || editorRef.current || isInitializedRef.current) return;
 
     // Usar setTimeout para asegurar que el DOM esté completamente renderizado
-    const initializeEditor = () => {
+    const initializeEditor = async () => {
       // Verificar que el elemento DOM existe antes de inicializar
       const holderElement = document.getElementById(editorId.current);
       if (!holderElement) {
         // Editor holder element not found
+        return;
+      }
+
+      // Cargar las herramientas dinámicamente
+      const tools = await loadEditorTools();
+      if (!tools.Header) {
+        console.error('Failed to load EditorJS tools');
         return;
       }
 
@@ -79,7 +102,7 @@ const BlogEditor = forwardRef<BlogEditorRef, BlogEditorProps>((
       tools: {
         // Paragraph ya está incluido por defecto en EditorJS
         header: {
-          class: Header,
+          class: tools.Header,
           inlineToolbar: ['link', 'bold', 'italic'],
           config: {
             placeholder: "Ingresa un encabezado",
@@ -88,14 +111,14 @@ const BlogEditor = forwardRef<BlogEditorRef, BlogEditorProps>((
           }
         },
         list: {
-          class: List,
+          class: tools.List,
           inlineToolbar: ['link', 'bold', 'italic'],
           config: {
             defaultStyle: 'unordered'
           }
         },
         image: {
-          class: ImageTool,
+          class: tools.ImageTool,
           config: {
             uploader: {
               async uploadByFile(file: File) {
@@ -179,7 +202,7 @@ const BlogEditor = forwardRef<BlogEditorRef, BlogEditorProps>((
           },
         },
         quote: {
-          class: Quote,
+          class: tools.Quote,
           inlineToolbar: ['link', 'bold', 'italic'],
           config: {
             quotePlaceholder: 'Ingresa una cita',
@@ -187,7 +210,7 @@ const BlogEditor = forwardRef<BlogEditorRef, BlogEditorProps>((
           },
         },
         embed: {
-          class: Embed,
+          class: tools.Embed,
           config: {
             services: {
               youtube: true,

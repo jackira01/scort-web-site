@@ -72,13 +72,19 @@ export function Step1EssentialInfo({
                     <SelectValue placeholder="Selecciona tu género" />
                   </SelectTrigger>
                   <SelectContent>
-                    {genderGroup.variants
-                      .filter((v) => v.active)
-                      .map((variant) => (
-                        <SelectItem key={variant._id} value={variant.value}>
-                          {variant.label || variant.value}
-                        </SelectItem>
-                      ))}
+                    {genderGroup?.variants && genderGroup.variants.length > 0 ? (
+                      genderGroup.variants
+                        .filter((v) => v.active)
+                        .map((variant) => (
+                          <SelectItem key={variant._id} value={variant.value}>
+                            {variant.label || variant.value}
+                          </SelectItem>
+                        ))
+                    ) : (
+                      <SelectItem value="loading" disabled>
+                        Cargando opciones...
+                      </SelectItem>
+                    )}
                   </SelectContent>
 
                 </Select>
@@ -129,13 +135,19 @@ export function Step1EssentialInfo({
                     <SelectValue placeholder="Selecciona una categoría" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categoryGroup.variants
-                      .filter((variant) => variant.active)
-                      .map((variant) => (
-                        <SelectItem key={variant._id} value={variant.value}>
-                          {variant.value}
-                        </SelectItem>
-                      ))}
+                    {categoryGroup?.variants && categoryGroup.variants.length > 0 ? (
+                      categoryGroup.variants
+                        .filter((variant) => variant.active)
+                        .map((variant) => (
+                          <SelectItem key={variant._id} value={variant.value}>
+                            {variant.value}
+                          </SelectItem>
+                        ))
+                    ) : (
+                      <SelectItem value="loading" disabled>
+                        Cargando categorías...
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               )}
