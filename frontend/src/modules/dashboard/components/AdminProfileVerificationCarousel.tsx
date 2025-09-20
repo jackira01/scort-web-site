@@ -53,13 +53,6 @@ const AdminProfileVerificationCarousel: React.FC<
     error: any;
   };
 
-  // Debug: Verificar el estado de la carga de datos
-  console.log('🔍 DEBUG useProfileVerification:');
-  console.log('🆔 profileId:', profileId);
-  console.log('📊 verificationData:', verificationData);
-  console.log('📋 isLoading:', isLoading);
-  console.log('❌ error:', error);
-
   // Fetch profile data using the hook
   const profileData = useProfile(profileId);
 
@@ -77,7 +70,7 @@ const AdminProfileVerificationCarousel: React.FC<
   // Mutation hook for updating verification
   const updateVerificationMutation = useProfileVerificationMutation({
     profileId,
-    verificationId: verificationData?.data?._id,
+    verificationId: verificationData?._id,
     onSuccess: () => {
       // Callback adicional si es necesario
     }
@@ -106,31 +99,21 @@ const AdminProfileVerificationCarousel: React.FC<
 
   // Función personalizada para guardar todos los cambios
   const handleSaveAllChanges = async () => {
-    console.log('🔍 DEBUG handleSaveAllChanges:');
-    console.log('🔄 hasIsActiveChanged:', hasIsActiveChanged);
-    console.log('🔄 hasChanges:', hasChanges);
-    console.log('📊 profileData.data?.isActive:', profileData.data?.isActive);
-    console.log('📊 isActiveLocal:', isActiveLocal);
-    
+
+
     try {
       // Guardar cambios de isActive si han cambiado
       if (hasIsActiveChanged) {
-        console.log("🚀 Iniciando actualización de isActive...");
-        console.log("📤 Enviando datos:", { isActive: isActiveLocal });
-        
+
         const profileResult = await updateProfileMutation.mutateAsync({ isActive: isActiveLocal });
-        console.log("✅ Respuesta de actualización de perfil:", profileResult);
       }
 
       // Guardar cambios de verificación si los hay
       if (hasChanges) {
-        console.log("🚀 Iniciando guardado de cambios de verificación...");
         await handleSaveChanges();
       }
-      
-      console.log("✅ Todos los cambios guardados exitosamente");
+
     } catch (error) {
-      console.error("❌ Error en handleSaveAllChanges:", error);
       toast.error('Error al guardar los cambios');
     }
   };
@@ -165,43 +148,25 @@ const AdminProfileVerificationCarousel: React.FC<
   // Save and cancel functions
   const handleSaveChanges = async () => {
     // Debug: Verificar datos antes de guardar
-    console.log('🔍 DEBUG handleSaveChanges:');
-    console.log('📊 verificationData:', verificationData);
-    console.log('📊 verificationData?.data:', verificationData?.data);
-    console.log('📊 verificationData?.data?.steps:', verificationData?.data?.steps);
-    console.log('🆔 verificationData?.data?._id:', verificationData?.data?._id);
-    console.log('📋 isLoading:', isLoading);
-    console.log('❌ error:', error);
+
 
     // Verificar si tenemos datos de verificación válidos
-    if (!verificationData?.data?._id) {
-      console.log('❌ Error: ID de verificación no disponible');
+    if (!verificationData?.data?.steps) {
       toast.error('No se puede guardar: ID de verificación no disponible');
       return;
     }
 
     // Verificar si tenemos steps válidos
     if (!verificationData?.data?.steps) {
-      console.log('❌ Error: steps de verificación no disponibles');
       toast.error('No se puede guardar: datos de steps no disponibles');
       return;
     }
 
     try {
-      console.log('🚀 Iniciando guardado de cambios de verificación...');
-      console.log('📋 verificationData.data.steps antes de buildUpdatedSteps:', verificationData.data.steps);
-      
       const updatedSteps = buildUpdatedSteps(verificationData);
-      console.log('📦 updatedSteps generados:', updatedSteps);
-      
-      console.log('🌐 Enviando petición de actualización...');
       const result = await updateVerificationMutation.mutateAsync(updatedSteps);
-      console.log('✅ Respuesta de la petición:', result);
-      
       resetChanges();
-      console.log('🔄 Cambios reseteados exitosamente');
     } catch (error) {
-      console.error('❌ Error en handleSaveChanges:', error);
       toast.error('Error al guardar los cambios de verificación');
     }
   };
@@ -384,7 +349,7 @@ const AdminProfileVerificationCarousel: React.FC<
                     )}
                   </Badge>
                   <Switch
-                    checked={getCurrentVerificationStatus(currentStep.key, verificationData?.data)}
+                    checked={getCurrentVerificationStatus(currentStep.key, verificationData)}
                     onCheckedChange={(checked) =>
                       handleToggleVerification(currentStep.key, checked)
                     }

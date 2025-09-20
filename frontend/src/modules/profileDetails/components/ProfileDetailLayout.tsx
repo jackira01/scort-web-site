@@ -135,7 +135,10 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
           {/* Left Section - 80% */}
           <div className="lg:col-span-5 space-y-8">
             {/* Gallery Section */}
-            <ProfileGallery {...adaptedProfileData} />
+            <ProfileGallery 
+              {...adaptedProfileData} 
+              isIdentityVerified={verification?.data?.steps?.documentPhotos?.isVerified || false}
+            />
             {/* Description and Services */}
             <DescriptionProfile
               description={adaptedProfileData.description}

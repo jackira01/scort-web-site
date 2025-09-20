@@ -4,6 +4,7 @@ import { PlanDefinitionModel } from '../plans/plan.model';
 import { UpgradeDefinitionModel } from '../plans/upgrade.model';
 import type { IProfile } from '../profile/profile.types';
 import type { IInvoice } from './invoice.model';
+import { Types } from 'mongoose';
 
 /**
  * Servicio para procesar pagos confirmados y actualizar perfiles
@@ -92,7 +93,8 @@ export class PaymentProcessorService {
     
     // NUEVO FLUJO: Asignar el plan comprado (reemplaza el plan Amatista por defecto)
     profile.planAssignment = {
-      planCode: planItem.code,
+      planId: plan._id as Types.ObjectId,           // Referencia al _id del plan
+      planCode: planItem.code,    // Mantener para compatibilidad
       variantDays: planItem.days,
       startAt: now,
       expiresAt: expiresAt

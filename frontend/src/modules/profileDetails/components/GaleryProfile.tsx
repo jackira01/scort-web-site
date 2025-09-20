@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, Search } from 'lucide-react';
+import { CheckCircle, Search, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -10,17 +10,52 @@ export const ProfileGallery = ({
   images,
   verified,
   name,
+  isIdentityVerified = false,
 }: {
   images: string[];
   verified: boolean;
   name: string;
+  isIdentityVerified?: boolean;
 }) => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImageIndex, setModalImageIndex] = useState(0);
 
+  const scrollToTrustFactors = () => {
+    const trustSection = document.getElementById('trust-factors');
+    if (trustSection) {
+      trustSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="space-y-4 animate-in fade-in-50 slide-in-from-left-4 duration-500">
+      {/* Identity Verification Banner */}
+      {isIdentityVerified && (
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-6">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0">
+                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400 mt-0.5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-md font-semibold text-green-800 dark:text-green-200 mb-1">
+                  La identidad del usuario ha sido confirmada
+                </h3>
+        
+              </div>
+            </div>
+            <button
+              onClick={scrollToTrustFactors}
+              className="flex items-center space-x-1 text-green-700 dark:text-green-300 hover:text-green-800 dark:hover:text-green-200 transition-colors duration-200 text-sm font-medium whitespace-nowrap ml-4"
+            >
+              <span>Ver más</span>
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Image */}
       <div className="relative overflow-hidden rounded-xl bg-muted group cursor-pointer"
         onClick={() => {

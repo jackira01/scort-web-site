@@ -132,7 +132,7 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
   };
 
   return (
-    <Card className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-sm">
+    <Card id="trust-factors" className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-sm">
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Factores que garantizan la confiabilidad de este perfil:

@@ -140,11 +140,11 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
-                {getStatusIcon(verification.steps.videoVerification.isVerified)}
+                {getStatusIcon(verification.steps.videoVerification?.isVerified || false)}
                 <span className="font-medium">Video de Verificación</span>
               </div>
               <span className="text-sm text-gray-500">
-                {verification.steps.videoVerification.videoLink ? 'Completado' : 'Pendiente'}
+                {verification.steps.videoVerification?.videoLink ? 'Completado' : 'Pendiente'}
               </span>
             </div>
 

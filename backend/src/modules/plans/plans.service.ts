@@ -506,7 +506,8 @@ export class PlansService {
                 // Usar fechas temporales que serán actualizadas cuando se confirme el pago
                 const tempDate = new Date('1970-01-01'); // Fecha temporal para indicar pendiente
                 profile.planAssignment = {
-                    planCode: planCode,
+                    planId: plan._id as Types.ObjectId,           // Referencia al _id del plan
+                    planCode: planCode,         // Mantener para compatibilidad
                     variantDays: variantDays,
                     startAt: tempDate, // Se asignará cuando se pague
                     expiresAt: tempDate // Se calculará cuando se pague
@@ -521,7 +522,8 @@ export class PlansService {
         } else {
             // Plan gratuito - asignar inmediatamente
             profile.planAssignment = {
-                planCode: planCode,
+                planId: plan._id as Types.ObjectId,           // Referencia al _id del plan
+                planCode: planCode,         // Mantener para compatibilidad
                 variantDays: variantDays,
                 startAt: now,
                 expiresAt: expiresAt

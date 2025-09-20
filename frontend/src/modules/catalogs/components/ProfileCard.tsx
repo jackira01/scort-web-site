@@ -38,11 +38,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
               className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
 
-            {/* Badge destacado */}
-            <Badge className="absolute top-2 left-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs">
-              <Star className="h-3 w-3 mr-1" />
-              DESTACADO
-            </Badge>
+
 
             {/* Overlay con información en hover */}
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end">

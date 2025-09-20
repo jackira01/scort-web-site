@@ -342,24 +342,86 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
         </Card>
 
         {/* Step 1: Document Front Photo */}
-        {renderFileUpload(
-          'frontPhoto',
-          'Paso 1: Documento (frontal)',
-          'Sube una foto clara del frente de tu documento de identidad',
-          <FileImage className="h-5 w-5 text-purple-500" />,
-          true,
-          watchedValues.documentPhotos.frontPhoto
-        )}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileImage className="h-5 w-5 text-purple-500" />
+              Paso 1: Documento (frontal)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Sube una foto clara del frente de tu documento de identidad
+            </p>
+            
+            {/* Imagen guía */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                📋 Ejemplo de documento frontal:
+              </h4>
+              <div className="flex justify-center">
+                <img 
+                  src="/images/Documento frontal.png" 
+                  alt="Ejemplo de documento frontal" 
+                  className="max-w-full h-auto max-h-48 rounded-lg border border-gray-200 dark:border-gray-700"
+                />
+              </div>
+              <p className="text-xs text-blue-700 dark:text-blue-300 mt-2 text-center">
+                Asegúrate de que todos los datos sean legibles y la imagen esté bien iluminada
+              </p>
+            </div>
+
+            {renderFileUpload(
+              'frontPhoto',
+              '',
+              '',
+              <></>,
+              true,
+              watchedValues.documentPhotos.frontPhoto
+            )}
+          </CardContent>
+        </Card>
 
         {/* Step 2: Document Back Photo */}
-        {renderFileUpload(
-          'backPhoto',
-          'Paso 2: Documento (reverso)',
-          'Sube una foto clara del reverso de tu documento de identidad',
-          <FileImage className="h-5 w-5 text-purple-500" />,
-          isStep1Complete,
-          watchedValues.documentPhotos.backPhoto
-        )}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileImage className="h-5 w-5 text-purple-500" />
+              Paso 2: Documento (reverso)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Sube una foto clara del reverso de tu documento de identidad
+            </p>
+            
+            {/* Imagen guía */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                📋 Ejemplo de documento reverso:
+              </h4>
+              <div className="flex justify-center">
+                <img 
+                  src="/images/Documento reverso.png" 
+                  alt="Ejemplo de documento reverso" 
+                  className="max-w-full h-auto max-h-48 rounded-lg border border-gray-200 dark:border-gray-700"
+                />
+              </div>
+              <p className="text-xs text-blue-700 dark:text-blue-300 mt-2 text-center">
+                Incluye toda la información del reverso, códigos de barras y firmas si las hay
+              </p>
+            </div>
+
+            {renderFileUpload(
+              'backPhoto',
+              '',
+              '',
+              <></>,
+              isStep1Complete,
+              watchedValues.documentPhotos.backPhoto
+            )}
+          </CardContent>
+        </Card>
 
         {/* Step 3: Selfie with Document */}
         {renderFileUpload(
