@@ -13,8 +13,9 @@ export interface ProfileVerificationData {
         selfieWithDocument?: string;
         isVerified: boolean;
       };
-      videoVerification: {
-        videoLink?: string;
+      mediaVerification: {
+        mediaLink?: string;
+        mediaType?: 'video' | 'image';
         isVerified: boolean;
       };
       videoCallRequested: {
@@ -46,6 +47,6 @@ export interface VerificationStepRenderProps {
   step: VerificationStep;
   stepData: ProfileVerificationData['data']['steps'][keyof ProfileVerificationData['data']['steps']] | undefined;
   onPreviewImage: (image: string) => void;
-  getCurrentVideoLink: (stepKey: 'videoVerification' | 'videoCallRequested') => string;
-  handleVideoLinkChange: (stepKey: 'videoVerification' | 'videoCallRequested', videoLink: string) => void;
+  getCurrentVideoLink: (stepKey: 'mediaVerification' | 'videoCallRequested') => string;
+  handleVideoLinkChange: (stepKey: 'mediaVerification' | 'videoCallRequested', videoLink: string) => void;
 }

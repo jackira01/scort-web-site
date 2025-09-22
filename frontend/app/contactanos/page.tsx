@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from '@/lib/axios';
+import { ConfigParameterService } from '@/services/config-parameter.service';
 
 interface ContactFormData {
   name: string;
@@ -35,6 +36,25 @@ const ContactPage = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [companyEmail, setCompanyEmail] = useState('soporte@prepagosvip.com');
+  const [companyWhatsApp, setCompanyWhatsApp] = useState('');
+
+  useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      try {
+        const [email, whatsapp] = await Promise.all([
+          ConfigParameterService.getByKey('company.email').then(param => param.value as string).catch(() => 'soporte@prepagosvip.com'),
+          ConfigParameterService.getByKey('company.whatsapp.number').then(param => param.value as string).catch(() => '')
+        ]);
+        setCompanyEmail(email);
+        setCompanyWhatsApp(whatsapp);
+      } catch (error) {
+        console.error('Error fetching company info:', error);
+      }
+    };
+
+    fetchCompanyInfo();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -114,9 +134,27 @@ const ContactPage = () => {
                   <Mail className="h-5 w-5 text-primary mt-1" />
                   <div>
                     <h3 className="font-semibold text-foreground">Email</h3>
-                    <p className="text-muted-foreground">soporte@prepagosvip.com</p>
+                    <p className="text-muted-foreground">{companyEmail}</p>
                   </div>
                 </div>
+                
+                {companyWhatsApp && (
+                  <div className="flex items-start gap-3">
+                    <MessageCircle className="h-5 w-5 text-primary mt-1" />
+                    <div>
+                      <h3 className="font-semibold text-foreground">WhatsApp</h3>
+                      <p className="text-muted-foreground">{companyWhatsApp}</p>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="mt-2"
+                        onClick={() => window.open(`https://wa.me/${companyWhatsApp.replace(/\D/g, '')}`, '_blank')}
+                      >
+                        Contactar por WhatsApp
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 
                 <div className="flex items-start gap-3">
                   <Clock className="h-5 w-5 text-primary mt-1" />

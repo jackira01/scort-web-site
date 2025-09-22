@@ -61,7 +61,7 @@ const HeaderComponent = () => {
                 Blog
               </Button>
             </Link>
-            <Link href="/plans">
+            <Link href="/planes">
               <Button
                 variant="ghost"
                 className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
@@ -174,7 +174,7 @@ const HeaderComponent = () => {
                 Blog
               </Button>
             </Link>
-            <Link href="/plans">
+            <Link href="/planes">
               <Button
                 variant="ghost"
                 className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"

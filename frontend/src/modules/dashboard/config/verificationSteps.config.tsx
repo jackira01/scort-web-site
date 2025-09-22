@@ -24,10 +24,10 @@ export const verificationSteps: VerificationStep[] = [
     description: 'Verificación de documentos de identidad',
   },
   {
-    key: 'videoVerification',
-    label: 'Video de Verificación',
+    key: 'mediaVerification',
+    label: 'Video/foto de Verificación',
     icon: <Video className="h-5 w-5" />,
-    description: 'Video de verificación de identidad',
+    description: 'Video/foto de verificación de identidad',
   },
   {
     key: 'videoCallRequested',

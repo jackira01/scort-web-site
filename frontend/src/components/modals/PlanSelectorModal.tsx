@@ -215,7 +215,7 @@ export default function PlanSelectorModal({
             <Button
               variant="link"
               className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
-              onClick={() => window.open('/plans', '_blank')}
+              onClick={() => window.open('/planes', '_blank')}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Ver detalles de planes

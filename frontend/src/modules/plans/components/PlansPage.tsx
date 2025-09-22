@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { usePlans } from '@/hooks/usePlans';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Check, Star, Zap, Crown, ArrowRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const PlansPage = () => {
+  const router = useRouter();
   const { data: plansData, isLoading, error } = usePlans({ isActive: true });
 
   if (isLoading) {
@@ -130,13 +132,13 @@ const PlansPage = () => {
 
 
                 {/* Sponsored Badge */}
-                {isSponsored && (
+                {/* {isSponsored && (
                   <div className="absolute top-4 left-4 z-10">
                     <Badge className="bg-yellow-500 text-white font-semibold px-3 py-1">
                       Destacado
                     </Badge>
                   </div>
-                )}
+                )} */}
 
                 {/* Header with gradient */}
                 <div className={`bg-gradient-to-r ${getPlanColor(plan.level)} p-6 text-white`}>
@@ -281,10 +283,18 @@ const PlansPage = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button variant="outline" size="lg">
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => router.push('/contactanos')}
+                >
                   Contactar Soporte
                 </Button>
-                <Button variant="outline" size="lg">
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => router.push('/faq')}
+                >
                   Ver FAQ
                 </Button>
               </div>

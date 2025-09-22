@@ -1,12 +1,14 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Shield, Users, FileText } from 'lucide-react';
 
 const TermsPage = () => {
+  const router = useRouter();
   const lastUpdated = "15 de enero de 2024";
 
   const sections = [
@@ -140,7 +142,7 @@ const TermsPage = () => {
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">Aviso Importante</h3>
                 <p className="text-gray-700">
-                  Al utilizar nuestros servicios, usted acepta estos términos y condiciones en su totalidad. 
+                  Al utilizar nuestros servicios, usted acepta estos términos y condiciones en su totalidad.
                   Si no está de acuerdo con alguna parte de estos términos, no debe utilizar nuestros servicios.
                 </p>
               </div>
@@ -183,11 +185,8 @@ const TermsPage = () => {
               Si tienes alguna pregunta sobre estos Términos y Condiciones, no dudes en contactarnos.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Badge variant="outline" className="px-4 py-2">
-                Email: legal@empresa.com
-              </Badge>
-              <Badge variant="outline" className="px-4 py-2">
-                Teléfono: +57 (1) 234-5678
+              <Badge variant="outline" className="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => router.push('/contactanos')}>
+                Escribenos a nuestro correo
               </Badge>
             </div>
           </CardContent>

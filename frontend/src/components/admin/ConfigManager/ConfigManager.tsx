@@ -172,8 +172,8 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
                     <button
                         onClick={() => setViewMode('memberships')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'memberships'
-                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                     >
                         Membresías
@@ -182,8 +182,8 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
                     <button
                         onClick={() => setViewMode('profile-limits')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'profile-limits'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                     >
                         Límites de Perfiles
@@ -192,8 +192,8 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
                     <button
                         onClick={() => setViewMode('agency-limits')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'agency-limits'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                     >
                         Límites de Agencias
@@ -355,7 +355,7 @@ export function ConfigManager({ className = '' }: ConfigManagerProps) {
                 return (
                     <>
                         {renderListControls()}
-                        <div className="p-6">
+                        <div className="">
                             {error ? (
                                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                                     <p className="text-red-800">Error: {error}</p>

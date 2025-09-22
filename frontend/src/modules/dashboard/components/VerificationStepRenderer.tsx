@@ -122,6 +122,61 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
       );
     }
 
+    case 'mediaVerification': {
+      const mediaData = stepData as ProfileVerificationData['data']['steps']['mediaVerification'];
+      
+      if (!mediaData.mediaLink) {
+        return (
+          <div className="mt-4 text-gray-500 text-center">
+            No hay video o imagen de verificación.
+          </div>
+        );
+      }
+
+      const isVideo = mediaData.mediaType === 'video';
+
+      return (
+        <div className="mt-4">
+          <div className="relative group">
+            {isVideo ? (
+              <video
+                src={mediaData.mediaLink}
+                controls
+                className="w-full max-w-md mx-auto rounded-lg shadow-md"
+                style={{ maxHeight: '300px' }}
+              >
+                Tu navegador no soporta el elemento de video.
+              </video>
+            ) : (
+              <CloudinaryImage
+                src={mediaData.mediaLink}
+                alt="Verificación de identidad"
+                width={300}
+                height={300}
+                className="w-full max-w-md mx-auto rounded-lg shadow-md cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => onPreviewImage(mediaData.mediaLink!)}
+              />
+            )}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPreviewImage(mediaData.mediaLink!)}
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="mt-2 text-center">
+            <p className="text-sm text-gray-600">
+              {isVideo ? 'Video de verificación' : 'Imagen de verificación'}
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     case 'videoCallRequested': {
       const currentVideoLink = getCurrentVideoLink(step.key as 'videoCallRequested');
 

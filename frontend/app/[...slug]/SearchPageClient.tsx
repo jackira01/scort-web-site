@@ -16,7 +16,6 @@ import {
 import SearchProfilesSSG from '@/modules/catalogs/components/SearchProfilesSSG';
 import FeaturedProfilesSection from '@/components/featured/FeaturedProfilesSection';
 import AgeFilter from '@/modules/filters/components/AgeFilter';
-import FilterToglles from '@/modules/filters/components/FilterToglles';
 import GenderFilter from '@/modules/filters/components/GenderFilter';
 import CategoryFilter from '@/modules/filters/components/CategoryFilter';
 import LocationFilter from '@/modules/filters/components/LocationFIlter';

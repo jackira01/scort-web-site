@@ -74,8 +74,8 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
     },
     {
       label: "Identidad confirmada",
-      isVerified: steps?.videoVerification?.isVerified || false,
-      hasData: !!steps?.videoVerification?.videoLink
+      isVerified: steps?.mediaVerification?.isVerified || false,
+      hasData: !!steps?.mediaVerification?.mediaLink
     },
     {
       label: "Verificación por videollamada",
@@ -161,8 +161,8 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
               {step.label === "Identidad confirmada" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified
-                    ? "La identidad del usuario ha sido confirmada mediante video de verificación."
-                    : "Este usuario aún no ha completado el video de verificación de identidad."}
+                    ? "La identidad del usuario ha sido confirmada mediante video/foto de verificación."
+                    : "Este usuario aún no ha completado el video/foto de verificación de identidad."}
                 </p>
               )}
               {step.label === "Verificación por videollamada" && (

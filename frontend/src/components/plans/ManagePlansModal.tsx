@@ -328,7 +328,7 @@ export default function ManagePlansModal({
           // Intentando renovar plan
 
           const renewSelectedVariant = getSelectedVariant(planCode, currentPlanData);
-          
+
           // Diferenciar entre admin y usuario normal
           if (isAdmin) {
             // Admin: renovación directa usando el endpoint del backend
@@ -354,28 +354,28 @@ export default function ManagePlansModal({
 
             // Crear SOLO la factura (el plan se renovará cuando se confirme el pago)
             const invoice = await invoiceService.createInvoice(invoiceData);
-            
+
             // Generar mensaje de WhatsApp para el pago
             const whatsappData = await invoiceService.getWhatsAppData(invoice._id);
-            
+
             // Mensaje específico para renovación con factura
             message = `Factura de renovación generada. Completa el pago para renovar tu plan.`;
-            
+
             // Mostrar toast con información adicional
             toast.success('Factura creada. El plan se renovará después del pago confirmado.', {
               duration: 4000,
             });
-            
+
             // Abrir WhatsApp inmediatamente
             window.open(whatsappData.whatsappUrl, '_blank');
-            
-            result = { 
-              invoice, 
+
+            result = {
+              invoice,
               whatsappData,
               requiresPayment: true,
               totalAmount: renewSelectedVariant.price
             };
-            
+
             // NO mostrar el toast de éxito general para usuarios normales
             // porque el plan no se ha renovado aún
             return;
@@ -383,15 +383,70 @@ export default function ManagePlansModal({
           break;
 
         case 'upgrade':
+
           const targetUpgradePlan = processedPlans.find((p: Plan) => p.code === planCode);
           const upgradeSelectedVariant = targetUpgradePlan ? getSelectedVariant(planCode, targetUpgradePlan) : null;
-          const upgradeRequest: PlanUpgradeRequest = {
-            profileId,
-            newPlanCode: planCode,
-            variantDays: upgradeSelectedVariant?.days
-          };
-          result = await upgradePlan(upgradeRequest);
-          message = `Upgrade a ${processedPlans.find((p: Plan) => p.code === planCode)?.name} realizado exitosamente`;
+
+          // Diferenciar entre admin y usuario normal
+          if (isAdmin) {
+            // Admin: upgrade directo usando el endpoint del backend
+            const upgradeRequest: PlanUpgradeRequest = {
+              profileId,
+              newPlanCode: planCode,
+              variantDays: upgradeSelectedVariant?.days
+            };
+            result = await upgradePlan(upgradeRequest);
+            message = `Actualización directa del plan a ${targetUpgradePlan?.name} realizada exitosamente`;
+          } else {
+            // Usuario normal: generar factura para compra del nuevo plan
+            if (!session?.user?._id) {
+              throw new Error('Usuario no autenticado');
+            }
+
+            // Construir detalles del plan actual
+            const currentPlanDetails = currentPlan 
+              ? `Plan actual: ${currentPlanData?.name || currentPlan.planCode} (${currentPlan.variantDays} días)`
+              : 'Sin plan activo';
+
+            // Construir detalles del nuevo plan
+            const newPlanDetails = `Nuevo plan: ${targetUpgradePlan?.name || planCode} (${upgradeSelectedVariant?.days || 30} días) - $${upgradeSelectedVariant?.price || 0}`;
+
+            const invoiceData: CreateInvoiceData = {
+              profileId,
+              userId: session.user._id,
+              planCode: planCode,
+              planDays: upgradeSelectedVariant?.days || 30,
+              notes: `Cambio de plan para perfil ${profileName}\n${currentPlanDetails}\n${newPlanDetails}`
+            };
+
+            // Crear factura para el nuevo plan
+            const invoice = await invoiceService.createInvoice(invoiceData);
+
+
+            // Generar mensaje de WhatsApp para el pago
+            const whatsappData = await invoiceService.getWhatsAppData(invoice._id);
+
+            // Mensaje específico para cambio de plan con factura
+            message = `Factura generada para cambio de plan. Completa el pago para activar tu nuevo plan ${targetUpgradePlan?.name}.`;
+
+            // Mostrar toast con información adicional
+            toast.success('Factura creada. El plan se actualizará después del pago confirmado.', {
+              duration: 4000,
+            });
+
+            // Abrir WhatsApp inmediatamente
+            window.open(whatsappData.whatsappUrl, '_blank');
+
+            result = {
+              invoice,
+              whatsappData,
+              requiresPayment: true,
+              totalAmount: upgradeSelectedVariant?.price || 0
+            };
+            // NO mostrar el toast de éxito general para usuarios normales
+            // porque el plan no se ha actualizado aún
+            return;
+          }
           break;
       }
 
@@ -529,9 +584,9 @@ export default function ManagePlansModal({
                         disabled={isProcessing}
                         className="w-full sm:w-auto"
                       >
-                        {isAdmin 
-                          ? `Renovar Plan (${formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})` 
-                          : `Generar Factura (${formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})`
+                        {isAdmin
+                          ? `Renovar Plan (${formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})`
+                          : `Renovar Plan (${formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})`
                         }
                       </Button>
                     </div>
@@ -655,12 +710,14 @@ export default function ManagePlansModal({
                           </Badge>
                         ) : canUpgrade && isPlanActive() ? (
                           <Button
-                            onClick={() => handlePlanAction('upgrade', plan.code)}
+                            onClick={() => {
+                              handlePlanAction('upgrade', plan.code);
+                            }}
                             disabled={isProcessing || (activeProfilesCount >= 10 && plan.code !== 'AMATISTA')}
                             className="w-full bg-purple-600 hover:bg-purple-700"
                             size="sm"
                           >
-                            Cambiar a {plan.name}
+                            {isAdmin ? `Actualizar a ${plan.name}` : `Comprar ${plan.name}`}
                           </Button>
                         ) : canPurchase ? (
                           <Button

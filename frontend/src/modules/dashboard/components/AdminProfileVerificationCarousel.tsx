@@ -109,7 +109,7 @@ const AdminProfileVerificationCarousel: React.FC<
   // Mutation hook for updating verification
   const updateVerificationMutation = useProfileVerificationMutation({
     profileId,
-    verificationId: verificationData?._id,
+    verificationId: verificationData?.data?._id,
     onSuccess: () => {
       // Callback adicional si es necesario
     }
@@ -143,7 +143,7 @@ const AdminProfileVerificationCarousel: React.FC<
       hasIsActiveChanged,
       hasAnyChanges,
       verificationDataExists: !!verificationData,
-      verificationId: verificationData?._id
+      verificationId: verificationData?.data?._id
     });
   }, [hasChanges, hasIsActiveChanged, hasAnyChanges, verificationData]);
 
@@ -221,25 +221,17 @@ const AdminProfileVerificationCarousel: React.FC<
     let actualVerificationData;
     let verificationId;
 
-    // Si es la estructura del backend { success: true, data: { _id, data: { steps: ... } } }
-    if (verificationData.success && verificationData.data?.data) {
-      console.log('📋 Backend response structure (nested data) detected');
+    // La estructura del backend siempre es { success: true, data: { _id, ... } }
+    if (verificationData.success && verificationData.data?._id) {
+      console.log('📋 Backend structure detected');
       actualVerificationData = verificationData.data;
       verificationId = verificationData.data._id;
       console.log('- Using verificationData.data._id:', verificationId);
       console.log('- Using verificationData.data for processing:', actualVerificationData);
     }
-    // Si es la estructura del backend { success: true, data: { _id, steps, ... } }
-    else if (verificationData.success && verificationData.data) {
-      console.log('📋 Backend response structure (direct data) detected');
-      actualVerificationData = verificationData.data;
-      verificationId = verificationData.data._id;
-      console.log('- Using verificationData.data._id:', verificationId);
-      console.log('- Using verificationData.data for processing:', actualVerificationData);
-    }
-    // Si es la estructura directa { _id, data: { steps: ... } }
-    else if (verificationData._id && verificationData.data) {
-      console.log('📋 Direct structure detected');
+    // Fallback para estructura directa (no debería ocurrir con el backend actual)
+    else if (verificationData._id && verificationData.steps) {
+      console.log('📋 Direct structure detected (fallback)');
       actualVerificationData = verificationData;
       verificationId = verificationData._id;
       console.log('- Using direct _id:', verificationId);

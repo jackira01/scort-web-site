@@ -237,7 +237,7 @@ class InvoiceService {
     phoneNumber?: string
   ): Promise<WhatsAppData> {
     const params = phoneNumber ? `?phoneNumber=${phoneNumber}` : '';
-    const response = await axios.get(`${this.baseURL}/${invoiceId}/whatsapp${params}`);
+    const response = await axios.get(`${this.baseURL}/${invoiceId}/whatsapp-data${params}`);
     return response.data.data;
   }
 

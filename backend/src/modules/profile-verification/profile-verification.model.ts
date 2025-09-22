@@ -22,13 +22,13 @@ const ProfileVerificationSchema = new Schema<IProfileVerification>({
         documentPhotos: {
             frontPhoto: { type: String, default: undefined }, // Paso 1: Foto frontal del documento
             backPhoto: { type: String, default: undefined }, // Paso 2: Foto reverso del documento
-            selfieWithDocument: { type: String, default: undefined }, // Paso 3: Selfie con documento
             isVerified: { type: Boolean, default: false },
         },
-        videoVerification: {
-            videoLink: { type: String, default: undefined }, // Paso 4: Video de verificación (opcional)
+        mediaVerification: {
+            mediaLink: { type: String, default: undefined }, // Paso 3: Video o imagen de verificación
+            mediaType: { type: String, enum: ['video', 'image'], default: undefined }, // Tipo de media
             isVerified: { type: Boolean, default: false },
-        }, // Video verification.
+        }, // Media verification (video or image).
         videoCallRequested: {
             videoLink: { type: String, default: undefined }, // required
             isVerified: { type: Boolean, default: false },

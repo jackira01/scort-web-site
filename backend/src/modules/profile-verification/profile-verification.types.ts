@@ -138,15 +138,11 @@ export interface UpdateVerificationStepsDTO {
   documentPhotos?: {
     frontPhoto?: string;
     backPhoto?: string;
-    selfieWithDocument?: string;
     isVerified?: boolean;
   };
-  videoVerification?: {
-    videoLink?: string;
-    isVerified?: boolean;
-  };
-  video?: {
-    videoLink?: string;
+  mediaVerification?: {
+    mediaLink?: string;
+    mediaType?: 'video' | 'image';
     isVerified?: boolean;
   };
   videoCallRequested?: {

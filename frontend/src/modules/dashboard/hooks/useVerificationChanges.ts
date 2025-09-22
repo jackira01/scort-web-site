@@ -44,7 +44,7 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
   };
 
   const handleVideoLinkChange = (
-    stepKey: 'videoVerification' | 'videoCallRequested',
+    stepKey: 'mediaVerification' | 'videoCallRequested',
     videoLink: string
   ) => {
     setPendingVideoLinks(prev => ({
@@ -79,12 +79,17 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
   };
 
   const getCurrentVideoLink = (
-    stepKey: 'videoVerification' | 'videoCallRequested',
+    stepKey: 'mediaVerification' | 'videoCallRequested',
     verificationData?: ProfileVerificationData
   ) => {
     if (stepKey in pendingVideoLinks) {
       return pendingVideoLinks[stepKey];
     }
+    
+    if (stepKey === 'mediaVerification') {
+      return verificationData?.data?.steps?.[stepKey]?.mediaLink || '';
+    }
+    
     return verificationData?.data?.steps?.[stepKey]?.videoLink || '';
   };
 
@@ -152,13 +157,21 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
 
     // Aplicar cambios pendientes de video links
     Object.entries(pendingVideoLinks).forEach(([stepKey, videoLink]) => {
-      const key = stepKey as 'videoVerification' | 'videoCallRequested';
-      if (updatedSteps[key] && 'videoLink' in updatedSteps[key]) {
+      const key = stepKey as 'mediaVerification' | 'videoCallRequested';
+      if (updatedSteps[key]) {
         console.log(`🎥 Updating ${stepKey} video link to:`, videoLink);
-        updatedSteps[key] = {
-          ...updatedSteps[key],
-          videoLink
-        };
+        
+        if (key === 'mediaVerification' && 'mediaLink' in updatedSteps[key]) {
+          updatedSteps[key] = {
+            ...updatedSteps[key],
+            mediaLink: videoLink
+          };
+        } else if (key === 'videoCallRequested' && 'videoLink' in updatedSteps[key]) {
+          updatedSteps[key] = {
+            ...updatedSteps[key],
+            videoLink
+          };
+        }
       }
     });
 

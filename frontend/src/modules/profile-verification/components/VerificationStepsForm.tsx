@@ -18,10 +18,10 @@ const verificationSchema = z.object({
   documentPhotos: z.object({
     frontPhoto: z.string().optional(),
     backPhoto: z.string().optional(),
-    selfieWithDocument: z.string().optional(),
   }),
-  videoVerification: z.object({
-    videoLink: z.string().optional(),
+  mediaVerification: z.object({
+    mediaLink: z.string().optional(),
+    mediaType: z.enum(['video', 'image']).optional(),
   }),
 });
 
@@ -47,10 +47,9 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
       documentPhotos: {
         frontPhoto: initialData.documentPhotos?.frontPhoto || '',
         backPhoto: initialData.documentPhotos?.backPhoto || '',
-        selfieWithDocument: initialData.documentPhotos?.selfieWithDocument || '',
       },
-      videoVerification: {
-        videoLink: initialData.videoVerification?.videoLink || '',
+      mediaVerification: {
+        mediaLink: initialData.mediaVerification?.mediaLink || initialData.videoVerification?.videoLink || '',
       },
     },
   });
@@ -59,16 +58,14 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
   // Determinar el paso actual basado en los datos completados
   useEffect(() => {
-    const { frontPhoto, backPhoto, selfieWithDocument } = watchedValues.documentPhotos;
+    const { frontPhoto, backPhoto } = watchedValues.documentPhotos;
     
     if (!frontPhoto) {
       setCurrentStep(1);
     } else if (!backPhoto) {
       setCurrentStep(2);
-    } else if (!selfieWithDocument) {
-      setCurrentStep(3);
     } else {
-      setCurrentStep(4);
+      setCurrentStep(3);
     }
   }, [watchedValues.documentPhotos]);
 
@@ -96,8 +93,8 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
     // Crear una URL temporal para mostrar preview
     const tempUrl = URL.createObjectURL(files[0]);
     
-    if (fieldName === 'videoVerification') {
-      form.setValue('videoVerification.videoLink', tempUrl);
+    if (fieldName === 'mediaVerification') {
+      form.setValue('mediaVerification.mediaLink', tempUrl);
     } else {
       form.setValue(`documentPhotos.${fieldName}` as any, tempUrl);
     }
@@ -106,11 +103,11 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
   };
 
   const onSubmit = async (data: VerificationFormData) => {
-    // Validar que si se completó el paso 1, también se completen 2 y 3
-    const { frontPhoto, backPhoto, selfieWithDocument } = data.documentPhotos;
+    // Validar que si se completó el paso 1, también se complete el paso 2
+    const { frontPhoto, backPhoto } = data.documentPhotos;
     
-    if (frontPhoto && (!backPhoto || !selfieWithDocument)) {
-      toast.error('Si subes la foto frontal del documento, debes completar también el reverso y la selfie con documento');
+    if (frontPhoto && !backPhoto) {
+      toast.error('Si subes la foto frontal del documento, debes completar también el reverso');
       return;
     }
 
@@ -127,11 +124,25 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
           try {
             let uploadedUrls: string[] = [];
 
-            if (fieldName === 'videoVerification') {
-              const videoResults = await uploadMultipleVideos([file]);
-              uploadedUrls = videoResults.map(result => result.link);
-              if (uploadedUrls.length > 0) {
-                uploadedData.videoVerification.videoLink = uploadedUrls[0];
+            if (fieldName === 'mediaVerification') {
+              // Detectar si es video o imagen
+              const isVideo = file.type.startsWith('video/');
+              
+              if (isVideo) {
+                const videoResults = await uploadMultipleVideos([file]);
+                uploadedUrls = videoResults.map(result => result.link);
+                
+                if (uploadedUrls.length > 0) {
+                  uploadedData.mediaVerification.mediaLink = uploadedUrls[0];
+                  uploadedData.mediaVerification.mediaType = 'video';
+                }
+              } else {
+                uploadedUrls = (await uploadMultipleImages([file])).filter((url): url is string => url !== null);
+                
+                if (uploadedUrls.length > 0) {
+                  uploadedData.mediaVerification.mediaLink = uploadedUrls[0];
+                  uploadedData.mediaVerification.mediaType = 'image';
+                }
               }
             } else {
               uploadedUrls = (await uploadMultipleImages([file])).filter((url): url is string => url !== null);
@@ -151,7 +162,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
       // Actualizar la verificación con los datos subidos
       await updateVerificationMutation.mutateAsync({
         documentPhotos: uploadedData.documentPhotos,
-        videoVerification: uploadedData.videoVerification,
+        mediaVerification: uploadedData.mediaVerification,
       });
 
       // Limpiar archivos pendientes después del éxito
@@ -227,7 +238,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                 <Input
                 type="file"
-                accept={fieldName === 'videoVerification' ? 'video/*' : 'image/*'}
+                accept={fieldName === 'mediaVerification' ? 'video/*,image/*' : 'image/*'}
                 onChange={(e) => {
                   const files = Array.from(e.target.files || []);
                   if (files.length > 0) {
@@ -252,7 +263,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
             }`}>
               <Input
                 type="file"
-                accept={fieldName === 'videoVerification' ? 'video/*' : 'image/*'}
+                accept={fieldName === 'mediaVerification' ? 'video/*,image/*' : 'image/*'}
                 onChange={(e) => {
                   const files = Array.from(e.target.files || []);
                   if (files.length > 0) {
@@ -274,7 +285,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   {isUploading ? 'Subiendo...' : 'Haz clic para seleccionar'}
                 </span>
                 <span className="text-xs text-gray-500">
-                  {fieldName === 'videoVerification' ? 'Formatos: MP4, MOV, AVI' : 'Formatos: JPG, PNG, WEBP'}
+                  {fieldName === 'mediaVerification' ? 'Formatos: MP4, MOV, AVI, JPG, PNG, WEBP' : 'Formatos: JPG, PNG, WEBP'}
                 </span>
               </label>
             </div>
@@ -292,7 +303,6 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
   const isStep1Complete = !!watchedValues.documentPhotos.frontPhoto;
   const isStep2Complete = !!watchedValues.documentPhotos.backPhoto;
-  const isStep3Complete = !!watchedValues.documentPhotos.selfieWithDocument;
 
   return (
     <Form {...form}>
@@ -304,7 +314,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between mb-4">
-              {[1, 2, 3, 4].map((step) => {
+              {[1, 2, 3].map((step) => {
                 const status = getStepStatus(step);
                 return (
                   <div key={step} className="flex items-center">
@@ -319,7 +329,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                     >
                       {status === 'completed' ? <CheckCircle className="h-4 w-4" /> : step}
                     </div>
-                    {step < 4 && (
+                    {step < 3 && (
                       <div
                         className={`w-16 h-1 mx-2 ${
                           step < currentStep ? 'bg-green-500' : 'bg-gray-200'
@@ -331,11 +341,10 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               })}
             </div>
             <div className="text-sm text-gray-600">
-              Paso {currentStep} de 4: {
+              Paso {currentStep} de 3: {
                 currentStep === 1 ? 'Documento (frontal)' :
                 currentStep === 2 ? 'Documento (reverso)' :
-                currentStep === 3 ? 'Selfie con documento' :
-                'Video de verificación (opcional)'
+                'Video o foto de verificación'
               }
             </div>
           </CardContent>
@@ -423,34 +432,61 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
           </CardContent>
         </Card>
 
-        {/* Step 3: Selfie with Document */}
-        {renderFileUpload(
-          'selfieWithDocument',
-          'Paso 3: Selfie con documento',
-          'Tómate una selfie sosteniendo tu documento de identidad junto a tu rostro',
-          <Camera className="h-5 w-5 text-purple-500" />,
-          isStep1Complete && isStep2Complete,
-          watchedValues.documentPhotos.selfieWithDocument
-        )}
+        {/* Step 3: Media Verification (Video or Photo) */}
+        <Card className={`border-2 transition-all duration-300 ${
+          isStep1Complete && isStep2Complete 
+            ? 'border-purple-200 bg-purple-50 dark:bg-purple-950/20' 
+            : 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
+        }`}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Video className="h-5 w-5 text-purple-500" />
+              Paso 3: Video o foto de verificación
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground mb-3">
+                Sube una foto o video de la persona junto con un cartel con el nombre del perfil y fecha de la solicitud de inscripción registrada
+              </p>
+              
+              {/* Imagen de referencia */}
+              <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200">
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                  📋 Ejemplo de referencia:
+                </p>
+                <div className="flex justify-center">
+                  <img 
+                    src="/images/perfil con cartel.png" 
+                    alt="Ejemplo de foto con cartel" 
+                    className="max-w-full h-auto max-h-48 rounded-lg border border-blue-300"
+                  />
+                </div>
+                <p className="text-xs text-blue-600 dark:text-blue-300 mt-2 text-center">
+                  La persona debe sostener un cartel con el nombre del perfil y la fecha
+                </p>
+              </div>
+            </div>
 
-        {/* Step 4: Video Verification (Optional) */}
-        {renderFileUpload(
-          'videoVerification',
-          'Paso 4: Video de verificación (opcional)',
-          'Graba un video corto presentándote y mostrando tu documento',
-          <Video className="h-5 w-5 text-purple-500" />,
-          true,
-          watchedValues.videoVerification.videoLink
-        )}
+            {renderFileUpload(
+              'mediaVerification',
+              '',
+              '',
+              <></>,
+              isStep1Complete && isStep2Complete,
+              watchedValues.mediaVerification.mediaLink
+            )}
+          </CardContent>
+        </Card>
 
         {/* Validation Warning */}
-        {isStep1Complete && (!isStep2Complete || !isStep3Complete) && (
+        {isStep1Complete && !isStep2Complete && (
           <Card className="border-amber-200 bg-amber-50">
             <CardContent className="pt-6">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-amber-500" />
                 <p className="text-sm text-amber-700">
-                  <strong>Importante:</strong> Si subes la foto frontal del documento, debes completar también el reverso y la selfie con documento.
+                  <strong>Importante:</strong> Si subes la foto frontal del documento, debes completar también el reverso.
                 </p>
               </div>
             </CardContent>

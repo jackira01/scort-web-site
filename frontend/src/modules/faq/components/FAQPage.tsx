@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +29,7 @@ import {
 } from 'lucide-react';
 
 const FAQPage = () => {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -190,10 +192,10 @@ const FAQPage = () => {
       <div className="container mx-auto px-4 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-200 mb-4">
             Preguntas Frecuentes
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
+          <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
             Encuentra respuestas rápidas a las preguntas más comunes sobre PREPAGOSVIP y nuestros servicios.
           </p>
 
@@ -212,7 +214,7 @@ const FAQPage = () => {
 
         {/* Popular Questions */}
         {searchTerm === '' && selectedCategory === 'all' && (
-          <Card className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <Card className="mb-8 ">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Star className="h-5 w-5 text-yellow-500" />
@@ -224,9 +226,9 @@ const FAQPage = () => {
                 {popularFAQs.map((faq) => {
                   const category = categories.find(cat => cat.id === faq.category);
                   return (
-                    <div key={faq.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                    <div key={faq.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                        <span className="font-medium text-gray-900 text-sm sm:text-base break-words">{faq.question}</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-200 text-sm sm:text-base break-words">{faq.question}</span>
                       </div>
                       <Button
                         variant="ghost"
@@ -339,29 +341,11 @@ const FAQPage = () => {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="p-4">
-                <MessageCircle className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-                <h4 className="font-semibold mb-2">Chat en Vivo</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Disponible 24/7</p>
-                <Button size="sm" className="w-full">
-                  Iniciar Chat
-                </Button>
-              </Card>
-
-              <Card className="p-4">
                 <Mail className="h-8 w-8 text-green-500 mx-auto mb-2" />
                 <h4 className="font-semibold mb-2">Email</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Respuesta en 24h</p>
-                <Button size="sm" variant="outline" className="w-full">
+                <Button size="sm" variant="outline" className="w-full" onClick={() => router.push('/contactanos')}>
                   Enviar Email
-                </Button>
-              </Card>
-
-              <Card className="p-4">
-                <Clock className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-                <h4 className="font-semibold mb-2">Centro de Ayuda</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Guías detalladas</p>
-                <Button size="sm" variant="outline" className="w-full">
-                  Ver Guías
                 </Button>
               </Card>
             </div>

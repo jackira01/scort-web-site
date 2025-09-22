@@ -42,6 +42,7 @@ class InvoiceService {
 
     const items: InvoiceItem[] = [];
     let totalAmount = 0;
+    let planDetails = '';
 
     // Agregar plan si se especifica
     if (planCode && planDays) {
@@ -65,6 +66,9 @@ class InvoiceService {
       };
       items.push(planItem);
       totalAmount += variant.price;
+
+      // Construir detalles del plan para las notas
+      planDetails = `Plan: ${plan.name} (${planCode}) - Variante: ${planDays} días - Precio: $${variant.price}`;
 
       // Item de plan agregado
     }
@@ -157,6 +161,15 @@ class InvoiceService {
     expiresAt.setHours(expiresAt.getHours() + 24);
     // Fecha de expiración calculada
 
+    // Construir notas automáticas con detalles del plan
+    let enhancedNotes = notes || '';
+    if (planDetails) {
+      const planDetailsNote = `Detalles del plan: ${planDetails}`;
+      enhancedNotes = enhancedNotes 
+        ? `${enhancedNotes}\n\n${planDetailsNote}` 
+        : planDetailsNote;
+    }
+
     const invoiceData = {
       profileId: new mongoose.Types.ObjectId(profileId),
       userId: new mongoose.Types.ObjectId(userId),
@@ -165,7 +178,7 @@ class InvoiceService {
       totalAmount: finalAmount, // Usar el precio final después del cupón
       coupon: couponInfo,
       expiresAt,
-      notes
+      notes: enhancedNotes
     };
     // Creando factura con datos
 

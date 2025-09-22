@@ -132,19 +132,18 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
               <span className="text-sm text-gray-500">
                 {[
                   verification.steps.documentPhotos.frontPhoto,
-                  verification.steps.documentPhotos.backPhoto,
-                  verification.steps.documentPhotos.selfieWithDocument
+                  verification.steps.documentPhotos.backPhoto
                 ].filter(Boolean).length} archivo(s)
               </span>
             </div>
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
-                {getStatusIcon(verification.steps.videoVerification?.isVerified || false)}
-                <span className="font-medium">Video de Verificación</span>
+                {getStatusIcon(verification.steps.mediaVerification?.isVerified || verification.steps.videoVerification?.isVerified || false)}
+                <span className="font-medium">Video o Foto de Verificación</span>
               </div>
               <span className="text-sm text-gray-500">
-                {verification.steps.videoVerification?.videoLink ? 'Completado' : 'Pendiente'}
+                {verification.steps.mediaVerification?.mediaLink || verification.steps.videoVerification?.videoLink ? 'Completado' : 'Pendiente'}
               </span>
             </div>
 

@@ -14,6 +14,7 @@ interface SearchPageProps {
   params: Promise<{
     slug: string[];
   }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 // Función para obtener opciones de filtros de la API
@@ -92,6 +93,7 @@ async function isValidCity(ciudad: string, departamento?: string): Promise<boole
 // Generar metadata dinámico para SEO
 export async function generateMetadata({
   params,
+  searchParams,
 }: SearchPageProps): Promise<Metadata> {
   const { slug } = await params;
   const [categoria, departamento, ciudad] = slug || [];
@@ -148,9 +150,36 @@ export async function generateMetadata({
   };
 }
 
-export default async function SearchPage({ params }: SearchPageProps) {
+export default async function SearchPage({ params, searchParams }: SearchPageProps) {
   const { slug } = await params;
-  const [categoria, departamento, ciudad] = slug || [];
+  const queryParams = await searchParams;
+  
+  // Procesar correctamente la estructura de URL /filtros/categoria
+  // El slug contiene ["filtros", "categoria"], los query params contienen departamento y ciudad
+  let categoria: string;
+  let departamento: string | undefined;
+  let ciudad: string | undefined;
+  
+  if (slug && slug.length > 0) {
+    // Si el primer elemento es "filtros", la categoría está en el segundo elemento
+    if (slug[0] === 'filtros' && slug.length > 1) {
+      categoria = slug[1]; // La categoría es el segundo elemento
+    } else {
+      // Fallback: el primer elemento es la categoría (para compatibilidad)
+      categoria = slug[0];
+    }
+    
+    departamento = queryParams.departamento as string | undefined;
+    ciudad = queryParams.ciudad as string | undefined;
+  } else {
+    categoria = '';
+  }
+  
+  console.log('🔍 SearchPage - Slug recibido:', slug);
+  console.log('🔍 SearchPage - Query params recibidos:', queryParams);
+  console.log('🔍 SearchPage - Categoría procesada:', categoria);
+  console.log('🔍 SearchPage - Departamento procesado:', departamento);
+  console.log('🔍 SearchPage - Ciudad procesada:', ciudad);
 
   // Verificar si es un archivo estático - renderizar contenido por defecto
   if (categoria && (
@@ -226,15 +255,20 @@ export default async function SearchPage({ params }: SearchPageProps) {
     if (categoria) {
       // Adding category: slugToText(categoria)
       requestBody.category = slugToText(categoria);
+      console.log('🔍 SearchPage - Categoría enviada a API:', requestBody.category);
     } else {
       // No category provided
     }
     if (departamento) {
       requestBody.location = { department: slugToText(departamento) };
+      console.log('🔍 SearchPage - Departamento enviado a API:', requestBody.location.department);
       if (ciudad) {
         requestBody.location.city = slugToText(ciudad);
+        console.log('🔍 SearchPage - Ciudad enviada a API:', requestBody.location.city);
       }
     }
+
+    console.log('🔍 SearchPage - RequestBody completo:', JSON.stringify(requestBody, null, 2));
 
 
 

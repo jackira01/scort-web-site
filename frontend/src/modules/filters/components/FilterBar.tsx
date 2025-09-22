@@ -20,10 +20,12 @@ import HorizontalFilterBar from './HorizontalFilterBar';
 
 const FilterBar = () => {
   const router = useRouter();
-  const { filters, updateLocation, clearFilters } = useSearchFilters();
-  const [categoria, setCategoría] = useState<string>('');
-  const [departamento, setDepartamento] = useState<string>('');
-  const [ciudad, setCiudad] = useState<string>('');
+  const { filters, updateFilter, updateCategory, updateLocation } = useSearchFilters();
+  
+  // Usar los valores del hook en lugar de estados locales
+  const categoria = filters.category || '';
+  const departamento = filters.location?.department || '';
+  const ciudad = filters.location?.city || '';
 
   const {
     data: filterOptions,
@@ -34,7 +36,7 @@ const FilterBar = () => {
   // Extraer las opciones específicas del objeto de datos
   const categories = filterOptions?.categories || [];
   const departments = filterOptions?.locations?.departments || [];
-  
+
   // Estados de carga y error derivados
   const isLoadingCategories = isLoadingFilterOptions;
   const isLoadingDepartments = isLoadingFilterOptions;
@@ -49,10 +51,12 @@ const FilterBar = () => {
 
     const params = new URLSearchParams();
 
+    // La categoría siempre va como parte de la ruta (slug)
     if (categoria) {
       route += `/${createSlug(categoria)}`;
     }
 
+    // El departamento y ciudad van como query parameters
     if (departamento) {
       params.append('departamento', departamento);
     }
@@ -64,14 +68,27 @@ const FilterBar = () => {
     const queryString = params.toString();
     const finalRoute = queryString ? `${route}?${queryString}` : route;
 
+    console.log('🔍 FilterBar - Navegando a:', finalRoute);
+    console.log('🔍 FilterBar - Categoría seleccionada:', categoria);
+    console.log('🔍 FilterBar - Departamento seleccionado:', departamento);
+    console.log('🔍 FilterBar - Ciudad seleccionada:', ciudad);
+
     router.push(finalRoute);
+  };
+
+  // Función para manejar cambio de categoría
+  const handleCategoryChange = (value: string) => {
+    updateCategory(value);
   };
 
   // Función para manejar cambio de departamento
   const handleDepartmentChange = (value: string) => {
-    setDepartamento(value);
-    // Limpiar ciudad cuando se cambie el departamento
-    setCiudad('');
+    updateLocation({ department: value, city: '' }); // Limpiar ciudad cuando se cambie el departamento
+  };
+
+  // Función para manejar cambio de ciudad
+  const handleCityChange = (value: string) => {
+    updateLocation({ department: departamento, city: value });
   };
 
   return (
@@ -92,7 +109,7 @@ const FilterBar = () => {
                 </SelectTrigger>
               </Select>
             ) : (
-              <Select value={categoria} onValueChange={setCategoría}>
+              <Select value={categoria} onValueChange={handleCategoryChange}>
                 <SelectTrigger className="w-full hover:border-purple-500 transition-all duration-200 focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/10">
                   <SelectValue placeholder="Seleccionar categoría" />
                 </SelectTrigger>
@@ -145,16 +162,22 @@ const FilterBar = () => {
             className="animate-in slide-in-from-bottom-2"
             style={{ animationDelay: '200ms' }}
           >
-            <Select value={ciudad} onValueChange={setCiudad} disabled={!departamento}>
+            <Select value={ciudad} onValueChange={handleCityChange} disabled={!departamento}>
               <SelectTrigger className="w-full hover:border-purple-500 transition-all duration-200 focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/10">
                 <SelectValue placeholder="Seleccionar ciudad" />
               </SelectTrigger>
               <SelectContent>
-                {cities.map((city) => (
-                  <SelectItem key={city.value} value={city.value}>
-                    {city.label}
+                {cities.length > 0 ? (
+                  cities.map((city) => (
+                    <SelectItem key={city} value={city}>
+                      {city}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-cities" disabled>
+                    {departamento ? 'No hay ciudades disponibles' : 'Selecciona un departamento primero'}
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -173,7 +196,7 @@ const FilterBar = () => {
             </Button>
           </div>
         </div>
-        <HorizontalFilterBar 
+        {/* <HorizontalFilterBar 
           filters={filters.verification}
           onFiltersChange={(verificationFilters) => {
             // Actualizar filtros y navegar a la página de búsqueda
@@ -195,7 +218,7 @@ const FilterBar = () => {
           }}
           onClearFilters={clearFilters}
           className="mt-4"
-        />
+        /> */}
       </div>
     </div>
   );

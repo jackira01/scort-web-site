@@ -92,7 +92,7 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
   }
 
   return (
-    <div className={`border border-gray-200 rounded-lg p-6 ${className}`}>
+    <div className={`border border-gray-200 dark:border-gray-700 rounded-lg p-6 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         {/* Indicador de carga en tiempo real */}
@@ -102,7 +102,7 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
             Actualizando...
           </div>
         )}
-        
+
         {/* Navigation buttons */}
         {featuredProfiles.length > visibleCount && (
           <div className="flex gap-2 ml-auto">

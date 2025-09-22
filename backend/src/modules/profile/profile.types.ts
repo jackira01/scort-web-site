@@ -233,13 +233,13 @@ export interface IProfileVerification extends Document {
         documentPhotos: {
             frontPhoto: string;
             backPhoto: string;
-            selfieWithDocument: string;
             isVerified: boolean;
         }; // required
-        videoVerification: {
-            videoLink: string;
+        mediaVerification: {
+            mediaLink: string; // Puede ser video o imagen
+            mediaType: 'video' | 'image'; // Tipo de media
             isVerified: boolean;
-        }; // Video verification.
+        }; // Media verification (video or image)
         videoCallRequested: {
             videoLink: string;
             isVerified: boolean;
