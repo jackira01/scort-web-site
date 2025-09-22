@@ -48,9 +48,9 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                 </h3>
                 {profile.location?.city && (
                   <p className="text-xs text-white/90">
-                    {typeof profile.location.city === 'object' && profile.location.city !== null && 'label' in profile.location.city 
-                      ? (profile.location.city as LocationValue).label 
-                      : typeof profile.location.city === 'object' && profile.location.city !== null 
+                    {typeof profile.location.city === 'object' && profile.location.city !== null && 'label' in profile.location.city
+                      ? (profile.location.city as LocationValue).label
+                      : typeof profile.location.city === 'object' && profile.location.city !== null
                         ? JSON.stringify(profile.location.city)
                         : profile.location.city || 'Ciudad no especificada'
                     }
@@ -67,11 +67,10 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
   // Variante por defecto: card completa con información responsive
   return (
     <Link href={`/perfil/${profile._id}`} className="block">
-      <Card className={`group hover:shadow-xl transition-all duration-300 overflow-hidden relative ${
-        profile.featured 
+      <Card className={`group hover:shadow-xl transition-all duration-300 overflow-hidden relative ${profile.hasDestacadoUpgrade
           ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30'
           : 'bg-card border-border'
-      }`}>
+        }`}>
         {/* Layout responsive: horizontal en mobile, vertical en desktop */}
         <div className="flex flex-row sm:flex-col">
           {/* Imagen */}
@@ -81,19 +80,12 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
               height={300}
               src={profile.media.gallery?.[0] || '/placeholder.svg'}
               alt={profile.name}
-              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
-                viewMode === 'grid'
+              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${viewMode === 'grid'
                   ? 'sm:h-48 md:h-56 lg:h-64'
                   : 'sm:h-40 md:h-48'
                 }`}
             />
-            {hasDestacadoUpgrade(profile as Profile) && (
-              <Badge className="absolute top-1 left-1 sm:top-2 lg:top-3 sm:left-2 lg:left-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs">
-                <Star className="h-2 w-2 lg:h-3 lg:w-3 mr-1" />
-                <span className="hidden sm:inline">PRESENTADO</span>
-                <span className="sm:hidden">★</span>
-              </Badge>
-            )}
+
             <div className="absolute top-1 right-1 sm:top-2 lg:top-3 sm:right-2 lg:right-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-1 lg:space-x-2">
               {profile.verification?.isVerified && (
                 <Badge
@@ -136,20 +128,20 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                     </span>
                   </span>
                 </div>
-                
+
                 {/* Barra de verificación */}
                 {profile.verification?.isVerified && (
                   <div className="mt-2">
-                    <VerificationBar 
-                      verification={profile.verification} 
-                      size="sm" 
+                    <VerificationBar
+                      verification={profile.verification}
+                      size="sm"
                       className="w-full"
                     />
                   </div>
                 )}
               </div>
             </div>
-            
+
             {/* Botón visible en mobile, oculto en desktop (aparece en hover) */}
             <div className="mt-2 sm:hidden">
               <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs py-1">

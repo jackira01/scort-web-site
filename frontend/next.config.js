@@ -1,105 +1,84 @@
 /** @type {import('next').NextConfig} */
+const path = require("path");
 
 const nextConfig = {
   // Configuración de compilación
   typescript: {
-    // Ignorar errores de TypeScript durante el build en producción
     ignoreBuildErrors: true,
   },
   eslint: {
-    // Ignorar errores de ESLint durante el build
     ignoreDuringBuilds: true,
   },
 
-  // Configuración del compilador nativo de Next.js
   compiler: {
-    // Eliminar console.log en producción
-    removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: process.env.NODE_ENV === "production",
   },
 
-  // Configuración de imágenes
   images: {
     domains: [
-      'res.cloudinary.com',
-      'images.unsplash.com',
-      'via.placeholder.com'
+      "res.cloudinary.com",
+      "images.unsplash.com",
+      "via.placeholder.com",
     ],
-    formats: ['image/webp', 'image/avif'],
+    formats: ["image/webp", "image/avif"],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    contentSecurityPolicy:
+      "default-src 'self'; script-src 'none'; sandbox;",
   },
 
-  // Configuración de compresión
   compress: true,
 
-  // Configuración de headers de seguridad
   async headers() {
     return [
       {
-        source: '/(.*)',
+        source: "/(.*)",
         headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
           },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff'
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin'
-          },
-          {
-            key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()'
-          }
-        ]
+        ],
       },
       {
-        source: '/api/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-store, max-age=0'
-          }
-        ]
-      }
+        source: "/api/(.*)",
+        headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
+      },
     ];
   },
 
-  // Configuración de rewrites para API
   async rewrites() {
     return [
       {
-        source: '/api/((?!auth).*)/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/$1/:path*`
-      }
+        source: "/api/((?!auth).*)/:path*",
+        destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+          }/api/$1/:path*`,
+      },
     ];
   },
 
-  // Configuración de optimización avanzada
   experimental: {
     optimizeCss: true,
     optimizePackageImports: [
-      'lucide-react',
-      'date-fns',
-      '@radix-ui/react-dialog',
-      '@radix-ui/react-dropdown-menu',
-      '@radix-ui/react-select',
-      '@tanstack/react-query',
-      'framer-motion'
+      "lucide-react",
+      "date-fns",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-select",
+      "@tanstack/react-query",
+      "framer-motion",
     ],
-    webVitalsAttribution: ['CLS', 'LCP'],
+    webVitalsAttribution: ["CLS", "LCP"],
     optimizeServerReact: true,
     serverMinification: true,
     serverSourceMaps: false,
   },
 
-  // Configuración de webpack optimizada
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Configurar fallbacks para Node.js polyfills
+  webpack: (config, { dev, isServer, webpack }) => {
+    // Fallbacks Node.js
     config.resolve.fallback = {
       ...config.resolve.fallback,
       fs: false,
@@ -108,118 +87,97 @@ const nextConfig = {
       crypto: false,
     };
 
-    // Polyfills para compatibilidad con librerías del navegador
+    // 🔑 Alias para evitar cargar el UMD (cdn.js) de date-fns
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@": path.resolve(__dirname, "src"),
+      "date-fns": path.dirname(require.resolve("date-fns/package.json")),
+    };
+
+    // 🚫 Elimina duplicados de self/global
+    config.plugins = config.plugins.filter(
+      (plugin) => !(plugin instanceof webpack.DefinePlugin)
+    );
+
+    // DefinePlugin único y limpio
     config.plugins.push(
       new webpack.DefinePlugin({
-        global: 'globalThis',
-        self: 'globalThis',
-        'typeof self': JSON.stringify('object'),
+        global: "globalThis",
+        self: "globalThis",
+        "typeof self": JSON.stringify("object"),
       })
     );
 
-    // Configuración adicional para resolver problemas de SSR con librerías del navegador
     if (isServer) {
       config.externals = config.externals || [];
-      config.externals.push('browser-image-compression');
-      config.externals.push('@editorjs/editorjs');
-      config.externals.push('@editorjs/header');
-      config.externals.push('@editorjs/list');
-      config.externals.push('@editorjs/image');
-      config.externals.push('@editorjs/quote');
-      config.externals.push('@editorjs/embed');
-      
-      // Agregar polyfill para self en el servidor
-      config.plugins.push(
-        new webpack.DefinePlugin({
-          self: 'global',
-          'typeof self': JSON.stringify('object'),
-        })
-      );
+      config.externals.push("browser-image-compression");
+      config.externals.push("@editorjs/editorjs");
+      config.externals.push("@editorjs/header");
+      config.externals.push("@editorjs/list");
+      config.externals.push("@editorjs/image");
+      config.externals.push("@editorjs/quote");
+      config.externals.push("@editorjs/embed");
     }
 
-    // Optimizaciones para producción
     if (!dev) {
-      // Configuración avanzada de splitChunks
       config.optimization.splitChunks = {
-        chunks: 'all',
+        chunks: "all",
         minSize: 20000,
         maxSize: 244000,
         cacheGroups: {
-          default: {
-            minChunks: 2,
-            priority: -20,
-            reuseExistingChunk: true,
-          },
+          default: { minChunks: 2, priority: -20, reuseExistingChunk: true },
           vendor: {
             test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
+            name: "vendors",
             priority: -10,
-            chunks: 'all',
+            chunks: "all",
           },
           react: {
             test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
-            name: 'react',
+            name: "react",
             priority: 20,
-            chunks: 'all',
+            chunks: "all",
           },
           ui: {
             test: /[\\/]node_modules[\\/](@radix-ui|@headlessui)[\\/]/,
-            name: 'ui',
+            name: "ui",
             priority: 15,
-            chunks: 'all',
+            chunks: "all",
           },
           utils: {
             test: /[\\/]node_modules[\\/](date-fns|lodash|clsx)[\\/]/,
-            name: 'utils',
+            name: "utils",
             priority: 10,
-            chunks: 'all',
+            chunks: "all",
           },
         },
       };
-
-
-
-      // Optimizar imports dinámicos
       config.optimization.usedExports = true;
       config.optimization.sideEffects = false;
     }
 
-    // Configurar alias para imports más eficientes
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': require('path').resolve(__dirname, 'src'),
-    };
-
     return config;
   },
 
-  // Configuración de output para standalone (deshabilitado temporalmente por permisos)
-  // output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
-
-  // Variables de entorno públicas
   env: {
-    NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME || 'Scort Web Site',
-    NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version || '1.0.0',
+    NEXT_PUBLIC_APP_NAME:
+      process.env.NEXT_PUBLIC_APP_NAME || "Scort Web Site",
+    NEXT_PUBLIC_APP_VERSION:
+      process.env.npm_package_version || "1.0.0",
   },
 
-  // Configuración de redirects
   async redirects() {
     return [
       {
-        source: '/admin',
-        destination: '/admin/dashboard',
+        source: "/admin",
+        destination: "/admin/dashboard",
         permanent: true,
       },
     ];
   },
 
-  // Configuración de trailing slash
   trailingSlash: false,
-
-  // Configuración de poweredByHeader
   poweredByHeader: false,
-
-  // Configuración de reactStrictMode
   reactStrictMode: true,
 };
 

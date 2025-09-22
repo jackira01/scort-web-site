@@ -427,25 +427,6 @@ export class PlansController {
 
     // ==================== UTILIDADES ====================
 
-    async validatePlanUpgrades(req: Request, res: Response): Promise<void> {
-        try {
-            const { code } = req.params;
-            const result = await plansService.validatePlanUpgrades(code);
-
-            res.status(200).json({
-                success: true,
-                message: 'Validación completada',
-                data: result
-            });
-        } catch (error: any) {
-            res.status(400).json({
-                success: false,
-                message: error.message || 'Error al validar upgrades del plan',
-                error: error.message
-            });
-        }
-    }
-
     async getUpgradeDependencyTree(req: Request, res: Response): Promise<void> {
         try {
             const { code } = req.params;

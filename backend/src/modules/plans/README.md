@@ -65,7 +65,6 @@ Cada plan incluye:
 - `POST /api/plans` - Crear nuevo plan
 - `PUT /api/plans/:id` - Actualizar plan
 - `DELETE /api/plans/:id` - Eliminar plan
-- `GET /api/plans/:code/validate-upgrades` - Validar upgrades de un plan
 
 ### Upgrades
 - `GET /api/plans/upgrades` - Listar upgrades (con paginación)

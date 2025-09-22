@@ -206,6 +206,9 @@ export const getSponsoredProfilesForCards = async (
     'media.gallery',
     'verification',
     'planAssignment',
+    'upgrades',
+    'activeUpgrades',
+    'hasDestacadoUpgrade',
     'isActive',
     'visible'
   ];

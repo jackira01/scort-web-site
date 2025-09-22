@@ -95,15 +95,18 @@ export const processImageAfterCrop = async (
       processedFile = blobToFile(watermarkedBlob, originalFileName);
     }
 
-    // Comprimir la imagen
-    const imageCompression = await loadImageCompression();
-    const compressedFile = await imageCompression(processedFile, {
-      maxSizeMB,
-      maxWidthOrHeight,
-      initialQuality,
-      useWebWorker,
-      fileType: 'image/jpeg', // Forzar JPEG para mejor compresión
-    });
+    // Comprimir la imagen - TEMPORALMENTE COMENTADO
+    // const imageCompression = await loadImageCompression();
+    // const compressedFile = await imageCompression(processedFile, {
+    //   maxSizeMB,
+    //   maxWidthOrHeight,
+    //   initialQuality,
+    //   useWebWorker,
+    //   fileType: 'image/jpeg', // Forzar JPEG para mejor compresión
+    // });
+    
+    // TEMPORALMENTE: usar archivo sin comprimir
+    const compressedFile = processedFile;
 
     // Obtener dimensiones finales
     const finalDimensions = await getImageDimensions(compressedFile);

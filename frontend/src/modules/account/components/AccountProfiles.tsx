@@ -268,40 +268,13 @@ export default function AccountProfiles({
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute top-3 left-3 flex space-x-2">
-                    {hasDestacadoUpgrade(profile as any) && (
-                      <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white animate-pulse">
-                        <Star className="h-3 w-3 mr-1" />
-                        DESTACADO
-                      </Badge>
-                    )}
-                    {profile.hasImpulsoUpgrade && (
-                      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-pulse">
-                        <Zap className="h-3 w-3 mr-1" />
-                        IMPULSO
-                      </Badge>
-                    )}
-                  </div>
+
                   <div className="absolute top-3 right-3 flex space-x-2">
                     {profile.verification?.verificationStatus === 'Activo' && (
                       <Badge className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100">
                         <CheckCircle className="h-3 w-3" />
                       </Badge>
                     )}
-                    <Badge
-                      variant={
-                        profile.verification?.verificationStatus === 'Activo'
-                          ? 'default'
-                          : 'secondary'
-                      }
-                      className={
-                        profile.verification?.verificationStatus === 'Activo'
-                          ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
-                          : ''
-                      }
-                    >
-                      {profile.verification?.verificationStatus}
-                    </Badge>
                   </div>
                 </div>
                 <CardContent className="p-4">

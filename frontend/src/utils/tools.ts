@@ -18,8 +18,13 @@ const loadImageCompression = async () => {
 
 /**
  * Normaliza el tamaño de una imagen a un máximo de 1000px manteniendo la proporción
+ * TEMPORALMENTE COMENTADO - No reducir resolución de imágenes
  */
 export const normalizeImageSize = async (file: File): Promise<File> => {
+  // COMENTADO TEMPORALMENTE - Devolver archivo original sin procesar
+  return file;
+  
+  /* CÓDIGO ORIGINAL COMENTADO
   return new Promise((resolve, reject) => {
     const img = new Image();
     const reader = new FileReader();
@@ -73,23 +78,26 @@ export const normalizeImageSize = async (file: File): Promise<File> => {
         }
       };
 
-      img.onerror = () => {
-        reject(new Error('Error al cargar la imagen para normalización'));
-      };
-
-      img.src = e.target!.result as string;
+      img.onerror = () => reject(new Error('Error al cargar la imagen'));
+      img.src = e.target?.result as string;
     };
 
-    reader.onerror = () => {
-      reject(new Error('Error al leer el archivo para normalización'));
-    };
-
+    reader.onerror = () => reject(new Error('Error al leer el archivo'));
     reader.readAsDataURL(file);
   });
+  */
 };
 
 
+/**
+ * Comprime una imagen manteniendo calidad aceptable
+ * TEMPORALMENTE COMENTADO - No comprimir imágenes
+ */
 export const compressImage = async (file: File): Promise<File> => {
+  // COMENTADO TEMPORALMENTE - Devolver archivo original sin comprimir
+  return file;
+  
+  /* CÓDIGO ORIGINAL COMENTADO
   const options = {
     maxSizeMB: 1, // máximo 1MB
     maxWidthOrHeight: 1280, // permitir hasta 1280px para mantener la resolución original
@@ -104,6 +112,7 @@ export const compressImage = async (file: File): Promise<File> => {
     // Error al comprimir imagen
     return file; // si falla, sigue con el original
   }
+  */
 };
 
 export const uploadMultipleImages = async (

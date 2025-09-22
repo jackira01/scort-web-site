@@ -21,6 +21,8 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
       availability,
       isActive,
       isVerified,
+      profileVerified,
+      documentVerified,
       hasDestacadoUpgrade,
       hasVideos,
       page,
@@ -37,6 +39,8 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
     if (category) filters.category = category;
     if (isActive !== undefined) filters.isActive = isActive;
     if (isVerified !== undefined) filters.isVerified = isVerified;
+    if (profileVerified !== undefined) filters.profileVerified = profileVerified;
+    if (documentVerified !== undefined) filters.documentVerified = documentVerified;
     if (hasDestacadoUpgrade !== undefined) filters.hasDestacadoUpgrade = hasDestacadoUpgrade;
     if (hasVideos !== undefined) filters.hasVideos = hasVideos;
 

@@ -100,6 +100,29 @@ export class PaymentProcessorService {
       expiresAt: expiresAt
     };
     
+    // Agregar automáticamente los upgrades incluidos en el plan
+    if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
+      for (const upgradeCode of plan.includedUpgrades) {
+        // Verificar si el upgrade ya existe y está activo
+        const existingUpgrade = profile.upgrades.find(
+          upgrade => upgrade.code === upgradeCode && upgrade.endAt > now
+        );
+        
+        if (!existingUpgrade) {
+          // Agregar el upgrade incluido en el plan
+          const newUpgrade = {
+            code: upgradeCode,
+            startAt: now,
+            endAt: expiresAt, // Los upgrades del plan duran lo mismo que el plan
+            purchaseAt: now
+          };
+          
+          profile.upgrades.push(newUpgrade);
+          console.log(`🎁 Upgrade incluido agregado: ${upgradeCode}`);
+        }
+      }
+    }
+    
     console.log(`✅ Plan ${planItem.code} asignado al perfil ${profile._id}, reemplazando plan anterior`);
   }
   

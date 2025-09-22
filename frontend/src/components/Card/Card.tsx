@@ -27,9 +27,9 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
       {profiles.map((profile, index) => (
         <Card
           key={profile._id}
-          className={`group hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer  ${profile.featured
-              ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50'
-              : 'bg-card border-border hover:border-purple-500/50'
+          className={`group hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer  ${profile.hasDestacadoUpgrade
+            ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50'
+            : 'bg-card border-border hover:border-purple-500/50'
             }`}
           style={{ animationDelay: `${index * 200}ms` }}
         >
@@ -47,7 +47,7 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
               <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
-                {hasDestacadoUpgrade(profile as Profile) && (
+                {profile.hasDestacadoUpgrade && (
                   <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white animate-pulse text-xs">
                     <Star className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
                     <span className="hidden sm:inline">DESTACADO</span>

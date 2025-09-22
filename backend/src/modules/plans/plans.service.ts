@@ -394,30 +394,6 @@ export class PlansService {
 
     // ==================== UTILIDADES ====================
 
-    async validatePlanUpgrades(planCode: string): Promise<{
-        valid: boolean;
-        invalidUpgrades: string[];
-    }> {
-        const plan = await PlanDefinitionModel.findByCode(planCode);
-        if (!plan) {
-            throw new Error(`Plan '${planCode}' no encontrado`);
-        }
-
-        const invalidUpgrades: string[] = [];
-
-        for (const upgradeCode of plan.includedUpgrades) {
-            const upgrade = await UpgradeDefinitionModel.findByCode(upgradeCode);
-            if (!upgrade || !upgrade.active) {
-                invalidUpgrades.push(upgradeCode);
-            }
-        }
-
-        return {
-            valid: invalidUpgrades.length === 0,
-            invalidUpgrades
-        };
-    }
-
     async getUpgradeDependencyTree(upgradeCode: string): Promise<{
         upgrade: IUpgradeDefinition;
         dependencies: IUpgradeDefinition[];
@@ -528,6 +504,30 @@ export class PlansService {
                 startAt: now,
                 expiresAt: expiresAt
             };
+            
+            // Agregar automáticamente los upgrades incluidos en el plan
+            if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
+                for (const upgradeCode of plan.includedUpgrades) {
+                    // Verificar si el upgrade ya existe y está activo
+                    const existingUpgrade = profile.upgrades.find(
+                        upgrade => upgrade.code === upgradeCode && upgrade.endAt > now
+                    );
+                    
+                    if (!existingUpgrade) {
+                        // Agregar el upgrade incluido en el plan
+                        const newUpgrade = {
+                            code: upgradeCode,
+                            startAt: now,
+                            endAt: expiresAt, // Los upgrades del plan duran lo mismo que el plan
+                            purchaseAt: now
+                        };
+                        
+                        profile.upgrades.push(newUpgrade);
+                        console.log(`🎁 Upgrade incluido agregado: ${upgradeCode}`);
+                    }
+                }
+            }
+            
             profile.isActive = true;
             await profile.save();
         }
@@ -634,6 +634,30 @@ export class PlansService {
             // Plan gratuito - renovar inmediatamente
             profile.planAssignment.expiresAt = newExpiresAt;
             profile.planAssignment.variantDays = variantDays;
+            
+            // Agregar automáticamente los upgrades incluidos en el plan
+            if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
+                for (const upgradeCode of plan.includedUpgrades) {
+                    // Verificar si el upgrade ya existe y está activo
+                    const existingUpgrade = profile.upgrades.find(
+                        upgrade => upgrade.code === upgradeCode && upgrade.endAt > newExpiresAt
+                    );
+                    
+                    if (!existingUpgrade) {
+                        // Agregar el upgrade incluido en el plan
+                        const newUpgrade = {
+                            code: upgradeCode,
+                            startAt: now,
+                            endAt: newExpiresAt, // Los upgrades del plan duran lo mismo que el plan
+                            purchaseAt: now
+                        };
+                        
+                        profile.upgrades.push(newUpgrade);
+                        console.log(`🎁 Upgrade incluido agregado en renovación: ${upgradeCode}`);
+                    }
+                }
+            }
+            
             await profile.save();
             // Plan renovado exitosamente para perfil
         }

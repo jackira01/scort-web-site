@@ -187,6 +187,7 @@ export interface ProfileCardData {
   featured?: boolean;
   online?: boolean;
   hasVideo?: boolean;
+  hasDestacadoUpgrade?: boolean;
 }
 
 // Tipos para el feed de Home
