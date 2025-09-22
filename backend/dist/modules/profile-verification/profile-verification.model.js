@@ -54,22 +54,12 @@ const ProfileVerificationSchema = new mongoose_1.Schema({
     },
     steps: {
         documentPhotos: {
-            documents: { type: [String], default: [] },
+            frontPhoto: { type: String, default: undefined },
+            backPhoto: { type: String, default: undefined },
+            selfieWithDocument: { type: String, default: undefined },
             isVerified: { type: Boolean, default: false },
         },
-        selfieWithPoster: {
-            photo: { type: String, default: undefined },
-            isVerified: { type: Boolean, default: false },
-        },
-        selfieWithDoc: {
-            photo: { type: String, default: undefined },
-            isVerified: { type: Boolean, default: false },
-        },
-        fullBodyPhotos: {
-            photos: { type: [String], default: [] },
-            isVerified: { type: Boolean, default: false },
-        },
-        video: {
+        videoVerification: {
             videoLink: { type: String, default: undefined },
             isVerified: { type: Boolean, default: false },
         },
@@ -78,7 +68,6 @@ const ProfileVerificationSchema = new mongoose_1.Schema({
             isVerified: { type: Boolean, default: false },
         },
         socialMedia: {
-            accounts: { type: [String], default: [] },
             isVerified: { type: Boolean, default: false },
         },
         phoneChangeDetected: {

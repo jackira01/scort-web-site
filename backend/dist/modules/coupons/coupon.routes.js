@@ -40,8 +40,15 @@ const validateCreateCoupon = [
     (0, express_validator_1.body)('planCode')
         .optional()
         .isString()
-        .matches(/^[A-Z0-9_-]+$/)
-        .withMessage('El código de plan debe contener solo letras mayúsculas, números, guiones y guiones bajos'),
+        .custom((value) => {
+        if (value === '' || value === null || value === undefined) {
+            return true;
+        }
+        if (!/^[A-Z0-9_-]+$/.test(value)) {
+            throw new Error('El código de plan debe contener solo letras mayúsculas, números, guiones y guiones bajos');
+        }
+        return true;
+    }),
     (0, express_validator_1.body)('applicablePlans')
         .optional()
         .isArray()
@@ -89,8 +96,15 @@ const validateUpdateCoupon = [
     (0, express_validator_1.body)('planCode')
         .optional()
         .isString()
-        .matches(/^[A-Z0-9_-]+$/)
-        .withMessage('El código de plan debe contener solo letras mayúsculas, números, guiones y guiones bajos'),
+        .custom((value) => {
+        if (value === '' || value === null || value === undefined) {
+            return true;
+        }
+        if (!/^[A-Z0-9_-]+$/.test(value)) {
+            throw new Error('El código de plan debe contener solo letras mayúsculas, números, guiones y guiones bajos');
+        }
+        return true;
+    }),
     (0, express_validator_1.body)('applicablePlans')
         .optional()
         .isArray()
@@ -165,14 +179,27 @@ const validateQueryParams = [
         .isIn(['true', 'false'])
         .withMessage('validOnly debe ser true o false')
 ];
-router.post('/apply', (0, coupon_middleware_1.couponRateLimit)(5, 10 * 60 * 1000), coupon_middleware_1.sanitizeCouponCode, validateApplyCoupon, validation_middleware_1.validateRequest, coupon_middleware_1.logCouponUsage, coupon_controller_1.couponController.applyCoupon);
-router.get('/validate/:code', (0, coupon_middleware_1.couponRateLimit)(10, 15 * 60 * 1000), coupon_middleware_1.sanitizeCouponCode, validateCouponCode, validation_middleware_1.validateRequest, coupon_middleware_1.validateCouponExists, coupon_middleware_1.validateCouponAvailability, coupon_middleware_1.validateCouponPlanCompatibility, coupon_middleware_1.logCouponUsage, coupon_controller_1.couponController.validateCoupon);
-router.use(auth_middleware_1.authenticateToken);
+router.post('/apply', (0, coupon_middleware_1.couponRateLimit)(5, 10 * 60 * 1000), coupon_middleware_1.sanitizeCouponCode, (0, validation_middleware_1.validateRequest)(validateApplyCoupon), coupon_middleware_1.logCouponUsage, coupon_controller_1.couponController.applyCoupon);
+router.get('/validate/:code', (0, coupon_middleware_1.couponRateLimit)(10, 15 * 60 * 1000), coupon_middleware_1.sanitizeCouponCode, (0, validation_middleware_1.validateRequest)([...validateCouponCode]), coupon_middleware_1.validateCouponExists, coupon_middleware_1.validateCouponAvailability, coupon_middleware_1.validateCouponPlanCompatibility, coupon_middleware_1.logCouponUsage, coupon_controller_1.couponController.validateCoupon);
+router.post('/validate-frontend', (0, coupon_middleware_1.couponRateLimit)(10, 15 * 60 * 1000), coupon_middleware_1.sanitizeCouponCode, (0, validation_middleware_1.validateRequest)([
+    (0, express_validator_1.body)('code')
+        .isString()
+        .isLength({ min: 3, max: 50 })
+        .matches(/^[A-Z0-9_-]+$/i)
+        .withMessage('Código de cupón inválido')
+]), coupon_middleware_1.logCouponUsage, coupon_controller_1.couponController.validateCouponForFrontend);
+router.use(auth_middleware_1.devAuthMiddleware);
 router.use(admin_middleware_1.adminMiddleware);
-router.post('/', coupon_middleware_1.sanitizeCouponCode, validateCreateCoupon, validation_middleware_1.validateRequest, coupon_controller_1.couponController.createCoupon);
 router.get('/stats', coupon_controller_1.couponController.getCouponStats);
-router.get('/', validateQueryParams, validation_middleware_1.validateRequest, coupon_controller_1.couponController.getCoupons);
-router.get('/:id', (0, validation_middleware_1.validateObjectId)('id'), validation_middleware_1.validateRequest, coupon_controller_1.couponController.getCouponById);
-router.put('/:id', coupon_middleware_1.sanitizeCouponCode, (0, validation_middleware_1.validateObjectId)('id'), validateUpdateCoupon, validation_middleware_1.validateRequest, coupon_controller_1.couponController.updateCoupon);
-router.delete('/:id', (0, validation_middleware_1.validateObjectId)('id'), validation_middleware_1.validateRequest, coupon_controller_1.couponController.deleteCoupon);
+router.get('/', (req, res, next) => {
+    console.log('🔍 Middleware antes de validateQueryParams - Query:', req.query);
+    next();
+}, (0, validation_middleware_1.validateQuery)(validateQueryParams), (req, res, next) => {
+    console.log('🔍 Middleware después de validateQuery - Query:', req.query);
+    next();
+}, coupon_controller_1.couponController.getCoupons);
+router.post('/', coupon_middleware_1.sanitizeCouponCode, (0, validation_middleware_1.validateRequest)(validateCreateCoupon), coupon_controller_1.couponController.createCoupon);
+router.get('/:id', (0, validation_middleware_1.validateRequest)([(0, validation_middleware_1.validateObjectId)('id')]), coupon_controller_1.couponController.getCouponById);
+router.put('/:id', coupon_middleware_1.sanitizeCouponCode, (0, validation_middleware_1.validateRequest)([(0, validation_middleware_1.validateObjectId)('id'), ...validateUpdateCoupon]), coupon_controller_1.couponController.updateCoupon);
+router.delete('/:id', (0, validation_middleware_1.validateRequest)([(0, validation_middleware_1.validateObjectId)('id')]), coupon_controller_1.couponController.deleteCoupon);
 exports.default = router;

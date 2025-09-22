@@ -192,7 +192,6 @@ router.put('/:id', [
     planActiveValidation
 ], plans_controller_1.plansController.updatePlan.bind(plans_controller_1.plansController));
 router.delete('/:id', idParamValidation, plans_controller_1.plansController.deletePlan.bind(plans_controller_1.plansController));
-router.get('/:code/validate-upgrades', codeParamValidation, plans_controller_1.plansController.validatePlanUpgrades.bind(plans_controller_1.plansController));
 router.post('/upgrades', [
     upgradeCodeValidation,
     upgradeNameValidation,

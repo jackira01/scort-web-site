@@ -10,7 +10,7 @@ const profile_model_1 = require("../profile/profile.model");
 const config_parameter_service_1 = require("../config-parameter/config-parameter.service");
 const invoice_service_1 = __importDefault(require("../payments/invoice.service"));
 const mongoose_1 = require("mongoose");
-const generateWhatsAppMessage = async (userId, profileId, invoiceId) => {
+const generateWhatsAppMessage = async (userId, profileId, planCode, variantDays, invoiceId, isRenewal, price, expiresAt) => {
     try {
         const [companyName, companyWhatsApp] = await Promise.all([
             config_parameter_service_1.ConfigParameterService.getValue('company.name'),
@@ -20,11 +20,41 @@ const generateWhatsAppMessage = async (userId, profileId, invoiceId) => {
             return null;
         }
         let message;
-        if (invoiceId) {
-            message = `¡Hola! 👋\n\nTu compra ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}\n\n¡Gracias por confiar en ${companyName}! 🙏\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+        if (isRenewal) {
+            if (invoiceId) {
+                const planInfo = planCode && variantDays
+                    ? `\n• Plan: ${planCode} (${variantDays} días)`
+                    : '';
+                const totalPrice = (price || 0) * (variantDays || 1);
+                const expirationDate = expiresAt ? new Date(expiresAt).toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : 'No disponible';
+                message = `¡Hola! 👋\n\n🔄 **Quiero renovar mi plan** 🔄\n\nTu solicitud de renovación ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n• Total a pagar: $${(price || 0).toLocaleString()} x${variantDays || 0}\n\n💰 **"Total a pagar: $${totalPrice.toLocaleString()}"**\n\n📅 **"Vence el:"** ${expirationDate} 📅\n\nPor favor, confirma el pago para activar tu perfil. ¡Gracias! 💎`;
+            }
+            else {
+                const planInfo = planCode && variantDays
+                    ? `\n• Plan: ${planCode} (${variantDays} días)`
+                    : '';
+                message = `¡Hola! 👋\n\n🔄 **Quiero renovar mi plan** 🔄\n\nTu plan gratuito ha sido renovado exitosamente. ✅\n\n📋 **Detalles:**\n• Perfil: ${profileId}${planInfo}\n\n¡Bienvenido de nuevo a ${companyName}! 🎉\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+            }
         }
         else {
-            message = `¡Hola! 👋\n\nTu plan gratuito ha sido activado exitosamente. ✅\n\n📋 **Detalles:**\n• Perfil: ${profileId}\n\n¡Bienvenido a ${companyName}! 🎉\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+            if (invoiceId) {
+                const planInfo = planCode && variantDays
+                    ? `\n• Plan: ${planCode} (${variantDays} días)`
+                    : '';
+                message = `¡Hola! 👋\n\nTu compra ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n\n¡Gracias por confiar en ${companyName}! 🙏\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+            }
+            else {
+                const planInfo = planCode && variantDays
+                    ? `\n• Plan: ${planCode} (${variantDays} días)`
+                    : '';
+                message = `¡Hola! 👋\n\nTu plan gratuito ha sido activado exitosamente. ✅\n\n📋 **Detalles:**\n• Perfil: ${profileId}${planInfo}\n\n¡Bienvenido a ${companyName}! 🎉\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+            }
         }
         return {
             userId,
@@ -210,23 +240,6 @@ class PlansService {
         const result = await upgrade_model_1.UpgradeDefinitionModel.findByIdAndDelete(id);
         return result !== null;
     }
-    async validatePlanUpgrades(planCode) {
-        const plan = await plan_model_1.PlanDefinitionModel.findByCode(planCode);
-        if (!plan) {
-            throw new Error(`Plan '${planCode}' no encontrado`);
-        }
-        const invalidUpgrades = [];
-        for (const upgradeCode of plan.includedUpgrades) {
-            const upgrade = await upgrade_model_1.UpgradeDefinitionModel.findByCode(upgradeCode);
-            if (!upgrade || !upgrade.active) {
-                invalidUpgrades.push(upgradeCode);
-            }
-        }
-        return {
-            valid: invalidUpgrades.length === 0,
-            invalidUpgrades
-        };
-    }
     async getUpgradeDependencyTree(upgradeCode) {
         const upgrade = await upgrade_model_1.UpgradeDefinitionModel.findByCode(upgradeCode);
         if (!upgrade) {
@@ -279,6 +292,7 @@ class PlansService {
                 profile.isActive = false;
                 const tempDate = new Date('1970-01-01');
                 profile.planAssignment = {
+                    planId: plan._id,
                     planCode: planCode,
                     variantDays: variantDays,
                     startAt: tempDate,
@@ -292,15 +306,31 @@ class PlansService {
         }
         else {
             profile.planAssignment = {
+                planId: plan._id,
                 planCode: planCode,
                 variantDays: variantDays,
                 startAt: now,
                 expiresAt: expiresAt
             };
+            if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
+                for (const upgradeCode of plan.includedUpgrades) {
+                    const existingUpgrade = profile.upgrades.find(upgrade => upgrade.code === upgradeCode && upgrade.endAt > now);
+                    if (!existingUpgrade) {
+                        const newUpgrade = {
+                            code: upgradeCode,
+                            startAt: now,
+                            endAt: expiresAt,
+                            purchaseAt: now
+                        };
+                        profile.upgrades.push(newUpgrade);
+                        console.log(`🎁 Upgrade incluido agregado: ${upgradeCode}`);
+                    }
+                }
+            }
             profile.isActive = true;
             await profile.save();
         }
-        const whatsAppMessage = await generateWhatsAppMessage(profile.user.toString(), profileId, invoiceId);
+        const whatsAppMessage = await generateWhatsAppMessage(profile.user.toString(), profileId, planCode, variantDays, invoiceId, true, variant.price, expiresAt);
         return {
             profileId,
             planCode,
@@ -354,9 +384,24 @@ class PlansService {
         else {
             profile.planAssignment.expiresAt = newExpiresAt;
             profile.planAssignment.variantDays = variantDays;
+            if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
+                for (const upgradeCode of plan.includedUpgrades) {
+                    const existingUpgrade = profile.upgrades.find(upgrade => upgrade.code === upgradeCode && upgrade.endAt > newExpiresAt);
+                    if (!existingUpgrade) {
+                        const newUpgrade = {
+                            code: upgradeCode,
+                            startAt: now,
+                            endAt: newExpiresAt,
+                            purchaseAt: now
+                        };
+                        profile.upgrades.push(newUpgrade);
+                        console.log(`🎁 Upgrade incluido agregado en renovación: ${upgradeCode}`);
+                    }
+                }
+            }
             await profile.save();
         }
-        const whatsAppMessage = await generateWhatsAppMessage(profile.user.toString(), profileId, invoiceId);
+        const whatsAppMessage = await generateWhatsAppMessage(profile.user.toString(), profileId, planCode, variantDays, invoiceId, true, variant.price, newExpiresAt);
         return {
             profileId,
             planCode,

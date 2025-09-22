@@ -132,6 +132,7 @@ class InvoiceService {
                 }
             }
             else {
+                console.error('❌ [INVOICE SERVICE] Error aplicando cupón:', couponResult.error);
                 throw new Error(`Error al aplicar cupón: ${couponResult.error}`);
             }
         }
@@ -166,10 +167,15 @@ class InvoiceService {
     async getInvoices(filters = {}, page = 1, limit = 10) {
         const query = {};
         if (filters._id) {
-            if (!mongoose_1.default.Types.ObjectId.isValid(filters._id)) {
-                throw new Error('ID de factura inválido');
+            if (filters._id.length >= 8) {
+                if (!mongoose_1.default.Types.ObjectId.isValid(filters._id)) {
+                    throw new Error('ID de factura inválido');
+                }
+                query._id = new mongoose_1.default.Types.ObjectId(filters._id);
             }
-            query._id = new mongoose_1.default.Types.ObjectId(filters._id);
+            else {
+                query._id = { $regex: new RegExp(filters._id, 'i') };
+            }
         }
         if (filters.profileId) {
             if (!mongoose_1.default.Types.ObjectId.isValid(filters.profileId)) {
@@ -291,6 +297,15 @@ class InvoiceService {
             if (newStatus === 'paid' && oldStatus !== 'paid') {
                 const PaymentProcessorService = await Promise.resolve().then(() => __importStar(require('./payment-processor.service')));
                 const result = await PaymentProcessorService.PaymentProcessorService.processInvoicePayment(invoiceId);
+                if (updatedInvoice.coupon && updatedInvoice.coupon.code) {
+                    try {
+                        const { couponService } = await Promise.resolve().then(() => __importStar(require('../coupons/coupon.service')));
+                        await couponService.incrementCouponUsage(updatedInvoice.coupon.code);
+                    }
+                    catch (couponError) {
+                        console.error(`❌ Error incrementando contador de cupón ${updatedInvoice.coupon.code}:`, couponError);
+                    }
+                }
             }
             else if (['cancelled', 'expired'].includes(newStatus) && oldStatus === 'pending') {
             }

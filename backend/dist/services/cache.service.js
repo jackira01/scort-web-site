@@ -24,8 +24,8 @@ class CacheService {
                 maxRetriesPerRequest: null,
                 lazyConnect: true,
                 keepAlive: 30000,
-                connectTimeout: 5000,
-                commandTimeout: 3000,
+                connectTimeout: 10000,
+                commandTimeout: 5000,
             });
             this.redis.on('connect', () => {
                 this.isConnected = true;

@@ -88,7 +88,7 @@ const getDefaultPlanConfig = async () => {
         return errorFallbackConfig;
     }
 };
-const generateWhatsAppMessage = async (userId, profileId, invoiceId) => {
+const generateWhatsAppMessage = async (userId, profileId, invoiceId, planCode, variantDays) => {
     try {
         const [companyName, companyWhatsApp] = await Promise.all([
             config_parameter_service_1.ConfigParameterService.getValue('company.name'),
@@ -97,9 +97,19 @@ const generateWhatsAppMessage = async (userId, profileId, invoiceId) => {
         if (!companyName || !companyWhatsApp) {
             return null;
         }
+        let planInfo = '';
+        if (planCode && variantDays) {
+            planInfo = `\n• Plan: ${planCode} (${variantDays} días)`;
+        }
+        else {
+            const profile = await profile_model_1.ProfileModel.findById(profileId);
+            if (profile?.planAssignment?.planCode && profile?.planAssignment?.variantDays) {
+                planInfo = `\n• Plan: ${profile.planAssignment.planCode} (${profile.planAssignment.variantDays} días)`;
+            }
+        }
         const message = invoiceId
-            ? `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n📋 **Detalles de mi compra:**\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención. 😊`
-            : `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n📋 **Detalles:**\n• ID de Perfil: ${profileId}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. 😊`;
+            ? `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n📋 **Detalles de mi compra:**\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención. 😊`
+            : `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n📋 **Detalles:**\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. 😊`;
         return {
             userId,
             profileId,
@@ -236,7 +246,7 @@ const createProfileWithInvoice = async (data) => {
             visible: shouldBeVisible
         });
     }
-    const whatsAppMessage = await generateWhatsAppMessage(profile.user.toString(), profile._id.toString(), invoice?._id?.toString());
+    const whatsAppMessage = await generateWhatsAppMessage(profile.user.toString(), profile._id.toString(), invoice?._id?.toString(), planCode, planDays);
     return { profile, invoice, whatsAppMessage };
 };
 exports.createProfileWithInvoice = createProfileWithInvoice;
@@ -354,6 +364,11 @@ const getProfilesForHome = async (page = 1, limit = 20) => {
         model: 'ProfileVerification',
         select: 'verificationProgress verificationStatus'
     })
+        .populate({
+        path: 'planAssignment.planId',
+        model: 'PlanDefinition',
+        select: 'name code level features includedUpgrades'
+    })
         .lean();
     const profilesWithVerifiedUsers = profiles.filter(profile => {
         const hasVerifiedUser = profile.user !== null;
@@ -431,8 +446,35 @@ const getProfilesForHome = async (page = 1, limit = 20) => {
             if (!(bInfo.hasHighlightUpgrade || bInfo.hasBoostUpgrade)) {
                 return -1;
             }
-            if (aInfo.planLevel !== bInfo.planLevel) {
-                return aInfo.planLevel - bInfo.planLevel;
+            let aEffectiveLevel = aInfo.planLevel;
+            let bEffectiveLevel = bInfo.planLevel;
+            if (aInfo.hasHighlightUpgrade && aInfo.planLevel > 1) {
+                aEffectiveLevel = Math.max(1, aInfo.planLevel - 1);
+            }
+            if (bInfo.hasHighlightUpgrade && bInfo.planLevel > 1) {
+                bEffectiveLevel = Math.max(1, bInfo.planLevel - 1);
+            }
+            if (aInfo.hasBoostUpgrade) {
+                aEffectiveLevel = 1;
+            }
+            if (bInfo.hasBoostUpgrade) {
+                bEffectiveLevel = 1;
+            }
+            if (aEffectiveLevel !== bEffectiveLevel) {
+                return aEffectiveLevel - bEffectiveLevel;
+            }
+            const aPlanDurationRank = a.planAssignment?.variantDays ?
+                planDefinitions.find(p => p.code === aInfo.planCode)?.variants.find(v => v.days === a.planAssignment?.variantDays)?.durationRank || 0 : 0;
+            const bPlanDurationRank = b.planAssignment?.variantDays ?
+                planDefinitions.find(p => p.code === bInfo.planCode)?.variants.find(v => v.days === b.planAssignment?.variantDays)?.durationRank || 0 : 0;
+            if (aPlanDurationRank !== bPlanDurationRank) {
+                return bPlanDurationRank - aPlanDurationRank;
+            }
+            if (aInfo.hasBoostUpgrade && !bInfo.hasBoostUpgrade) {
+                return 1;
+            }
+            if (bInfo.hasBoostUpgrade && !aInfo.hasBoostUpgrade) {
+                return -1;
             }
             const aLatestUpgrade = Math.max(...aInfo.activeUpgrades.map(u => new Date(u.startAt).getTime()));
             const bLatestUpgrade = Math.max(...bInfo.activeUpgrades.map(u => new Date(u.startAt).getTime()));
@@ -443,6 +485,13 @@ const getProfilesForHome = async (page = 1, limit = 20) => {
         }
         if (aInfo.planLevel !== bInfo.planLevel) {
             return aInfo.planLevel - bInfo.planLevel;
+        }
+        const aPlanDurationRank = a.planAssignment?.variantDays ?
+            planDefinitions.find(p => p.code === aInfo.planCode)?.variants.find(v => v.days === a.planAssignment?.variantDays)?.durationRank || 0 : 0;
+        const bPlanDurationRank = b.planAssignment?.variantDays ?
+            planDefinitions.find(p => p.code === bInfo.planCode)?.variants.find(v => v.days === b.planAssignment?.variantDays)?.durationRank || 0 : 0;
+        if (aPlanDurationRank !== bPlanDurationRank) {
+            return bPlanDurationRank - aPlanDurationRank;
         }
         if (aInfo.planLevel <= 2) {
             const aActivity = new Date(aInfo.lastActivity).getTime();
@@ -989,13 +1038,6 @@ const upgradePlan = async (profileId, newPlanCode, variantDays) => {
     }
     const defaultPlanConfig = await getDefaultPlanConfig();
     const defaultPlanCode = defaultPlanConfig.enabled ? defaultPlanConfig.planCode : 'AMATISTA';
-    const planHierarchy = [defaultPlanCode, 'ESMERALDA', 'ORO', 'DIAMANTE'].filter((plan, index, arr) => arr.indexOf(plan) === index);
-    const currentPlanCode = profile.planAssignment.planCode || defaultPlanCode;
-    const currentIndex = planHierarchy.indexOf(currentPlanCode);
-    const newIndex = planHierarchy.indexOf(normalizedPlanCode);
-    if (newIndex <= currentIndex) {
-        throw new Error('Solo se permiten upgrades a planes superiores. No se pueden hacer downgrades.');
-    }
     let selectedVariant;
     if (variantDays) {
         selectedVariant = newPlan.variants.find(v => v.days === variantDays);

@@ -14,8 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { CreditCard, Calendar, Package, X } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { DateTime } from 'luxon';
 
 interface InvoiceItem {
   description: string;
@@ -70,13 +69,13 @@ export const InvoiceListModal: React.FC<InvoiceListModalProps> = ({
   };
   
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'dd MMM yyyy, HH:mm', { locale: es });
+    return DateTime.fromJSDate(new Date(dateString)).setLocale('es').toFormat('dd MMM yyyy, HH:mm');
   };
   
   const isExpiringSoon = (expiresAt: string) => {
-    const expiryDate = new Date(expiresAt);
-    const now = new Date();
-    const hoursUntilExpiry = (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    const expiryDate = DateTime.fromJSDate(new Date(expiresAt));
+    const now = DateTime.now();
+    const hoursUntilExpiry = expiryDate.diff(now, 'hours').hours;
     return hoursUntilExpiry <= 6 && hoursUntilExpiry > 0;
   };
 

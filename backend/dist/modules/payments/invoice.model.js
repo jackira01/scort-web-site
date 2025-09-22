@@ -146,7 +146,7 @@ invoiceSchema.index({ userId: 1, status: 1 });
 invoiceSchema.index({ expiresAt: 1, status: 1 });
 invoiceSchema.index({ createdAt: -1 });
 invoiceSchema.pre('save', function (next) {
-    if (this.isModified('items')) {
+    if (this.isModified('items') && !this.coupon) {
         this.totalAmount = this.items.reduce((total, item) => {
             return total + (item.price * item.quantity);
         }, 0);

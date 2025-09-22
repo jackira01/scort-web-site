@@ -24,6 +24,7 @@ class InvoiceController {
                 planCode: req.body.planCode,
                 planDays: req.body.planDays,
                 upgradeCodes: req.body.upgradeCodes || [],
+                couponCode: req.body.couponCode,
                 notes: req.body.notes
             };
             const invoice = await invoice_service_1.default.generateInvoice(invoiceData);
@@ -68,6 +69,7 @@ class InvoiceController {
     async getInvoices(req, res) {
         try {
             const filters = {
+                _id: req.query._id,
                 profileId: req.query.profileId,
                 userId: req.query.userId,
                 status: req.query.status,
@@ -84,6 +86,13 @@ class InvoiceController {
         }
         catch (error) {
             console.error('Error getting invoices:', error);
+            if (error.message === 'ID de factura inválido') {
+                res.status(400).json({
+                    success: false,
+                    message: 'ID de factura inválido'
+                });
+                return;
+            }
             res.status(500).json({
                 success: false,
                 message: error.message || 'Error interno del servidor'

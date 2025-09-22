@@ -2,7 +2,7 @@
 const path = require("path");
 
 const nextConfig = {
-  // Configuración de compilación
+  // ⚙️ Configuración de compilación
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -60,6 +60,7 @@ const nextConfig = {
     ];
   },
 
+  // 🚀 Ajustes experimentales seguros
   experimental: {
     optimizeCss: true,
     optimizePackageImports: [
@@ -77,6 +78,7 @@ const nextConfig = {
     serverSourceMaps: false,
   },
 
+  // 🔧 Forzar Webpack (no Turbopack)
   webpack: (config, { dev, isServer, webpack }) => {
     // Fallbacks Node.js
     config.resolve.fallback = {
@@ -87,19 +89,17 @@ const nextConfig = {
       crypto: false,
     };
 
-    // 🔑 Alias para evitar cargar el UMD (cdn.js) de date-fns
+    // Alias
     config.resolve.alias = {
       ...config.resolve.alias,
       "@": path.resolve(__dirname, "src"),
       "date-fns": path.dirname(require.resolve("date-fns/package.json")),
     };
 
-    // 🚫 Elimina duplicados de self/global
+    // 🔑 Evitar duplicados DefinePlugin
     config.plugins = config.plugins.filter(
       (plugin) => !(plugin instanceof webpack.DefinePlugin)
     );
-
-    // DefinePlugin único y limpio
     config.plugins.push(
       new webpack.DefinePlugin({
         global: "globalThis",

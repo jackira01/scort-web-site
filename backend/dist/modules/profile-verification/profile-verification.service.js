@@ -21,15 +21,20 @@ const shouldRequireIndependentVerification = async (userId, currentProfileId) =>
 const getDefaultVerificationSteps = (accountType, requiresIndependentVerification, lastLoginVerified, userLastLoginDate) => {
     const baseSteps = {
         documentPhotos: {
-            documents: [],
+            frontPhoto: undefined,
+            backPhoto: undefined,
+            selfieWithDocument: undefined,
             isVerified: false
         },
-        video: {
+        videoVerification: {
+            videoLink: undefined,
+            isVerified: false
+        },
+        videoCallRequested: {
             videoLink: undefined,
             isVerified: false
         },
         socialMedia: {
-            accounts: [],
             isVerified: false
         },
         phoneChangeDetected: false,
@@ -42,8 +47,10 @@ const getDefaultVerificationSteps = (accountType, requiresIndependentVerificatio
         return {
             ...baseSteps,
             documentPhotos: {
-                documents: [],
-                isVerified: true
+                frontPhoto: undefined,
+                backPhoto: undefined,
+                selfieWithDocument: undefined,
+                isVerified: false
             }
         };
     }

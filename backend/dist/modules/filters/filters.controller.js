@@ -37,7 +37,7 @@ exports.getFilterOptions = exports.getFilteredProfilesPost = void 0;
 const service = __importStar(require("./filters.service"));
 const getFilteredProfilesPost = async (req, res) => {
     try {
-        const { category, location, features, priceRange, availability, isActive, isVerified, hasDestacadoUpgrade, hasVideos, page, limit, sortBy, sortOrder, fields } = req.body;
+        const { category, location, features, priceRange, availability, isActive, isVerified, profileVerified, documentVerified, hasDestacadoUpgrade, hasVideos, page, limit, sortBy, sortOrder, fields } = req.body;
         const filters = {};
         if (category)
             filters.category = category;
@@ -45,6 +45,10 @@ const getFilteredProfilesPost = async (req, res) => {
             filters.isActive = isActive;
         if (isVerified !== undefined)
             filters.isVerified = isVerified;
+        if (profileVerified !== undefined)
+            filters.profileVerified = profileVerified;
+        if (documentVerified !== undefined)
+            filters.documentVerified = documentVerified;
         if (hasDestacadoUpgrade !== undefined)
             filters.hasDestacadoUpgrade = hasDestacadoUpgrade;
         if (hasVideos !== undefined)

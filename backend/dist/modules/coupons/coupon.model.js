@@ -92,6 +92,19 @@ const CouponSchema = new mongoose_1.Schema({
             message: 'El código de plan es requerido para cupones de asignación de plan'
         }
     },
+    variantDays: {
+        type: Number,
+        min: 1,
+        validate: {
+            validator: function (value) {
+                if (this.type === 'plan_assignment') {
+                    return !!value && value > 0;
+                }
+                return true;
+            },
+            message: 'Los días de variante son requeridos para cupones de asignación de plan'
+        }
+    },
     applicablePlans: {
         type: [String],
         default: [],

@@ -9,7 +9,7 @@ const cache_service_1 = require("../../services/cache.service");
 const logger_1 = require("../../utils/logger");
 const getFilteredProfiles = async (filters) => {
     try {
-        const { category, location, priceRange, availability, isActive, isVerified, hasDestacadoUpgrade, hasVideos, page = 1, limit = 20, fields, } = filters;
+        const { category, location, priceRange, availability, isActive, isVerified, profileVerified, documentVerified, hasDestacadoUpgrade, hasVideos, page = 1, limit = 20, fields, } = filters;
         const cacheKey = cache_service_1.cacheService.generateKey(cache_service_1.CACHE_KEYS.FILTERS, JSON.stringify(filters));
         const cachedResult = await cache_service_1.cacheService.get(cacheKey);
         if (cachedResult) {
@@ -43,6 +43,80 @@ const getFilteredProfiles = async (filters) => {
         }
         if (isVerified !== undefined) {
             query['user.isVerified'] = isVerified;
+        }
+        if (profileVerified !== undefined) {
+            const profileVerificationQuery = await profile_model_1.ProfileModel.aggregate([
+                {
+                    $lookup: {
+                        from: 'profileverifications',
+                        localField: 'verification',
+                        foreignField: '_id',
+                        as: 'verificationData'
+                    }
+                },
+                {
+                    $match: {
+                        'verificationData.steps.videoVerification.isVerified': profileVerified
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1
+                    }
+                }
+            ]);
+            const verifiedProfileIds = profileVerificationQuery.map(p => p._id);
+            if (profileVerified) {
+                query._id = { $in: verifiedProfileIds };
+            }
+            else {
+                query._id = { $nin: verifiedProfileIds };
+            }
+        }
+        if (documentVerified !== undefined) {
+            const documentVerificationQuery = await profile_model_1.ProfileModel.aggregate([
+                {
+                    $lookup: {
+                        from: 'profileverifications',
+                        localField: 'verification',
+                        foreignField: '_id',
+                        as: 'verificationData'
+                    }
+                },
+                {
+                    $match: {
+                        'verificationData.steps.documentPhotos.isVerified': documentVerified
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1
+                    }
+                }
+            ]);
+            const documentVerifiedProfileIds = documentVerificationQuery.map(p => p._id);
+            if (documentVerified) {
+                if (query._id && query._id.$in) {
+                    query._id = { $in: query._id.$in.filter((id) => documentVerifiedProfileIds.some(docId => docId.equals(id))) };
+                }
+                else if (query._id && query._id.$nin) {
+                    query._id = { $in: documentVerifiedProfileIds, $nin: query._id.$nin };
+                }
+                else {
+                    query._id = { $in: documentVerifiedProfileIds };
+                }
+            }
+            else {
+                if (query._id && query._id.$in) {
+                    query._id = { $in: query._id.$in.filter((id) => !documentVerifiedProfileIds.some(docId => docId.equals(id))) };
+                }
+                else if (query._id && query._id.$nin) {
+                    query._id = { $nin: [...query._id.$nin, ...documentVerifiedProfileIds] };
+                }
+                else {
+                    query._id = { $nin: documentVerifiedProfileIds };
+                }
+            }
         }
         if (hasDestacadoUpgrade !== undefined && hasDestacadoUpgrade) {
             const now = new Date();
@@ -181,11 +255,6 @@ const getFilteredProfiles = async (filters) => {
                 }
             },
             {
-                $match: {
-                    'userInfo.isVerified': true
-                }
-            },
-            {
                 $addFields: {
                     user: { $arrayElemAt: ['$userInfo', 0] }
                 }
@@ -211,6 +280,24 @@ const getFilteredProfiles = async (filters) => {
                 }
             });
         }
+        aggregationPipeline.push({
+            $lookup: {
+                from: 'plandefinitions',
+                localField: 'planAssignment.plan',
+                foreignField: '_id',
+                as: 'planAssignmentPlan'
+            }
+        });
+        aggregationPipeline.push({
+            $addFields: {
+                'planAssignment.plan': { $arrayElemAt: ['$planAssignmentPlan', 0] }
+            }
+        });
+        aggregationPipeline.push({
+            $project: {
+                planAssignmentPlan: 0
+            }
+        });
         if (fields && fields.includes('features')) {
             aggregationPipeline.push({
                 $lookup: {
@@ -233,11 +320,6 @@ const getFilteredProfiles = async (filters) => {
                         localField: 'user',
                         foreignField: '_id',
                         as: 'userInfo'
-                    }
-                },
-                {
-                    $match: {
-                        'userInfo.isVerified': true
                     }
                 },
                 { $count: 'total' }
