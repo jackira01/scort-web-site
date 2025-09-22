@@ -98,7 +98,13 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                 </div>
               </div>
               <Link href={`/perfil/${profile._id}`} className="mt-2 sm:mt-3">
-                <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 text-xs sm:text-sm py-1 sm:py-2">
+                <Button 
+                  className={`w-full text-white transition-all duration-300 hover:scale-105 hover:shadow-lg text-xs sm:text-sm py-1 sm:py-2 ${
+                    profile.hasDestacadoUpgrade
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/25'
+                      : 'bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 hover:shadow-slate-500/25'
+                  }`}
+                >
                   Ver perfil
                 </Button>
               </Link>

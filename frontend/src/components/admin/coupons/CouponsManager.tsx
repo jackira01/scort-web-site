@@ -47,7 +47,7 @@ export default function CouponsManager() {
   const getStatusBadge = (coupon: ICoupon) => {
     const now = new Date();
     const expiryDate = new Date(coupon.validUntil);
-    
+
     // Verificar si el cupón tiene usos ilimitados (-1) o si aún tiene usos disponibles
     if (coupon.maxUses !== -1 && coupon.currentUses >= coupon.maxUses) {
       return <Badge variant="secondary">Agotado</Badge>;
@@ -63,20 +63,20 @@ export default function CouponsManager() {
 
   const filteredCoupons = coupons.filter(coupon => {
     const matchesSearch = coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (coupon.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
-    
+      (coupon.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+
     if (!matchesSearch) return false;
 
     const now = new Date();
     const expiryDate = new Date(coupon.validUntil);
-    
+
     switch (filterStatus) {
       case 'active':
         return coupon.isActive && expiryDate >= now && coupon.currentUses < coupon.maxUses;
       case 'expired':
         return expiryDate < now;
       case 'exhausted':
-          return coupon.currentUses >= coupon.maxUses;
+        return coupon.currentUses >= coupon.maxUses;
       default:
         return true;
     }
@@ -108,11 +108,11 @@ export default function CouponsManager() {
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-3">
           <Ticket className="h-8 w-8 text-purple-600" />
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-700 dark:text-gray-200">
             Gestión de Cupones
           </h1>
         </div>
-        <Button 
+        <Button
           onClick={() => router.push('/adminboard/coupons/create')}
           className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
         >
@@ -134,7 +134,7 @@ export default function CouponsManager() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -146,7 +146,7 @@ export default function CouponsManager() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -158,7 +158,7 @@ export default function CouponsManager() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -211,7 +211,7 @@ export default function CouponsManager() {
               </Button>
               <Button
                 variant={filterStatus === 'exhausted' ? 'default' : 'outline'}
-              onClick={() => setFilterStatus('exhausted')}
+                onClick={() => setFilterStatus('exhausted')}
                 size="sm"
               >
                 Utilizados

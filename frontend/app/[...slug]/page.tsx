@@ -24,7 +24,7 @@ async function getFilterOptions() {
     if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_URL) {
       return null;
     }
-    
+
     const res = await fetch(`${API_URL}/api/filters/options`, {
       next: { revalidate: 300 } // Cache por 5 minutos
     });
@@ -54,11 +54,11 @@ async function isValidDepartment(departamento: string): Promise<boolean> {
   try {
     // Usar validación local primero (más confiable y rápida)
     const isValidLocal = isValidDepartmentLocal(departamento);
-    
+
     if (isValidLocal) {
       return true;
     }
-    
+
     // Fallback a API solo si es necesario
     const options = await getFilterOptions();
     if (!options) return true; // Durante build, permitir todos los departamentos
@@ -79,7 +79,7 @@ async function isValidCity(ciudad: string, departamento?: string): Promise<boole
         return true;
       }
     }
-    
+
     // Fallback a API
     const options = await getFilterOptions();
     if (!options) return true; // Durante build, permitir todas las ciudades
@@ -97,12 +97,12 @@ export async function generateMetadata({
 }: SearchPageProps): Promise<Metadata> {
   const { slug } = await params;
   const [categoria, departamento, ciudad] = slug || [];
-  
+
   // Validar parámetros
   if (!categoria || !(await isValidCategory(categoria))) {
     return {
-      title: 'Página no encontrada',
-      description: 'La página que buscas no existe.',
+      title: 'Online Escorts - Premium Escort Services',
+      description: 'Find premium escort services in your city. Professional, verified, and discreet companions.',
     };
   }
 
@@ -114,7 +114,7 @@ export async function generateMetadata({
     // Ruta completa: /categoria/departamento/ciudad
     const deptLabel = slugToText(departamento);
     const cityLabel = slugToText(ciudad);
-    
+
     pageTitle = `${slugToText(categoria)} en ${cityLabel}, ${deptLabel} - Perfiles Verificados`;
     pageDescription = `Encuentra los mejores perfiles de ${categoria} en ${cityLabel}, ${deptLabel}. Perfiles verificados y actualizados.`;
     keywords = `${categoria}, ${cityLabel}, ${deptLabel}, perfiles, verificados`;
@@ -122,7 +122,7 @@ export async function generateMetadata({
     // Ruta parcial: /categoria/departamento
     const deptData = getDepartmentByNormalized(departamento);
     const deptLabel = deptData?.original || departamento;
-    
+
     pageTitle = `${categoria.charAt(0).toUpperCase() + categoria.slice(1)} en ${deptLabel} - Perfiles Verificados`;
     pageDescription = `Encuentra los mejores perfiles de ${categoria} en ${deptLabel}. Perfiles verificados y actualizados.`;
     keywords = `${categoria}, ${deptLabel}, perfiles, verificados`;
@@ -132,7 +132,7 @@ export async function generateMetadata({
     pageDescription = `Encuentra los mejores perfiles de ${categoria}. Perfiles verificados y actualizados en toda Colombia.`;
     keywords = `${categoria}, perfiles, verificados, Colombia`;
   }
-  
+
   return {
     title: pageTitle,
     description: pageDescription,
@@ -153,13 +153,13 @@ export async function generateMetadata({
 export default async function SearchPage({ params, searchParams }: SearchPageProps) {
   const { slug } = await params;
   const queryParams = await searchParams;
-  
+
   // Procesar correctamente la estructura de URL /filtros/categoria
   // El slug contiene ["filtros", "categoria"], los query params contienen departamento y ciudad
   let categoria: string;
   let departamento: string | undefined;
   let ciudad: string | undefined;
-  
+
   if (slug && slug.length > 0) {
     // Si el primer elemento es "filtros", la categoría está en el segundo elemento
     if (slug[0] === 'filtros' && slug.length > 1) {
@@ -168,34 +168,30 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
       // Fallback: el primer elemento es la categoría (para compatibilidad)
       categoria = slug[0];
     }
-    
+
     departamento = queryParams.departamento as string | undefined;
     ciudad = queryParams.ciudad as string | undefined;
   } else {
     categoria = '';
   }
-  
-  console.log('🔍 SearchPage - Slug recibido:', slug);
-  console.log('🔍 SearchPage - Query params recibidos:', queryParams);
-  console.log('🔍 SearchPage - Categoría procesada:', categoria);
-  console.log('🔍 SearchPage - Departamento procesado:', departamento);
-  console.log('🔍 SearchPage - Ciudad procesada:', ciudad);
+
+
 
   // Verificar si es un archivo estático - renderizar contenido por defecto
   if (categoria && (
-        categoria.includes('.') || // Archivos con extensión
-        categoria.startsWith('_') || // Archivos del sistema Next.js
-        categoria === 'favicon.ico' ||
-        categoria === 'robots.txt' ||
-        categoria === 'sitemap.xml' ||
-        categoria.endsWith('.js') ||
-        categoria.endsWith('.css') ||
-        categoria.endsWith('.map') ||
-        categoria.endsWith('.ico') ||
-        categoria.endsWith('.png') ||
-        categoria.endsWith('.jpg') ||
-        categoria.endsWith('.svg')
-    )) {
+    categoria.includes('.') || // Archivos con extensión
+    categoria.startsWith('_') || // Archivos del sistema Next.js
+    categoria === 'favicon.ico' ||
+    categoria === 'robots.txt' ||
+    categoria === 'sitemap.xml' ||
+    categoria.endsWith('.js') ||
+    categoria.endsWith('.css') ||
+    categoria.endsWith('.map') ||
+    categoria.endsWith('.ico') ||
+    categoria.endsWith('.png') ||
+    categoria.endsWith('.jpg') ||
+    categoria.endsWith('.svg')
+  )) {
     // Renderizar página por defecto en lugar de notFound
     return (
       <div className="container mx-auto px-4 py-8">
@@ -239,11 +235,11 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
 
   // Obtener datos del servidor con ISR
   let profilesData: ProfilesResponse;
-  
+
   try {
     // Preparar el body para la petición POST directamente
     // Params received: { categoria, departamento, ciudad }
-    
+
     const requestBody: any = {
       page: 1,
       limit: PAGINATION.DEFAULT_LIMIT,
@@ -255,27 +251,20 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
     if (categoria) {
       // Adding category: slugToText(categoria)
       requestBody.category = slugToText(categoria);
-      console.log('🔍 SearchPage - Categoría enviada a API:', requestBody.category);
     } else {
       // No category provided
     }
     if (departamento) {
       requestBody.location = { department: slugToText(departamento) };
-      console.log('🔍 SearchPage - Departamento enviado a API:', requestBody.location.department);
       if (ciudad) {
         requestBody.location.city = slugToText(ciudad);
-        console.log('🔍 SearchPage - Ciudad enviada a API:', requestBody.location.city);
       }
     }
-
-    console.log('🔍 SearchPage - RequestBody completo:', JSON.stringify(requestBody, null, 2));
-
-
 
     // Fetch con revalidate para ISR usando POST
     const res = await fetch(
       `${API_URL}/api/filters/profiles`,
-      { 
+      {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -290,9 +279,9 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
     }
 
     const responseData = await res.json();
-    
 
-    
+
+
     // Transformar la estructura para que coincida con ProfilesResponse
     if (responseData.success && responseData.data) {
       const backendData = responseData.data;
@@ -307,15 +296,14 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
           hasPrevPage: backendData.hasPrevPage,
         },
       };
-      
+
 
     } else {
-      console.log('❌ [ERROR] Backend response not successful:', responseData);
       throw new Error(responseData.message || 'Error en la respuesta del servidor');
     }
   } catch (error) {
     console.error('❌ [ERROR] Failed to fetch profiles for ISR:', error);
-    
+
     // En caso de error, devolver datos vacíos para evitar crash
     profilesData = {
       profiles: [],
@@ -330,7 +318,7 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
   }
 
   return (
-    <SearchPageClient 
+    <SearchPageClient
       categoria={categoria}
       departamento={departamento}
       ciudad={ciudad}

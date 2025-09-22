@@ -42,13 +42,13 @@ interface DefaultPlanConfig {
 const updateDefaultPlanConfig = async (config: DefaultPlanConfig): Promise<void> => {
   try {
     const existingParam = await ConfigParameterService.getByKey('system.default_plan', false);
-    
+
     if (existingParam) {
       const updateData = {
         value: config,
         isActive: true
       };
-      
+
       await ConfigParameterService.update(existingParam._id, updateData);
     } else {
       const createData = {
@@ -61,7 +61,7 @@ const updateDefaultPlanConfig = async (config: DefaultPlanConfig): Promise<void>
           description: 'Configuración del plan por defecto para nuevos perfiles'
         }
       };
-      
+
       await ConfigParameterService.create(createData);
     }
   } catch (error) {
@@ -77,7 +77,7 @@ const updateDefaultPlanConfig = async (config: DefaultPlanConfig): Promise<void>
             description: 'Configuración del plan por defecto para nuevos perfiles'
           }
         };
-        
+
         await ConfigParameterService.create(createData);
       } catch (createError) {
         throw createError;
@@ -91,7 +91,7 @@ const updateDefaultPlanConfig = async (config: DefaultPlanConfig): Promise<void>
 export default function DefaultPlanManager() {
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const queryClient = useQueryClient();
-  
+
 
 
   // Queries
@@ -101,7 +101,7 @@ export default function DefaultPlanManager() {
     isActive: true
   });
   const plans = plansResponse?.plans || [];
-  
+
 
 
   const { value: defaultConfig, loading: configLoading } = useConfigValue<DefaultPlanConfig>(
@@ -126,12 +126,12 @@ export default function DefaultPlanManager() {
   });
 
 
-  
+
   // Get selected plan details
   const selectedPlan = plans.find(plan => plan._id === (selectedPlanId || defaultConfig?.planId));
   // Mostrar solo planes activos en el selector, pero permitir que el plan seleccionado sea inactivo
   const activePlans = plans.filter(plan => plan.isActive);
-  
+
 
 
   const handleToggleEnabled = async (enabled: boolean) => {
@@ -139,35 +139,35 @@ export default function DefaultPlanManager() {
       toast.error('Debe seleccionar un plan antes de habilitar');
       return;
     }
-    
+
     if (defaultConfig?.enabled === enabled) {
       return;
     }
-    
+
     const newConfig: DefaultPlanConfig = {
       enabled,
       planId: enabled ? (selectedPlanId || defaultConfig?.planId || null) : null,
       planCode: enabled && selectedPlan ? selectedPlan.code : null,
     };
-    
+
     updateConfigMutation.mutate(newConfig);
   };
 
   const handlePlanChange = (planId: string) => {
     setSelectedPlanId(planId);
     const plan = plans.find(p => p._id === planId);
-    
+
     if (plan && defaultConfig?.enabled) {
       if (defaultConfig?.planId === planId) {
         return;
       }
-      
+
       const newConfig: DefaultPlanConfig = {
         enabled: true,
         planId: planId,
         planCode: plan.code,
       };
-      
+
       updateConfigMutation.mutate(newConfig);
     }
   };
@@ -178,7 +178,7 @@ export default function DefaultPlanManager() {
     <div className="space-y-6">
       <div className="flex items-center space-x-2">
         <Settings className="h-6 w-6 text-purple-600" />
-        <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+        <h1 className="text-2xl lg:text-3xl font-bold text-gray-700 dark:text-gray-200">
           Plan por Defecto
         </h1>
       </div>

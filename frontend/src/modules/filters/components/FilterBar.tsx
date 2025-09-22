@@ -21,7 +21,7 @@ import HorizontalFilterBar from './HorizontalFilterBar';
 const FilterBar = () => {
   const router = useRouter();
   const { filters, updateFilter, updateCategory, updateLocation } = useSearchFilters();
-  
+
   // Usar los valores del hook en lugar de estados locales
   const categoria = filters.category || '';
   const departamento = filters.location?.department || '';
@@ -67,12 +67,6 @@ const FilterBar = () => {
 
     const queryString = params.toString();
     const finalRoute = queryString ? `${route}?${queryString}` : route;
-
-    console.log('🔍 FilterBar - Navegando a:', finalRoute);
-    console.log('🔍 FilterBar - Categoría seleccionada:', categoria);
-    console.log('🔍 FilterBar - Departamento seleccionado:', departamento);
-    console.log('🔍 FilterBar - Ciudad seleccionada:', ciudad);
-
     router.push(finalRoute);
   };
 
