@@ -53,6 +53,45 @@ const AdminProfileVerificationCarousel: React.FC<
     error: any;
   };
 
+  // Debug log para verificar los datos de verificación
+  useEffect(() => {
+    console.log('🔍 AdminProfileVerificationCarousel - verificationData changed:');
+    console.log('📊 Full verificationData object:', verificationData);
+    console.log('📋 verificationData type:', typeof verificationData);
+    console.log('🔑 verificationData keys:', verificationData ? Object.keys(verificationData) : 'No data');
+    
+    if (verificationData) {
+      console.log('🔍 Detailed structure analysis:');
+      console.log('- _id (direct):', verificationData._id);
+      console.log('- success:', verificationData.success);
+      console.log('- data:', verificationData.data);
+      
+      // Si tiene la estructura { success: true, data: { _id, steps, ... } }
+      if (verificationData.success && verificationData.data) {
+        console.log('📋 Backend response structure detected:');
+        console.log('- verificationData.data._id:', verificationData.data._id);
+        console.log('- verificationData.data.steps:', verificationData.data.steps);
+        console.log('- verificationData.data.verificationStatus:', verificationData.data.verificationStatus);
+        console.log('- verificationData.data.verificationProgress:', verificationData.data.verificationProgress);
+        
+        if (verificationData.data.steps) {
+          console.log('🔍 Steps structure:');
+          Object.entries(verificationData.data.steps).forEach(([stepKey, stepValue]) => {
+            console.log(`- ${stepKey}:`, stepValue);
+          });
+        }
+      }
+      // Si tiene la estructura directa { _id, data: { steps: ... } }
+      else if (verificationData._id && verificationData.data) {
+        console.log('📋 Direct structure detected:');
+        console.log('- Direct _id:', verificationData._id);
+        console.log('- Direct data.steps:', verificationData.data.steps);
+      }
+    }
+    
+    console.log('✅ hasData:', !!verificationData);
+  }, [verificationData]);
+
   // Fetch profile data using the hook
   const profileData = useProfile(profileId);
 
@@ -97,36 +136,56 @@ const AdminProfileVerificationCarousel: React.FC<
   // Detectar si hay cambios en general (verificación + isActive)
   const hasAnyChanges = hasChanges || hasIsActiveChanged;
 
+  // Debug log para entender por qué el botón permanece deshabilitado
+  useEffect(() => {
+    console.log('🔍 Changes detection:', {
+      hasChanges,
+      hasIsActiveChanged,
+      hasAnyChanges,
+      verificationDataExists: !!verificationData,
+      verificationId: verificationData?._id
+    });
+  }, [hasChanges, hasIsActiveChanged, hasAnyChanges, verificationData]);
+
   // Función personalizada para guardar todos los cambios
   const handleSaveAllChanges = async () => {
-
+    console.log('🔍 DEBUG handleSaveAllChanges:');
+    console.log('📊 hasIsActiveChanged:', hasIsActiveChanged);
+    console.log('📊 hasChanges:', hasChanges);
+    console.log('📊 verificationData:', verificationData);
 
     try {
       // Guardar cambios de isActive si han cambiado
       if (hasIsActiveChanged) {
-
+        console.log('💾 Guardando cambios de isActive...');
         const profileResult = await updateProfileMutation.mutateAsync({ isActive: isActiveLocal });
+        console.log('✅ Cambios de isActive guardados:', profileResult);
       }
 
       // Guardar cambios de verificación si los hay
       if (hasChanges) {
+        console.log('💾 Guardando cambios de verificación...');
         await handleSaveChanges();
       }
 
+      toast.success('Todos los cambios han sido guardados exitosamente');
     } catch (error) {
+      console.error('❌ Error al guardar los cambios:', error);
       toast.error('Error al guardar los cambios');
     }
   };
 
   // Función personalizada para cancelar todos los cambios
   const handleCancelAllChanges = () => {
+    console.log('🔄 Canceling all changes');
     // Restaurar isActive al valor original
     if (profileData.data?.isActive !== undefined) {
       setIsActiveLocal(profileData.data.isActive);
     }
 
     // Cancelar cambios de verificación
-    handleCancelChanges();
+    resetChanges();
+    console.log('✅ All changes canceled');
   };
 
   // Current step and navigation
@@ -148,25 +207,83 @@ const AdminProfileVerificationCarousel: React.FC<
   // Save and cancel functions
   const handleSaveChanges = async () => {
     // Debug: Verificar datos antes de guardar
-
-
+    console.log('🔍 DEBUG handleSaveChanges:');
+    console.log('📊 verificationData:', verificationData);
+    
     // Verificar si tenemos datos de verificación válidos
-    if (!verificationData?.data?.steps) {
+    if (!verificationData) {
+      console.log('❌ No verificationData available');
+      toast.error('No se puede guardar: datos de verificación no disponibles');
+      return;
+    }
+
+    // Extraer datos correctamente según la estructura del backend
+    let actualVerificationData;
+    let verificationId;
+
+    // Si es la estructura del backend { success: true, data: { _id, data: { steps: ... } } }
+    if (verificationData.success && verificationData.data?.data) {
+      console.log('📋 Backend response structure (nested data) detected');
+      actualVerificationData = verificationData.data;
+      verificationId = verificationData.data._id;
+      console.log('- Using verificationData.data._id:', verificationId);
+      console.log('- Using verificationData.data for processing:', actualVerificationData);
+    }
+    // Si es la estructura del backend { success: true, data: { _id, steps, ... } }
+    else if (verificationData.success && verificationData.data) {
+      console.log('📋 Backend response structure (direct data) detected');
+      actualVerificationData = verificationData.data;
+      verificationId = verificationData.data._id;
+      console.log('- Using verificationData.data._id:', verificationId);
+      console.log('- Using verificationData.data for processing:', actualVerificationData);
+    }
+    // Si es la estructura directa { _id, data: { steps: ... } }
+    else if (verificationData._id && verificationData.data) {
+      console.log('📋 Direct structure detected');
+      actualVerificationData = verificationData;
+      verificationId = verificationData._id;
+      console.log('- Using direct _id:', verificationId);
+      console.log('- Using direct data for processing:', actualVerificationData);
+    }
+    else {
+      console.log('❌ Invalid verificationData structure:', verificationData);
+      console.log('Available keys:', verificationData ? Object.keys(verificationData) : 'No data');
+      if (verificationData?.data) {
+        console.log('Data keys:', Object.keys(verificationData.data));
+      }
+      toast.error('Estructura de datos de verificación inválida');
+      return;
+    }
+
+    // Verificar si tenemos el ID de verificación
+    if (!verificationId) {
+      console.log('❌ No verification ID available');
       toast.error('No se puede guardar: ID de verificación no disponible');
       return;
     }
 
-    // Verificar si tenemos steps válidos
-    if (!verificationData?.data?.steps) {
+    // Verificar si tenemos steps válidos (considerando estructura anidada)
+    const stepsData = actualVerificationData?.data?.steps || actualVerificationData?.steps;
+    if (!stepsData) {
+      console.log('❌ No steps data available');
+      console.log('- actualVerificationData.data:', actualVerificationData?.data);
+      console.log('- actualVerificationData.steps:', actualVerificationData?.steps);
       toast.error('No se puede guardar: datos de steps no disponibles');
       return;
     }
 
     try {
+      console.log('🚀 Proceeding with save operation...');
+      console.log('📤 Data to send to buildUpdatedSteps:', verificationData);
+      
       const updatedSteps = buildUpdatedSteps(verificationData);
+      console.log('📤 Sending updated steps:', updatedSteps);
+      
       const result = await updateVerificationMutation.mutateAsync(updatedSteps);
+      console.log('✅ Save result:', result);
       resetChanges();
     } catch (error) {
+      console.error('❌ Error al guardar cambios de verificación:', error);
       toast.error('Error al guardar los cambios de verificación');
     }
   };
@@ -610,7 +727,10 @@ const AdminProfileVerificationCarousel: React.FC<
                   <Button
                     onClick={handleSaveAllChanges}
                     className="flex-1"
-                    disabled={updateVerificationMutation.isPending || updateProfileMutation.isPending}
+                    disabled={
+                      updateVerificationMutation.isPending || 
+                      updateProfileMutation.isPending
+                    }
                   >
                     {(updateVerificationMutation.isPending || updateProfileMutation.isPending) ? 'Guardando...' : 'Guardar cambios'}
                   </Button>

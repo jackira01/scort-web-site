@@ -8,10 +8,6 @@ import type { SponsoredProfilesQuery } from './sponsored-profiles.service';
  */
 export const getSponsoredProfiles = async (req: Request, res: Response) => {
   try {
-    console.log('🚀 [DEBUG] Controller getSponsoredProfiles - Request recibido');
-    console.log('🚀 [DEBUG] Query params:', req.query);
-    console.log('🚀 [DEBUG] Headers:', req.headers);
-
     const {
       page,
       limit,
@@ -54,17 +50,9 @@ export const getSponsoredProfiles = async (req: Request, res: Response) => {
       query.fields = fields.split(',').map(field => field.trim()).filter(Boolean);
     }
 
-    console.log('🚀 [DEBUG] Service query construido:', query);
 
     // Obtener perfiles patrocinados
     const result = await service.getSponsoredProfiles(query);
-
-    console.log('🚀 [DEBUG] Resultado del servicio:', {
-      profilesCount: result.profiles.length,
-      totalProfiles: result.pagination.totalProfiles,
-      currentPage: result.pagination.currentPage
-    });
-
     res.status(200).json({
       success: true,
       data: result.profiles,
@@ -131,7 +119,7 @@ export const checkProfileSponsored = async (req: Request, res: Response) => {
         profileId,
         isSponsored
       },
-      message: isSponsored 
+      message: isSponsored
         ? 'El perfil es elegible para aparecer en la sección patrocinada'
         : 'El perfil no cumple los criterios para aparecer en la sección patrocinada'
     });

@@ -24,6 +24,8 @@ export const getFilteredProfiles = async (
       availability,
       isActive,
       isVerified,
+      profileVerified,
+      documentVerified,
       hasDestacadoUpgrade,
       hasVideos,
       page = 1,
@@ -90,6 +92,92 @@ export const getFilteredProfiles = async (
     // Filtro por verificación
     if (isVerified !== undefined) {
       query['user.isVerified'] = isVerified;
+    }
+
+    // Filtro por verificación de perfil (basado en videoVerification)
+    if (profileVerified !== undefined) {
+      // Buscar perfiles que tengan verificación de video completada
+      const profileVerificationQuery = await Profile.aggregate([
+        {
+          $lookup: {
+            from: 'profileverifications',
+            localField: 'verification',
+            foreignField: '_id',
+            as: 'verificationData'
+          }
+        },
+        {
+          $match: {
+            'verificationData.steps.videoVerification.isVerified': profileVerified
+          }
+        },
+        {
+          $project: {
+            _id: 1
+          }
+        }
+      ]);
+
+      const verifiedProfileIds = profileVerificationQuery.map(p => p._id);
+      
+      if (profileVerified) {
+        // Solo incluir perfiles con video verificado
+        query._id = { $in: verifiedProfileIds };
+      } else {
+        // Excluir perfiles con video verificado
+        query._id = { $nin: verifiedProfileIds };
+      }
+    }
+
+    // Filtro por verificación de documentos (basado en documentPhotos)
+    if (documentVerified !== undefined) {
+      // Buscar perfiles que tengan verificación de documentos completada
+      const documentVerificationQuery = await Profile.aggregate([
+        {
+          $lookup: {
+            from: 'profileverifications',
+            localField: 'verification',
+            foreignField: '_id',
+            as: 'verificationData'
+          }
+        },
+        {
+          $match: {
+            'verificationData.steps.documentPhotos.isVerified': documentVerified
+          }
+        },
+        {
+          $project: {
+            _id: 1
+          }
+        }
+      ]);
+
+      const documentVerifiedProfileIds = documentVerificationQuery.map(p => p._id);
+      
+      if (documentVerified) {
+        // Solo incluir perfiles con documentos verificados
+        if (query._id && query._id.$in) {
+          // Si ya hay filtro de profileVerified, hacer intersección
+          query._id = { $in: query._id.$in.filter((id: any) => documentVerifiedProfileIds.some(docId => docId.equals(id))) };
+        } else if (query._id && query._id.$nin) {
+          // Si hay exclusión previa, combinar con inclusión de documentos
+          query._id = { $in: documentVerifiedProfileIds, $nin: query._id.$nin };
+        } else {
+          query._id = { $in: documentVerifiedProfileIds };
+        }
+      } else {
+        // Excluir perfiles con documentos verificados
+        if (query._id && query._id.$in) {
+          // Si ya hay inclusión, filtrar excluyendo documentos verificados
+          query._id = { $in: query._id.$in.filter((id: any) => !documentVerifiedProfileIds.some(docId => docId.equals(id))) };
+        } else if (query._id && query._id.$nin) {
+          // Si ya hay exclusión, agregar más IDs a excluir
+          query._id = { $nin: [...query._id.$nin, ...documentVerifiedProfileIds] };
+        } else {
+          query._id = { $nin: documentVerifiedProfileIds };
+        }
+      }
     }
 
     // Filtro por destacado (upgrade activo)

@@ -53,7 +53,7 @@ export interface SearchFilters {
 
   // Estados
   isActive?: boolean;
-  isVerified?: boolean;
+  profileVerified?: boolean;
   hasVideos?: boolean;
   hasDestacadoUpgrade?: boolean;
 
@@ -142,7 +142,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
 
   // Actualizar estados (verificado, activo)
   const updateStates = useCallback(
-    (states: { isActive?: boolean; isVerified?: boolean }) => {
+    (states: { isActive?: boolean; profileVerified?: boolean }) => {
       setFilters((prev) => ({
         ...prev,
         ...states,
@@ -182,7 +182,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
       sortBy: 'createdAt',
       sortOrder: 'desc',
       isActive: true,
-      // No establecer isVerified por defecto para mostrar todos los perfiles
+      // No establecer profileVerified por defecto para mostrar todos los perfiles
     });
   }, []);
 

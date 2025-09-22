@@ -116,9 +116,12 @@ export const getProfileVerification = async (profileId: string) => {
             });
 
             console.log('✅ Created new verification record:', createResponse.data);
+            
+            // Devolver directamente los datos creados
             return createResponse.data;
         }
 
+        // Devolver directamente la respuesta del backend
         return response.data;
     } catch (error) {
         console.error('❌ Error fetching profile verification:', error);

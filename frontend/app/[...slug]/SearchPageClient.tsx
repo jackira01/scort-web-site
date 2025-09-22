@@ -69,7 +69,7 @@ export default function SearchPageClient({
     ...(filters.features?.gender && { gender: filters.features.gender }),
     ...(filters.features?.sex && { sex: filters.features.sex }),
     // Incluir filtros de verificación del HorizontalFilterBar
-    ...(filters.verification?.identityVerified && { isVerified: filters.verification.identityVerified }),
+    ...(filters.verification?.identityVerified && { profileVerified: filters.verification.identityVerified }),
     ...(filters.verification?.hasVideo && { hasVideos: filters.verification.hasVideo }),
     ...(filters.verification?.documentVerified && { documentVerified: filters.verification.documentVerified }),
     isActive: true,
@@ -226,7 +226,7 @@ export default function SearchPageClient({
             <Card className="sticky top-32">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-200">Filtros</h2>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -279,7 +279,7 @@ export default function SearchPageClient({
 
                   {/* <FilterToglles
                     filters={{
-                      verified: filters.isVerified,
+                      verified: filters.profileVerified,
                       video: filters.hasVideos,
                       destacado: filters.hasDestacadoUpgrade,
                     }}
@@ -313,7 +313,7 @@ export default function SearchPageClient({
                   </SheetTrigger>
                   <SheetContent side="left" className="w-80 overflow-y-auto max-h-screen">
                     <SheetHeader className="sticky top-0 bg-white z-10 pb-4">
-                      <SheetTitle className="flex items-center justify-between">
+                      <SheetTitle className="flex items-center justify-between ">
                         Filtros
                         <Button
                           variant="ghost"
@@ -368,7 +368,7 @@ export default function SearchPageClient({
 
                       {/* <FilterToglles
                         filters={{
-                          verified: filters.isVerified,
+                          verified: filters.profileVerified,
                           video: filters.hasVideos,
                           destacado: filters.hasDestacadoUpgrade,
                         }}

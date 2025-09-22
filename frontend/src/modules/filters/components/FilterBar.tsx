@@ -180,7 +180,7 @@ const FilterBar = () => {
             const params = new URLSearchParams();
             
             if (verificationFilters.identityVerified) {
-              params.append('identityVerified', 'true');
+              params.append('profileVerified', 'true');
             }
             if (verificationFilters.hasVideo) {
               params.append('hasVideo', 'true');
