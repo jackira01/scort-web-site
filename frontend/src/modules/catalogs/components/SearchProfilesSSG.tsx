@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ProfilesResponse, FilterQuery } from '@/types/profile.types';
 import { getProfilesForCards } from '@/services/filters.service';
+import { transformProfilesToCards } from '@/utils/profile.utils';
 
 interface SearchProfilesSSGProps {
   viewMode: 'grid' | 'list';
@@ -116,9 +117,10 @@ export default function SearchProfilesSSG({
 
   const { profiles, pagination } = profilesData;
 
+  // Transform profiles to include hasDestacadoUpgrade highlighting
+  const transformedProfiles = profiles ? transformProfilesToCards(profiles) : [];
 
-
-  if (!profiles || profiles.length === 0) {
+  if (!transformedProfiles || transformedProfiles.length === 0) {
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-semibold text-muted-foreground mb-2">
@@ -136,7 +138,7 @@ export default function SearchProfilesSSG({
       {/* Results count */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Mostrando {profiles.length} de {pagination.totalProfiles} perfiles
+          Mostrando {transformedProfiles.length} de {pagination.totalProfiles} perfiles
         </p>
       </div>
 
@@ -146,11 +148,12 @@ export default function SearchProfilesSSG({
           ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
           : 'grid-cols-1'
       }`}>
-        {profiles.map((profile) => (
+        {transformedProfiles.map((profile) => (
           <ProfileCard 
             key={profile._id} 
-            profile={profile as any} 
+            profile={profile} 
             viewMode={viewMode}
+            variant="default"
           />
         ))}
       </div>

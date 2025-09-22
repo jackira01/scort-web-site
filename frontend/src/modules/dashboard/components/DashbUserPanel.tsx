@@ -35,7 +35,7 @@ export const DashUserPanel = () => {
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+        <h1 className="text-2xl lg:text-3xl font-bold text-gray-700 dark:text-gray-200 ">
           Usuarios
         </h1>
       </div>

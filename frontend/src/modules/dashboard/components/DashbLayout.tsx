@@ -2,25 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import AttributeGroupsAdmin from './AttributeGroupsAdmin';
-import { sidebarItems } from '@/modules/dashboard/data';
-import { DashUserPanel } from './DashbUserPanel';
-import { DashProfilePanel } from './DashbProfilePanel';
+import HeaderComponent from '@/components/header/Header';
+import { AttributeGroupsAdmin } from '@/modules/dashboard/components/AttributeGroupsAdmin';
+import { DashUserPanel } from '@/modules/dashboard/components/DashbUserPanel';
 import ConfigManager from '@/components/admin/ConfigManager/ConfigManager';
 import PlansManager from '@/components/admin/plans/PlansManager';
 import DefaultPlanManager from '@/components/admin/DefaultPlanManager';
 import BlogsManager from '@/components/admin/blogs/BlogsManager';
-import InvoicesManager from '@/components/admin/invoices/InvoicesManager';
-import EmailManager from '@/components/admin/emails/EmailManager';
 import NewsManager from '@/components/admin/news/NewsManager';
 import CouponsManager from '@/components/admin/coupons/CouponsManager';
+import EmailManager from '@/components/admin/emails/EmailManager';
+import { AdminSidebar } from '@/modules/dashboard/components/AdminSidebar';
+import { AdminOverlay } from '@/modules/dashboard/components/AdminOverlay';
+import { DashProfilePanel } from './DashbProfilePanel';
+import InvoicesManager from '@/components/admin/invoices/InvoicesManager';
 
 
 export default function DashboardLayout() {
     const [activeSection, setActiveSection] = useState('usuarios');
     const [mounted, setMounted] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const searchParams = useSearchParams();
 
     useEffect(() => {
@@ -35,6 +36,10 @@ export default function DashboardLayout() {
             }
         }
     }, [searchParams, mounted]);
+
+    const handleSidebarOverlayChange = (isOpen: boolean) => {
+        setSidebarOpen(isOpen);
+    };
 
     // Evitar hidratación mismatch
     if (!mounted) {
@@ -115,69 +120,27 @@ export default function DashboardLayout() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
-            {/* Header */}
+        <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
+            {/* AdminSidebar superpuesto */}
+            <AdminSidebar
+                activeSection={activeSection}
+                setActiveSection={setActiveSection}
+                onOverlayChange={handleSidebarOverlayChange}
+            />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="flex gap-8">
-                    {/* Sidebar */}
-                    <div className="w-80 space-y-2 animate-in slide-in-from-left-4 duration-500">
-                        <Card className="bg-card border-border shadow-sm">
-                            <CardContent className="p-6">
-                                <nav className="space-y-2">
-                                    {sidebarItems.map((item, index) => (
-                                        <button
-                                            type="button"
-                                            key={item.id}
-                                            onClick={() => setActiveSection(item.id)}
-                                            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 group animate-in slide-in-from-left-2 ${activeSection === item.id
-                                                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                                                }`}
-                                            style={{ animationDelay: `${index * 100}ms` }}
-                                        >
-                                            <item.icon
-                                                className={`h-5 w-5 ${activeSection === item.id ? 'text-white' : 'group-hover:text-purple-600'} transition-colors duration-200`}
-                                            />
-                                            <div className="flex-1 relative group">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="font-medium">{item.label}</span>
-                                                    {/* {item.badge && (
-                                                        <Badge
-                                                            variant={
-                                                                activeSection === item.id
-                                                                    ? 'secondary'
-                                                                    : 'default'
-                                                            }
-                                                            className={`text-xs ${activeSection === item.id
-                                                                ? 'bg-white/20 text-white'
-                                                                : 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-100'
-                                                                }`}
-                                                        >
-                                                            {item.badge}
-                                                        </Badge>
-                                                    )} */}
-                                                </div>
-
-                                                {/* Tooltip con descripción que aparece en hover */}
-                                                <div className="absolute left-0 top-full mt-2 w-64 p-3 bg-gray-900 dark:bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
-                                                    <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 dark:bg-gray-800 rotate-45"></div>
-                                                    {item.description}
-                                                </div>
-                                            </div>
-                                        </button>
-                                    ))}
-                                </nav>
-                            </CardContent>
-                        </Card>
+            {/* Contenido principal con overlay */}
+            <AdminOverlay
+                isVisible={sidebarOpen}
+                onClick={() => setSidebarOpen(false)}
+            >
+                <main className="pt-5 px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="animate-in fade-in-0 duration-500">
+                            {renderContent()}
+                        </div>
                     </div>
-
-                    {/* Main Content */}
-                    <div className="flex-1">{renderContent()}</div>
-                </div>
-            </div>
-
-
+                </main>
+            </AdminOverlay>
         </div>
     );
 }
