@@ -194,9 +194,16 @@ export function Step4Plan() {
           <Label className="text-foreground text-lg font-semibold mb-4 block">
             Plan de Membresía <span className="text-red-500">*</span>
           </Label>
-          <Select value={selectedPlanId} onValueChange={handlePlanChange}>
+          <Select 
+            key={`plan-${selectedPlanId}`}
+            value={selectedPlanId} 
+            onValueChange={handlePlanChange}
+          >
             <SelectTrigger className={`w-full ${errors.selectedPlan ? 'border-red-500' : ''}`}>
-              <SelectValue placeholder="Selecciona un plan" />
+              <SelectValue 
+                placeholder="Selecciona un plan"
+                className={selectedPlanId ? 'text-foreground' : 'text-muted-foreground'}
+              />
             </SelectTrigger>
             <SelectContent>
               {plans.map((plan) => (

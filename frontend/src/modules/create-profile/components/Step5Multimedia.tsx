@@ -1,7 +1,7 @@
 'use client';
 
 import { Camera, Mic, Video, X, Edit3, CheckCircle, Star, Upload } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,12 +27,34 @@ interface DefaultPlanConfig {
 type Step5MultimediaProps = {};
 
 export function Step5Multimedia({ }: Step5MultimediaProps) {
+  console.log('🔄 [DEBUG] Step5Multimedia - Componente renderizado');
+  
   const {
     watch,
     setValue,
     formState: { errors },
   } = useFormContext();
-  const formData = watch();
+  
+  // Optimización: observar solo los campos específicos necesarios
+  const selectedPlan = watch('selectedPlan');
+  const photos = watch('photos') || [];
+  const videos = watch('videos') || [];
+  const audios = watch('audios') || [];
+  const coverImageIndex = watch('coverImageIndex');
+  const videoCoverImages = watch('videoCoverImages') || {};
+  const acceptTerms = watch('acceptTerms');
+  
+  // Debug: Rastrear cambios en las variables observadas
+  console.log('📊 [DEBUG] Variables observadas:', {
+    selectedPlan: selectedPlan ? { id: selectedPlan._id, name: selectedPlan.name } : null,
+    photosLength: photos.length,
+    videosLength: videos.length,
+    audiosLength: audios.length,
+    coverImageIndex,
+    videoCoverImagesKeys: Object.keys(videoCoverImages).length,
+    acceptTerms
+  });
+  
   // Estados para el procesamiento de imágenes
   const [contentLimits, setContentLimits] = useState({
     maxPhotos: 20, // valores por defecto
@@ -54,22 +76,36 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     page: 1,
     isActive: true
   });
-  const plans = plansResponse?.plans || [];
+  
+  // Memoizar plans para evitar re-renders innecesarios
+  const plans = useMemo(() => {
+    console.log('🔄 [DEBUG] Memoizando plans:', plansResponse?.plans?.length || 0);
+    return plansResponse?.plans || [];
+  }, [plansResponse?.plans]);
 
   // Obtener configuración del plan por defecto
-  const { value: defaultConfig } = useConfigValue<DefaultPlanConfig>(
+  const { value: defaultConfigRaw } = useConfigValue<DefaultPlanConfig>(
     'system.default_plan',
     {
       enabled: true,
       defaultValue: { enabled: false, planId: null, planCode: null }
     }
   );
+  
+  // Memoizar defaultConfig para evitar re-renders innecesarios
+  const defaultConfig = useMemo(() => {
+    console.log('🔄 [DEBUG] Memoizando defaultConfig:', defaultConfigRaw);
+    return defaultConfigRaw;
+  }, [defaultConfigRaw?.enabled, defaultConfigRaw?.planId, defaultConfigRaw?.planCode]);
 
   // Cargar límites del plan por defecto o seleccionado
   useEffect(() => {
-    // Obtener el plan seleccionado del formulario
-    const selectedPlan = formData.selectedPlan;
-
+    console.log('🔧 [DEBUG] useEffect ejecutado - Dependencias:', {
+      selectedPlan: selectedPlan ? { id: selectedPlan._id, name: selectedPlan.name } : null,
+      defaultConfig,
+      plansLength: plans.length
+    });
+    
     if (selectedPlan && selectedPlan.contentLimits) {
       // Usar límites del plan seleccionado
       console.log('📋 [DEBUG] Aplicando límites del plan seleccionado:', selectedPlan.name, selectedPlan.contentLimits);
@@ -99,14 +135,14 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
         maxAudios: 2
       });
     }
-  }, [defaultConfig, plans, formData.selectedPlan]);
+  }, [defaultConfig, plans, selectedPlan?._id, selectedPlan?.contentLimits]);
 
-  // Usar los valores del formulario como fuente de verdad
-  const photos = formData.photos || [];
-  const videos = formData.videos || [];
-  const audios = formData.audios || [];
-  const coverImageIndex = formData.coverImageIndex;
-  const videoCoverImages = formData.videoCoverImages || {};
+  // Usar los valores del formulario como fuente de verdad (ya optimizados arriba)
+  // const photos = formData.photos || [];
+  // const videos = formData.videos || [];
+  // const audios = formData.audios || [];
+  // const coverImageIndex = formData.coverImageIndex;
+  // const videoCoverImages = formData.videoCoverImages || {};
 
   // Función para manejar la selección de archivos
   const handleFileSelect = async (
@@ -131,11 +167,11 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       newFiles: fileArray.length,
       totalAfterAdd: currentFiles.length + fileArray.length,
       limit: limits[type],
-      selectedPlan: formData.selectedPlan?.name || 'Plan por defecto'
+      selectedPlan: selectedPlan?.name || 'Plan por defecto'
     });
 
     if (currentFiles.length + fileArray.length > limits[type]) {
-      const planName = formData.selectedPlan?.name || 'tu plan actual';
+      const planName = selectedPlan?.name || 'tu plan actual';
       const typeLabel = type === 'photos' ? 'fotos' : type === 'videos' ? 'videos' : 'audios';
 
       toast.error(
@@ -575,9 +611,9 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                 >
                   {photos.length} / {contentLimits.maxPhotos}
                 </Badge>
-                {formData.selectedPlan && (
+                {selectedPlan && (
                   <Badge variant="secondary" className="text-xs">
-                    {formData.selectedPlan.name}
+                    {selectedPlan.name}
                   </Badge>
                 )}
               </div>
@@ -591,8 +627,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                     </div>
                     <p className="text-red-700 dark:text-red-300 text-sm">
                       <strong>Límite alcanzado:</strong> Has alcanzado el máximo de {contentLimits.maxPhotos} fotos
-                      para {formData.selectedPlan?.name || 'tu plan actual'}.
-                      {formData.selectedPlan?.code === 'FREE' && (
+                      para {selectedPlan?.name || 'tu plan actual'}.
+                      {selectedPlan?.code === 'FREE' && (
                         <span className="block mt-1">
                           💎 Considera actualizar a un plan Premium para subir más fotos.
                         </span>
@@ -699,9 +735,9 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                 >
                   {videos.length} / {contentLimits.maxVideos}
                 </Badge>
-                {formData.selectedPlan && (
+                {selectedPlan && (
                   <Badge variant="secondary" className="text-xs">
-                    {formData.selectedPlan.name}
+                    {selectedPlan.name}
                   </Badge>
                 )}
               </div>
@@ -715,8 +751,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                     </div>
                     <p className="text-red-700 dark:text-red-300 text-sm">
                       <strong>Límite alcanzado:</strong> Has alcanzado el máximo de {contentLimits.maxVideos} videos
-                      para {formData.selectedPlan?.name || 'tu plan actual'}.
-                      {formData.selectedPlan?.code === 'FREE' && (
+                      para {selectedPlan?.name || 'tu plan actual'}.
+                      {selectedPlan?.code === 'FREE' && (
                         <span className="block mt-1">
                           💎 Considera actualizar a un plan Premium para subir más videos.
                         </span>
@@ -814,9 +850,9 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                 >
                   {audios.length} / {contentLimits.maxAudios}
                 </Badge>
-                {formData.selectedPlan && (
+                {selectedPlan && (
                   <Badge variant="secondary" className="text-xs">
-                    {formData.selectedPlan.name}
+                    {selectedPlan.name}
                   </Badge>
                 )}
               </div>
@@ -829,8 +865,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                   </div>
                   <p className="text-red-700 dark:text-red-300 text-sm">
                     <strong>Límite alcanzado:</strong> Has alcanzado el máximo de {contentLimits.maxAudios} audios
-                    para {formData.selectedPlan?.name || 'tu plan actual'}.
-                    {formData.selectedPlan?.code === 'FREE' && (
+                    para {selectedPlan?.name || 'tu plan actual'}.
+                    {selectedPlan?.code === 'FREE' && (
                       <span className="block mt-1">
                         💎 Considera actualizar a un plan Premium para subir más audios.
                       </span>
@@ -908,7 +944,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
             <div className="flex items-start space-x-2">
               <Checkbox
                 id="terms"
-                checked={formData.acceptTerms}
+                checked={acceptTerms}
                 onCheckedChange={(checked) => setValue('acceptTerms', !!checked)}
                 className={errors.acceptTerms ? 'border-red-500' : ''}
               />

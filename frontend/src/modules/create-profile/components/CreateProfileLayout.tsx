@@ -106,8 +106,7 @@ export function CreateProfileLayout() {
       },
       age: '',
       skinColor: '',
-      sexuality: '',
-      eyeColor: '',
+    eyeColor: '',
       hairColor: '',
       bodyType: '',
       height: '',
@@ -188,8 +187,7 @@ export function CreateProfileLayout() {
             },
             age: form.getValues('age') || '',
             skinColor: form.getValues('skinColor') || '',
-            sexuality: form.getValues('sexuality') || '',
-            eyeColor: form.getValues('eyeColor') || '',
+        eyeColor: form.getValues('eyeColor') || '',
             hairColor: form.getValues('hairColor') || '',
             bodyType: form.getValues('bodyType') || '',
             height: form.getValues('height') || '',
@@ -334,11 +332,11 @@ export function CreateProfileLayout() {
       });
     }
 
-    // Sexuality
-    if (formData.sexuality && groupMap.sex?._id) {
+    // Body type feature
+    if (formData.bodyType && groupMap.body?._id) {
       features.push({
-        group_id: groupMap.sex._id,
-        value: [formData.sexuality],
+        group_id: groupMap.body._id,
+        value: [formData.bodyType],
       });
     }
 
@@ -514,39 +512,41 @@ export function CreateProfileLayout() {
       }
 
       if (data.audios && data.audios.length > 0) {
+        console.log('🎵 Procesando audios...');
 
         // Filtrar solo archivos File, no strings (URLs existentes)
         const audioFiles = data.audios.filter((audio): audio is File => audio instanceof File);
+        console.log(`📤 Subiendo ${audioFiles.length} audios nuevos`);
 
         if (audioFiles.length > 0) {
           toast.loading('Subiendo audios...');
-          audioUrls = await uploadMultipleAudios(audioFiles);
+          const uploadedAudios = await uploadMultipleAudios(audioFiles);
           toast.dismiss();
-          toast.success(`${audioUrls.length} audios subidos exitosamente`);
+          
+          const successfulAudios = uploadedAudios.filter(url => url !== null);
+          toast.success(`${successfulAudios.length} audios subidos exitosamente`);
+          audioUrls = [...audioUrls, ...uploadedAudios];
         }
-        // Mantener URLs existentes
+
+        // Mantener URLs existentes (strings)
         const existingAudioUrls = data.audios.filter((audio): audio is string => typeof audio === 'string');
         audioUrls = [...audioUrls, ...existingAudioUrls];
+        console.log(`📊 Total audios: ${audioUrls.length} (${existingAudioUrls.length} existentes)`);
       }
 
       // Crear datos con URLs de Cloudinary (filtrar valores null)
-      const dataWithUrls = {
+      const backendData = transformDataToBackendFormat({
         ...data,
-        photos: photoUrls.filter((url): url is string => url !== null),
-        videos: videoUrls.filter(video => video !== null), // Filtrar null y asegurar tipo correcto
-        audios: audioUrls.filter((url): url is string => url !== null),
-      };
-
-      console.log('Datos con URLs:', {
-        photos: dataWithUrls.photos.length,
-        videos: dataWithUrls.videos.length,
-        audios: dataWithUrls.audios.length,
-        photosUrls: dataWithUrls.photos,
-        videosUrls: dataWithUrls.videos,
-        audiosUrls: dataWithUrls.audios
+        photos: photoUrls.filter(url => url !== null) as string[],
+        videos: videoUrls as any,
+        audios: audioUrls.filter(url => url !== null) as string[],
       });
 
-      const backendData = transformDataToBackendFormat(dataWithUrls as any);
+      console.log('📤 Enviando datos al backend:', {
+        photos: backendData.media?.gallery?.length || 0,
+        videos: backendData.media?.videos?.length || 0,
+        audios: backendData.media?.audios?.length || 0
+      });
 
       console.log('Datos del backend:', {
         mediaGallery: backendData.media?.gallery?.length || 0,
@@ -647,7 +647,6 @@ const renderStepContent = () => {
       return (
         <Step3Details
           skinGroup={groupMap.skin}
-          sexualityGroup={groupMap.sex}
           eyeGroup={groupMap.eyes}
           hairGroup={groupMap.hair}
           bodyGroup={groupMap.body}

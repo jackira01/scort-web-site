@@ -251,11 +251,11 @@ export function ConfigParameterForm({
 
 
     return (
-        <div className="bg-white rounded-lg shadow">
+        <div className="rounded-lg">
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-900">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-300">
                         {mode === 'create' ? 'Crear Parámetro' : 'Editar Parámetro'}
                     </h2>
                     <button
@@ -273,7 +273,7 @@ export function ConfigParameterForm({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Clave */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
                             Clave *
                         </label>
                         <input
@@ -295,7 +295,7 @@ export function ConfigParameterForm({
 
                     {/* Nombre */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
                             Nombre *
                         </label>
                         <input
@@ -316,7 +316,7 @@ export function ConfigParameterForm({
 
                     {/* Tipo */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
                             Tipo *
                         </label>
                         <select
@@ -337,7 +337,7 @@ export function ConfigParameterForm({
 
                     {/* Categoría */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
                             Categoría *
                         </label>
                         <input
@@ -359,7 +359,7 @@ export function ConfigParameterForm({
 
                 {/* Descripción */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
                         Descripción
                     </label>
                     <textarea
@@ -372,13 +372,13 @@ export function ConfigParameterForm({
                 </div>
 
                 {/* Configuración de UI */}
-                <div className="border border-gray-200 rounded-lg p-4">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Configuración de Interfaz</h3>
+                <div className="border border-gray-200 rounded-lg p-4 dark:border-gray-600">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4 dark:text-gray-300">Configuración de Interfaz</h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Tipo de entrada */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
                                 Tipo de entrada
                             </label>
                             <select
@@ -400,7 +400,7 @@ export function ConfigParameterForm({
 
                         {/* Placeholder */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
                                 Placeholder
                             </label>
                             <input
@@ -415,7 +415,7 @@ export function ConfigParameterForm({
 
                     {/* Texto de ayuda */}
                     <div className="mt-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
                             Texto de ayuda
                         </label>
                         <input
@@ -430,7 +430,7 @@ export function ConfigParameterForm({
 
                 {/* Valor */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
                         Valor *
                     </label>
                     {formData.metadata?.ui_config?.input_type === 'textarea' || formData.metadata?.ui_config?.input_type === 'json' ? (
@@ -472,7 +472,7 @@ export function ConfigParameterForm({
 
                 {/* Tags */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
                         Etiquetas
                     </label>
                     <div className="flex flex-wrap gap-2 mb-2">
@@ -520,7 +520,7 @@ export function ConfigParameterForm({
                         onChange={(e) => handleInputChange('isActive', e.target.checked)}
                         className="mr-2"
                     />
-                    <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
+                    <label htmlFor="isActive" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Parámetro activo
                     </label>
                 </div>
@@ -530,7 +530,7 @@ export function ConfigParameterForm({
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
                         disabled={isLoading}
                     >
                         Cancelar

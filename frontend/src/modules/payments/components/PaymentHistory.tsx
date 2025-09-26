@@ -126,7 +126,7 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Estado:
@@ -167,9 +167,11 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
               />
             </div>
 
-            <Button onClick={clearFilters} variant="outline">
-              Limpiar Filtros
-            </Button>
+            <div className="sm:col-span-2 lg:col-span-1">
+              <Button onClick={clearFilters} variant="outline" className="w-full">
+                Limpiar Filtros
+              </Button>
+            </div>
           </div>
 
           {total > 0 && (
@@ -224,25 +226,27 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
               {invoices.map((invoice) => (
                 <div
                   key={invoice._id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-gray-100 bg-white dark:bg-gray-800/70 dark:border-gray-700 hover:bg-white/90 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border border-gray-100 bg-white dark:bg-gray-800/70 dark:border-gray-700 hover:bg-white/90 transition-colors gap-4"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-800">
+                  <div className="flex items-start sm:items-center gap-4 flex-1">
+                    <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-800 flex-shrink-0">
                       <Receipt className="h-4 w-4 text-purple-600 dark:text-purple-300" />
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium text-gray-900 dark:text-gray-300">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                        <p className="font-medium text-gray-900 dark:text-gray-300 truncate">
                           {invoice.items[0]?.name || 'Factura'}
                         </p>
-                        {invoice.profileId && (
-                          <Badge variant="outline" className="text-xs">
-                            <User className="h-3 w-3 mr-1" />
-                            {invoice.profileId.name}
-                          </Badge>
-                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {invoice.profileId && (
+                            <Badge variant="outline" className="text-xs">
+                              <User className="h-3 w-3 mr-1" />
+                              <span className="truncate max-w-20">{invoice.profileId.name}</span>
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-300">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-500 dark:text-gray-300">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
                           {new Date(invoice.createdAt).toLocaleDateString('es-ES')}
@@ -250,32 +254,34 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
                         {invoice.paymentData?.paymentMethod && (
                           <span className="flex items-center gap-1">
                             <CreditCard className="h-3 w-3" />
-                            {invoice.paymentData.paymentMethod}
+                            <span className="truncate">{invoice.paymentData.paymentMethod}</span>
                           </span>
                         )}
                       </div>
                       {invoice.notes && (
-                        <p className="text-xs text-gray-500 mt-1 truncate max-w-md">
+                        <p className="text-xs text-gray-500 mt-2 line-clamp-2 sm:truncate sm:max-w-md">
                           {invoice.notes}
                         </p>
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900 mb-1 dark:text-gray-300">
+                  <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start text-right gap-2 sm:gap-1">
+                    <p className="font-semibold text-gray-900 dark:text-gray-300 text-lg sm:text-base">
                       {formatCurrency(invoice.totalAmount)}
                     </p>
-                    <Badge
-                      variant={getStatusBadgeVariant(invoice.status)}
-                      className="text-xs"
-                    >
-                      {getStatusText(invoice.status)}
-                    </Badge>
-                    {invoice.status === 'pending' && invoice.expiresAt && (
-                      <p className="text-xs text-orange-600 mt-1">
-                        Expira: {new Date(invoice.expiresAt).toLocaleDateString('es-ES')}
-                      </p>
-                    )}
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge
+                        variant={getStatusBadgeVariant(invoice.status)}
+                        className="text-xs"
+                      >
+                        {getStatusText(invoice.status)}
+                      </Badge>
+                      {invoice.status === 'pending' && invoice.expiresAt && (
+                        <p className="text-xs text-orange-600 whitespace-nowrap">
+                          Expira: {new Date(invoice.expiresAt).toLocaleDateString('es-ES')}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

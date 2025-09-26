@@ -94,8 +94,6 @@ export const ProfileGallery = ({
             key={index + image}
             onClick={() => {
               setSelectedImage(index);
-              setModalImageIndex(index);
-              setIsModalOpen(true);
             }}
             className={`relative overflow-hidden rounded-lg aspect-square group transition-all duration-200 ${selectedImage === index
               ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-background'
@@ -110,13 +108,6 @@ export const ProfileGallery = ({
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
             />
             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-200" />
-
-            {/* Hover Overlay with Small Magnifying Glass */}
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-              <div className="bg-white/20 backdrop-blur-sm rounded-full p-1 transform scale-75 group-hover:scale-100 transition-transform duration-200">
-                <Search className="h-3 w-3 text-white" />
-              </div>
-            </div>
           </button>
         ))}
       </div>

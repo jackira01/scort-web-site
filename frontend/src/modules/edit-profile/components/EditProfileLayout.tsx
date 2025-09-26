@@ -19,7 +19,7 @@ import {
   uploadMultipleVideos,
 } from '@/utils/tools';
 import { FormProvider } from '../../create-profile/context/FormContext';
-import { steps } from '../../create-profile/data';
+import { editSteps } from '../data';
 import type { FormData } from '../../create-profile/schemas';
 import { normalizeSimpleText } from '@/utils/normalize-text';
 import {
@@ -101,13 +101,102 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
     if (profileDetails && attributeGroups) {
       // Cargando datos del perfil
 
+      // Debug: Log complete profile structure
+      console.log('🔍 DEBUG - Complete profileDetails structure:', {
+        profileDetails,
+        features: profileDetails.features,
+        rates: profileDetails.rates,
+        ratesType: typeof profileDetails.rates,
+        ratesIsArray: Array.isArray(profileDetails.rates),
+        ratesLength: profileDetails.rates?.length,
+        ratesContent: profileDetails.rates,
+      });
+
+      // Debug: Log each feature in detail
+      console.log('🔍 DEBUG - Features analysis:');
+      profileDetails.features?.forEach((feature: any, index: number) => {
+        console.log(`Feature ${index}:`, {
+          group: feature.group,
+          groupKey: feature.group?.key,
+          groupName: feature.groupName,
+          value: feature.value,
+          valueType: typeof feature.value,
+          valueIsArray: Array.isArray(feature.value),
+          firstValue: feature.value?.[0],
+        });
+      });
+
       // Función para obtener el valor de una característica por grupo
       const getFeatureValue = (groupKey: string) => {
-        const feature = profileDetails.features?.find((f: any) =>
-          f.group?.key === groupKey
-        );
+        // Mapeo de claves a nombres de grupo en español
+        const groupNameMap: Record<string, string[]> = {
+          'skin': ['Color de piel', 'Piel'],
+          'sex': ['sexo', 'Orientación sexual', 'Sexualidad'],
+          'eyes': ['Color de ojos', 'Ojos'],
+          'hair': ['Color de cabello', 'Cabello', 'Pelo'],
+          'body': ['Cuerpo', 'Tipo de cuerpo', 'Contextura', 'contextura'],
+        };
+
+        const possibleNames = groupNameMap[groupKey] || [groupKey];
+        
+        console.log(`🔍 DEBUG getFeatureValue(${groupKey}) - Searching for:`, possibleNames);
+        console.log(`🔍 DEBUG - Available features:`, profileDetails.features?.map((f: any) => ({
+          groupName: f.groupName,
+          value: f.value
+        })));
+        
+        const feature = profileDetails.features?.find((f: any) => {
+          const groupName = f.groupName?.toLowerCase() || '';
+          const matches = possibleNames.some(name => 
+            groupName.includes(name.toLowerCase()) || 
+            name.toLowerCase().includes(groupName)
+          );
+          console.log(`🔍 DEBUG - Checking feature "${f.groupName}" against ${groupKey}:`, { groupName, matches });
+          return matches;
+        });
+        
         const value = feature?.value?.[0] || '';
-        // Feature procesado
+        console.log(`🔍 getFeatureValue(${groupKey}) RESULT:`, { 
+          feature, 
+          value, 
+          groupName: feature?.groupName,
+          possibleNames 
+        });
+        
+        // Para bodyType, si no se encuentra la característica, devolver cadena vacía
+        // Esto permite que perfiles sin esta característica puedan editarla
+        if (groupKey === 'body' && !value) {
+          console.log(`🔍 DEBUG - bodyType not found, allowing empty value for editing`);
+          return '';
+        }
+        
+        return value;
+      };
+
+      // Función específica para obtener el género
+      const getGenderValue = () => {
+        // Buscar por groupName que contenga género
+        const genderFeature = profileDetails.features?.find((f: any) => 
+          f.groupName?.toLowerCase().includes('género') || 
+          f.groupName?.toLowerCase().includes('genero') ||
+          ['hombre', 'mujer', 'trans'].includes(f.value?.[0]?.toLowerCase())
+        );
+        const value = genderFeature?.value?.[0] || '';
+        console.log('🔍 getGenderValue:', { genderFeature, value });
+        return value;
+      };
+
+      // Función específica para obtener la categoría
+      const getCategoryValue = () => {
+        // Buscar por groupName que contenga categoría
+        const categoryFeature = profileDetails.features?.find((f: any) => 
+          f.groupName?.toLowerCase().includes('categoría') || 
+          f.groupName?.toLowerCase().includes('categoria') ||
+          f.groupName?.toLowerCase().includes('escort') ||
+          f.groupName?.toLowerCase().includes('agencia')
+        );
+        const value = categoryFeature?.value?.[0] || categoryFeature?.groupName || profileDetails.category || '';
+        console.log('🔍 getCategoryValue:', { categoryFeature, value, profileCategory: profileDetails.category });
         return value;
       };
 
@@ -130,20 +219,40 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
 
       // Convertir rates del backend al formato del formulario
       const convertRates = () => {
-        if (!profileDetails.rates || !Array.isArray(profileDetails.rates)) return [];
-        return profileDetails.rates.map((rate: any, index: number) => ({
-          id: rate.id || `rate-${index}`,
-          time: rate.hour || rate.time || '',
-          price: typeof rate.price === 'number' ? rate.price : parseFloat(rate.price) || 0,
-          delivery: Boolean(rate.delivery),
-        }));
+        console.log('🔍 DEBUG - Converting rates:', {
+          originalRates: profileDetails.rates,
+          ratesType: typeof profileDetails.rates,
+          ratesIsArray: Array.isArray(profileDetails.rates),
+          ratesLength: profileDetails.rates?.length,
+        });
+
+        if (!profileDetails.rates || !Array.isArray(profileDetails.rates)) {
+          console.log('🔍 DEBUG - No rates found or not array, returning empty array');
+          return [];
+        }
+
+        const convertedRates = profileDetails.rates
+          .filter((rate: any) => rate && typeof rate === 'object' && Object.keys(rate).length > 0)
+          .map((rate: any, index: number) => {
+            const converted = {
+              id: rate.id || rate._id || `rate-${index}`,
+              time: rate.hour || rate.time || '',
+              price: typeof rate.price === 'number' ? rate.price : parseFloat(rate.price) || 0,
+              delivery: Boolean(rate.delivery),
+            };
+            console.log(`🔍 DEBUG - Converting rate ${index}:`, { original: rate, converted });
+            return converted;
+          });
+
+        console.log('🔍 DEBUG - Final converted rates:', convertedRates);
+        return convertedRates;
       };
 
       // Actualizar valores del formulario usando setValue para mejor control
       const formData = {
         profileName: profileDetails.name || '',
-        gender: getFeatureValue('gender'),
-        category: profileDetails.category || '',
+        gender: getGenderValue(),
+        category: getCategoryValue(),
         location: {
           country: profileDetails.location?.country?.label || profileDetails.location?.country || 'Colombia',
           department: profileDetails.location?.department?.label || profileDetails.location?.department || '',
@@ -157,11 +266,10 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
           telegram: profileDetails.contact?.telegram || '',
         },
         age: profileDetails.age ? String(profileDetails.age) : '',
-        skinColor: getFeatureValue('skin_color'),
-        sexuality: getFeatureValue('sexuality'),
-        eyeColor: getFeatureValue('eye_color'),
-        hairColor: getFeatureValue('hair_color'),
-        bodyType: getFeatureValue('body_type'),
+        skinColor: getFeatureValue('skin'),
+        eyeColor: getFeatureValue('eyes'),
+        hairColor: getFeatureValue('hair'),
+        bodyType: getFeatureValue('body'),
         height: profileDetails.height ? String(profileDetails.height) : '',
         rates: convertRates(),
         availability: profileDetails.availability || [],
@@ -175,6 +283,27 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       // Establecer cada valor individualmente para asegurar que los campos controlados se actualicen
       // Step 1 - Campos esenciales
       form.setValue('profileName', formData.profileName);
+      
+      // Debug: Verificar el valor del género
+      console.log('🔍 Debug - Valor del género extraído:', formData.gender);
+      console.log('🔍 Debug - profileDetails.features:', profileDetails.features);
+      console.log('🔍 Debug - Feature de género encontrada:', profileDetails.features?.find((f: any) => f.group?.key === 'gender'));
+      
+      // Debug adicional: Verificar estructura completa de features
+      console.log('🔍 Debug - Estructura completa de cada feature:');
+      profileDetails.features?.forEach((feature: any, index: number) => {
+        console.log(`Feature ${index}:`, {
+          group: feature.group,
+          groupName: feature.groupName,
+          value: feature.value,
+          completeFeature: feature
+        });
+      });
+      
+      // Debug: Verificar categoría
+      console.log('🔍 Debug - profileDetails.category:', profileDetails.category);
+      console.log('🔍 Debug - profileDetails completo:', profileDetails);
+      
       form.setValue('gender', formData.gender);
       form.setValue('category', formData.category);
       form.setValue('location.country', formData.location.country);
@@ -183,9 +312,27 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
 
       // Step 2 - Descripción y servicios
       form.setValue('description', formData.description);
-      form.setValue('selectedServices', formData.selectedServices);
+      
+      // Calcular selectedServices como la unión de basicServices y additionalServices
+      const allServices = [
+        ...(profileDetails.basicServices || []),
+        ...(profileDetails.additionalServices || [])
+      ];
+      const uniqueServices = [...new Set(allServices)]; // Eliminar duplicados
+      
+      form.setValue('selectedServices', uniqueServices);
       form.setValue('basicServices', profileDetails.basicServices || []);
       form.setValue('additionalServices', profileDetails.additionalServices || []);
+
+      // Debug: Log services data being set
+      console.log('🔍 DEBUG - Services data being set:', {
+        selectedServices: uniqueServices,
+        basicServices: profileDetails.basicServices || [],
+        additionalServices: profileDetails.additionalServices || [],
+        profileDetailsBasicServices: profileDetails.basicServices,
+        profileDetailsAdditionalServices: profileDetails.additionalServices,
+        allServicesBeforeUnique: allServices,
+      });
 
       // Step 3 - Detalles y contacto
       form.setValue('contact.number', formData.contact.number);
@@ -193,13 +340,30 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       form.setValue('contact.telegram', formData.contact.telegram);
       form.setValue('age', formData.age);
       form.setValue('skinColor', formData.skinColor);
-      form.setValue('sexuality', formData.sexuality);
       form.setValue('eyeColor', formData.eyeColor);
       form.setValue('hairColor', formData.hairColor);
       form.setValue('bodyType', formData.bodyType);
       form.setValue('height', formData.height);
       form.setValue('rates', formData.rates);
       form.setValue('availability', formData.availability);
+
+      // Debug: Log Step 3 data being set
+      console.log('🔍 DEBUG - Step 3 data being set:', {
+        contactNumber: formData.contact.number,
+        contactWhatsapp: formData.contact.whatsapp,
+        contactTelegram: formData.contact.telegram,
+        age: formData.age,
+        skinColor: formData.skinColor,
+        sexuality: formData.sexuality,
+        eyeColor: formData.eyeColor,
+        hairColor: formData.hairColor,
+        bodyType: formData.bodyType,
+        height: formData.height,
+        rates: formData.rates,
+        ratesLength: formData.rates?.length || 0,
+        availability: formData.availability,
+        availabilityLength: formData.availability?.length || 0,
+      });
 
       // Step 4 - Multimedia
       form.setValue('photos', formData.photos);
@@ -215,7 +379,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
 
       // Valores establecidos en el formulario
     }
-  }, [profileDetails, form, attributeGroups]);
+  }, [profileDetails, attributeGroups]);
 
   const acceptTerms = form.watch('acceptTerms');
 
@@ -252,8 +416,32 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
           const step2Data = {
             description: form.getValues('description') || '',
             selectedServices: form.getValues('selectedServices') || [],
+            basicServices: form.getValues('basicServices') || [],
+            additionalServices: form.getValues('additionalServices') || [],
           };
-          return step2Schema.safeParse(step2Data);
+          
+          // Debug: Log Step 2 validation data
+          console.log('🔍 DEBUG Step 2 - Validation Data:', {
+            description: step2Data.description,
+            descriptionLength: step2Data.description.length,
+            selectedServices: step2Data.selectedServices,
+            selectedServicesCount: step2Data.selectedServices.length,
+            basicServices: step2Data.basicServices,
+            basicServicesCount: step2Data.basicServices.length,
+            additionalServices: step2Data.additionalServices,
+            additionalServicesCount: step2Data.additionalServices.length,
+          });
+          
+          const validation = step2Schema.safeParse(step2Data);
+          
+          // Debug: Log validation result
+          console.log('🔍 DEBUG Step 2 - Validation Result:', {
+            success: validation.success,
+            errors: validation.success ? null : validation.error.issues,
+            data: validation.success ? validation.data : null,
+          });
+          
+          return validation;
         }
 
         case 3: {
@@ -278,26 +466,43 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
             rates: form.getValues('rates') || [],
             availability: form.getValues('availability') || [],
           };
-          return step3Schema.safeParse(step3Data);
+
+          // Debug: Log Step 3 validation data
+          console.log('🔍 DEBUG Step 3 - Validation Data:', {
+            contact: step3Data.contact,
+            age: step3Data.age,
+            skinColor: step3Data.skinColor,
+            sexuality: step3Data.sexuality,
+            eyeColor: step3Data.eyeColor,
+            hairColor: step3Data.hairColor,
+            bodyType: step3Data.bodyType,
+            height: step3Data.height,
+            rates: step3Data.rates,
+            ratesCount: step3Data.rates.length,
+            availability: step3Data.availability,
+            availabilityCount: step3Data.availability.length,
+          });
+
+          const validation = step3Schema.safeParse(step3Data);
+
+          // Debug: Log validation result
+          console.log('🔍 DEBUG Step 3 - Validation Result:', {
+            success: validation.success,
+            errors: validation.success ? null : validation.error.issues,
+            data: validation.success ? validation.data : null,
+          });
+
+          return validation;
         }
 
         case 4: {
-          // Cambio: Ahora validamos plan selection en paso 4
+          // Validamos multimedia en paso 4 (sin plan selection)
           const step4Data = {
-            selectedUpgrades: form.getValues('selectedUpgrades') || [],
-            acceptTerms: form.getValues('acceptTerms') || false,
-          };
-          return step5Schema.safeParse(step4Data); // Usamos step5Schema para validar plan selection
-        }
-
-        case 5: {
-          // Cambio: Ahora validamos multimedia en paso 5
-          const step5Data = {
             photos: form.getValues('photos') || [],
             videos: form.getValues('videos') || [],
             audios: form.getValues('audios') || [],
           };
-          return step4Schema.safeParse(step5Data); // Usamos step4Schema para validar multimedia
+          return step4Schema.safeParse(step4Data);
         }
 
         default:
@@ -347,6 +552,14 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       features.push({
         group_id: groupMap.skin._id,
         value: [formData.skinColor],
+      });
+    }
+
+    // Body type feature
+    if (formData.bodyType && groupMap.body?._id) {
+      features.push({
+        group_id: groupMap.body._id,
+        value: [formData.bodyType],
       });
     }
 
@@ -419,10 +632,16 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
   };
 
   const handleNext = () => {
+    console.log('🔍 DEBUG - handleNext called for step:', currentStep);
+    
     const validation = validateStep(currentStep);
+    console.log('🔍 DEBUG - Validation result:', validation);
+    
     if (validation.success) {
-      setCurrentStep((prev) => Math.min(prev + 1, steps.length));
+      console.log('✅ DEBUG - Validation successful, moving to next step');
+      setCurrentStep((prev) => Math.min(prev + 1, editSteps.length));
     } else {
+      console.log('❌ DEBUG - Validation failed:', validation.error?.issues);
       // Validation errors
       toast.error('Por favor completa todos los campos requeridos');
     }
@@ -544,16 +763,13 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         return (
           <Step3Details
             skinGroup={groupMap.skin}
-            sexualityGroup={groupMap.sex}
             eyeGroup={groupMap.eyes}
             hairGroup={groupMap.hair}
             bodyGroup={groupMap.body}
           />
         );
       case 4:
-        return <Step4Plan />; // Cambio: Plan selection ahora es paso 4
-      case 5:
-        return <Step5Multimedia />; // Cambio: Multimedia ahora es paso 5
+        return <Step5Multimedia />; // Multimedia ahora es paso 4
 
       default:
         return null;
@@ -587,111 +803,102 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
 
   return (
     <FormProvider form={form} currentStep={currentStep}>
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-pink-900/20">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
-            <Link href="/cuenta">
-              <Button
-                variant="ghost"
-                className="mb-4 hover:bg-white/50 dark:hover:bg-gray-800/50"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver a mis perfiles
-              </Button>
-            </Link>
-            <div className="text-center">
-              <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-                Editar Perfil
-              </h1>
-              <p className="text-muted-foreground">
-                Actualiza la información de tu perfil
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            {/* Sidebar */}
+      <div className="min-h-screen mb-20 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Sidebar - Guidelines */}
             <div className="lg:col-span-1">
-              <div className="sticky top-8">
+              <div className="sticky top-24 space-y-4">
                 <SidebarContent currentStep={currentStep} />
               </div>
             </div>
 
             {/* Main Content */}
             <div className="lg:col-span-3">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                {/* Step Header */}
-                <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Badge className="bg-white/20 text-white">
-                          Paso {currentStep} de {steps.length}
-                        </Badge>
-                        {currentStep === steps.length && (
-                          <Badge className="bg-green-500 text-white">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Listo para actualizar
-                          </Badge>
-                        )}
-                      </div>
-                      <h2 className="text-2xl font-bold">
-                        {steps[currentStep - 1]?.title}
-                      </h2>
-                      <p className="text-white/80">
-                        {steps[currentStep - 1]?.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+              <div className="bg-background rounded-xl shadow-sm border border-border p-8">
+                {renderStepContent()}
 
-                {/* Step Content */}
-                <div className="p-6">{renderStepContent()}</div>
-
-                {/* Navigation */}
-                <div className="border-t border-gray-200 dark:border-gray-700 p-6">
-                  <div className="flex justify-between">
+                {/* Navigation Buttons */}
+                <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
+                  {currentStep === 1 ? (
+                    <Link href="/cuenta">
+                      <Button
+                        variant="outline"
+                        className="hover:bg-muted/50 transition-colors duration-200"
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Volver
+                      </Button>
+                    </Link>
+                  ) : (
                     <Button
                       variant="outline"
                       onClick={handlePrevious}
                       disabled={currentStep === 1}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                      className="hover:bg-muted/50 transition-colors duration-200"
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" />
-                      Anterior
+                      Atrás
                     </Button>
+                  )}
 
-                    {currentStep < steps.length ? (
-                      <Button
-                        onClick={handleNext}
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                      >
-                        Siguiente
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={handleSubmit}
-                        disabled={!acceptTerms || uploading}
-                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {uploading ? (
-                          <>
-                            <Loader className="h-4 w-4 mr-2 animate-spin" />
-                            Actualizando...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Actualizar Perfil
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </div>
+                  {currentStep === editSteps.length ? (
+                    <Button
+                      className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold px-8"
+                      disabled={uploading}
+                      onClick={handleSubmit}
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader className="h-4 w-4 mr-2 animate-spin" />
+                          Actualizando perfil...
+                        </>
+                      ) : (
+                        'Actualizar perfil'
+                      )}
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleNext}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                    >
+                      próximo
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress Steps */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-center space-x-4">
+            {editSteps.map((step) => (
+              <div
+                key={step.id}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 ${currentStep === step.id
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                  : currentStep > step.id
+                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
+                    : 'bg-muted text-muted-foreground'
+                  }`}
+              >
+                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+                  {currentStep > step.id ? (
+                    <CheckCircle className="h-3 w-3" />
+                  ) : (
+                    step.id
+                  )}
+                </div>
+                <span className="hidden sm:block font-medium">
+                  {step.title}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>

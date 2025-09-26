@@ -1,6 +1,11 @@
 import { Blog, BlogFilters, CreateBlogData, UpdateBlogData, BlogsResponse } from '../hooks/use-blogs';
+import { API_URL } from '@/lib/config';
 
+<<<<<<< HEAD
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+=======
+const API_BASE_URL = API_URL;
+>>>>>>> 840af42 (feat(account): add mobile-friendly horizontal menu and menu content components)
 
 interface ApiResponse<T> {
   success: boolean;

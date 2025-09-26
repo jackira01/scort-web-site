@@ -1,4 +1,5 @@
 import axios from '@/lib/axios';
+import { API_URL } from '@/lib/config';
 import type {
   ICoupon,
   CreateCouponInput,
@@ -11,7 +12,7 @@ import type {
 } from '@/types/coupon.types';
 
 class CouponService {
-  private readonly baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/coupons`;
+  private readonly baseUrl = `${API_URL}/api/coupons`;
 
   /**
    * Crear nuevo cupón (Admin)

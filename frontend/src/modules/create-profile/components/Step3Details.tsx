@@ -12,7 +12,6 @@ import { RatesManager } from './RatesManager';
 
 interface Step3DetailsProps {
   skinGroup: AttributeGroup;
-  sexualityGroup: AttributeGroup;
   eyeGroup: AttributeGroup;
   hairGroup: AttributeGroup;
   bodyGroup: AttributeGroup;
@@ -20,14 +19,13 @@ interface Step3DetailsProps {
 
 export function Step3Details({
   skinGroup,
-  sexualityGroup,
   eyeGroup,
   hairGroup,
   bodyGroup,
 }: Step3DetailsProps) {
   const { control, watch, setValue, formState: { errors } } = useFormContext();
   const formData = watch();
-  
+
   const handleRatesChange = (rates: Rate[]) => {
     setValue('rates', rates);
   };
@@ -68,7 +66,7 @@ export function Step3Details({
         {/* Contact Details */}
         <div className="space-y-6">
           <h3 className="text-lg font-semibold text-foreground">Donde contactarme</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Número de contacto */}
             <div>
@@ -88,9 +86,8 @@ export function Step3Details({
                       placeholder="3001234567"
                       value={field.value}
                       onChange={field.onChange}
-                      className={`rounded-l-none ${
-                        errors.contact?.number ? 'border-red-500 focus:border-red-500' : ''
-                      }`}
+                      className={`rounded-l-none ${errors.contact?.number ? 'border-red-500 focus:border-red-500' : ''
+                        }`}
                     />
                   )}
                 />
@@ -120,9 +117,8 @@ export function Step3Details({
                       placeholder="3001234567"
                       value={field.value || ''}
                       onChange={field.onChange}
-                      className={`rounded-l-none ${
-                        errors.contact?.whatsapp ? 'border-red-500 focus:border-red-500' : ''
-                      }`}
+                      className={`rounded-l-none ${errors.contact?.whatsapp ? 'border-red-500 focus:border-red-500' : ''
+                        }`}
                     />
                   )}
                 />
@@ -152,9 +148,8 @@ export function Step3Details({
                       placeholder="3001234567"
                       value={field.value || ''}
                       onChange={field.onChange}
-                      className={`rounded-l-none ${
-                        errors.contact?.telegram ? 'border-red-500 focus:border-red-500' : ''
-                      }`}
+                      className={`rounded-l-none ${errors.contact?.telegram ? 'border-red-500 focus:border-red-500' : ''
+                        }`}
                     />
                   )}
                 />
@@ -184,68 +179,14 @@ export function Step3Details({
                   placeholder="23"
                   value={field.value}
                   onChange={field.onChange}
-                  className={`mt-2 ${
-                    errors.age ? 'border-red-500 focus:border-red-500' : ''
-                  }`}
+                  className={`mt-2 ${errors.age ? 'border-red-500 focus:border-red-500' : ''
+                    }`}
                 />
               )}
             />
             {errors.age && (
               <p className="text-red-500 text-sm mt-1">
                 {errors.age.message}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Physical Characteristics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <Label className="text-foreground">Piel <span className="text-red-500">*</span></Label>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {skinGroup.variants
-                  .filter((v) => v.active)
-                  .map((variant) => (
-                    <Button
-                      key={variant._id}
-                      variant={
-                        formData.skinColor === variant.value ? 'default' : 'outline'
-                      }
-                      size="sm"
-                      onClick={() => setValue('skinColor', variant.value)}
-                    >
-                      {variant.label || variant.value}
-                    </Button>
-                  ))}
-            </div>
-            {errors.skinColor && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.skinColor.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <Label className="text-foreground">Sexo <span className="text-red-500">*</span></Label>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {sexualityGroup.variants
-                  .filter((v) => v.active)
-                  .map((variant) => (
-                    <Button
-                      key={variant._id}
-                      variant={
-                        formData.sexuality === variant.value ? 'default' : 'outline'
-                      }
-                      size="sm"
-                      onClick={() => setValue('sexuality', variant.value)}
-                    >
-                      {variant.label || variant.value}
-                    </Button>
-                  ))}
-            </div>
-            {errors.sexuality && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.sexuality.message}
               </p>
             )}
           </div>
@@ -278,6 +219,32 @@ export function Step3Details({
               {errors.eyeColor && (
                 <p className="text-red-500 text-sm mt-1">
                   {errors.eyeColor.message}
+                </p>
+              )}
+            </div>
+
+            {/* Physical Characteristics */}
+            <div>
+              <Label className="text-foreground">Piel <span className="text-red-500">*</span></Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {skinGroup.variants
+                  .filter((v) => v.active)
+                  .map((variant) => (
+                    <Button
+                      key={variant._id}
+                      variant={
+                        formData.skinColor === variant.value ? 'default' : 'outline'
+                      }
+                      size="sm"
+                      onClick={() => setValue('skinColor', variant.value)}
+                    >
+                      {variant.label || variant.value}
+                    </Button>
+                  ))}
+              </div>
+              {errors.skinColor && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.skinColor.message}
                 </p>
               )}
             </div>
@@ -339,9 +306,8 @@ export function Step3Details({
                 placeholder="173 cm"
                 value={formData.height}
                 onChange={(e) => setValue('height', e.target.value)}
-                className={`mt-2 ${
-                  errors.height ? 'border-red-500 focus:border-red-500' : ''
-                }`}
+                className={`mt-2 ${errors.height ? 'border-red-500 focus:border-red-500' : ''
+                  }`}
               />
               {errors.height && (
                 <p className="text-red-500 text-sm mt-1">

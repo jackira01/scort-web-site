@@ -68,8 +68,8 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
   return (
     <Link href={`/perfil/${profile._id}`} className="block">
       <Card className={`group hover:shadow-xl transition-all duration-300 overflow-hidden relative ${profile.hasDestacadoUpgrade
-          ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30'
-          : 'bg-card border-border'
+        ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30'
+        : 'bg-card border-border'
         }`}>
         {/* Layout responsive: horizontal en mobile, vertical en desktop */}
         <div className="flex flex-row sm:flex-col">
@@ -81,8 +81,8 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
               src={profile.media.gallery?.[0] || '/placeholder.svg'}
               alt={profile.name}
               className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${viewMode === 'grid'
-                  ? 'sm:h-48 md:h-56 lg:h-64'
-                  : 'sm:h-40 md:h-48'
+                ? 'sm:h-48 md:h-56 lg:h-64'
+                : 'sm:h-40 md:h-48'
                 }`}
             />
 
@@ -144,12 +144,11 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
 
             {/* Botón visible en mobile, oculto en desktop (aparece en hover) */}
             <div className="mt-2 sm:hidden">
-              <Button 
-                className={`w-full text-white text-xs py-1 ${
-                  profile.hasDestacadoUpgrade
+              <Button
+                className={`w-full text-white text-xs py-1 ${profile.hasDestacadoUpgrade
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
                     : 'bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600'
-                }`}
+                  }`}
               >
                 Ver perfil
               </Button>
@@ -177,12 +176,11 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
               <p className="text-white/90 text-xs lg:text-sm mb-4 line-clamp-3">
                 {profile.description}
               </p>
-              <Button 
-                className={`w-full text-white text-sm ${
-                  profile.hasDestacadoUpgrade
+              <Button
+                className={`w-full text-white text-sm ${profile.hasDestacadoUpgrade
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
                     : 'bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600'
-                }`}
+                  }`}
               >
                 Ver perfil
               </Button>

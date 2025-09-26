@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Star, Plus } from 'lucide-react';
-import { useState } from 'react';
 import type { AttributeGroup } from '../types';
 
 interface Step2DescriptionProps {
@@ -28,8 +27,6 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
   const basicServices = watch('basicServices') || [];
   const additionalServices = watch('additionalServices') || [];
 
-  const [showClassification, setShowClassification] = useState(false);
-
   const handleServiceToggle = (serviceValue: string) => {
     const currentServices = getValues('selectedServices') || [];
     const updatedServices = currentServices.includes(serviceValue)
@@ -44,6 +41,12 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
 
       setValue('basicServices', currentBasic.filter((s: string) => s !== serviceValue));
       setValue('additionalServices', currentAdditional.filter((s: string) => s !== serviceValue));
+    } else {
+      // Si se selecciona un servicio, automáticamente asignarlo como básico por defecto
+      const currentBasic = getValues('basicServices') || [];
+      if (!currentBasic.includes(serviceValue)) {
+        setValue('basicServices', [...currentBasic, serviceValue]);
+      }
     }
   };
 
@@ -124,18 +127,6 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <Label className="text-sm font-medium">Servicios *</Label>
-            {selectedServices.length > 0 && (
-              <Button
-                type="button"
-                variant={showClassification ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowClassification(!showClassification)}
-                className="text-xs"
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                {showClassification ? 'Ocultar clasificación' : 'Seleccionar servicios adicionales/básicos'}
-              </Button>
-            )}
           </div>
 
           {serviceGroup?.variants && (
@@ -170,8 +161,8 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
                         )}
                       </div>
 
-                      {/* Clasificación de servicios */}
-                      {isSelected && showClassification && (
+                      {/* Clasificación de servicios - Mostrar automáticamente cuando se selecciona */}
+                      {isSelected && (
                         <div className="ml-6 flex gap-2">
                           <Button
                             type="button"
@@ -209,7 +200,7 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
           )}
 
           {/* Resumen de clasificación */}
-          {showClassification && (basicServices.length > 0 || additionalServices.length > 0) && (
+          {(basicServices.length > 0 || additionalServices.length > 0) && (
             <div className="mt-4 p-4 bg-muted/30 rounded-lg space-y-3">
               <h4 className="text-sm font-medium">Resumen de clasificación:</h4>
 

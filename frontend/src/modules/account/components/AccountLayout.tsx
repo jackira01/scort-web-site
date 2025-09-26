@@ -1,21 +1,30 @@
 'use client';
 
 import { AlertTriangle } from 'lucide-react';
-import { useState } from 'react';
-import toast from 'react-hot-toast';
-import Loader from '@/components/Loader';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useUser } from '@/hooks/use-user';
 import { useUserProfiles } from '@/hooks/use-user-profiles';
-import AccountContent from '@/modules/account/components/AccountContent';
-import AccountProgressBar from '@/modules/account/components/AccountProgressBar';
-import AccountSidebar from '@/modules/account/components/AccountSidebar';
-import { useAccountSection } from '@/modules/account/hooks/useAccountSection';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import AccountMenuContent from './AccountMenuContent';
+import AccountHorizontalMenu from './AccountHorizontalMenu';
+import AccountContent from './AccountContent';
+import AccountProgressBar from './AccountProgressBar';
+import { useAccountSection } from '../hooks/useAccountSection';
 import CouponModal from '@/components/modals/CouponModal';
 import CouponConfirmationModal from '@/components/modals/CouponConfirmationModal';
 import PlanSelectorModal from '@/components/modals/PlanSelectorModal';
 import { couponService } from '@/services/coupon.service';
 import { ICoupon } from '@/types/coupon.types';
+<<<<<<< HEAD
+=======
+import { API_URL } from '@/lib/config';
+import Loader from '@/components/Loader';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+>>>>>>> 840af42 (feat(account): add mobile-friendly horizontal menu and menu content components)
 
 export default function AccountLayout() {
     const { activeSection, setActiveSection } = useAccountSection();
@@ -33,11 +42,25 @@ export default function AccountLayout() {
     const [selectedPlanPrice, setSelectedPlanPrice] = useState<number>(0);
     const [selectedVariantDays, setSelectedVariantDays] = useState<number>(30);
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Detectar si es vista móvil
+    useEffect(() => {
+        const checkIsMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+
+        checkIsMobile();
+        window.addEventListener('resize', checkIsMobile);
+
+        return () => window.removeEventListener('resize', checkIsMobile);
+    }, []);
 
     const handleCouponRedeem = async (couponCode: string) => {
         try {
             const result = await couponService.validateCouponForFrontend(couponCode);
-            
+
             if (result.success && result.data) {
                 setValidatedCoupon(result.data);
                 setCouponModalOpen(true);
@@ -53,7 +76,7 @@ export default function AccountLayout() {
     const handleApplyCoupon = (profileId: string) => {
         setSelectedProfileId(profileId);
         setCouponModalOpen(false);
-        
+
         // Si el cupón es de tipo porcentual o monto fijo, mostrar selector de planes
         if (validatedCoupon && (validatedCoupon.type === 'percentage' || validatedCoupon.type === 'fixed_amount')) {
             setPlanSelectorModalOpen(true);
@@ -96,7 +119,7 @@ export default function AccountLayout() {
                 // Para cupones de asignación de plan, usar el plan actual del perfil
                 currentPlan = selectedProfile.planAssignment?.planCode || 'AMATISTA';
                 planDays = selectedProfile.planAssignment?.variantDays || 30;
-                
+
                 // Buscar el precio del plan actual (esto debería venir de una API de planes)
                 // Por ahora usamos valores por defecto basados en el plan
                 const planPrices: { [key: string]: number } = {
@@ -150,7 +173,22 @@ export default function AccountLayout() {
             });
 
             if (!couponApplicationResponse.ok) {
-                const errorData = await couponApplicationResponse.json();
+                let errorData;
+                const responseText = await couponApplicationResponse.text();
+
+                try {
+                    errorData = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('❌ [ACCOUNT LAYOUT] Error al parsear respuesta del servidor:', {
+                        responseText: responseText ? responseText.substring(0, 200) : 'Sin contenido',
+                        parseError: parseError instanceof Error ? parseError.message : String(parseError),
+                        status: couponApplicationResponse.status,
+                        statusText: couponApplicationResponse.statusText
+                    });
+
+                    throw new Error(`Error del servidor (${couponApplicationResponse.status}): ${responseText ? responseText.substring(0, 100) : 'Sin contenido'}`);
+                }
+
                 console.error('❌ [ACCOUNT LAYOUT] Error al aplicar cupón:', {
                     error: errorData,
                     couponCode: validatedCoupon.code,
@@ -159,12 +197,26 @@ export default function AccountLayout() {
                     status: couponApplicationResponse.status,
                     statusText: couponApplicationResponse.statusText
                 });
-                
+
                 // Mostrar mensaje de error genérico ya que se eliminó la restricción de planes
                 throw new Error(errorData.message || 'Error al aplicar el cupón');
             }
 
-            const couponResult = await couponApplicationResponse.json();
+            let couponResult;
+            const responseText = await couponApplicationResponse.text();
+
+            try {
+                couponResult = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('❌ [ACCOUNT LAYOUT] Error al parsear respuesta exitosa del servidor:', {
+                    responseText: responseText ? responseText.substring(0, 200) : 'Sin contenido',
+                    parseError: parseError instanceof Error ? parseError.message : String(parseError),
+                    status: couponApplicationResponse.status,
+                    statusText: couponApplicationResponse.statusText
+                });
+
+                throw new Error('Error al procesar la respuesta del servidor');
+            }
             console.log('✅ [ACCOUNT LAYOUT] Cupón aplicado exitosamente:', {
                 couponResult,
                 savings: couponResult.data?.originalPrice - couponResult.data?.finalPrice,
@@ -174,7 +226,7 @@ export default function AccountLayout() {
             const { originalPrice: calculatedOriginalPrice, finalPrice, discount, discountPercentage } = couponResult.data;
 
             // Crear factura con el cupón aplicado y el precio final calculado
-            const invoiceResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/invoices`, {
+            const invoiceResponse = await fetch(`${API_URL}/api/invoices`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -190,15 +242,44 @@ export default function AccountLayout() {
             });
 
             if (!invoiceResponse.ok) {
-                const errorData = await invoiceResponse.json();
+                let errorData;
+                const responseText = await invoiceResponse.text();
+
+                try {
+                    errorData = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('❌ [ACCOUNT LAYOUT] Error al parsear respuesta de factura:', {
+                        responseText: responseText ? responseText.substring(0, 200) : 'Sin contenido',
+                        parseError: parseError instanceof Error ? parseError.message : String(parseError),
+                        status: invoiceResponse.status,
+                        statusText: invoiceResponse.statusText
+                    });
+
+                    throw new Error(`Error al crear factura (${invoiceResponse.status}): ${responseText ? responseText.substring(0, 100) : 'Sin contenido'}`);
+                }
+
                 throw new Error(errorData.message || 'Error al crear la factura');
             }
 
-            const invoiceData = await invoiceResponse.json();
+            let invoiceData;
+            const invoiceResponseText = await invoiceResponse.text();
+
+            try {
+                invoiceData = JSON.parse(invoiceResponseText);
+            } catch (parseError) {
+                console.error('❌ [ACCOUNT LAYOUT] Error al parsear respuesta exitosa de factura:', {
+                    responseText: invoiceResponseText ? invoiceResponseText.substring(0, 200) : 'Sin contenido',
+                    parseError: parseError instanceof Error ? parseError.message : String(parseError),
+                    status: invoiceResponse.status,
+                    statusText: invoiceResponse.statusText
+                });
+
+                throw new Error('Error al procesar la respuesta de factura del servidor');
+            }
             const invoice = invoiceData.data;
 
             // Generar datos de WhatsApp para la factura
-            const whatsappResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/invoices/${invoice._id}/whatsapp-data`, {
+            const whatsappResponse = await fetch(`${API_URL}/api/invoices/${invoice._id}/whatsapp-data`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -206,37 +287,66 @@ export default function AccountLayout() {
             });
 
             if (!whatsappResponse.ok) {
-                const errorData = await whatsappResponse.json();
+                let errorData;
+                const responseText = await whatsappResponse.text();
+
+                try {
+                    errorData = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('❌ [ACCOUNT LAYOUT] Error al parsear respuesta de WhatsApp:', {
+                        responseText: responseText ? responseText.substring(0, 200) : 'Sin contenido',
+                        parseError: parseError instanceof Error ? parseError.message : String(parseError),
+                        status: whatsappResponse.status,
+                        statusText: whatsappResponse.statusText
+                    });
+
+                    throw new Error(`Error al generar WhatsApp (${whatsappResponse.status}): ${responseText ? responseText.substring(0, 100) : 'Sin contenido'}`);
+                }
+
                 throw new Error(errorData.message || 'Error al generar mensaje de WhatsApp');
             }
 
-            const whatsappData = await whatsappResponse.json();
-            
+            let whatsappData;
+            const whatsappResponseText = await whatsappResponse.text();
+
+            try {
+                whatsappData = JSON.parse(whatsappResponseText);
+            } catch (parseError) {
+                console.error('❌ [ACCOUNT LAYOUT] Error al parsear respuesta exitosa de WhatsApp:', {
+                    responseText: whatsappResponseText ? whatsappResponseText.substring(0, 200) : 'Sin contenido',
+                    parseError: parseError instanceof Error ? parseError.message : String(parseError),
+                    status: whatsappResponse.status,
+                    statusText: whatsappResponse.statusText
+                });
+
+                throw new Error('Error al procesar la respuesta de WhatsApp del servidor');
+            }
+
             // Redirigir a WhatsApp con el mensaje generado
             if (whatsappData.success && whatsappData.data.whatsappUrl) {
                 window.open(whatsappData.data.whatsappUrl, '_blank');
-                
+
                 // Mostrar mensaje de éxito con detalles del descuento
-                const discountTypeText = validatedCoupon.type === 'percentage' 
+                const discountTypeText = validatedCoupon.type === 'percentage'
                     ? `${validatedCoupon.value}% de descuento`
                     : validatedCoupon.type === 'fixed_amount'
-                    ? `Precio final: $${finalPrice.toLocaleString()}`
-                    : 'Asignación de plan gratuito';
-                
+                        ? `Precio final: $${finalPrice.toLocaleString()}`
+                        : 'Asignación de plan gratuito';
+
                 toast.success(
                     `Factura creada exitosamente. Cupón ${validatedCoupon.code} aplicado (${discountTypeText}). Precio original: $${calculatedOriginalPrice.toLocaleString()}, Precio final: $${finalPrice.toLocaleString()}. Redirigiendo a WhatsApp...`
                 );
             } else {
                 throw new Error('No se pudo generar el enlace de WhatsApp');
             }
-            
+
             // Cerrar modales y limpiar estados
             setConfirmationModalOpen(false);
             setValidatedCoupon(null);
             setSelectedProfileId('');
             setSelectedPlanCode('');
             setSelectedPlanPrice(0);
-            
+
         } catch (error: any) {
             console.error('Error al procesar aplicación del cupón:', error);
             toast.error(error.message || 'Error al procesar la aplicación del cupón');
@@ -268,8 +378,8 @@ export default function AccountLayout() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
-            <AccountProgressBar percentage={accountCompleteness} />
+        <div className="min-h-screen mb-20 md:mb-0 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
+            {/* <AccountProgressBar percentage={accountCompleteness} /> */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Alertas de verificación */}
                 <div className="mb-6 space-y-4">
@@ -286,16 +396,50 @@ export default function AccountLayout() {
                 </div>
 
                 <div className="flex gap-8">
-                    <AccountSidebar
-                        activeSection={activeSection}
-                        setActiveSection={setActiveSection}
-                        onCouponRedeem={handleCouponRedeem}
-                    />
+                    {/* Sidebar para desktop */}
+                    {!isMobile && (
+                        <AccountMenuContent
+                            activeSection={activeSection}
+                            setActiveSection={setActiveSection}
+                            onCouponRedeem={handleCouponRedeem}
+                            isVisible={true}
+                            onClose={() => { }}
+                            isMobile={false}
+                        />
+                    )}
+
+                    {/* Contenido principal */}
                     <div className="flex-1">
                         <AccountContent activeSection={activeSection} />
                     </div>
                 </div>
             </div>
+
+            {/* Menu horizontal para móvil */}
+            <AnimatePresence>
+                {isMobile && !isMenuOpen && (
+                    <AccountHorizontalMenu
+                        activeSection={activeSection}
+                        setActiveSection={setActiveSection}
+                        onToggleMenu={() => setIsMenuOpen(true)}
+                        isVisible={true}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Menu content para móvil */}
+            <AnimatePresence>
+                {isMobile && isMenuOpen && (
+                    <AccountMenuContent
+                        activeSection={activeSection}
+                        setActiveSection={setActiveSection}
+                        onCouponRedeem={handleCouponRedeem}
+                        isVisible={isMenuOpen}
+                        onClose={() => setIsMenuOpen(false)}
+                        isMobile={true}
+                    />
+                )}
+            </AnimatePresence>
 
             {/* Modal de selección de perfil para cupón */}
             <CouponModal

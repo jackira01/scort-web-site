@@ -27,6 +27,8 @@ interface FormProviderProps {
 }
 
 export function FormProvider({ children, form, currentStep }: FormProviderProps) {
+  console.log('🏗️ [DEBUG] FormProvider renderizado - currentStep:', currentStep);
+  
   return (
     <FormContext.Provider value={{ form, currentStep }}>
       {children}

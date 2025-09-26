@@ -41,10 +41,6 @@ export const step3Schema = z.object({
     .string()
     .min(1, 'Debes seleccionar el color de piel'),
 
-  sexuality: z
-    .string()
-    .min(1, 'Debes seleccionar la orientación sexual'),
-
   eyeColor: z
     .string()
     .min(1, 'Debes seleccionar el color de ojos'),
@@ -55,7 +51,8 @@ export const step3Schema = z.object({
 
   bodyType: z
     .string()
-    .min(1, 'Debes seleccionar el tipo de cuerpo'),
+    .optional()
+    .refine((val) => !val || val.length > 0, 'Debes seleccionar el tipo de cuerpo'),
 
   height: z
     .union([

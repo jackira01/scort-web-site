@@ -45,7 +45,10 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+<<<<<<< HEAD
 
+=======
+>>>>>>> 840af42 (feat(account): add mobile-friendly horizontal menu and menu content components)
               <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
                 {profile.hasDestacadoUpgrade && (
                   <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white animate-pulse text-xs">
@@ -98,12 +101,11 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                 </div>
               </div>
               <Link href={`/perfil/${profile._id}`} className="mt-2 sm:mt-3">
-                <Button 
-                  className={`w-full text-white transition-all duration-300 hover:scale-105 hover:shadow-lg text-xs sm:text-sm py-1 sm:py-2 ${
-                    profile.hasDestacadoUpgrade
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/25'
-                      : 'bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 hover:shadow-slate-500/25'
-                  }`}
+                <Button
+                  className={`w-full text-white transition-all duration-300 hover:scale-105 hover:shadow-lg text-xs sm:text-sm py-1 sm:py-2 ${profile.hasDestacadoUpgrade
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/25'
+                    : 'bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 hover:shadow-slate-500/25'
+                    }`}
                 >
                   Ver perfil
                 </Button>

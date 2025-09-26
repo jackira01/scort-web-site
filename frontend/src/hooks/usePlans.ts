@@ -13,8 +13,13 @@ import {
   UpgradesFilters,
   PaginationParams
 } from '@/types/plans';
+import { API_URL } from '@/lib/config';
 
+<<<<<<< HEAD
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+=======
+const API_BASE_URL = API_URL;
+>>>>>>> 840af42 (feat(account): add mobile-friendly horizontal menu and menu content components)
 
 // Función para transformar datos del backend al formato del frontend
 const transformBackendPlanToFrontend = (backendPlan: any): Plan => {
