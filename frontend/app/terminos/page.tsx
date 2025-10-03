@@ -1,5 +1,6 @@
 'use client';
 
+import PublicContentPage from '@/components/public/PublicContentPage';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -130,7 +131,7 @@ const sections = [
   },
 ];
 
-export default function TermsPage() {
+const TermsPageFallback = () => {
   const [activeSection, setActiveSection] = useState('general');
 
   return (
@@ -256,5 +257,17 @@ export default function TermsPage() {
         </div>
       </div>
     </div>
+  );
+};
+
+export default function TermsPage() {
+  return (
+    <PublicContentPage 
+      slug="terminos"
+      fallbackContent={<TermsPageFallback />}
+      showBackButton={true}
+      backButtonText="Volver al inicio"
+      backButtonHref="/"
+    />
   );
 }

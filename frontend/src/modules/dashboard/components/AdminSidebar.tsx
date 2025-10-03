@@ -29,11 +29,9 @@ export function AdminSidebar({
 
     const handleItemClick = (itemId: string) => {
         setActiveSection(itemId);
-        // En móvil, cerrar el sidebar después de seleccionar
-        if (window.innerWidth < 1024) {
-            setIsOpen(false);
-            onOverlayChange?.(false);
-        }
+        // Cerrar el sidebar después de seleccionar cualquier item
+        setIsOpen(false);
+        onOverlayChange?.(false);
     };
 
     return (

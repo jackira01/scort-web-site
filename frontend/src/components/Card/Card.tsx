@@ -42,13 +42,9 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                 height={300}
                 src={profile.media?.gallery?.[0] || '/placeholder.svg'}
                 alt={profile.name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 "
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-<<<<<<< HEAD
-
-=======
->>>>>>> 840af42 (feat(account): add mobile-friendly horizontal menu and menu content components)
               <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
                 {profile.hasDestacadoUpgrade && (
                   <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white animate-pulse text-xs">

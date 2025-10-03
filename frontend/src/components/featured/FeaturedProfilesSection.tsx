@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import type { ProfileCardData } from '@/types/profile.types';
 import { ProfileCard } from '@/modules/catalogs/components/ProfileCard';
 import { useFeaturedSponsoredProfiles } from '@/hooks/use-sponsored-profiles';
 
@@ -18,13 +17,10 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
   // Usar el hook personalizado para perfiles patrocinados
   const {
     profiles: featuredProfiles,
-    pagination,
     isLoading,
     isError,
     error,
     isFetching,
-    totalCount,
-    refetch,
     prefetchNextPage,
   } = useFeaturedSponsoredProfiles(1, 10);
 
@@ -73,12 +69,12 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
 
   if (isLoading) {
     return (
-      <div className={`border border-gray-200 rounded-lg p-6 ${className}`}>
+      <div className={`${className}`}>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {Array.from({ length: visibleCount }).map((_, index) => (
-            <div key={index} className="animate-pulse">
+            <div key={index} className="animate-pulse h-72 w-48">
               <Card className="overflow-hidden">
-                <div className="aspect-[4/3] bg-gray-200" />
+                <div className="aspect-[4/3] bg-gray-200 h-72 w-48" />
               </Card>
             </div>
           ))}
@@ -92,7 +88,7 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
   }
 
   return (
-    <div className={`border border-gray-200 dark:border-gray-700 rounded-lg p-6 ${className}`}>
+    <div className={`${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         {/* Indicador de carga en tiempo real */}
@@ -139,13 +135,14 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
           {featuredProfiles.map((profile) => (
             <div
               key={profile._id}
-              className="flex-shrink-0"
-              style={{ width: `${100 / visibleCount}%` }}
+              className="flex-shrink-0 h-72 w-48"
+
             >
               <ProfileCard
                 profile={profile as any}
                 viewMode="grid"
                 variant="featured"
+
               />
             </div>
           ))}

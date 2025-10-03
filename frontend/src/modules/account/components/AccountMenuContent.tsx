@@ -150,18 +150,20 @@ const AccountMenuContent = ({
             </div>
           </div>
 
-          {/* Botón de Verificar Cuenta - Solo mostrar si no está verificado */}
-          {!user?.isVerified && (
-            <div className="mb-6">
-              <Button
-                className="w-full bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
-                onClick={() => setIsVerificationModalOpen(true)}
-              >
-                <ShieldCheck className="h-5 w-5 mr-2" />
-                Verificar Cuenta
-              </Button>
-            </div>
-          )}
+          {/* Botón de Verificación/Administración de Datos */}
+          <div className="mb-6">
+            <Button
+              className={`w-full font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] ${
+                user?.isVerified 
+                  ? 'bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white'
+                  : 'bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white'
+              }`}
+              onClick={() => setIsVerificationModalOpen(true)}
+            >
+              <ShieldCheck className="h-5 w-5 mr-2" />
+              {user?.isVerified ? 'Administrar Verificación' : 'Verificar Cuenta'}
+            </Button>
+          </div>
 
           <nav className="space-y-2">
             {sidebarItems.map((item, index) => (

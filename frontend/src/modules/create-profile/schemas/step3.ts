@@ -26,16 +26,21 @@ export const step3Schema = z.object({
   age: z
     .union([
       z.number(),
-      z.string().regex(/^\d+$/, 'debe ser un número válido')
+      z.string().regex(/^\d+$/, 'debe ser un número válido'),
+      z.undefined()
     ])
+    .optional()
     .transform((val) => {
+      if (val === undefined || val === '') {
+        return undefined;
+      }
       const num = typeof val === 'string' ? parseInt(val, 10) : val;
       if (isNaN(num)) {
         throw new Error('debe ser un número válido');
       }
       return num;
     })
-    .refine((val) => val >= 18 && val <= 100, 'La edad debe estar entre 18 y 100 años'),
+    .refine((val) => val === undefined || (val >= 18 && val <= 100), 'La edad debe estar entre 18 y 100 años'),
 
   skinColor: z
     .string()

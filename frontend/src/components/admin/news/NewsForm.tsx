@@ -1,295 +1,436 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Plus,
+  Trash2,
+  Save,
+  X,
+  AlertCircle,
+  FileText,
+  Type,
+  Image as ImageIcon,
+  Upload,
+  Crop,
+  Eye
+} from 'lucide-react';
+import { INews, INewsContent } from '@/types/news.types';
+import { ImageCropModal } from '@/components/ImageCropModal';
+import { CloudinaryImage } from '@/components/CloudinaryImage';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, } from '@/components/ui/dialog';
+
 import { useCreateNews, useUpdateNews } from '@/hooks/use-news';
 import { News, CreateNewsRequest, UpdateNewsRequest } from '@/types/news.types';
 
 interface NewsFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
-  mode: 'create' | 'edit';
   news?: News | null;
+  mode: 'create' | 'edit';
 }
 
-interface FormData {
-  title: string;
-  content: string[];
-  published: boolean;
-}
-
-const NewsForm = ({ isOpen, onClose, onSuccess, mode, news }: NewsFormProps) => {
-  const [formData, setFormData] = useState<FormData>({
-    title: '',
-    content: [''],
-    published: true,
-  });
+export function NewsForm({ isOpen, onClose, news, mode }: NewsFormProps) {
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState<INewsContent[]>([]);
+  const [isPublished, setIsPublished] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Estados para imagen/banner
+  const [bannerImage, setBannerImage] = useState<string | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [currentImageToCrop, setCurrentImageToCrop] = useState<File | null>(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
 
   const createNewsMutation = useCreateNews();
   const updateNewsMutation = useUpdateNews();
 
   // Reset form when modal opens/closes or news changes
   useEffect(() => {
-    if (isOpen) {
-      if (mode === 'edit' && news) {
-        setFormData({
-          title: news.title,
-          content: news.content.length > 0 ? news.content : [''],
-          published: news.published,
-        });
-      } else {
-        setFormData({
-          title: '',
-          content: [''],
-          published: true,
-        });
-      }
-      setErrors({});
+    if (mode === 'edit' && news) {
+      setTitle(news.title);
+      setContent(news.content || []);
+      setIsPublished(news.published);
+      setBannerImage(news.bannerImage || null);
+    } else {
+      // Reset form for create mode
+      setTitle('');
+      setContent([]);
+      setIsPublished(false);
+      setBannerImage(null);
+      setBannerFile(null);
     }
-  }, [isOpen, mode, news]);
+    setErrors({});
+  }, [mode, news, isOpen]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // Validate title
-    if (!formData.title.trim()) {
+    if (!title.trim()) {
       newErrors.title = 'El título es requerido';
-    } else if (formData.title.trim().length < 3) {
-      newErrors.title = 'El título debe tener al menos 3 caracteres';
-    } else if (formData.title.trim().length > 200) {
-      newErrors.title = 'El título no puede exceder 200 caracteres';
     }
 
-    // Validate content
-    const validContent = formData.content.filter(item => item.trim().length > 0);
-    if (validContent.length === 0) {
-      newErrors.content = 'Debe incluir al menos un elemento de contenido';
+    if (content.length === 0) {
+      newErrors.content = 'Debe agregar al menos un elemento de contenido';
     }
-
-    // Validate individual content items
-    const invalidItems = formData.content.some((item, index) => {
-      if (item.trim().length > 0 && item.trim().length > 500) {
-        newErrors[`content_${index}`] = 'Cada elemento no puede exceder 500 caracteres';
-        return true;
-      }
-      return false;
-    });
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Función para manejar la selección de imagen
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    if (!validateForm()) {
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      setErrors({ ...errors, banner: 'Solo se permiten archivos de imagen' });
       return;
     }
 
+    // Validar tamaño (máximo 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors({ ...errors, banner: 'El archivo es demasiado grande. Máximo 10MB.' });
+      return;
+    }
+
+    setCurrentImageToCrop(file);
+    setCropModalOpen(true);
+  };
+
+  // Función para manejar el crop completado
+  const handleCropComplete = async (croppedBlob: Blob, croppedUrl: string) => {
     try {
-      // Clean content (remove empty items)
-      const cleanContent = formData.content
-        .map(item => item.trim())
-        .filter(item => item.length > 0);
+      setIsProcessingImage(true);
+
+      // Crear archivo desde el blob
+      const processedFile = new File([croppedBlob], currentImageToCrop?.name || 'banner.jpg', {
+        type: croppedBlob.type,
+        lastModified: Date.now(),
+      });
+
+      setBannerFile(processedFile);
+      setBannerImage(croppedUrl);
+
+      // Limpiar errores de banner
+      const newErrors = { ...errors };
+      delete newErrors.banner;
+      setErrors(newErrors);
+
+    } catch (error) {
+      setErrors({ ...errors, banner: 'Error al procesar la imagen' });
+    } finally {
+      setIsProcessingImage(false);
+      setCropModalOpen(false);
+      setCurrentImageToCrop(null);
+    }
+  };
+
+  // Función para remover imagen
+  const handleRemoveImage = () => {
+    setBannerImage(null);
+    setBannerFile(null);
+    const newErrors = { ...errors };
+    delete newErrors.banner;
+    setErrors(newErrors);
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    try {
+      // Convertir INewsContent[] a string[] para compatibilidad con el backend
+      const contentStrings = content.map(item => item.content);
+      
+      const newsData: CreateNewsRequest | UpdateNewsRequest = {
+        title: title.trim(),
+        content: contentStrings,
+        published: isPublished,
+        bannerImage: bannerImage || undefined,
+      };
 
       if (mode === 'create') {
-        const createData: CreateNewsRequest = {
-          title: formData.title.trim(),
-          content: cleanContent,
-          published: formData.published,
-        };
-        await createNewsMutation.mutateAsync(createData);
-      } else if (mode === 'edit' && news) {
-        const updateData: UpdateNewsRequest = {
-          _id: news._id,
-          title: formData.title.trim(),
-          content: cleanContent,
-          published: formData.published,
-        };
-        await updateNewsMutation.mutateAsync({ id: news._id, data: updateData });
+        await createNewsMutation.mutateAsync(newsData as CreateNewsRequest);
+      } else if (news?.id) {
+        await updateNewsMutation.mutateAsync({
+          id: news.id,
+          ...newsData as UpdateNewsRequest,
+        });
       }
 
-      onSuccess();
+      onClose();
     } catch (error) {
-      // Error handled by mutation
+      console.error('Error saving news:', error);
     }
   };
 
-  const handleInputChange = (field: keyof FormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
+  // Función para agregar contenido de texto
+  const addContentItem = (type: 'text') => {
+    const newItem: INewsContent = {
+      id: Date.now().toString(),
+      type,
+      content: '',
+      order: content.length,
+    };
+    setContent([...content, newItem]);
   };
 
-  const handleContentChange = (index: number, value: string) => {
-    const newContent = [...formData.content];
-    newContent[index] = value;
-    setFormData(prev => ({ ...prev, content: newContent }));
-
-    // Clear errors
-    if (errors.content) {
-      setErrors(prev => ({ ...prev, content: '' }));
-    }
-    if (errors[`content_${index}`]) {
-      setErrors(prev => ({ ...prev, [`content_${index}`]: '' }));
-    }
+  // Función para actualizar contenido
+  const updateContentItem = (id: string, newContent: string) => {
+    setContent(content.map(item =>
+      item.id === id ? { ...item, content: newContent } : item
+    ));
   };
 
-  const addContentItem = () => {
-    setFormData(prev => ({
-      ...prev,
-      content: [...prev.content, '']
-    }));
-  };
-
-  const removeContentItem = (index: number) => {
-    if (formData.content.length > 1) {
-      const newContent = formData.content.filter((_, i) => i !== index);
-      setFormData(prev => ({ ...prev, content: newContent }));
-    }
+  // Función para eliminar contenido
+  const removeContentItem = (id: string) => {
+    setContent(content.filter(item => item.id !== id));
   };
 
   const isLoading = createNewsMutation.isPending || updateNewsMutation.isPending;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
             {mode === 'create' ? 'Crear Nueva Noticia' : 'Editar Noticia'}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title */}
+        <div className="space-y-6">
+          {/* Campo de título */}
           <div className="space-y-2">
-            <Label htmlFor="title">Título *</Label>
+            <Label htmlFor="title" className="flex items-center gap-2">
+              <Type className="h-4 w-4" />
+              Título de la noticia
+            </Label>
             <Input
               id="title"
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
-              placeholder="Ingresa el título de la noticia"
-              className={errors.title ? 'border-destructive' : ''}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Ingrese el título de la noticia..."
+              className={errors.title ? 'border-red-500' : ''}
             />
             {errors.title && (
-              <p className="text-sm text-destructive">{errors.title}</p>
+              <p className="text-red-500 text-sm flex items-center gap-1">
+                <AlertCircle className="h-4 w-4" />
+                {errors.title}
+              </p>
             )}
-            <p className="text-xs text-muted-foreground">
-              {formData.title.length}/200 caracteres
-            </p>
           </div>
+
+          {/* Campo de imagen/banner */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ImageIcon className="h-5 w-5" />
+                Imagen/Banner (16:9)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!bannerImage ? (
+                <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                    id="banner-upload"
+                  />
+                  <label htmlFor="banner-upload" className="cursor-pointer">
+                    <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-muted-foreground">Seleccionar imagen para banner</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      JPG, PNG, WEBP - Máximo 10MB
+                    </p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
+                      📐 Se recortará automáticamente a formato 16:9
+                    </p>
+                  </label>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="relative group">
+                    <CloudinaryImage
+                      src={bannerImage}
+                      alt="Banner de la noticia"
+                      width={640}
+                      height={360}
+                      className="w-full rounded-lg border"
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          if (bannerFile) {
+                            setCurrentImageToCrop(bannerFile);
+                            setCropModalOpen(true);
+                          }
+                        }}
+                        disabled={!bannerFile}
+                      >
+                        <Crop className="h-4 w-4 mr-1" />
+                        Recortar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleRemoveImage}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Eliminar
+                      </Button>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="w-fit">
+                    <Eye className="h-3 w-3 mr-1" />
+                    Imagen cargada - Formato 16:9
+                  </Badge>
+                </div>
+              )}
+              {errors.banner && (
+                <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-700 dark:text-red-300">
+                    {errors.banner}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
 
           <Separator />
 
-          {/* Content */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Contenido *</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addContentItem}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar elemento
-              </Button>
-            </div>
-
-            {errors.content && (
-              <p className="text-sm text-destructive">{errors.content}</p>
-            )}
-
-            <div className="space-y-3">
-              {formData.content.map((item, index) => (
-                <Card key={index} className="p-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium">
-                        Elemento {index + 1}
-                      </Label>
-                      {formData.content.length > 1 && (
+          {/* Sección de contenido */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Contenido de la noticia
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {content.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No hay contenido agregado</p>
+                  <p className="text-sm">Agregue elementos de texto para crear la noticia</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {content.map((item, index) => (
+                    <div key={index} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline">
+                          Texto #{index + 1}
+                        </Badge>
                         <Button
-                          type="button"
-                          variant="ghost"
                           size="sm"
-                          onClick={() => removeContentItem(index)}
-                          className="text-destructive hover:text-destructive"
+                          variant="ghost"
+                          onClick={() => removeContentItem(item.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      )}
+                      </div>
+                      <Textarea
+                        value={item.content}
+                        onChange={(e) => updateContentItem(item.id, e.target.value)}
+                        placeholder="Escriba el contenido del párrafo..."
+                        rows={4}
+                      />
                     </div>
-                    <Textarea
-                      value={item}
-                      onChange={(e) => handleContentChange(index, e.target.value)}
-                      placeholder="Describe un cambio o actualización..."
-                      className={`min-h-[80px] ${errors[`content_${index}`] ? 'border-destructive' : ''}`}
-                    />
-                    {errors[`content_${index}`] && (
-                      <p className="text-sm text-destructive">{errors[`content_${index}`]}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      {item.length}/500 caracteres
-                    </p>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Botones para agregar contenido */}
+              <div className="flex gap-2 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => addContentItem('text')}
+                  className="w-full"
+                >
+                  <Type className="h-4 w-4 mr-2" />
+                  Agregar Texto
+                </Button>
+              </div>
+
+              {errors.content && (
+                <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-700 dark:text-red-300">
+                    {errors.content}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
 
           <Separator />
 
-          {/* Published */}
-          <div className="flex items-center justify-between">
+          {/* Estado de publicación */}
+          <div className="flex items-center justify-between p-4 border rounded-lg">
             <div className="space-y-1">
-              <Label>Estado de publicación</Label>
+              <Label className="text-base font-medium">Estado de publicación</Label>
               <p className="text-sm text-muted-foreground">
-                {formData.published
-                  ? 'La noticia será visible para todos los usuarios'
-                  : 'La noticia se guardará como borrador'
-                }
+                {isPublished ? 'La noticia será visible para todos los usuarios' : 'La noticia permanecerá como borrador'}
               </p>
             </div>
             <Switch
-              checked={formData.published}
-              onCheckedChange={(checked) => handleInputChange('published', checked)}
+              checked={isPublished}
+              onCheckedChange={setIsPublished}
             />
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+          {/* Botones de acción */}
+          <div className="flex justify-end gap-3 pt-6 border-t">
+            <Button variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading
-                ? (mode === 'create' ? 'Creando...' : 'Guardando...')
-                : (mode === 'create' ? 'Crear Noticia' : 'Guardar Cambios')
+            <Button
+              onClick={handleSubmit}
+              disabled={createNewsMutation.isPending || updateNewsMutation.isPending}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {createNewsMutation.isPending || updateNewsMutation.isPending
+                ? 'Guardando...'
+                : mode === 'create' ? 'Crear Noticia' : 'Actualizar Noticia'
               }
             </Button>
           </div>
-        </form>
+        </div>
+
+        {/* Modal de recorte de imagen */}
+        {currentImageToCrop && (
+          <ImageCropModal
+            isOpen={cropModalOpen}
+            onClose={() => {
+              setCropModalOpen(false);
+              setCurrentImageToCrop(null);
+            }}
+            imageSrc={URL.createObjectURL(currentImageToCrop)}
+            onCropComplete={handleCropComplete}
+            fileName={currentImageToCrop.name}
+            aspectRatio={16 / 9} // Formato 16:9 para banners
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
-};
+}
 
 export default NewsForm;

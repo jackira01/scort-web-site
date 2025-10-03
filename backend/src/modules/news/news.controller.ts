@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { NewsService, CreateNewsData, UpdateNewsData, NewsFilters } from './news.service';
 import { validationResult } from 'express-validator';
+import { NewsViewService } from './news-view.service';
+import { AuthRequest } from '../../types/auth.types';
 
 export class NewsController {
   /**
@@ -271,6 +273,95 @@ export class NewsController {
       });
     } catch (error: any) {
       // Error al obtener últimas noticias
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Error interno del servidor'
+      });
+    }
+  }
+
+  /**
+   * POST /api/news/:id/view - Registrar visualización de noticia
+   */
+  static async markNewsAsViewed(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Usuario no autenticado'
+        });
+        return;
+      }
+
+      const newsView = await NewsViewService.markNewsAsViewed(userId, id);
+
+      res.status(200).json({
+        success: true,
+        message: 'Noticia marcada como vista',
+        data: newsView
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Error interno del servidor'
+      });
+    }
+  }
+
+  /**
+   * GET /api/news/unread - Obtener noticias no leídas por el usuario
+   */
+  static async getUnreadNews(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Usuario no autenticado'
+        });
+        return;
+      }
+
+      const unreadNews = await NewsViewService.getUnreadNews(userId);
+
+      res.status(200).json({
+        success: true,
+        data: unreadNews
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Error interno del servidor'
+      });
+    }
+  }
+
+  /**
+   * GET /api/news/latest-unread - Obtener la última noticia no leída por el usuario
+   */
+  static async getLatestUnreadNews(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Usuario no autenticado'
+        });
+        return;
+      }
+
+      const latestUnreadNews = await NewsViewService.getLatestUnreadNews(userId);
+
+      res.status(200).json({
+        success: true,
+        data: latestUnreadNews
+      });
+    } catch (error: any) {
       res.status(500).json({
         success: false,
         message: error.message || 'Error interno del servidor'

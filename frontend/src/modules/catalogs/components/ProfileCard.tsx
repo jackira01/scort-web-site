@@ -30,7 +30,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
     return (
       <Link href={`/perfil/${profile._id}`} className="block">
         <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer relative">
-          <div className="relative aspect-[4/3]">
+          <div className="relative h-72 w-full">
             <Image
               src={profile.media?.gallery?.[0] || '/placeholder.svg'}
               alt={profile.name}
@@ -146,8 +146,8 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
             <div className="mt-2 sm:hidden">
               <Button
                 className={`w-full text-white text-xs py-1 ${profile.hasDestacadoUpgrade
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
-                    : 'bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                  : 'bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600'
                   }`}
               >
                 Ver perfil
@@ -178,8 +178,8 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
               </p>
               <Button
                 className={`w-full text-white text-sm ${profile.hasDestacadoUpgrade
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
-                    : 'bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                  : 'bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600'
                   }`}
               >
                 Ver perfil

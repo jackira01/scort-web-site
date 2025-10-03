@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import PublicContentPage from '@/components/public/PublicContentPage';
 import FAQPage from '@/modules/faq/components/FAQPage';
 
 export const metadata: Metadata = {
@@ -7,5 +8,13 @@ export const metadata: Metadata = {
 };
 
 export default function FAQ() {
-  return <FAQPage />;
+  return (
+    <PublicContentPage 
+      slug="faq"
+      fallbackContent={<FAQPage />}
+      showBackButton={true}
+      backButtonText="Volver al inicio"
+      backButtonHref="/"
+    />
+  );
 }

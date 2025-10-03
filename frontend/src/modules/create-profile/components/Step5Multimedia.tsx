@@ -6,14 +6,11 @@ import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ImageCropModal } from '@/components/ImageCropModal';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-// COMENTADO: Lógica de recorte de imágenes desactivada
-// import { ImageCropModal } from '@/components/ImageCropModal';
-// import { ProcessedImageResult } from '@/utils/imageProcessor';
-// import { uploadProcessedImages, uploadMixedImages } from '@/utils/tools';
-// Watermark se aplica automáticamente en uploadMultipleImages
+import { ProcessedImageResult } from '@/utils/imageProcessor';
 import { useFormContext } from '../context/FormContext';
 import { usePlans } from '@/hooks/usePlans';
 import { useConfigValue } from '@/hooks/use-config-parameters';
@@ -28,13 +25,13 @@ type Step5MultimediaProps = {};
 
 export function Step5Multimedia({ }: Step5MultimediaProps) {
   console.log('🔄 [DEBUG] Step5Multimedia - Componente renderizado');
-  
+
   const {
     watch,
     setValue,
     formState: { errors },
   } = useFormContext();
-  
+
   // Optimización: observar solo los campos específicos necesarios
   const selectedPlan = watch('selectedPlan');
   const photos = watch('photos') || [];
@@ -43,7 +40,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
   const coverImageIndex = watch('coverImageIndex');
   const videoCoverImages = watch('videoCoverImages') || {};
   const acceptTerms = watch('acceptTerms');
-  
+
   // Debug: Rastrear cambios en las variables observadas
   console.log('📊 [DEBUG] Variables observadas:', {
     selectedPlan: selectedPlan ? { id: selectedPlan._id, name: selectedPlan.name } : null,
@@ -54,21 +51,24 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     videoCoverImagesKeys: Object.keys(videoCoverImages).length,
     acceptTerms
   });
-  
+
   // Estados para el procesamiento de imágenes
   const [contentLimits, setContentLimits] = useState({
     maxPhotos: 20, // valores por defecto
     maxVideos: 8,
     maxAudios: 6
   });
-  // COMENTADO: Estados para el procesamiento de imágenes desactivados
-  // const [cropModalOpen, setCropModalOpen] = useState(false);
-  // const [currentImageToCrop, setCurrentImageToCrop] = useState<{
-  //   file: File;
-  //   index?: number;
-  // } | null>(null);
-  // const [processedImages, setProcessedImages] = useState<Map<number, ProcessedImageResult>>(new Map());
-  // const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+
+  // Estados para el modal de crop
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [currentImageToCrop, setCurrentImageToCrop] = useState<{
+    file: File;
+    index: number;
+  } | null>(null);
+
+  // Estado para almacenar imágenes procesadas
+  const [processedImages, setProcessedImages] = useState<Map<number, ProcessedImageResult>>(new Map());
 
   // Obtener planes disponibles
   const { data: plansResponse } = usePlans({
@@ -76,7 +76,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     page: 1,
     isActive: true
   });
-  
+
   // Memoizar plans para evitar re-renders innecesarios
   const plans = useMemo(() => {
     console.log('🔄 [DEBUG] Memoizando plans:', plansResponse?.plans?.length || 0);
@@ -91,7 +91,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       defaultValue: { enabled: false, planId: null, planCode: null }
     }
   );
-  
+
   // Memoizar defaultConfig para evitar re-renders innecesarios
   const defaultConfig = useMemo(() => {
     console.log('🔄 [DEBUG] Memoizando defaultConfig:', defaultConfigRaw);
@@ -105,7 +105,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       defaultConfig,
       plansLength: plans.length
     });
-    
+
     if (selectedPlan && selectedPlan.contentLimits) {
       // Usar límites del plan seleccionado
       console.log('📋 [DEBUG] Aplicando límites del plan seleccionado:', selectedPlan.name, selectedPlan.contentLimits);
@@ -216,10 +216,12 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       }
     }
 
-    // Para imágenes, agregar directamente sin procesamiento de crop
+    // Para imágenes, agregar directamente sin abrir modal de crop
     if (type === 'photos') {
+      // Agregar archivos directamente
       const newFiles: (File | string)[] = [...currentFiles, ...fileArray];
       setValue(type, newFiles);
+
       toast.success(`${fileArray.length} imagen(es) agregada(s).`);
     } else {
       // Para videos y audios, agregar directamente
@@ -227,30 +229,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       setValue(type, newFiles);
       toast.success(`${fileArray.length} archivo(s) agregado(s) a ${type}`);
     }
-
-    // COMENTADO: Lógica de crop desactivada
-    // Para imágenes, abrir modal de crop para cada archivo
-    // if (type === 'photos') {
-    //   // Agregar archivos temporalmente y abrir crop para el primero
-    //   const newFiles: (File | string)[] = [...currentFiles, ...fileArray];
-    //   setValue(type, newFiles);
-
-    //   // Abrir crop modal para la primera imagen nueva
-    //   if (fileArray.length > 0) {
-    //     setCurrentImageToCrop({
-    //       file: fileArray[0],
-    //       index: currentFiles.length
-    //     });
-    //     setCropModalOpen(true);
-    //   }
-
-    //   toast.success(`${fileArray.length} imagen(es) agregada(s). Recorta cada una para optimizar.`);
-    // } else {
-    //   // Para videos y audios, agregar directamente
-    //   const newFiles: (File | string)[] = [...currentFiles, ...fileArray];
-    //   setValue(type, newFiles);
-    //   toast.success(`${fileArray.length} archivo(s) agregado(s) a ${type}`);
-    // }
   };
 
   // Función para eliminar archivos
@@ -271,80 +249,86 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     setValue(type, newFiles);
     toast.success('Archivo eliminado');
 
-    // COMENTADO: Lógica de processedImages desactivada
     // Para fotos, también eliminar de processedImages y actualizar el formulario
-    // if (type === 'photos') {
-    //   const newProcessedImages = new Map(processedImages);
-    //   newProcessedImages.delete(index);
-    //   setProcessedImages(newProcessedImages);
+    if (type === 'photos') {
+      const newProcessedImages = new Map(processedImages);
+      newProcessedImages.delete(index);
+      setProcessedImages(newProcessedImages);
 
-    //   // Actualizar las imágenes procesadas en el formulario
-    //   const processedImagesArray = Array.from(newProcessedImages.values());
-    //   setValue('processedImages', processedImagesArray);
-    // }
+      // Actualizar las imágenes procesadas en el formulario
+      const processedImagesArray = Array.from(newProcessedImages.values());
+      setValue('processedImages', processedImagesArray);
+    }
   };
 
-  // COMENTADO: Función para manejar el crop completado - desactivada
-  // const handleCropComplete = async (croppedBlob: Blob, croppedUrl: string) => {
-  //   if (!currentImageToCrop) return;
+  // Función para manejar el crop completado
+  const handleCropComplete = async (croppedBlob: Blob, croppedUrl: string) => {
+    if (!currentImageToCrop) return;
 
-  //   try {
-  //     setIsProcessingImage(true);
+    try {
+      setIsProcessingImage(true);
 
-  //     // Crear el resultado procesado desde el blob ya optimizado
-  //     // El procesamiento centralizado ya aplicó crop, marca de agua y compresión
-  //     const processedFile = new File([croppedBlob], currentImageToCrop.file.name, {
-  //       type: croppedBlob.type,
-  //       lastModified: Date.now(),
-  //     });
+      // Crear el resultado procesado desde el blob ya optimizado
+      // El procesamiento centralizado ya aplicó crop, marca de agua y compresión
+      const processedFile = new File([croppedBlob], currentImageToCrop.file.name, {
+        type: croppedBlob.type,
+        lastModified: Date.now(),
+      });
 
-  //     // Obtener dimensiones de la imagen procesada
-  //     const img = new Image();
-  //     const dimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
-  //       img.onload = () => resolve({ width: img.width, height: img.height });
-  //       img.onerror = () => reject(new Error('Error al cargar imagen'));
-  //       img.src = croppedUrl;
-  //     });
+      // Obtener dimensiones de la imagen procesada
+      const img = new Image();
+      const dimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+        img.onload = () => resolve({ width: img.width, height: img.height });
+        img.onerror = () => reject(new Error('Error al cargar imagen'));
+        img.src = croppedUrl;
+      });
 
-  //     const processedResult: ProcessedImageResult = {
-  //       file: processedFile,
-  //       url: croppedUrl,
-  //       originalSize: currentImageToCrop.file.size,
-  //       compressedSize: processedFile.size,
-  //       compressionRatio: ((currentImageToCrop.file.size - processedFile.size) / currentImageToCrop.file.size) * 100,
-  //       dimensions,
-  //       originalIndex: currentImageToCrop.index,
-  //       originalFileName: currentImageToCrop.file.name
-  //     };
+      const processedResult: ProcessedImageResult = {
+        file: processedFile,
+        url: croppedUrl,
+        originalSize: currentImageToCrop.file.size,
+        compressedSize: processedFile.size,
+        compressionRatio: ((currentImageToCrop.file.size - processedFile.size) / currentImageToCrop.file.size) * 100,
+        dimensions,
+        originalIndex: currentImageToCrop.index,
+        originalFileName: currentImageToCrop.file.name
+      };
 
-  //     // Guardar el resultado procesado
-  //     const newProcessedImages = new Map(processedImages);
-  //     newProcessedImages.set(currentImageToCrop.index || 0, processedResult);
-  //     setProcessedImages(newProcessedImages);
+      // Guardar el resultado procesado
+      const newProcessedImages = new Map(processedImages);
+      newProcessedImages.set(currentImageToCrop.index || 0, processedResult);
+      setProcessedImages(newProcessedImages);
 
-  //     // Guardar las imágenes procesadas en el formulario
-  //     const processedImagesArray = Array.from(newProcessedImages.values());
-  //     setValue('processedImages', processedImagesArray);
+      // Actualizar el archivo en el array de fotos con la imagen procesada
+      const currentPhotos = [...photos];
+      if (currentImageToCrop.index !== undefined && currentImageToCrop.index < currentPhotos.length) {
+        currentPhotos[currentImageToCrop.index] = processedFile;
+        setValue('photos', currentPhotos);
+      }
 
-  //     toast.success(
-  //       `Imagen procesada: ${Math.round(processedResult.compressionRatio)}% de compresión aplicada`
-  //     );
-  //   } catch (error) {
-  //     toast.error('Error al procesar la imagen');
-  //   } finally {
-  //     setIsProcessingImage(false);
-  //     setCropModalOpen(false);
-  //     setCurrentImageToCrop(null);
-  //   }
-  // };
+      // Guardar las imágenes procesadas en el formulario
+      const processedImagesArray = Array.from(newProcessedImages.values());
+      setValue('processedImages', processedImagesArray);
 
-  // COMENTADO: Función para abrir crop modal para una imagen existente - desactivada
-  // const handleEditImage = (file: File | string, index: number) => {
-  //   if (file instanceof File) {
-  //     setCurrentImageToCrop({ file, index });
-  //     setCropModalOpen(true);
-  //   }
-  // };
+      toast.success(
+        `Imagen procesada: ${Math.round(processedResult.compressionRatio)}% de compresión aplicada`
+      );
+    } catch (error) {
+      toast.error('Error al procesar la imagen');
+    } finally {
+      setIsProcessingImage(false);
+      setCropModalOpen(false);
+      setCurrentImageToCrop(null);
+    }
+  };
+
+  // Función para abrir crop modal para una imagen existente
+  const handleEditImage = (file: File | string, index: number) => {
+    if (file instanceof File) {
+      setCurrentImageToCrop({ file, index });
+      setCropModalOpen(true);
+    }
+  };
 
   // Función para seleccionar imagen de portada
   const handleSetCoverImage = (index: number) => {
@@ -389,6 +373,174 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     toast.success('Imagen de portada para video agregada');
   };
 
+  // Función para renderizar las cards de imágenes con diseño mejorado
+  const renderImageCard = (
+    file: File | string,
+    type: 'photos' | 'videos' | 'audios',
+    index: number,
+  ) => {
+    const isImage = type === 'photos';
+    const isVideo = type === 'videos';
+    const isAudio = type === 'audios';
+
+    // Validar que el file sea un objeto File válido
+    const isValidFile = file instanceof File && file.size > 0;
+    const isStringUrl = typeof file === 'string';
+    const previewUrl = isValidFile ? URL.createObjectURL(file) : isStringUrl ? file : null;
+    const fileName = isValidFile ? file.name : isStringUrl ? file.split('/').pop() || 'Archivo' : 'Archivo';
+    const fileSize = isValidFile ? file.size : 0;
+
+    // Verificar si existe una imagen procesada (recortada) para este índice
+    const processedImage = isImage ? processedImages.get(index) : null;
+    const displayUrl = processedImage ? processedImage.url : previewUrl;
+    const isPreviewImage = coverImageIndex === index || (coverImageIndex === undefined && index === 0);
+
+    return (
+      <div
+        key={index}
+        className={`relative group border-2 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg ${isImage && isPreviewImage
+            ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-400 dark:border-yellow-600 ring-2 ring-yellow-400 dark:ring-yellow-600 shadow-lg'
+            : 'bg-card border-border hover:border-primary/50'
+          }`}
+      >
+        {/* Imagen principal */}
+        <div className="aspect-square relative overflow-hidden bg-muted">
+          {isImage && displayUrl ? (
+            <img
+              src={displayUrl}
+              alt={fileName}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : isVideo && videoCoverImages[index] ? (
+            <img
+              src={videoCoverImages[index] instanceof File
+                ? URL.createObjectURL(videoCoverImages[index] as File)
+                : videoCoverImages[index] as string
+              }
+              alt={`Portada de ${fileName}`}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : isVideo && previewUrl ? (
+            <video
+              src={previewUrl}
+              className="w-full h-full object-cover"
+              muted
+            />
+          ) : isAudio ? (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30">
+              <Mic className="h-16 w-16 text-purple-500" />
+            </div>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-muted">
+              <Camera className="h-16 w-16 text-muted-foreground" />
+            </div>
+          )}
+
+          {/* Indicador de imagen de portada */}
+          {isImage && isPreviewImage && (
+            <div className="absolute top-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 shadow-lg">
+              <Star className="h-3 w-3 fill-white" />
+              Portada
+            </div>
+          )}
+
+          {/* Indicador de imagen de portada personalizada para video */}
+          {isVideo && videoCoverImages[index] && (
+            <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 shadow-lg">
+              <CheckCircle className="h-3 w-3" />
+              Preview
+            </div>
+          )}
+
+          {/* Botón eliminar en esquina superior derecha */}
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => handleFileRemove(type, index)}
+            className="absolute top-2 right-2 h-8 w-8 p-0 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            title="Eliminar archivo"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+
+          {/* Input oculto para subir imagen de portada para video */}
+          {isVideo && (
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleVideoCoverImageSelect(index, e.target.files)}
+              className="hidden"
+              id={`video-cover-${index}`}
+            />
+          )}
+        </div>
+
+        {/* Información del archivo */}
+        <div className="p-3 bg-card">
+          <p className="text-sm font-medium text-foreground truncate mb-1">
+            {fileName}
+          </p>
+          {isValidFile && (
+            <p className="text-xs text-muted-foreground mb-3">
+              {(fileSize / 1024 / 1024).toFixed(2)} MB
+            </p>
+          )}
+
+          {/* Botones de acción (misma fila) */}
+          <div className="flex gap-2 mt-2">
+            {/* Botón para seleccionar como preview */}
+            {isImage && (
+              <Button
+                variant={isPreviewImage ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleSetCoverImage(index)}
+                className={`flex-1 ${isPreviewImage
+                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500'
+                    : 'hover:bg-yellow-50 hover:border-yellow-300 dark:hover:bg-yellow-950/20'
+                  }`}
+                title={isPreviewImage ? "Imagen de portada actual" : "Seleccionar como imagen de portada"}
+              >
+                <Star className={`h-4 w-4 mr-1 ${isPreviewImage ? 'fill-white' : ''}`} />
+                {isPreviewImage ? 'Portada' : 'Preview'}
+              </Button>
+            )}
+
+            {/* Botón para subir imagen de portada para video */}
+            {isVideo && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => document.getElementById(`video-cover-${index}`)?.click()}
+                className="flex-1 hover:bg-green-50 hover:border-green-300 dark:hover:bg-green-950/20"
+                title={videoCoverImages[index] ? "Cambiar imagen de portada del video" : "Seleccionar imagen de portada para video"}
+              >
+                <Upload className="h-4 w-4 mr-1" />
+                {videoCoverImages[index] ? 'Cambiar' : 'Preview'}
+              </Button>
+            )}
+          </div>
+
+          {/* Botón Ajustar debajo */}
+          {isImage && isPreviewImage && (
+            <div className="mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEditImage(file, index)}
+                className="w-full hover:bg-blue-50 hover:border-blue-300 dark:hover:bg-blue-950/20"
+                title="Ajustar y recortar imagen"
+              >
+                <Edit3 className="h-4 w-4 mr-1" />
+                Ajustar
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+
   // Función para renderizar la vista previa de archivos
   const renderFilePreview = (
     file: File | string,
@@ -406,134 +558,85 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     const fileName = isValidFile ? file.name : isStringUrl ? file.split('/').pop() || 'Archivo' : 'Archivo';
     const fileSize = isValidFile ? file.size : 0;
 
-    // COMENTADO: Lógica de processedImages desactivada
     // Para imágenes, verificar si está procesada
-    // const processedImage = isImage ? processedImages.get(index) : null;
-    // const isProcessed = !!processedImage;
-    // const displayUrl = processedImage ? processedImage.url : previewUrl;
-
-    // Usar directamente previewUrl sin procesamiento
-    const displayUrl = previewUrl;
+    const processedImage = isImage ? processedImages.get(index) : null;
+    const isProcessed = !!processedImage;
+    const displayUrl = processedImage ? processedImage.url : previewUrl;
 
     return (
       <div
         key={index}
-        className={`relative group border rounded-lg p-2 transition-all ${isImage && coverImageIndex === index
-            ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-300 dark:border-yellow-700 ring-2 ring-yellow-400 dark:ring-yellow-600'
-            : 'bg-muted/50'
+        className={`relative group border rounded-lg overflow-hidden transition-all w-48 h-64 flex flex-col ${isImage && coverImageIndex === index
+          ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-300 dark:border-yellow-700 ring-2 ring-yellow-400 dark:ring-yellow-600'
+          : 'bg-muted/50'
           }`}
       >
-        {/* COMENTADO: Lógica de isProcessed desactivada */}
-        {/* className={`relative group border rounded-lg p-2 transition-all ${isProcessed ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' : 'bg-muted/50'
-          }`} */}
-        <div className="flex items-center space-x-2">
-          {isImage && (
-            <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center overflow-hidden relative">
-              {displayUrl ? (
-                <img
-                  src={displayUrl}
-                  alt={fileName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Camera className="h-6 w-6 text-gray-400" />
-              )}
-              {/* Indicador de imagen de portada */}
-              {index === 0 && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
-                  <Star className="h-3 w-3 text-white fill-white" />
-                </div>
-              )}
-              {/* COMENTADO: Indicador de procesamiento desactivado */}
-              {/* {isProcessed && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                  <CheckCircle className="h-3 w-3 text-white" />
-                </div>
-              )} */}
-            </div>
+        {/* Preview de archivo */}
+        <div className="flex-1 flex items-center justify-center bg-gray-200 relative overflow-hidden">
+          {isImage && displayUrl && (
+            <img
+              src={displayUrl}
+              alt={fileName}
+              className="w-full h-full object-cover"
+            />
           )}
           {isVideo && (
-            <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center overflow-hidden relative">
-              {/* Mostrar imagen de portada del video si existe */}
-              {videoCoverImages[index] ? (
-                <img
-                  src={videoCoverImages[index] instanceof File
+            videoCoverImages[index] ? (
+              <img
+                src={
+                  videoCoverImages[index] instanceof File
                     ? URL.createObjectURL(videoCoverImages[index] as File)
-                    : videoCoverImages[index] as string
-                  }
-                  alt={`Portada de ${fileName}`}
-                  className="w-full h-full object-cover"
-                />
-              ) : previewUrl ? (
-                <video
-                  src={previewUrl}
-                  className="w-full h-full object-cover"
-                  muted
-                />
-              ) : (
-                <Video className="h-6 w-6 text-gray-400" />
-              )}
-              {/* Indicador de imagen de portada personalizada */}
-              {videoCoverImages[index] && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                  <CheckCircle className="h-3 w-3 text-white" />
-                </div>
-              )}
+                    : (videoCoverImages[index] as string)
+                }
+                alt={`Portada de ${fileName}`}
+                className="w-full h-full object-cover"
+              />
+            ) : previewUrl ? (
+              <video
+                src={previewUrl}
+                className="w-full h-full object-cover"
+                muted
+              />
+            ) : (
+              <Video className="h-10 w-10 text-gray-400" />
+            )
+          )}
+          {isAudio && <Mic className="h-10 w-10 text-gray-600" />}
+
+          {/* Badge de portada */}
+          {index === 0 && isImage && (
+            <div className="absolute top-2 right-2 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
+              <Star className="h-4 w-4 text-white fill-white" />
             </div>
           )}
-          {isAudio && (
-            <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
-              <Mic className="h-6 w-6 text-gray-600" />
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
-              {fileName}
+        </div>
+
+        {/* Info + botones */}
+        <div className="p-2 flex flex-col gap-1">
+          <p className="text-sm font-medium truncate">{fileName}</p>
+          {isValidFile && (
+            <p className="text-xs text-muted-foreground">
+              {(fileSize / 1024 / 1024).toFixed(2)} MB
             </p>
-            {isValidFile && (
-              <div className="flex items-center gap-2">
-                <p className="text-xs text-muted-foreground">
-                  {(fileSize / 1024 / 1024).toFixed(2)} MB
-                </p>
-                {/* COMENTADO: Información de compresión desactivada */}
-                {/* {processedImage && (
-                  <>
-                    <span className="text-xs text-muted-foreground">→</span>
-                    <p className="text-xs text-green-600 dark:text-green-400 font-medium">
-                      {(processedImage.compressedSize / 1024 / 1024).toFixed(2)} MB
-                      ({Math.round(processedImage.compressionRatio)}% reducido)
-                    </p>
-                  </>
-                )} */}
-              </div>
-            )}
-            {/* COMENTADO: Información de dimensiones desactivada */}
-            {/* {processedImage && (
-              <p className="text-xs text-muted-foreground">
-                {processedImage.dimensions.width} × {processedImage.dimensions.height}px
-              </p>
-            )} */}
-          </div>
-          <div className="flex items-center gap-1">
-            {/* Botón para seleccionar imagen de portada */}
+          )}
+          <div className="flex gap-1 mt-1">
             {isImage && (
               <Button
                 variant={index === 0 ? "default" : "ghost"}
                 size="sm"
                 onClick={() => handleSetCoverImage(index)}
-                className={`opacity-0 group-hover:opacity-100 transition-opacity h-8 px-2 ${index === 0
-                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white opacity-100'
-                    : 'hover:bg-yellow-100 hover:text-yellow-600'
+                className={`flex-1 h-8 px-2 ${index === 0
+                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                  : 'hover:bg-yellow-100 hover:text-yellow-600'
                   }`}
-                title={index === 0 ? "Imagen de portada actual" : "Seleccionar como imagen de portada"}
               >
                 <Star className={`h-4 w-4 mr-1 ${index === 0 ? 'fill-white' : ''}`} />
-                <span className="text-xs font-medium">
+                <span className="text-xs">
                   {index === 0 ? 'Portada' : 'Seleccionar'}
                 </span>
               </Button>
             )}
-            {/* Botón para subir imagen de portada para video */}
+
             {isVideo && (
               <>
                 <input
@@ -547,37 +650,21 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => document.getElementById(`video-cover-${index}`)?.click()}
-                  className={`opacity-0 group-hover:opacity-100 transition-opacity h-8 px-2 ${videoCoverImages[index]
-                      ? 'bg-green-100 hover:bg-green-200 text-green-600'
-                      : 'hover:bg-blue-100 hover:text-blue-600'
-                    }`}
-                  title={videoCoverImages[index] ? "Cambiar imagen de portada del video" : "Seleccionar imagen de portada para video"}
+                  className="flex-1 h-8 px-2"
                 >
                   <Upload className="h-4 w-4 mr-1" />
-                  <span className="text-xs font-medium">
+                  <span className="text-xs">
                     {videoCoverImages[index] ? 'Cambiar' : 'Preview'}
                   </span>
                 </Button>
               </>
             )}
-            {/* COMENTADO: Botón de editar imagen desactivado */}
-            {/* {isImage && isValidFile && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleEditImage(file, index)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
-                title="Editar imagen"
-              >
-                <Edit3 className="h-4 w-4" />
-              </Button>
-            )} */}
+
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleFileRemove(type, index)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
-              title="Eliminar archivo"
+              className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -585,6 +672,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
         </div>
       </div>
     );
+
   };
 
   return (
@@ -620,20 +708,33 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
             </div>
             <div className="space-y-3 mt-3">
               {photos.length >= contentLimits.maxPhotos && (
-                <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                  <div className="flex items-start space-x-2">
-                    <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs font-bold">!</span>
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-sm font-bold">💎</span>
                     </div>
-                    <p className="text-red-700 dark:text-red-300 text-sm">
-                      <strong>Límite alcanzado:</strong> Has alcanzado el máximo de {contentLimits.maxPhotos} fotos
-                      para {selectedPlan?.name || 'tu plan actual'}.
+                    <div className="flex-1">
+                      <p className="text-purple-800 dark:text-purple-200 text-sm font-medium mb-2">
+                        <strong>¡Has superado el límite!</strong>
+                      </p>
+                      <p className="text-purple-700 dark:text-purple-300 text-sm mb-3">
+                        Has alcanzado el máximo de {contentLimits.maxPhotos} fotos para {selectedPlan?.name || 'tu plan actual'}. 
+                        Si deseas subir más fotos, mejora tu plan ahora y desbloquea todo el potencial de tu perfil.
+                      </p>
                       {selectedPlan?.code === 'FREE' && (
-                        <span className="block mt-1">
-                          💎 Considera actualizar a un plan Premium para subir más fotos.
-                        </span>
+                        <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3 border border-purple-200/50">
+                          <p className="text-purple-800 dark:text-purple-200 text-sm font-medium mb-2">
+                            ✨ Con un plan Premium obtienes:
+                          </p>
+                          <ul className="text-purple-700 dark:text-purple-300 text-xs space-y-1">
+                            <li>• Hasta 50+ fotos de alta calidad</li>
+                            <li>• Mayor visibilidad en búsquedas</li>
+                            <li>• Funciones exclusivas premium</li>
+                            <li>• Soporte prioritario</li>
+                          </ul>
+                        </div>
                       )}
-                    </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -667,8 +768,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
             <div className="space-y-4">
               <div
                 className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${photos.length >= contentLimits.maxPhotos
-                    ? 'border-red-300 bg-red-50/50 dark:bg-red-950/20 cursor-not-allowed opacity-60'
-                    : 'hover:border-purple-500 cursor-pointer'
+                  ? 'border-red-300 bg-red-50/50 dark:bg-red-950/20 cursor-not-allowed opacity-60'
+                  : 'hover:border-purple-500 cursor-pointer'
                   } ${errors.photos
                     ? 'border-red-500'
                     : 'border-muted-foreground/30'
@@ -702,13 +803,13 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
               {/* Vista previa de fotos */}
               {photos.length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <h4 className="text-sm font-medium text-foreground">
                     Fotos seleccionadas:
                   </h4>
-                  <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
                     {photos.map((file, index) =>
-                      renderFilePreview(file, 'photos', index),
+                      renderImageCard(file, 'photos', index),
                     )}
                   </div>
                 </div>
@@ -783,8 +884,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
             <div className="space-y-4">
               <div
                 className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${videos.length >= contentLimits.maxVideos
-                    ? 'border-red-300 bg-red-50/50 dark:bg-red-950/20 cursor-not-allowed opacity-60'
-                    : 'hover:border-purple-500 cursor-pointer'
+                  ? 'border-red-300 bg-red-50/50 dark:bg-red-950/20 cursor-not-allowed opacity-60'
+                  : 'hover:border-purple-500 cursor-pointer'
                   } ${errors.videos
                     ? 'border-red-500'
                     : 'border-muted-foreground/30'
@@ -880,8 +981,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
             <div className="space-y-4">
               <div
                 className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${audios.length >= contentLimits.maxAudios
-                    ? 'border-red-300 bg-red-50/50 dark:bg-red-950/20 cursor-not-allowed opacity-60'
-                    : 'hover:border-purple-500 cursor-pointer'
+                  ? 'border-red-300 bg-red-50/50 dark:bg-red-950/20 cursor-not-allowed opacity-60'
+                  : 'hover:border-purple-500 cursor-pointer'
                   } ${errors.audios
                     ? 'border-red-500'
                     : 'border-muted-foreground/30'
@@ -978,9 +1079,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
       </div>
 
-      {/* COMENTADO: Modal de recorte de imagen desactivado */}
       {/* Modal de recorte de imagen */}
-      {/* {currentImageToCrop && (
+      {currentImageToCrop && (
         <ImageCropModal
           isOpen={cropModalOpen}
           onClose={() => {
@@ -992,7 +1092,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
           fileName={currentImageToCrop.file.name}
           aspectRatio={4 / 3}
         />
-      )} */}
+      )}
     </div>
   );
 }

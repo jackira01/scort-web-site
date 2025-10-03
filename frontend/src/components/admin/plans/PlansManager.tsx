@@ -4,11 +4,12 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, CreditCard, Zap } from 'lucide-react';
+import { Plus, CreditCard, Zap, UserCheck } from 'lucide-react';
 import { PlanForm } from './PlanForm';
 import { PlansList } from './PlansList';
 import { UpgradeForm } from './UpgradeForm';
 import { UpgradesList } from './UpgradesList';
+import DefaultPlanManager from '@/components/admin/DefaultPlanManager';
 import { Plan, Upgrade, PlansManagerState } from '@/types/plans';
 
 export const PlansManager: React.FC = () => {
@@ -67,7 +68,7 @@ export const PlansManager: React.FC = () => {
   const handleTabChange = (value: string) => {
     setState(prev => ({
       ...prev,
-      activeTab: value as 'plans' | 'upgrades',
+      activeTab: value as 'plans' | 'upgrades' | 'default-plan',
     }));
   };
 
@@ -85,7 +86,7 @@ export const PlansManager: React.FC = () => {
 
       {/* Tabs */}
       <Tabs value={state.activeTab} onValueChange={handleTabChange} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="plans" className="flex items-center gap-2">
             <CreditCard className="h-4 w-4" />
             Planes de Suscripción
@@ -93,6 +94,10 @@ export const PlansManager: React.FC = () => {
           <TabsTrigger value="upgrades" className="flex items-center gap-2">
             <Zap className="h-4 w-4" />
             Upgrades
+          </TabsTrigger>
+          <TabsTrigger value="default-plan" className="flex items-center gap-2">
+            <UserCheck className="h-4 w-4" />
+            Plan por Defecto
           </TabsTrigger>
         </TabsList>
 
@@ -138,6 +143,25 @@ export const PlansManager: React.FC = () => {
             </CardHeader>
             <CardContent>
               <UpgradesList onEdit={handleEditUpgrade} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Default Plan Tab */}
+        <TabsContent value="default-plan" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Plan por Defecto</CardTitle>
+                  <CardDescription>
+                    Configura el plan que se asigna automáticamente a nuevos perfiles
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DefaultPlanManager />
             </CardContent>
           </Card>
         </TabsContent>

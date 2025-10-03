@@ -7,6 +7,8 @@ import {
     Clock,
     Info,
     Shield,
+    Settings,
+    FileText,
 } from 'lucide-react';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
@@ -20,7 +22,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
-import { useUpdateUser } from '@/hooks/use-user';
+import { useUpdateUser, useUser } from '@/hooks/use-user';
 import type { User } from '@/types/user.types';
 import { uploadMultipleImages } from '@/utils/tools';
 
@@ -45,6 +47,7 @@ export default function AccountVerificationModal({
         image3: null as File | null,
     });
     const { mutate: updateUserMutation } = useUpdateUser();
+    const { data: user } = useUser();
 
     const handleFileUpload = (fileType: 'image1' | 'image2' | 'image3', file: File) => {
         setUploadedFiles((prev) => ({
@@ -92,6 +95,79 @@ export default function AccountVerificationModal({
         setUploadedFiles({ image1: null, image2: null, image3: null });
         onClose();
     };
+
+    // Si el usuario está verificado, mostrar panel de administración
+    if (user?.isVerified && !showUploadForm) {
+        return (
+            <Dialog open={isOpen} onOpenChange={handleClose}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                            Cuenta Verificada
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6 p-4">
+                        <div className="text-center">
+                            <div className="w-16 h-16 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900 dark:to-emerald-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-foreground mb-2">
+                                ¡Tu cuenta está verificada!
+                            </h3>
+                            <p className="text-muted-foreground text-sm">
+                                Tu identidad ha sido confirmada y tu cuenta está completamente verificada.
+                            </p>
+                        </div>
+
+                        <div className="space-y-3">
+                            <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                        <div>
+                                            <p className="font-medium text-green-800 dark:text-green-200">
+                                                Verificación Completa
+                                            </p>
+                                            <p className="text-sm text-green-600 dark:text-green-400">
+                                                Todos tus documentos han sido aprobados
+                                            </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <div className="space-y-2">
+                                <Button
+                                    onClick={() => setShowUploadForm(true)}
+                                    variant="outline"
+                                    className="w-full justify-start"
+                                >
+                                    <FileText className="h-4 w-4 mr-2" />
+                                    Actualizar Documentos
+                                </Button>
+                                
+                                <Button
+                                    onClick={handleClose}
+                                    variant="outline"
+                                    className="w-full justify-start"
+                                >
+                                    <Settings className="h-4 w-4 mr-2" />
+                                    Ver Estado de Verificación
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="text-center">
+                            <p className="text-xs text-muted-foreground">
+                                Si necesitas actualizar tu información de verificación, puedes subir nuevos documentos.
+                            </p>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        );
+    }
 
     if (verification_in_progress) {
         return (

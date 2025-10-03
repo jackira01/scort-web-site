@@ -450,13 +450,14 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
             whatsapp: '',
             telegram: '',
           };
+          const ageValue = form.getValues('age');
           const step3Data = {
             contact: {
               number: contactData.number || '',
               whatsapp: contactData.whatsapp || undefined,
               telegram: contactData.telegram || undefined,
             },
-            age: form.getValues('age') || '',
+            age: ageValue && ageValue !== '' ? ageValue : undefined,
             skinColor: form.getValues('skinColor') || '',
             sexuality: form.getValues('sexuality') || '',
             eyeColor: form.getValues('eyeColor') || '',

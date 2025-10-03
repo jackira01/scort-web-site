@@ -179,16 +179,7 @@ export const sidebarItems = [
         icon: CreditCard,
         badge: null,
         description:
-            'Gestiona planes de suscripción y upgrades temporales del sistema',
-        active: false,
-    },
-    {
-        id: 'plan-defecto',
-        label: 'Plan por Defecto',
-        icon: UserCheck,
-        badge: null,
-        description:
-            'Configura el plan que se asigna automáticamente a nuevos perfiles',
+            'Gestiona planes de suscripción, upgrades temporales y configuración del plan por defecto',
         active: false,
     },
     {
@@ -207,6 +198,15 @@ export const sidebarItems = [
         badge: null,
         description:
             'Gestiona noticias y actualizaciones del sistema: crear, editar y publicar patch notes',
+        active: false,
+    },
+    {
+        id: 'contenido',
+        label: 'Páginas de Contenido',
+        icon: FileText,
+        badge: null,
+        description:
+            'Gestiona FAQ, Términos y otras páginas de contenido dinámico',
         active: false,
     },
     {

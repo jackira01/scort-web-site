@@ -2,35 +2,42 @@
 
 import { AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { AnimatePresence } from 'motion/react';
 import { useUser } from '@/hooks/use-user';
 import { useUserProfiles } from '@/hooks/use-user-profiles';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 import AccountMenuContent from './AccountMenuContent';
 import AccountHorizontalMenu from './AccountHorizontalMenu';
 import AccountContent from './AccountContent';
-import AccountProgressBar from './AccountProgressBar';
 import { useAccountSection } from '../hooks/useAccountSection';
 import CouponModal from '@/components/modals/CouponModal';
 import CouponConfirmationModal from '@/components/modals/CouponConfirmationModal';
 import PlanSelectorModal from '@/components/modals/PlanSelectorModal';
+import NewsModal from '@/components/modals/NewsModal';
 import { couponService } from '@/services/coupon.service';
 import { ICoupon } from '@/types/coupon.types';
-<<<<<<< HEAD
-=======
 import { API_URL } from '@/lib/config';
 import Loader from '@/components/Loader';
 import { Alert, AlertDescription } from '@/components/ui/alert';
->>>>>>> 840af42 (feat(account): add mobile-friendly horizontal menu and menu content components)
+import { useAutoNewsModal } from '@/hooks/useAutoNewsModal';
 
 export default function AccountLayout() {
     const { activeSection, setActiveSection } = useAccountSection();
     const { data: user, isLoading } = useUser();
     const { data: userProfiles } = useUserProfiles(user?._id);
     const accountCompleteness = 65;
+
+    // Hook para el modal automático de noticias
+    const {
+        isModalOpen: isNewsModalOpen,
+        currentNews,
+        closeModal: closeNewsModal,
+        hasUnreadNews
+    } = useAutoNewsModal({
+        enabled: !!user, // Solo habilitar si el usuario está autenticado
+        delay: 3000, // Esperar 3 segundos después de cargar la página
+        checkInterval: 60000 // Verificar cada minuto
+    });
 
     // Estados para los modales de cupón
     const [couponModalOpen, setCouponModalOpen] = useState(false);
@@ -469,6 +476,13 @@ export default function AccountLayout() {
                 couponCode={validatedCoupon?.code || ''}
                 couponType={validatedCoupon?.type}
                 couponValue={validatedCoupon?.value}
+            />
+
+            {/* Modal automático de noticias */}
+            <NewsModal
+                isOpen={isNewsModalOpen}
+                onClose={closeNewsModal}
+                news={currentNews}
             />
         </div>
     );

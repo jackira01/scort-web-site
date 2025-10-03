@@ -64,9 +64,14 @@ export default function SearchPageClient({
   const queryFilters = {
     ...(filters.category && { category: filters.category }),
     ...(filters.location?.department && { location: filters.location }),
-    ...(filters.features?.age && { age: filters.features.age }),
-    ...(filters.features?.gender && { gender: filters.features.gender }),
-    ...(filters.features?.sex && { sex: filters.features.sex }),
+    // Construir features correctamente
+    ...((filters.features?.ageRange || filters.features?.gender || filters.features?.sex) && {
+      features: {
+        ...(filters.features?.ageRange && { ageRange: filters.features.ageRange }),
+        ...(filters.features?.gender && { gender: filters.features.gender }),
+        ...(filters.features?.sex && { sex: filters.features.sex }),
+      }
+    }),
     // Incluir filtros de verificación del HorizontalFilterBar
     ...(filters.verification?.identityVerified && { profileVerified: filters.verification.identityVerified }),
     ...(filters.verification?.hasVideo && { hasVideos: filters.verification.hasVideo }),
@@ -80,7 +85,7 @@ export default function SearchPageClient({
 
   // Determinar si los filtros han cambiado desde los iniciales
   const hasFiltersChanged = Boolean(
-    filters.features?.age ||
+    filters.features?.ageRange ||
     filters.features?.gender ||
     filters.features?.sex ||
     (filters.location?.department !== departamento) ||
@@ -168,7 +173,7 @@ export default function SearchPageClient({
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50">
       {/* Header con información de ubicación */}
-      <div className="backdrop-blur-sm border-b border-purple-100 sticky top-0 z-40">
+      <div className="backdrop-blur-sm border-b border-purple-100 dark:border-purple-900 sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col gap-4">
             {/* Breadcrumb */}
@@ -311,20 +316,24 @@ export default function SearchPageClient({
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="left" className="w-80 overflow-y-auto max-h-screen">
-                    <SheetHeader className="sticky top-0 bg-white z-10 pb-4">
-                      <SheetTitle className="flex items-center justify-between ">
+                    <SheetHeader className="sticky top-0 bg-white dark:bg-gray-900 z-10 pb-2">
+                      <SheetTitle>
                         Filtros
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleClearFilters}
-                          disabled={isLoadingProfiles}
-                          className="text-purple-600 hover:text-purple-700"
-                        >
-                          {isLoadingProfiles ? 'Cargando...' : 'Restaurar filtros'}
-                        </Button>
                       </SheetTitle>
                     </SheetHeader>
+                    
+                    {/* Botón restaurar filtros separado del header */}
+                    <div className="sticky top-16 bg-white dark:bg-gray-900 z-10 pb-4 pt-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleClearFilters}
+                        disabled={isLoadingProfiles}
+                        className="text-purple-600 hover:text-purple-700 w-full"
+                      >
+                        {isLoadingProfiles ? 'Cargando...' : 'Restaurar filtros'}
+                      </Button>
+                    </div>
 
                     <div className="mt-6 space-y-6 pb-20 px-1">
                       <LocationFilter

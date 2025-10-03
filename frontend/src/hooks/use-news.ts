@@ -1,13 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { newsService } from '../services/news.service';
-import toast from 'react-hot-toast';
-import {
-  News,
-  NewsFilters,
-  CreateNewsRequest,
-  UpdateNewsRequest,
-  NewsPaginationParams
-} from '../types/news.types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { newsService, NewsFilters } from '../services/news.service';
+import { News, CreateNewsRequest, NewsFormData } from '../types/news.types';
+import { toast } from 'sonner';
 
 // ============================================================================
 // QUERY KEYS
@@ -75,6 +69,51 @@ export const useSearchNews = (searchTerm: string, limit: number = 10) => {
     queryFn: () => newsService.searchNews(searchTerm, limit),
     enabled: !!searchTerm && searchTerm.length >= 2,
     staleTime: 5 * 60 * 1000,
+  });
+};
+
+/**
+ * Hook para obtener la última noticia no leída
+ */
+export const useLatestUnreadNews = () => {
+  return useQuery({
+    queryKey: [...newsKeys.all, 'latest-unread'],
+    queryFn: () => newsService.getLatestUnreadNews(),
+    staleTime: 1 * 60 * 1000, // 1 minuto
+    refetchInterval: 2 * 60 * 1000, // Refetch cada 2 minutos
+  });
+};
+
+/**
+ * Hook para obtener noticias no leídas
+ */
+export const useUnreadNews = (filters: NewsFilters & NewsPaginationParams = {}) => {
+  return useQuery({
+    queryKey: [...newsKeys.all, 'unread', filters],
+    queryFn: () => newsService.getUnreadNews(),
+    staleTime: 1 * 60 * 1000, // 1 minuto
+  });
+};
+
+/**
+ * Hook para marcar una noticia como vista
+ */
+export const useMarkNewsAsViewed = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (newsId: string) => newsService.markNewsAsViewed(newsId),
+    onSuccess: () => {
+      // Invalidar queries relacionadas con noticias no leídas
+      queryClient.invalidateQueries({ queryKey: [...newsKeys.all, 'unread'] });
+      queryClient.invalidateQueries({ queryKey: [...newsKeys.all, 'latest-unread'] });
+      
+      toast.success('Noticia marcada como vista');
+    },
+    onError: (error: any) => {
+      console.error('Error al marcar noticia como vista:', error);
+      toast.error('Error al marcar la noticia como vista');
+    },
   });
 };
 
@@ -193,7 +232,7 @@ export const useDeleteNews = () => {
 export const useAdminNews = (filters: NewsFilters & NewsPaginationParams = {}) => {
   return useQuery({
     queryKey: newsKeys.admin.list(filters),
-    queryFn: () => newsService.getAllNewsForAdmin(filters),
+    queryFn: () => newsService.getNews(filters),
     staleTime: 2 * 60 * 1000, // 2 minutos
   });
 };
@@ -252,6 +291,9 @@ export default {
   useNewsById,
   useLatestNews,
   useSearchNews,
+  useLatestUnreadNews,
+  useUnreadNews,
+  useMarkNewsAsViewed,
   useCreateNews,
   useUpdateNews,
   useToggleNewsStatus,

@@ -9,6 +9,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import AuthRedirectHandler from '@/components/authentication/AuthRedirectHandler';
 import { CookieConsentProvider } from '@/contexts/CookieConsentContext';
 import CookieConsentWrapper from '@/components/CookieConsentWrapper';
+import { AgeVerificationProvider } from '@/contexts/AgeVerificationContext';
 
 const enviroment = process.env.NODE_ENV;
 
@@ -69,11 +70,13 @@ export function Providers({ children }: PropsWithChildren) {
           refetchWhenOffline={false}
         >
           <CookieConsentProvider>
-            <AuthRedirectHandler />
-            <Toaster position="top-right" />
-            <CookieConsentWrapper>
-              {children}
-            </CookieConsentWrapper>
+            <AgeVerificationProvider>
+              <AuthRedirectHandler />
+              <Toaster position="top-right" />
+              <CookieConsentWrapper>
+                {children}
+              </CookieConsentWrapper>
+            </AgeVerificationProvider>
           </CookieConsentProvider>
         </SessionProvider>
       </ThemeProvider>

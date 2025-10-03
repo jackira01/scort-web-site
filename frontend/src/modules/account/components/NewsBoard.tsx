@@ -17,7 +17,7 @@ const NewsBoard = () => {
 
   // Obtener las últimas noticias
   const { data: latestNews, isLoading: isLoadingLatest, error: latestError } = useLatestNews(10);
-  
+
   // Búsqueda de noticias (solo cuando hay término de búsqueda)
   const { data: searchResults, isLoading: isLoadingSearch } = useSearchNews(
     searchTerm,
@@ -132,6 +132,9 @@ const NewsBoard = () => {
   const displayNews = isSearching ? searchResults : latestNews;
   const isLoading = isSearching ? isLoadingSearch : isLoadingLatest;
 
+  console.log(displayNews);
+
+
   return (
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
       {/* Header */}
@@ -184,17 +187,17 @@ const NewsBoard = () => {
           <div className="flex justify-center py-8">
             <Loader />
           </div>
-        ) : !displayNews || displayNews.length === 0 ? (
-          <EmptyState 
+        ) : !displayNews || displayNews.data.length === 0 ? (
+          <EmptyState
             message={
-              isSearching 
+              isSearching
                 ? `No se encontraron noticias que coincidan con "${searchTerm}"`
                 : "No hay noticias disponibles en este momento"
             }
           />
         ) : (
           <div className="space-y-4">
-            {displayNews.map((news) => (
+            {displayNews.data.map((news) => (
               <NewsItem key={news._id} news={news} />
             ))}
           </div>
@@ -202,10 +205,10 @@ const NewsBoard = () => {
       </div>
 
       {/* Footer info */}
-      {!isSearching && displayNews && displayNews.length > 0 && (
+      {!isSearching && displayNews && displayNews.data.length > 0 && (
         <div className="text-center py-4">
           <p className="text-sm text-muted-foreground">
-            Mostrando las {displayNews.length} noticias más recientes
+            Mostrando las {displayNews.data.length} noticias más recientes
           </p>
         </div>
       )}

@@ -1,9 +1,31 @@
 // Tipos para el módulo de noticias (Tablero de noticias)
 
+// Interfaz para contenido estructurado de noticias
+export interface INewsContent {
+  id: string;
+  type: 'text' | 'image';
+  content: string;
+  order: number;
+}
+
+// Interfaz principal de noticias
+export interface INews {
+  id: string;
+  title: string;
+  content: INewsContent[];
+  bannerImage?: string; // URL de la imagen/banner principal
+  published: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Interfaz para compatibilidad con el backend actual
 export interface News {
   _id: string;
   title: string;
   content: string[]; // Array de strings para los patch notes
+  imageUrl?: string; // URL de la imagen/banner de la noticia
+  bannerImage?: string; // Nueva URL de la imagen/banner principal
   published: boolean;
   createdAt: string;
   updatedAt: string;
@@ -14,12 +36,15 @@ export interface News {
 // Tipos para formularios
 export interface CreateNewsRequest {
   title: string;
-  content: string[];
+  content: INewsContent[] | string[];
+  imageUrl?: string;
+  bannerImage?: string;
   published?: boolean;
 }
 
 export interface UpdateNewsRequest extends Partial<CreateNewsRequest> {
-  _id: string;
+  _id?: string;
+  id?: string;
 }
 
 // Tipos para respuestas de API
@@ -68,6 +93,7 @@ export interface NewsManagerState {
 export interface NewsFormData {
   title: string;
   content: string[];
+  imageUrl?: string;
   published: boolean;
 }
 

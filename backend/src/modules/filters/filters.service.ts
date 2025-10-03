@@ -212,56 +212,78 @@ export const getFilteredProfiles = async (
       // DEBUG - Processing features with keys
       const featureConditions: any[] = [];
 
-      // Primero necesitamos obtener los IDs de los grupos por sus keys
-      const groupKeys = Object.keys(features);
-      // DEBUG - Features keys
-      const attributeGroups = await AttributeGroup.find({
-        key: { $in: groupKeys },
-      });
-      // DEBUG - Found attribute groups
-      const groupKeyToId = new Map();
-      attributeGroups.forEach((group) => {
-        groupKeyToId.set(group.key, group._id);
-      });
-      // DEBUG - Group key to ID map
-
-      for (const [groupKey, value] of Object.entries(features)) {
-        const groupId = groupKeyToId.get(groupKey);
-        // DEBUG - Processing feature
-        if (!groupId) {
-          // WARNING - No groupId found for feature key
-          continue;
-        }
-
-        if (Array.isArray(value)) {
-          // Si es un array, buscar cualquiera de los valores (normalizados)
-          const normalizedValues = value.map((v) => v.toLowerCase().trim());
-          const condition = {
-            features: {
-              $elemMatch: {
-                group_id: groupId,
-                value: { $in: normalizedValues },
-              },
-            },
-          };
-          featureConditions.push(condition);
-        } else {
-          // Si es un valor único (normalizado) - buscar en el array de valores del perfil
-          const normalizedValue = (value as string).toLowerCase().trim();
-          const condition = {
-            features: {
-              $elemMatch: {
-                group_id: groupId,
-                value: { $in: [normalizedValue] },
-              },
-            },
-          };
-          featureConditions.push(condition);
+      // Manejo especial para ageRange
+      if (features.ageRange && typeof features.ageRange === 'object') {
+        const { min, max } = features.ageRange as { min?: number; max?: number };
+        if (min !== undefined || max !== undefined) {
+          const ageCondition: any = {};
+          if (min !== undefined) {
+            ageCondition.$gte = min;
+          }
+          if (max !== undefined) {
+            ageCondition.$lte = max;
+          }
+          query.age = ageCondition;
         }
       }
 
-      if (featureConditions.length > 0) {
-        query.$and = featureConditions;
+      // Procesar otras características (excluyendo ageRange)
+      const otherFeatures = Object.fromEntries(
+        Object.entries(features).filter(([key]) => key !== 'ageRange')
+      );
+
+      if (Object.keys(otherFeatures).length > 0) {
+        // Primero necesitamos obtener los IDs de los grupos por sus keys
+        const groupKeys = Object.keys(otherFeatures);
+        // DEBUG - Features keys
+        const attributeGroups = await AttributeGroup.find({
+          key: { $in: groupKeys },
+        });
+        // DEBUG - Found attribute groups
+        const groupKeyToId = new Map();
+        attributeGroups.forEach((group) => {
+          groupKeyToId.set(group.key, group._id);
+        });
+        // DEBUG - Group key to ID map
+
+        for (const [groupKey, value] of Object.entries(otherFeatures)) {
+          const groupId = groupKeyToId.get(groupKey);
+          // DEBUG - Processing feature
+          if (!groupId) {
+            // WARNING - No groupId found for feature key
+            continue;
+          }
+
+          if (Array.isArray(value)) {
+            // Si es un array, buscar cualquiera de los valores (normalizados)
+            const normalizedValues = value.map((v) => v.toLowerCase().trim());
+            const condition = {
+              features: {
+                $elemMatch: {
+                  group_id: groupId,
+                  value: { $in: normalizedValues },
+                },
+              },
+            };
+            featureConditions.push(condition);
+          } else {
+            // Si es un valor único (normalizado) - buscar en el array de valores del perfil
+            const normalizedValue = (value as string).toLowerCase().trim();
+            const condition = {
+              features: {
+                $elemMatch: {
+                  group_id: groupId,
+                  value: { $in: [normalizedValue] },
+                },
+              },
+            };
+            featureConditions.push(condition);
+          }
+        }
+
+        if (featureConditions.length > 0) {
+          query.$and = featureConditions;
+        }
       }
     }
 
@@ -332,9 +354,24 @@ export const getFilteredProfiles = async (
 
     // Determinar campos a seleccionar: asegurar campos requeridos por el motor de visibilidad
     const requiredFields = ['planAssignment', 'upgrades', 'lastShownAt', 'createdAt'];
+    
+    // Campos mínimos necesarios para ProfileCard
+    const profileCardFields = [
+      '_id', 
+      'name', 
+      'age', 
+      'location', 
+      'description', 
+      'verification', 
+      'media.gallery',
+      'online',
+      'hasVideo'
+    ];
+    
     const finalFields = Array.isArray(fields) && fields.length > 0
       ? Array.from(new Set([...fields, ...requiredFields]))
-      : ['_id', 'name', 'age', 'location', 'description', 'verification', 'media', 'isActive', ...requiredFields];
+      : Array.from(new Set([...profileCardFields, ...requiredFields]));
+    
     const selectFields = finalFields.join(' ');
 
     const startTime = Date.now();
@@ -418,6 +455,19 @@ export const getFilteredProfiles = async (
       });
     }
 
+    // Agregar proyección final para limitar campos devueltos
+    const projectionFields: any = {};
+    finalFields.forEach(field => {
+      projectionFields[field] = 1;
+    });
+    
+    // Asegurar que siempre incluimos el campo user para verificaciones
+    projectionFields['user'] = 1;
+    
+    aggregationPipeline.push({
+      $project: projectionFields
+    });
+
     // Ejecutar agregación para obtener perfiles
     const [allProfiles, totalCountResult] = await Promise.all([
       Profile.aggregate(aggregationPipeline),
@@ -469,7 +519,7 @@ export const getFilteredProfiles = async (
       limit,
     };
 
-    // Agregar información de verificación a los perfiles
+    // Agregar información de verificación y hasDestacadoUpgrade a los perfiles
     const profilesWithVerification = paginatedProfiles.map(profile => {
       // Calcular estado de verificación basado en verificationStatus
       let isVerified = false;
@@ -487,8 +537,25 @@ export const getFilteredProfiles = async (
         }
       }
       
+      // Calcular hasDestacadoUpgrade
+      const now = new Date();
+      let hasDestacadoUpgrade = false;
+      
+      // Verificar si tiene plan DIAMANTE
+      if (profile.planAssignment?.planCode === 'DIAMANTE') {
+        hasDestacadoUpgrade = true;
+      } else if (profile.upgrades && Array.isArray(profile.upgrades)) {
+        // Verificar si tiene upgrade DESTACADO/HIGHLIGHT activo
+        hasDestacadoUpgrade = profile.upgrades.some((upgrade: any) => 
+          ['DESTACADO', 'HIGHLIGHT'].includes(upgrade.code) &&
+          new Date(upgrade.startAt) <= now &&
+          new Date(upgrade.endAt) > now
+        );
+      }
+      
       return {
         ...profile,
+        hasDestacadoUpgrade,
         verification: {
           isVerified,
           verificationLevel

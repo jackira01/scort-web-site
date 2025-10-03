@@ -15,11 +15,7 @@ import {
 } from '@/types/plans';
 import { API_URL } from '@/lib/config';
 
-<<<<<<< HEAD
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-=======
 const API_BASE_URL = API_URL;
->>>>>>> 840af42 (feat(account): add mobile-friendly horizontal menu and menu content components)
 
 // Función para transformar datos del backend al formato del frontend
 const transformBackendPlanToFrontend = (backendPlan: any): Plan => {
@@ -86,10 +82,10 @@ const plansApi = {
     const response = await fetch(`${API_BASE_URL}/api/plans${queryString}`);
     if (!response.ok) throw new Error('Error al obtener planes');
     const result = await response.json();
-    
+
     // Transformar la respuesta del backend al formato esperado por el frontend
     const plans = (result.data || []).map(transformBackendPlanToFrontend);
-    
+
     return {
       plans,
       total: result.pagination?.total || 0,
@@ -167,7 +163,7 @@ const plansApi = {
 
   update: async (data: UpdatePlanRequest): Promise<Plan> => {
 
-    
+
     // Transformar datos del frontend al formato del backend
     const backendData = {
       code: data.code,
@@ -202,12 +198,12 @@ const plansApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(backendData)
     });
-    
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || 'Error al actualizar plan');
     }
-    
+
     const result = await response.json();
     const plan = result.data || result;
     const transformedPlan = transformBackendPlanToFrontend(plan);
@@ -236,17 +232,17 @@ const upgradesApi = {
     if (filters.search) queryParts.push(`search=${encodeURIComponent(filters.search)}`);
 
     const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/plans/upgrades${queryString}`);
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(`Error al obtener upgrades. ${JSON.stringify(errorData)}`);
       }
-      
+
       const result = await response.json();
-      
+
       // Transformar la respuesta del backend al formato esperado por el frontend
       return {
         upgrades: result.data || [],
@@ -346,7 +342,7 @@ export const usePlansByLevel = (level: number) => {
 
 export const useCreatePlan = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: plansApi.create,
     onSuccess: (data) => {
@@ -363,7 +359,7 @@ export const useCreatePlan = () => {
 
 export const useUpdatePlan = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: plansApi.update,
     onSuccess: (data) => {
@@ -381,7 +377,7 @@ export const useUpdatePlan = () => {
 
 export const useDeletePlan = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: plansApi.delete,
     onSuccess: () => {
@@ -438,7 +434,7 @@ export const useUpgradeDependencyTree = () => {
 
 export const useCreateUpgrade = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: upgradesApi.create,
     onSuccess: () => {
@@ -454,7 +450,7 @@ export const useCreateUpgrade = () => {
 
 export const useUpdateUpgrade = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: upgradesApi.update,
     onSuccess: (data) => {
@@ -471,7 +467,7 @@ export const useUpdateUpgrade = () => {
 
 export const useDeleteUpgrade = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: upgradesApi.delete,
     onSuccess: () => {

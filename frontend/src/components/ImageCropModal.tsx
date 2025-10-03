@@ -139,7 +139,7 @@ export function ImageCropModal({
               crop={crop}
               zoom={zoom}
               rotation={rotation}
-              aspect={4 / 5}
+              aspect={aspectRatio}
               onCropChange={setCrop}
               onCropComplete={onCropCompleteCallback}
               onZoomChange={setZoom}
@@ -150,6 +150,13 @@ export function ImageCropModal({
                   width: '100%',
                   height: '100%',
                   backgroundColor: 'transparent'
+                },
+                cropAreaStyle: {
+                  border: '2px solid #3b82f6',
+                  borderRadius: '4px'
+                },
+                mediaStyle: {
+                  transform: 'none'
                 }
               }}
             />
