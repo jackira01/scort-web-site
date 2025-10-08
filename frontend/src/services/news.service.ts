@@ -60,7 +60,7 @@ class NewsService {
   }
 
   /**
-   * Obtener las últimas noticias publicadas
+   * Obtener las últimas noticias
    */
   async getLatestNews(limit: number = 5): Promise<NewsResponse> {
     const response = await axios.get(`${this.baseUrl}/latest?limit=${limit}`);
@@ -104,32 +104,6 @@ class NewsService {
    */
   async deleteNews(id: string): Promise<{ success: boolean; message: string }> {
     const response = await axios.delete(`${this.baseUrl}/${id}`);
-    return response.data;
-  }
-
-  // ===== MÉTODOS DE VISUALIZACIONES =====
-
-  /**
-   * Marcar una noticia como vista por el usuario autenticado
-   */
-  async markNewsAsViewed(newsId: string): Promise<NewsViewResponse> {
-    const response = await axios.post(`${this.baseUrl}/${newsId}/view`);
-    return response.data;
-  }
-
-  /**
-   * Obtener noticias no leídas por el usuario autenticado
-   */
-  async getUnreadNews(): Promise<NewsResponse> {
-    const response = await axios.get(`${this.baseUrl}/unread`);
-    return response.data;
-  }
-
-  /**
-   * Obtener la última noticia no leída por el usuario autenticado
-   */
-  async getLatestUnreadNews(): Promise<SingleNewsResponse> {
-    const response = await axios.get(`${this.baseUrl}/latest-unread`);
     return response.data;
   }
 }

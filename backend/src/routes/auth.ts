@@ -1,8 +1,16 @@
 import { Router } from 'express';
 import { JWTService } from '../services/jwt.service';
+import { 
+  verifyEmailController, 
+  resendVerificationController 
+} from '../controllers/auth.controller';
 
 const router = Router();
 const jwtService = new JWTService();
+
+// Rutas de verificación de email
+router.post('/verify-email', verifyEmailController);
+router.post('/resend-verification', resendVerificationController);
 
 /**
  * @route POST /auth/generate-token

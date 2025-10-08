@@ -18,6 +18,7 @@ declare module "next-auth" {
       highlightedUntil?: string;
       verificationDocument?: string[];
       password?: string;
+      emailVerified?: Date | null;
     } & DefaultSession["user"]
   }
 
@@ -36,6 +37,7 @@ declare module "next-auth" {
     highlightedUntil?: string;
     verificationDocument?: string[];
     password?: string;
+    emailVerified?: Date | null;
   }
 }
 
@@ -55,5 +57,6 @@ declare module "next-auth/jwt" {
     highlightedUntil?: string;
     verificationDocument?: string[];
     password?: string;
+    emailVerified?: Date | null;
   }
 }

@@ -4,12 +4,14 @@ import { FilterQuery, UpdateQuery } from 'mongoose';
 export interface CreateNewsData {
   title: string;
   content: string[];
+  imageUrl?: string;
   published?: boolean;
 }
 
 export interface UpdateNewsData {
   title?: string;
   content?: string[];
+  imageUrl?: string;
   published?: boolean;
 }
 
@@ -31,6 +33,7 @@ export class NewsService {
       const news = new News({
         title: data.title,
         content: data.content,
+        imageUrl: data.imageUrl,
         published: data.published ?? true
       });
 
@@ -122,6 +125,10 @@ export class NewsService {
 
       if (data.content !== undefined) {
         updateData.content = data.content;
+      }
+
+      if (data.imageUrl !== undefined) {
+        updateData.imageUrl = data.imageUrl;
       }
 
       if (data.published !== undefined) {

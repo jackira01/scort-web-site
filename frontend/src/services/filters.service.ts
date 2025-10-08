@@ -85,6 +85,7 @@ export const getProfilesForCards = async (
     sortOrder: params.sortOrder || 'desc',
   };
 
+  console.log('getProfilesForCards: Sending request with params', optimizedParams);
 
 
   // Usar POST para mejor rendimiento con campos específicos

@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, Calendar, Eye } from 'lucide-react';
-import { useLatestUnreadNews, useMarkNewsAsViewed } from '@/hooks/use-news';
+import { useLatestNews } from '@/hooks/use-news';
+import { useNewsLocalStorage } from '@/hooks/useNewsLocalStorage';
 import { News } from '@/types/news.types';
 import { DateTime } from 'luxon';
 import Image from 'next/image';
@@ -23,22 +24,23 @@ export const NewsModal: React.FC<NewsModalProps> = ({
   news: propNews
 }) => {
   const [currentNews, setCurrentNews] = useState<News | null>(propNews || null);
-  const { data: latestUnreadResponse } = useLatestUnreadNews();
-  const markAsViewedMutation = useMarkNewsAsViewed();
+  const { data: latestNewsResponse } = useLatestNews(10);
+  const { getLatestUnviewedNews, markNewsAsViewed } = useNewsLocalStorage();
 
-  // Si no se pasa una noticia específica, usar la última no leída
+  // Si no se pasa una noticia específica, usar la última no leída del localStorage
   useEffect(() => {
-    if (!propNews && latestUnreadResponse?.data) {
-      setCurrentNews(latestUnreadResponse.data);
+    if (!propNews && latestNewsResponse?.data) {
+      const latestUnreadNews = getLatestUnviewedNews(latestNewsResponse.data);
+      setCurrentNews(latestUnreadNews);
     } else if (propNews) {
       setCurrentNews(propNews);
     }
-  }, [propNews, latestUnreadResponse]);
+  }, [propNews, latestNewsResponse, getLatestUnviewedNews]);
 
   const handleClose = () => {
     if (currentNews?._id) {
-      // Marcar como vista al cerrar
-      markAsViewedMutation.mutate(currentNews._id);
+      // Marcar como vista al cerrar usando localStorage
+      markNewsAsViewed(currentNews._id);
     }
     setCurrentNews(null);
     onClose();
@@ -63,7 +65,7 @@ export const NewsModal: React.FC<NewsModalProps> = ({
       <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden">
         {/* Header con imagen de banner si existe */}
         {currentNews.imageUrl && (
-          <div className="relative w-full h-48 bg-gradient-to-r from-purple-500 to-pink-500">
+          <div className="relative w-full aspect-video bg-gradient-to-r from-purple-500 to-pink-500">
             <Image
               src={currentNews.imageUrl}
               alt={currentNews.title}
@@ -72,14 +74,6 @@ export const NewsModal: React.FC<NewsModalProps> = ({
               priority
             />
             <div className="absolute inset-0 bg-black/20" />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-4 right-4 text-white hover:bg-white/20"
-              onClick={handleClose}
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         )}
 
@@ -87,19 +81,9 @@ export const NewsModal: React.FC<NewsModalProps> = ({
           {/* Header sin imagen */}
           {!currentNews.imageUrl && (
             <DialogHeader className="mb-4">
-              <div className="flex items-start justify-between">
-                <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white pr-8">
-                  {currentNews.title}
-                </DialogTitle>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  onClick={handleClose}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
+              <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
+                {currentNews.title}
+              </DialogTitle>
             </DialogHeader>
           )}
 

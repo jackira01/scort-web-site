@@ -182,8 +182,9 @@ const FilterBar = () => {
             style={{ animationDelay: '300ms' }}
           >
             <Button
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium transition-all duration-200 shadow-lg hover:shadow-xl disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed disabled:shadow-none"
               onClick={handleSearch}
+              disabled={!categoria && !departamento}
             >
               <Search className="w-4 h-4 mr-2" />
               Buscar

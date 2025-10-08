@@ -399,8 +399,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       <div
         key={index}
         className={`relative group border-2 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg ${isImage && isPreviewImage
-            ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-400 dark:border-yellow-600 ring-2 ring-yellow-400 dark:ring-yellow-600 shadow-lg'
-            : 'bg-card border-border hover:border-primary/50'
+          ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-400 dark:border-yellow-600 ring-2 ring-yellow-400 dark:ring-yellow-600 shadow-lg'
+          : 'bg-card border-border hover:border-primary/50'
           }`}
       >
         {/* Imagen principal */}
@@ -495,8 +495,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                 size="sm"
                 onClick={() => handleSetCoverImage(index)}
                 className={`flex-1 ${isPreviewImage
-                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500'
-                    : 'hover:bg-yellow-50 hover:border-yellow-300 dark:hover:bg-yellow-950/20'
+                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500'
+                  : 'hover:bg-yellow-50 hover:border-yellow-300 dark:hover:bg-yellow-950/20'
                   }`}
                 title={isPreviewImage ? "Imagen de portada actual" : "Seleccionar como imagen de portada"}
               >
@@ -521,7 +521,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
           </div>
 
           {/* Botón Ajustar debajo */}
-          {isImage && isPreviewImage && (
+          {isImage && isValidFile && (
             <div className="mt-2">
               <Button
                 variant="outline"
@@ -718,7 +718,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                         <strong>¡Has superado el límite!</strong>
                       </p>
                       <p className="text-purple-700 dark:text-purple-300 text-sm mb-3">
-                        Has alcanzado el máximo de {contentLimits.maxPhotos} fotos para {selectedPlan?.name || 'tu plan actual'}. 
+                        Has alcanzado el máximo de {contentLimits.maxPhotos} fotos para {selectedPlan?.name || 'tu plan actual'}.
                         Si deseas subir más fotos, mejora tu plan ahora y desbloquea todo el potencial de tu perfil.
                       </p>
                       {selectedPlan?.code === 'FREE' && (
@@ -1090,7 +1090,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
           imageSrc={URL.createObjectURL(currentImageToCrop.file)}
           onCropComplete={handleCropComplete}
           fileName={currentImageToCrop.file.name}
-          aspectRatio={4 / 3}
+          aspectRatio={4 / 6}
         />
       )}
     </div>

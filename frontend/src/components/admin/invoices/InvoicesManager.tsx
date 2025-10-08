@@ -51,6 +51,8 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [invoiceIdFilter, setInvoiceIdFilter] = useState<string>('');
   const [invoiceIdSearch, setInvoiceIdSearch] = useState<string>(''); // Estado separado para la búsqueda
+  const [invoiceNumberFilter, setInvoiceNumberFilter] = useState<string>('');
+  const [invoiceNumberSearch, setInvoiceNumberSearch] = useState<string>(''); // Estado separado para la búsqueda por número
   // const [userIdFilter, setUserIdFilter] = useState<string>('');
   // const [profileIdFilter, setProfileIdFilter] = useState<string>('');
   const [pageSize] = useState(10);
@@ -70,6 +72,7 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
     limit: pageSize,
     status: statusFilter || undefined,
     _id: invoiceIdFilter || undefined,
+    invoiceNumber: invoiceNumberFilter || undefined,
     // userId: userIdFilter || undefined,
     // profileId: profileIdFilter || undefined
   });
@@ -85,6 +88,15 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
 
   const handleSearchInvoice = () => {
     setInvoiceIdFilter(invoiceIdSearch); // Aplica el filtro cuando se hace clic en buscar
+    setCurrentPage(1);
+  };
+
+  const handleInvoiceNumberFilterChange = (value: string) => {
+    setInvoiceNumberSearch(value); // Solo actualiza el estado de búsqueda, no el filtro
+  };
+
+  const handleSearchInvoiceNumber = () => {
+    setInvoiceNumberFilter(invoiceNumberSearch); // Aplica el filtro cuando se hace clic en buscar
     setCurrentPage(1);
   };
 
@@ -106,6 +118,8 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
     setStatusFilter('');
     setInvoiceIdFilter('');
     setInvoiceIdSearch(''); // Limpiar también el estado de búsqueda
+    setInvoiceNumberFilter('');
+    setInvoiceNumberSearch('');
     // setUserIdFilter('');
     // setProfileIdFilter('');
     setCurrentPage(1);
@@ -215,7 +229,7 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Estado:
@@ -255,27 +269,26 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
               </div>
             </div>
 
-            {/* <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                ID de Usuario:
-              </label>
-              <Input
-                placeholder="Filtrar por ID de usuario"
-                value={userIdFilter}
-                onChange={(e) => handleUserIdFilterChange(e.target.value)}
-              />
-            </div>
-
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                ID de Perfil:
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Número de Factura:
               </label>
-              <Input
-                placeholder="Filtrar por ID de perfil"
-                value={profileIdFilter}
-                onChange={(e) => handleProfileIdFilterChange(e.target.value)}
-              />
-            </div> */}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Filtrar por número de factura"
+                  value={invoiceNumberSearch}
+                  onChange={(e) => handleInvoiceNumberFilterChange(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearchInvoiceNumber()}
+                />
+                <Button
+                  onClick={handleSearchInvoiceNumber}
+                  variant="outline"
+                  className="px-3"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
 
             <div className="flex gap-2">
               <Button onClick={clearFilters} variant="outline">
@@ -313,11 +326,23 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
               <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 mb-2 dark:text-gray-300">No se encontraron facturas</p>
               <p className="text-sm text-gray-500 dark:text-gray-300">
-                {statusFilter || invoiceIdFilter
-                  ? 'Intenta cambiar los filtros'
+                {invoiceIdFilter || invoiceNumberFilter
+                  ? 'No se encontró ninguna factura con ese ID o número'
+                  : statusFilter
+                  ? 'No hay facturas con ese estado'
                   : 'Aún no hay facturas registradas'
                 }
               </p>
+              {(invoiceIdFilter || invoiceNumberFilter || statusFilter) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="mt-3"
+                >
+                  Limpiar filtros
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -333,7 +358,7 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <p className="font-medium text-gray-900 dark:text-gray-300">
-                          Factura #{invoice._id.slice(-8)}
+                          Factura #{invoice.invoiceNumber || invoice._id.slice(-8)}
                         </p>
                         {invoice.profileId && (
                           <Badge variant="outline" className="text-xs">

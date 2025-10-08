@@ -59,6 +59,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             verification_in_progress: result.user.verification_in_progress,
             role: result.user.role,
             hasPassword: true,
+            emailVerified: result.user.emailVerified,
             provider: "credentials"
           };
         } catch (error) {
@@ -111,6 +112,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           user.verification_in_progress = result.user.verification_in_progress;
           user.role = result.user.role;
           user.hasPassword = result.user.hasPassword;
+          user.emailVerified = result.user.emailVerified;
 
           return true;
         } catch (error) {
@@ -126,14 +128,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Solo mantener logs críticos para debugging de producción
       if (user) {
         token.id = user.id;
-        token._id = user._id || user.id;
-        token.email = user.email;
+        token._id = user._id || user.id || '';
+        token.email = user.email || '';
         token.name = user.name;
         token.image = user.image;
         token.isVerified = user.isVerified;
         token.verification_in_progress = user.verification_in_progress;
         token.role = user.role;
         token.hasPassword = user.hasPassword;
+        token.emailVerified = user.emailVerified;
         token.profileId = user.profileId;
         token.profileStatus = user.profileStatus;
         token.profileVerificationStatus = user.profileVerificationStatus;
@@ -158,6 +161,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             token.isVerified = userData.isVerified;
             token.verification_in_progress = userData.verification_in_progress;
             token.role = userData.role;
+            token.emailVerified = userData.emailVerified;
             token.profileId = userData.profileId;
             token.profileStatus = userData.profileStatus;
             token.profileVerificationStatus = userData.profileVerificationStatus;
@@ -188,6 +192,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.verification_in_progress = token.verification_in_progress as boolean;
         session.user.role = token.role as 'admin' | 'user' | 'guest';
         session.user.hasPassword = token.hasPassword as boolean;
+        session.user.emailVerified = token.emailVerified as Date | null;
         session.user.provider = token.provider as string;
         session.user.profileId = token.profileId as string;
         session.user.profileStatus = token.profileStatus as string;

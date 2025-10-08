@@ -49,6 +49,12 @@ const AUTH_REQUIRED_ROUTES = [
   '/adminboard',
 ];
 
+// Rutas que requieren verificación de email
+const EMAIL_VERIFICATION_REQUIRED_ROUTES = [
+  '/perfil',
+  '/adminboard',
+];
+
 // Rutas que requieren que el usuario tenga contraseña configurada
 const PASSWORD_REQUIRED_ROUTES = [
   '/cuenta/crear-perfil',
@@ -110,6 +116,17 @@ export async function middleware(request: NextRequest) {
       // Redirigir a la ruta raíz para rutas protegidas sin sesión
       const homeUrl = new URL('/', request.url);
       return NextResponse.redirect(homeUrl);
+    }
+  }
+
+  // Verificar si la ruta requiere verificación de email
+  const requiresEmailVerification = EMAIL_VERIFICATION_REQUIRED_ROUTES.some(route => pathname.startsWith(route));
+  
+  if (requiresEmailVerification && token) {
+    // Si el usuario no tiene email verificado, redirigir a página de verificación
+    if (!token.emailVerified) {
+      const verificationUrl = new URL('/autenticacion/verificar-email', request.url);
+      return NextResponse.redirect(verificationUrl);
     }
   }
 

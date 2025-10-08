@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useLatestUnreadNews } from './use-news';
+import { useLatestNews } from './use-news';
+import { useNewsLocalStorage } from './useNewsLocalStorage';
 import { News } from '@/types/news.types';
 
 interface UseAutoNewsModalOptions {
@@ -32,12 +33,20 @@ export const useAutoNewsModal = (
   const [hasShownInitialNews, setHasShownInitialNews] = useState(false);
 
   const { 
-    data: latestUnreadResponse, 
+    data: latestNewsResponse, 
     isLoading,
     refetch 
-  } = useLatestUnreadNews();
+  } = useLatestNews(10); // Obtener las últimas 10 noticias
 
-  const latestUnreadNews = latestUnreadResponse?.data;
+  const { 
+    getLatestUnviewedNews, 
+    markNewsAsViewed,
+    cleanOldViewedNews 
+  } = useNewsLocalStorage();
+
+  // Obtener la última noticia no vista usando localStorage
+  const latestNews = latestNewsResponse?.data || [];
+  const latestUnreadNews = getLatestUnviewedNews(latestNews);
   const hasUnreadNews = !!latestUnreadNews;
 
   // Función para abrir el modal
@@ -51,9 +60,18 @@ export const useAutoNewsModal = (
 
   // Función para cerrar el modal
   const closeModal = () => {
+    // Marcar la noticia como vista al cerrar el modal
+    if (currentNews) {
+      markNewsAsViewed(currentNews._id);
+    }
     setIsModalOpen(false);
     setCurrentNews(null);
   };
+
+  // Limpiar noticias vistas antiguas al inicializar
+  useEffect(() => {
+    cleanOldViewedNews(30); // Mantener solo las últimas 30 días
+  }, [cleanOldViewedNews]);
 
   // Efecto para mostrar automáticamente la noticia no leída
   useEffect(() => {

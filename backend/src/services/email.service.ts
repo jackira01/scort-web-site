@@ -259,6 +259,82 @@ Por favor, revisa estos cambios en el panel de administración.
   }
 
   /**
+   * Envía código de verificación por email
+   * @param email - Email del destinatario
+   * @param code - Código de verificación de 6 dígitos
+   * @param userName - Nombre del usuario (opcional)
+   * @returns Promise<EmailResponse>
+   */
+  async sendEmailVerificationCode(
+    email: string,
+    code: string,
+    userName?: string
+  ): Promise<EmailResponse> {
+    try {
+      await this.initialize();
+
+      const displayName = userName || email.split('@')[0];
+
+      const emailContent = {
+        subject: `Código de verificación - ${this.appName}`,
+        textPart: `
+Hola ${displayName},
+
+Tu código de verificación es: ${code}
+
+Este código expirará en 15 minutos por seguridad.
+
+Si no solicitaste este código, puedes ignorar este mensaje.
+
+Saludos,
+Equipo de ${this.appName}
+        `,
+        htmlPart: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+            <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #333; margin-bottom: 10px;">🔐 Verificación de Email</h1>
+                <p style="color: #666; font-size: 16px;">Hola ${displayName},</p>
+              </div>
+              
+              <div style="text-align: center; background-color: #f8f9fa; padding: 30px; border-radius: 8px; margin-bottom: 30px;">
+                <p style="color: #333; font-size: 18px; margin-bottom: 20px;">Tu código de verificación es:</p>
+                <div style="display: inline-block; background-color: #007bff; color: white; padding: 15px 30px; border-radius: 6px; font-size: 32px; font-weight: bold; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+                  ${code}
+                </div>
+              </div>
+              
+              <div style="background-color: #fff3cd; padding: 20px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+                <p style="color: #856404; margin: 0; font-size: 14px;">
+                  ⏰ <strong>Importante:</strong> Este código expirará en 15 minutos por seguridad.
+                </p>
+              </div>
+              
+              <div style="text-align: center; color: #666; font-size: 14px; line-height: 1.6;">
+                <p>Si no solicitaste este código, puedes ignorar este mensaje.</p>
+                <p style="margin-top: 20px;">
+                  Saludos,<br>
+                  <strong>Equipo de ${this.appName}</strong>
+                </p>
+              </div>
+            </div>
+          </div>
+        `
+      };
+
+      return await this.sendSingleEmail({
+        to: { email, name: displayName },
+        content: emailContent
+      });
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to send email verification code'
+      };
+    }
+  }
+
+  /**
    * Valida el formato de email
    * @param email - Email a validar
    * @returns boolean

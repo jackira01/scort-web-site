@@ -72,9 +72,11 @@ export const useSearchNews = (searchTerm: string, limit: number = 10) => {
   });
 };
 
-/**
- * Hook para obtener la última noticia no leída
- */
+// ===== HOOKS PARA VISUALIZACIONES =====
+// Estos hooks ya no son necesarios con localStorage
+// Se mantienen comentados por compatibilidad temporal
+
+/*
 export const useLatestUnreadNews = () => {
   return useQuery({
     queryKey: [...newsKeys.all, 'latest-unread'],
@@ -84,9 +86,6 @@ export const useLatestUnreadNews = () => {
   });
 };
 
-/**
- * Hook para obtener noticias no leídas
- */
 export const useUnreadNews = (filters: NewsFilters & NewsPaginationParams = {}) => {
   return useQuery({
     queryKey: [...newsKeys.all, 'unread', filters],
@@ -95,9 +94,6 @@ export const useUnreadNews = (filters: NewsFilters & NewsPaginationParams = {}) 
   });
 };
 
-/**
- * Hook para marcar una noticia como vista
- */
 export const useMarkNewsAsViewed = () => {
   const queryClient = useQueryClient();
 
@@ -116,6 +112,7 @@ export const useMarkNewsAsViewed = () => {
     },
   });
 };
+*/
 
 // ============================================================================
 // MUTATION HOOKS
@@ -291,9 +288,9 @@ export default {
   useNewsById,
   useLatestNews,
   useSearchNews,
-  useLatestUnreadNews,
-  useUnreadNews,
-  useMarkNewsAsViewed,
+  // useLatestUnreadNews, // Comentado - ya no se usa con localStorage
+  // useUnreadNews, // Comentado - ya no se usa con localStorage
+  // useMarkNewsAsViewed, // Comentado - ya no se usa con localStorage
   useCreateNews,
   useUpdateNews,
   useToggleNewsStatus,

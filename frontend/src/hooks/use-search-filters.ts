@@ -204,7 +204,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
     setFilters((prev) => {
       const newFilters = { ...prev };
       
-
+      console.log('🔍 DEBUG useSearchFilters - updateFilter called', { key, value });
       
       // Manejar filtros anidados en features
       if (['gender', 'sex', 'age', 'height', 'weight', 'bodyType', 'ethnicity', 'hairColor', 'eyeColor', 'services', 'ageRange'].includes(key)) {
@@ -212,7 +212,16 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
           ...prev.features,
           [key]: value,
         };
-
+        
+        if (key === 'ageRange') {
+          console.log('🔍 DEBUG useSearchFilters - Processing ageRange in features:', {
+            key,
+            value,
+            updatedFeatures: newFilters.features
+          });
+        }
+        
+        console.log('useSearchFilters: Updated features', newFilters.features);
       }
       // Manejar filtros de ubicación
       else if (['department', 'city'].includes(key)) {
@@ -259,7 +268,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
         page: 1, // Reset page when changing filters
       };
       
-
+      console.log('useSearchFilters: Final filters after update', finalFilters);
       
       return finalFilters;
     });

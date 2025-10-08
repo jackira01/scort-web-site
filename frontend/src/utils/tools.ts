@@ -3,7 +3,7 @@ import { applyWatermarkToImage } from './watermark';
 import { ProcessedImageResult } from './imageProcessor';
 
 const upload_preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "";
-const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_NAME || "";
+const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "";
 
 /**
  * Carga dinámica de browser-image-compression solo en el cliente
@@ -23,7 +23,7 @@ const loadImageCompression = async () => {
 export const normalizeImageSize = async (file: File): Promise<File> => {
   // COMENTADO TEMPORALMENTE - Devolver archivo original sin procesar
   return file;
-  
+
   /* CÓDIGO ORIGINAL COMENTADO
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -96,7 +96,7 @@ export const normalizeImageSize = async (file: File): Promise<File> => {
 export const compressImage = async (file: File): Promise<File> => {
   // COMENTADO TEMPORALMENTE - Devolver archivo original sin comprimir
   return file;
-  
+
   /* CÓDIGO ORIGINAL COMENTADO
   const options = {
     maxSizeMB: 1, // máximo 1MB
@@ -136,8 +136,8 @@ export const uploadMultipleImages = async (
       // 1. Normalización de tamaño (máximo 1000px)
       const normalizedFile = await normalizeImageSize(file);
 
-      // 2. Aplicación de marca de agua
-      const watermarkedFile = await applyWatermarkToImage(normalizedFile, watermarkText);
+      // 2. Aplicación de marca de agua (deshabilitada para banners de noticias)
+      const watermarkedFile = watermarkText ? await applyWatermarkToImage(normalizedFile, watermarkText) : normalizedFile;
 
       // 3. Compresión final (máximo 500KB)
       const compressedFile = await compressImage(watermarkedFile);
@@ -178,9 +178,9 @@ export const uploadMultipleImages = async (
 
   const successCount = uploadedUrls.filter(url => url !== null).length;
   const failCount = uploadedUrls.length - successCount;
-  
+
   console.log(`📊 Resultado subida imágenes: ${successCount} exitosas, ${failCount} fallidas`);
-  
+
   return uploadedUrls;
 };
 
@@ -299,7 +299,7 @@ export const uploadMultipleVideos = async (
   }
 
   const uploadedVideos: { link: string; preview: string }[] = [];
-  
+
   for (let i = 0; i < filesArray.length; i++) {
     const file = filesArray[i];
     try {
@@ -322,14 +322,14 @@ export const uploadMultipleVideos = async (
       }
 
       let previewUrl = '';
-      
+
       // Si hay imagen de preview personalizada, subirla
       if (videoCoverImages && videoCoverImages[i]) {
         const coverImage = videoCoverImages[i];
-        
+
         if (coverImage instanceof File) {
           console.log(`📤 Subiendo imagen de preview para video ${i + 1}: ${coverImage.name}`);
-          
+
           // Subir imagen de preview personalizada
           const previewFormData = new FormData();
           previewFormData.append('file', coverImage);
@@ -340,7 +340,7 @@ export const uploadMultipleVideos = async (
             `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
             previewFormData,
           );
-          
+
           if (previewResponse.data && previewResponse.data.secure_url) {
             previewUrl = previewResponse.data.secure_url;
             console.log(`✅ Imagen de preview subida exitosamente: ${previewUrl}`);
@@ -363,7 +363,7 @@ export const uploadMultipleVideos = async (
         link: videoResponse.data.secure_url,
         preview: previewUrl
       });
-      
+
       console.log(`✅ Video ${i + 1} subido exitosamente: ${videoResponse.data.secure_url}`);
     } catch (error) {
       console.error(`❌ Error al subir video ${i + 1} (${file.name}):`, error);
@@ -373,7 +373,7 @@ export const uploadMultipleVideos = async (
 
   const successCount = uploadedVideos.length;
   const failCount = filesArray.length - successCount;
-  
+
   console.log(`📊 Resultado subida videos: ${successCount} exitosos, ${failCount} fallidos`);
 
   return uploadedVideos;
@@ -389,7 +389,7 @@ export const uploadMultipleAudios = async (
   }
 
   const uploadedUrls: (string | null)[] = [];
-  
+
   for (let i = 0; i < filesArray.length; i++) {
     const file = filesArray[i];
     try {
@@ -404,7 +404,7 @@ export const uploadMultipleAudios = async (
         `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`,
         formData,
       );
-      
+
       if (response.data && response.data.secure_url) {
         uploadedUrls.push(response.data.secure_url);
         console.log(`✅ Audio ${i + 1} subido exitosamente: ${response.data.secure_url}`);
@@ -421,7 +421,7 @@ export const uploadMultipleAudios = async (
 
   const successCount = uploadedUrls.filter(url => url !== null).length;
   const failCount = uploadedUrls.length - successCount;
-  
+
   console.log(`📊 Resultado subida audios: ${successCount} exitosos, ${failCount} fallidos`);
 
   return uploadedUrls;

@@ -252,26 +252,29 @@ export const registerUserController = async (req: Request, res: Response) => {
       password: hashedPassword,
       providers: ['credentials'],
       hasPassword: true,
-      emailVerified: new Date(), // En producción, esto debería ser null hasta verificar
+      emailVerified: null, // No verificado hasta que confirme el email
     });
 
-    // Enviar correo de bienvenida
+    // Enviar código de verificación por email
     try {
-      await sendWelcomeEmail(user.email, user.name);
+      const { EmailVerificationService } = await import('./email-verification.service');
+      const emailVerificationService = new EmailVerificationService();
+      await emailVerificationService.sendVerificationCode(user.email, user.name);
     } catch (emailError) {
-      // Error enviando correo de bienvenida
-      // No fallar el registro por error de email
+      console.error('Error enviando código de verificación:', emailError);
+      // No fallar el registro por error de email, pero informar al usuario
     }
 
     res.status(201).json({
       success: true,
-      message: 'Usuario registrado exitosamente',
+      message: 'Usuario registrado exitosamente. Revisa tu email para verificar tu cuenta.',
       user: {
         _id: user._id,
         email: user.email,
         name: user.name,
         isVerified: user.isVerified,
         role: user.role,
+        emailVerified: user.emailVerified,
       }
     });
   } catch (error) {

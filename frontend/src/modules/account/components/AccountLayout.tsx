@@ -14,6 +14,7 @@ import CouponModal from '@/components/modals/CouponModal';
 import CouponConfirmationModal from '@/components/modals/CouponConfirmationModal';
 import PlanSelectorModal from '@/components/modals/PlanSelectorModal';
 import NewsModal from '@/components/modals/NewsModal';
+import EmailVerificationModal from '@/components/modals/EmailVerificationModal';
 import { couponService } from '@/services/coupon.service';
 import { ICoupon } from '@/types/coupon.types';
 import { API_URL } from '@/lib/config';
@@ -51,6 +52,9 @@ export default function AccountLayout() {
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    
+    // Estado para el modal de verificación de email
+    const [emailVerificationModalOpen, setEmailVerificationModalOpen] = useState(false);
 
     // Detectar si es vista móvil
     useEffect(() => {
@@ -63,6 +67,29 @@ export default function AccountLayout() {
 
         return () => window.removeEventListener('resize', checkIsMobile);
     }, []);
+
+    // Verificar si el usuario necesita verificar su email
+    useEffect(() => {
+        console.log('🔍 DEBUG EmailModal - Usuario:', {
+            user: user ? {
+                id: user.id,
+                email: user.email,
+                emailVerified: user.emailVerified,
+                emailVerifiedType: typeof user.emailVerified
+            } : null
+        });
+        
+        if (user && !user.emailVerified && user.emailVerified !== null) {
+            console.log('✅ DEBUG EmailModal - Abriendo modal de verificación');
+            setEmailVerificationModalOpen(true);
+        } else {
+            console.log('❌ DEBUG EmailModal - NO abriendo modal:', {
+                hasUser: !!user,
+                emailVerified: user?.emailVerified,
+                isNotNull: user?.emailVerified !== null
+            });
+        }
+    }, [user]);
 
     const handleCouponRedeem = async (couponCode: string) => {
         try {
@@ -483,6 +510,13 @@ export default function AccountLayout() {
                 isOpen={isNewsModalOpen}
                 onClose={closeNewsModal}
                 news={currentNews}
+            />
+
+            {/* Modal de verificación de email */}
+            <EmailVerificationModal
+                isOpen={emailVerificationModalOpen}
+                onClose={() => setEmailVerificationModalOpen(false)}
+                userEmail={user?.email || ''}
             />
         </div>
     );

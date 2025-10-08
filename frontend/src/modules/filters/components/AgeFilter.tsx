@@ -26,17 +26,50 @@ const AgeFilter = ({ ageRange, onAgeRangeChange }: AgeFilterProps) => {
   }, [ageRange]);
 
   const handleMinChange = (value: string) => {
-    const min = value ? parseInt(value) : undefined;
-    setLocalAgeRange(prev => ({ ...prev, min }));
+    console.log('🔍 DEBUG AgeFilter - Min change:', { value, type: typeof value });
+    const numValue = value === '' ? undefined : parseInt(value);
+    console.log('🔍 DEBUG AgeFilter - Min parsed:', { numValue, type: typeof numValue });
+    setLocalAgeRange(prev => ({ ...prev, min: numValue }));
   };
 
   const handleMaxChange = (value: string) => {
-    const max = value ? parseInt(value) : undefined;
-    setLocalAgeRange(prev => ({ ...prev, max }));
+    console.log('🔍 DEBUG AgeFilter - Max change:', { value, type: typeof value });
+    const numValue = value === '' ? undefined : parseInt(value);
+    console.log('🔍 DEBUG AgeFilter - Max parsed:', { numValue, type: typeof numValue });
+    setLocalAgeRange(prev => ({ ...prev, max: numValue }));
   };
 
   const handleApplyFilter = () => {
-    onAgeRangeChange(localAgeRange);
+    console.log('🔍 DEBUG AgeFilter - Aplicando filtro con localAgeRange:', localAgeRange);
+    
+    const filteredRange: { min?: number; max?: number } = {};
+    
+    if (localAgeRange.min !== undefined && localAgeRange.min !== null && !isNaN(localAgeRange.min)) {
+      filteredRange.min = localAgeRange.min;
+      console.log('✅ DEBUG AgeFilter - Min válido:', filteredRange.min);
+    } else {
+      console.log('❌ DEBUG AgeFilter - Min inválido:', { 
+        value: localAgeRange.min, 
+        isUndefined: localAgeRange.min === undefined,
+        isNull: localAgeRange.min === null,
+        isNaN: isNaN(localAgeRange.min as number)
+      });
+    }
+    
+    if (localAgeRange.max !== undefined && localAgeRange.max !== null && !isNaN(localAgeRange.max)) {
+      filteredRange.max = localAgeRange.max;
+      console.log('✅ DEBUG AgeFilter - Max válido:', filteredRange.max);
+    } else {
+      console.log('❌ DEBUG AgeFilter - Max inválido:', { 
+        value: localAgeRange.max, 
+        isUndefined: localAgeRange.max === undefined,
+        isNull: localAgeRange.max === null,
+        isNaN: isNaN(localAgeRange.max as number)
+      });
+    }
+    
+    console.log('🚀 DEBUG AgeFilter - Enviando filteredRange:', filteredRange);
+    onAgeRangeChange(filteredRange);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

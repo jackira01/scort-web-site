@@ -14,7 +14,10 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: 'Online Escorts - Premium Escort Services',
   description:
-    'Encuentra servicios de Escorts premium en tu ciudad. Profesionales, verificados y compañeros discretos.'
+    'Encuentra servicios de Escorts premium en tu ciudad. Profesionales, verificados y compañeros discretos.',
+  icons: {
+    icon: "/images/kiss.png", // o /logo.png
+  },
 };
 
 export default function RootLayout({

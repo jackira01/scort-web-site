@@ -10,11 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
+import { uploadMultipleImages } from '@/utils/tools';
 import {
-  Plus,
   Trash2,
   Save,
-  X,
   AlertCircle,
   FileText,
   Type,
@@ -58,9 +58,18 @@ export function NewsForm({ isOpen, onClose, news, mode }: NewsFormProps) {
   useEffect(() => {
     if (mode === 'edit' && news) {
       setTitle(news.title);
-      setContent(news.content || []);
+      
+      // Convertir el contenido del backend (string[]) a INewsContent[]
+      const convertedContent: INewsContent[] = (news.content || []).map((contentString, index) => ({
+        id: `content-${index}`,
+        type: 'text' as const,
+        content: contentString,
+        order: index
+      }));
+      
+      setContent(convertedContent);
       setIsPublished(news.published);
-      setBannerImage(news.bannerImage || null);
+      setBannerImage(news.imageUrl || null);
     } else {
       // Reset form for create mode
       setTitle('');
@@ -149,6 +158,24 @@ export function NewsForm({ isOpen, onClose, news, mode }: NewsFormProps) {
     if (!validateForm()) return;
 
     try {
+      let finalImageUrl = bannerImage;
+
+      // Si hay una imagen recortada (bannerFile), subirla a Cloudinary primero
+      if (bannerFile) {
+        try {
+          const uploadedUrls = await uploadMultipleImages([bannerFile]);
+          if (uploadedUrls && uploadedUrls.length > 0 && uploadedUrls[0]) {
+            finalImageUrl = uploadedUrls[0];
+          } else {
+            throw new Error('No se pudo obtener la URL de la imagen subida');
+          }
+        } catch (uploadError) {
+          console.error('Error al subir imagen a Cloudinary:', uploadError);
+          toast.error('Error al subir la imagen. Inténtalo de nuevo.');
+          return;
+        }
+      }
+
       // Convertir INewsContent[] a string[] para compatibilidad con el backend
       const contentStrings = content.map(item => item.content);
       
@@ -156,7 +183,7 @@ export function NewsForm({ isOpen, onClose, news, mode }: NewsFormProps) {
         title: title.trim(),
         content: contentStrings,
         published: isPublished,
-        bannerImage: bannerImage || undefined,
+        imageUrl: finalImageUrl || undefined,
       };
 
       if (mode === 'create') {

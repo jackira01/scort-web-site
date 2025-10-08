@@ -119,33 +119,14 @@ const queryValidation = [
 // GET /api/news - Obtener noticias con filtros
 router.get('/', queryValidation, NewsController.getNews);
 
-// GET /api/news/latest-unread - Obtener la última noticia no leída por el usuario autenticado
-router.get('/latest-unread', 
-  // authMiddleware, // Descomentar cuando esté disponible
-  NewsController.getLatestUnreadNews
-);
-
-// GET /api/news/unread - Obtener noticias no leídas por el usuario autenticado
-router.get('/unread', 
-  // authMiddleware, // Descomentar cuando esté disponible
-  NewsController.getUnreadNews
-);
-
 // GET /api/news/latest - Obtener últimas noticias
 router.get('/latest', NewsController.getLatestNews);
 
 // GET /api/news/search - Buscar noticias
 router.get('/search', searchValidation, NewsController.searchNews);
 
-// GET /api/news/:id -// Obtener noticia por ID
+// GET /api/news/:id - Obtener noticia por ID
 router.get('/:id', idValidation, NewsController.getNewsById);
-
-// Marcar noticia como vista por el usuario autenticado
-router.post('/:id/view', 
-  // authMiddleware, // Descomentar cuando esté disponible
-  idValidation,
-  NewsController.markNewsAsViewed
-);
 
 // ===== RUTAS ADMINISTRATIVAS =====
 // Nota: Descomentar authMiddleware y adminMiddleware cuando estén disponibles
