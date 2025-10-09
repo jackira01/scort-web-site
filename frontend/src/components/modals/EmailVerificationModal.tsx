@@ -19,6 +19,12 @@ export default function EmailVerificationModal({
   onClose, 
   userEmail 
 }: EmailVerificationModalProps) {
+  console.log('🔍 DEBUG EmailVerificationModal - Renderizando con props:', {
+    isOpen,
+    userEmail,
+    timestamp: new Date().toISOString()
+  });
+
   const [verificationCode, setVerificationCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);

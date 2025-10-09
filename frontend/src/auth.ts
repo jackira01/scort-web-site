@@ -50,7 +50,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (req) {
             // TODO: Implementar limpieza de intentos fallidos si es necesario
           }
-
           return {
             id: result.user._id,
             email: result.user.email,
@@ -76,7 +75,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 
   // Usar JWT para mejor compatibilidad con Credentials
-  session: { 
+  session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 días
   },
@@ -101,6 +100,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           const result = await response.json();
 
+
           if (!result.success) {
             return false;
           }
@@ -123,15 +123,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       return true;
     },
-    
+
     async jwt({ token, user, account, trigger }) {
       // Solo mantener logs críticos para debugging de producción
       if (user) {
-        token.id = user.id;
+        token.id = user.id || '';
         token._id = user._id || user.id || '';
         token.email = user.email || '';
-        token.name = user.name;
-        token.image = user.image;
+        token.name = user.name || '';
+        token.image = user.image || '';
         token.isVerified = user.isVerified;
         token.verification_in_progress = user.verification_in_progress;
         token.role = user.role;
@@ -156,7 +156,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (response.ok) {
             const userData = await response.json();
-            
+
             token.hasPassword = userData.hasPassword;
             token.isVerified = userData.isVerified;
             token.verification_in_progress = userData.verification_in_progress;
@@ -179,7 +179,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       return token;
     },
-    
+
     async session({ session, token }) {
       // Transferir datos del token a la sesión
       if (token) {
@@ -200,10 +200,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.isHighlighted = token.isHighlighted as boolean;
         session.user.highlightedUntil = token.highlightedUntil as string;
       }
-
       return session;
     },
-    
+
     async redirect({ url, baseUrl }) {
       // Siempre redirigir a / después del login exitoso
       return `${baseUrl}/`;
@@ -224,6 +223,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   // Configuración de debug para desarrollo
   debug: process.env.NODE_ENV === 'development',
-  
+
   secret: process.env.AUTH_SECRET,
 });

@@ -61,7 +61,7 @@ export const verifyPasswordResetCodeController = async (req: Request, res: Respo
       await UserModel.findByIdAndUpdate(user._id, {
         $unset: { resetPasswordCode: 1, resetPasswordExpires: 1 }
       });
-      
+
       return res.status(400).json({
         success: false,
         message: 'Código inválido o expirado'
@@ -78,10 +78,10 @@ export const verifyPasswordResetCodeController = async (req: Request, res: Respo
 
     // Código válido - generar token temporal para cambio de contraseña
     const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    
+
     // Guardar token temporal con expiración de 10 minutos
     const tokenExpiration = new Date(Date.now() + 10 * 60 * 1000);
-    
+
     await UserModel.findByIdAndUpdate(user._id, {
       resetPasswordToken: resetToken,
       resetPasswordTokenExpires: tokenExpiration,
@@ -135,18 +135,18 @@ export const resetPasswordController = async (req: Request, res: Response) => {
     }
 
     // Verificar token y expiración
-    if (!user.resetPasswordToken || 
-        !user.resetPasswordTokenExpires || 
-        user.resetPasswordToken !== token ||
-        user.resetPasswordTokenExpires < new Date()) {
-      
+    if (!user.resetPasswordToken ||
+      !user.resetPasswordTokenExpires ||
+      user.resetPasswordToken !== token ||
+      user.resetPasswordTokenExpires < new Date()) {
+
       // Limpiar campos expirados
       if (user.resetPasswordTokenExpires && user.resetPasswordTokenExpires < new Date()) {
         await UserModel.findByIdAndUpdate(user._id, {
           $unset: { resetPasswordToken: 1, resetPasswordTokenExpires: 1 }
         });
       }
-      
+
       return res.status(400).json({
         success: false,
         message: 'Token de restablecimiento inválido o expirado'
@@ -161,8 +161,8 @@ export const resetPasswordController = async (req: Request, res: Response) => {
     await UserModel.findByIdAndUpdate(user._id, {
       password: hashedPassword,
       hasPassword: true,
-      $unset: { 
-        resetPasswordToken: 1, 
+      $unset: {
+        resetPasswordToken: 1,
         resetPasswordTokenExpires: 1,
         resetPasswordCode: 1,
         resetPasswordExpires: 1
@@ -209,6 +209,7 @@ export const getUserById = async (req: Request, res: Response) => {
       accountType: user.accountType,
       agencyInfo: user.agencyInfo,
       hasPassword: user.hasPassword, // Agregar hasPassword para el callback JWT
+      emailVerified: user.emailVerified,
     });
   } catch (error) {
     // Error al obtener usuario por ID
@@ -338,6 +339,8 @@ export const loginUserController = async (req: Request, res: Response) => {
         isVerified: user.isVerified,
         verification_in_progress: user.verification_in_progress,
         role: user.role,
+        emailVerified: user.emailVerified,
+        hasPassword: user.hasPassword,
       }
     });
   } catch (error) {
@@ -373,16 +376,16 @@ export const requestPasswordResetController = async (req: Request, res: Response
 
     // Buscar usuario por email
     const user = await userService.findUserByEmail(email);
-    
+
     // Por seguridad, siempre devolvemos el mismo mensaje
     // independientemente de si el usuario existe o no
     if (user) {
       // Generar código de recuperación de 6 dígitos
       const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-      
+
       // Guardar el código en el usuario con expiración de 15 minutos
       const expirationTime = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
-      
+
       await UserModel.findByIdAndUpdate(user._id, {
         resetPasswordCode: resetCode,
         resetPasswordExpires: expirationTime
@@ -392,7 +395,7 @@ export const requestPasswordResetController = async (req: Request, res: Response
       try {
         const EmailService = require('../../services/email.service').default;
         const emailService = new EmailService();
-        
+
         const emailResult = await emailService.sendSingleEmail({
           to: { email: email },
           content: {
@@ -512,7 +515,8 @@ export const authGoogleUserController = async (req: Request, res: Response) => {
       isVerified: user.isVerified,
       verification_in_progress: user.verification_in_progress,
       role: user.role,
-      hasPassword: user.hasPassword
+      hasPassword: user.hasPassword,
+      emailVerified: user.emailVerified,
     }
   });
 };

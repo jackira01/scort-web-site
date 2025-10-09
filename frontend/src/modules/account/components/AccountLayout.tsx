@@ -52,9 +52,17 @@ export default function AccountLayout() {
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
-    
+
     // Estado para el modal de verificación de email
     const [emailVerificationModalOpen, setEmailVerificationModalOpen] = useState(false);
+
+    // Debug: Monitorear cambios en el estado del modal
+    useEffect(() => {
+        console.log('🔍 DEBUG EmailModal - Estado del modal cambió:', {
+            emailVerificationModalOpen,
+            timestamp: new Date().toISOString()
+        });
+    }, [emailVerificationModalOpen]);
 
     // Detectar si es vista móvil
     useEffect(() => {
@@ -70,15 +78,8 @@ export default function AccountLayout() {
 
     // Verificar si el usuario necesita verificar su email
     useEffect(() => {
-        console.log('🔍 DEBUG EmailModal - Usuario:', {
-            user: user ? {
-                id: user.id,
-                email: user.email,
-                emailVerified: user.emailVerified,
-                emailVerifiedType: typeof user.emailVerified
-            } : null
-        });
-        
+        console.log('🔍 DEBUG EmailModal - Usuario:', user);
+
         if (user && !user.emailVerified && user.emailVerified !== null) {
             console.log('✅ DEBUG EmailModal - Abriendo modal de verificación');
             setEmailVerificationModalOpen(true);
@@ -515,7 +516,10 @@ export default function AccountLayout() {
             {/* Modal de verificación de email */}
             <EmailVerificationModal
                 isOpen={emailVerificationModalOpen}
-                onClose={() => setEmailVerificationModalOpen(false)}
+                onClose={() => {
+                    console.log('🔍 DEBUG EmailModal - Cerrando modal de verificación');
+                    setEmailVerificationModalOpen(false);
+                }}
                 userEmail={user?.email || ''}
             />
         </div>

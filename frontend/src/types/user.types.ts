@@ -9,36 +9,37 @@
     verificationImages?: string[];
 } */
 export interface BaseUser {
-    _id: string;
-    isVerified?: boolean;
-    verification_in_progress?: boolean;
-    role?: 'admin' | 'user' | 'guest';
-    accountType?: 'common' | 'agency';
-    agencyInfo?: {
-        businessName?: string;
-        businessDocument?: string;
-        conversionRequestedAt?: Date | string;
-        conversionApprovedAt?: Date | string;
-        conversionApprovedBy?: string;
-        conversionStatus: 'pending' | 'approved' | 'rejected';
-    };
+  _id: string;
+  isVerified?: boolean;
+  verification_in_progress?: boolean;
+  role?: 'admin' | 'user' | 'guest';
+  accountType?: 'common' | 'agency';
+  agencyInfo?: {
+    businessName?: string;
+    businessDocument?: string;
+    conversionRequestedAt?: Date | string;
+    conversionApprovedAt?: Date | string;
+    conversionApprovedBy?: string;
+    conversionStatus: 'pending' | 'approved' | 'rejected';
+  };
+  emailVerified?: string;
 }
 export interface User extends BaseUser {
-    email?: string;
-    name: string;
-    verificationDocument: string[];
-    profiles?: Profile[];
-    password?: string;
-    role: 'admin' | 'user' | 'guest';
-    accountType: 'common' | 'agency';
-    agencyInfo?: {
-        businessName?: string;
-        businessDocument?: string;
-        conversionRequestedAt?: Date | string;
-        conversionApprovedAt?: Date | string;
-        conversionApprovedBy?: string;
-        conversionStatus: 'pending' | 'approved' | 'rejected';
-    };
+  email?: string;
+  name: string;
+  verificationDocument: string[];
+  profiles?: Profile[];
+  password?: string;
+  role: 'admin' | 'user' | 'guest';
+  accountType: 'common' | 'agency';
+  agencyInfo?: {
+    businessName?: string;
+    businessDocument?: string;
+    conversionRequestedAt?: Date | string;
+    conversionApprovedAt?: Date | string;
+    conversionApprovedBy?: string;
+    conversionStatus: 'pending' | 'approved' | 'rejected';
+  };
 }
 
 
@@ -115,13 +116,13 @@ export interface Profile {
 }
 
 export interface UserPaginatedResponse {
-    docs: User[];
-    totalDocs: number;
-    limit: number;
-    totalPages: number;
-    page: number;
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
-    nextPage: number | null;
-    prevPage: number | null;
+  docs: User[];
+  totalDocs: number;
+  limit: number;
+  totalPages: number;
+  page: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  nextPage: number | null;
+  prevPage: number | null;
 }

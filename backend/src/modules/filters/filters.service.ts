@@ -119,7 +119,7 @@ export const getFilteredProfiles = async (
       ]);
 
       const verifiedProfileIds = profileVerificationQuery.map(p => p._id);
-      
+
       if (profileVerified) {
         // Solo incluir perfiles con video verificado
         query._id = { $in: verifiedProfileIds };
@@ -154,7 +154,7 @@ export const getFilteredProfiles = async (
       ]);
 
       const documentVerifiedProfileIds = documentVerificationQuery.map(p => p._id);
-      
+
       if (documentVerified) {
         // Solo incluir perfiles con documentos verificados
         if (query._id && query._id.$in) {
@@ -207,23 +207,27 @@ export const getFilteredProfiles = async (
     }
 
     // Filtro por características (features)
-    // DEBUG - Features object
+    console.log('🔍 DEBUG - Features object received:', JSON.stringify(features, null, 2));
     if (features && Object.keys(features).length > 0) {
-      // DEBUG - Processing features with keys
+      console.log('🔍 DEBUG - Processing features with keys:', Object.keys(features));
       const featureConditions: any[] = [];
 
       // Manejo especial para ageRange
       if (features.ageRange && typeof features.ageRange === 'object') {
+        console.log('🔍 DEBUG - Processing ageRange:', features.ageRange);
         const { min, max } = features.ageRange as { min?: number; max?: number };
         if (min !== undefined || max !== undefined) {
           const ageCondition: any = {};
           if (min !== undefined) {
             ageCondition.$gte = min;
+            console.log('🔍 DEBUG - Age min condition:', min);
           }
           if (max !== undefined) {
             ageCondition.$lte = max;
+            console.log('🔍 DEBUG - Age max condition:', max);
           }
           query.age = ageCondition;
+          console.log('🔍 DEBUG - Final age query condition:', ageCondition);
         }
       }
 
@@ -235,22 +239,22 @@ export const getFilteredProfiles = async (
       if (Object.keys(otherFeatures).length > 0) {
         // Primero necesitamos obtener los IDs de los grupos por sus keys
         const groupKeys = Object.keys(otherFeatures);
-        // DEBUG - Features keys
+        console.log('🔍 DEBUG - Features keys to process:', groupKeys);
         const attributeGroups = await AttributeGroup.find({
           key: { $in: groupKeys },
         });
-        // DEBUG - Found attribute groups
+        console.log('🔍 DEBUG - Found attribute groups:', attributeGroups.map(g => ({ key: g.key, id: g._id })));
         const groupKeyToId = new Map();
         attributeGroups.forEach((group) => {
           groupKeyToId.set(group.key, group._id);
         });
-        // DEBUG - Group key to ID map
+        console.log('🔍 DEBUG - Group key to ID map:', Array.from(groupKeyToId.entries()));
 
         for (const [groupKey, value] of Object.entries(otherFeatures)) {
           const groupId = groupKeyToId.get(groupKey);
-          // DEBUG - Processing feature
+          console.log('🔍 DEBUG - Processing feature:', { groupKey, value, groupId });
           if (!groupId) {
-            // WARNING - No groupId found for feature key
+            console.warn('⚠️ WARNING - No groupId found for feature key:', groupKey);
             continue;
           }
 
@@ -354,24 +358,24 @@ export const getFilteredProfiles = async (
 
     // Determinar campos a seleccionar: asegurar campos requeridos por el motor de visibilidad
     const requiredFields = ['planAssignment', 'upgrades', 'lastShownAt', 'createdAt'];
-    
+
     // Campos mínimos necesarios para ProfileCard
     const profileCardFields = [
-      '_id', 
-      'name', 
-      'age', 
-      'location', 
-      'description', 
-      'verification', 
+      '_id',
+      'name',
+      'age',
+      'location',
+      'description',
+      'verification',
       'media.gallery',
       'online',
       'hasVideo'
     ];
-    
+
     const finalFields = Array.isArray(fields) && fields.length > 0
       ? Array.from(new Set([...fields, ...requiredFields]))
       : Array.from(new Set([...profileCardFields, ...requiredFields]));
-    
+
     const selectFields = finalFields.join(' ');
 
     const startTime = Date.now();
@@ -403,6 +407,9 @@ export const getFilteredProfiles = async (
         }
       }
     ];
+
+    console.log('🔍 DEBUG - Final MongoDB query:', JSON.stringify(query, null, 2));
+    console.log('🔍 DEBUG - Aggregation pipeline:', JSON.stringify(aggregationPipeline, null, 2));
 
     // DEBUG getFilteredProfiles - Pipeline de agregación
 
@@ -460,10 +467,10 @@ export const getFilteredProfiles = async (
     finalFields.forEach(field => {
       projectionFields[field] = 1;
     });
-    
+
     // Asegurar que siempre incluimos el campo user para verificaciones
     projectionFields['user'] = 1;
-    
+
     aggregationPipeline.push({
       $project: projectionFields
     });
@@ -488,8 +495,11 @@ export const getFilteredProfiles = async (
     ]);
 
     // DEBUG getFilteredProfiles - Perfiles encontrados y total count result
+    console.log('🔍 DEBUG - Profiles returned from aggregation:', allProfiles.length);
+    console.log('🔍 DEBUG - Sample profile ages (first 5):', allProfiles.slice(0, 5).map(p => ({ id: p._id, age: p.age })));
 
     const totalCount = totalCountResult[0]?.total || 0;
+    console.log('🔍 DEBUG - Total profiles found:', totalCount);
 
     // Ordenar perfiles usando el motor de visibilidad (nivel -> score -> lastShownAt -> createdAt)
     const sortedProfiles = await sortProfiles(allProfiles as any, now);
@@ -524,11 +534,11 @@ export const getFilteredProfiles = async (
       // Calcular estado de verificación basado en verificationStatus
       let isVerified = false;
       let verificationLevel = 'pending';
-      
+
       if (profile.verification) {
         const verifiedCount = Object.values(profile.verification).filter(status => status === 'verified').length;
         const totalFields = Object.keys(profile.verification).length;
-        
+
         if (verifiedCount === totalFields && totalFields > 0) {
           isVerified = true;
           verificationLevel = 'verified';
@@ -536,23 +546,23 @@ export const getFilteredProfiles = async (
           verificationLevel = 'partial';
         }
       }
-      
+
       // Calcular hasDestacadoUpgrade
       const now = new Date();
       let hasDestacadoUpgrade = false;
-      
+
       // Verificar si tiene plan DIAMANTE
       if (profile.planAssignment?.planCode === 'DIAMANTE') {
         hasDestacadoUpgrade = true;
       } else if (profile.upgrades && Array.isArray(profile.upgrades)) {
         // Verificar si tiene upgrade DESTACADO/HIGHLIGHT activo
-        hasDestacadoUpgrade = profile.upgrades.some((upgrade: any) => 
+        hasDestacadoUpgrade = profile.upgrades.some((upgrade: any) =>
           ['DESTACADO', 'HIGHLIGHT'].includes(upgrade.code) &&
           new Date(upgrade.startAt) <= now &&
           new Date(upgrade.endAt) > now
         );
       }
-      
+
       return {
         ...profile,
         hasDestacadoUpgrade,
