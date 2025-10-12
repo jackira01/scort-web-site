@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { OutputData } from "@editorjs/editorjs";
+import type { OutputData } from "@editorjs/editorjs";
 import Renderer from "editorjs-react-renderer";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
@@ -16,7 +16,7 @@ const processHtmlToJsx = (html: string): JSX.Element => {
     .replace(/<b>(.*?)<\/b>/g, '<strong>$1</strong>')
     .replace(/<i>(.*?)<\/i>/g, '<em>$1</em>')
     .replace(/<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>/g, '<a href="$1" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">$2</a>');
-  
+
   return <span dangerouslySetInnerHTML={{ __html: processedHtml }} />;
 };
 
@@ -53,28 +53,28 @@ const BlogRenderer: React.FC<BlogRendererProps> = ({ content, className = "" }) 
         5: "text-lg font-medium mb-2 text-foreground",
         6: "text-base font-medium mb-2 text-foreground"
       };
-      
+
       return React.createElement(
         tagName,
-        { 
+        {
           className: levelClasses[level as keyof typeof levelClasses] || levelClasses[2]
         },
         processHtmlToJsx(data.text)
       );
     },
-    
+
     paragraph: ({ data }: any) => (
       <p className="text-foreground leading-relaxed mb-4 text-base">
         {processHtmlToJsx(data.text)}
       </p>
     ),
-    
+
     list: ({ data }: any) => {
       const Tag = data.style === 'ordered' ? 'ol' : 'ul';
-      const listClass = data.style === 'ordered' 
+      const listClass = data.style === 'ordered'
         ? "list-decimal list-inside mb-4 space-y-2 text-foreground"
         : "list-disc list-inside mb-4 space-y-2 text-foreground";
-      
+
       return (
         <Tag className={listClass}>
           {data.items.map((item: any, index: number) => {
@@ -88,7 +88,7 @@ const BlogRenderer: React.FC<BlogRendererProps> = ({ content, className = "" }) 
         </Tag>
       );
     },
-    
+
     image: ({ data }: any) => (
       <figure className="mb-6">
         <div className="relative overflow-hidden rounded-lg border border-border">
@@ -106,7 +106,7 @@ const BlogRenderer: React.FC<BlogRendererProps> = ({ content, className = "" }) 
         )}
       </figure>
     ),
-    
+
     quote: ({ data }: any) => (
       <blockquote className="border-l-4 border-primary pl-6 py-4 mb-6 bg-muted/50 rounded-r-lg">
         <p className="text-lg italic text-foreground mb-2 leading-relaxed">
@@ -119,7 +119,7 @@ const BlogRenderer: React.FC<BlogRendererProps> = ({ content, className = "" }) 
         )}
       </blockquote>
     ),
-    
+
     embed: ({ data }: any) => {
       // Manejar diferentes tipos de embeds
       if (data.service === 'youtube') {
@@ -142,13 +142,13 @@ const BlogRenderer: React.FC<BlogRendererProps> = ({ content, className = "" }) 
           </div>
         );
       }
-      
+
       // Para otros tipos de embed, mostrar un enlace
       return (
         <div className="mb-6 p-4 border border-border rounded-lg bg-muted/30">
-          <a 
-            href={data.source} 
-            target="_blank" 
+          <a
+            href={data.source}
+            target="_blank"
             rel="noopener noreferrer"
             className="text-primary hover:underline font-medium"
           >
@@ -157,7 +157,7 @@ const BlogRenderer: React.FC<BlogRendererProps> = ({ content, className = "" }) 
         </div>
       );
     },
-    
+
     // Renderer por defecto para bloques no reconocidos
     default: ({ data }: any) => (
       <div className="mb-4 p-3 bg-muted/50 rounded border border-border">
@@ -172,8 +172,8 @@ const BlogRenderer: React.FC<BlogRendererProps> = ({ content, className = "" }) 
     return (
       <div className={`prose prose-lg max-w-none ${className}`}>
         <div className="space-y-1">
-          <Renderer 
-            data={content} 
+          <Renderer
+            data={content}
             renderers={renderers}
           />
         </div>
@@ -181,7 +181,7 @@ const BlogRenderer: React.FC<BlogRendererProps> = ({ content, className = "" }) 
     );
   } catch (error) {
     // Error al renderizar el contenido del blog
-    
+
     return (
       <Card className={`w-full ${className}`}>
         <CardContent className="p-6">

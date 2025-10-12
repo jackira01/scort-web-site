@@ -27,7 +27,7 @@ const BlogEditor = dynamic(() => import('../../../../../src/components/blog/Blog
 
 import { BlogEditorRef } from '../../../../../src/components/blog/BlogEditor';
 import BlogRenderer from '../../../../../src/components/blog/BlogRenderer';
-import { OutputData } from '@editorjs/editorjs';
+import type { OutputData } from '@editorjs/editorjs';
 import { Switch } from '../../../../../src/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../../src/components/ui/card';
 import { Badge } from '../../../../../src/components/ui/badge';
@@ -187,7 +187,7 @@ export default function EditBlogPage() {
 
     // Agregar archivo para subida diferida
     const { id, preview } = addPendingFile(file, 'image');
-    
+
     setFormData(prev => ({
       ...prev,
       coverImage: preview,
@@ -209,7 +209,7 @@ export default function EditBlogPage() {
       if (editorRef.current) {
         const editorData = await editorRef.current.getData();
         const updatedFormData = { ...formData, content: editorData };
-        
+
         // Validar con el contenido actualizado
         const newErrors: BlogFormErrors = {};
 
@@ -233,7 +233,7 @@ export default function EditBlogPage() {
 
         // Subir archivos pendientes a Cloudinary
         const uploadedUrls = await uploadAllPendingFiles('blog-images');
-        
+
         // Procesar imagen de portada
         let finalCoverImage = updatedFormData.coverImage;
         if (updatedFormData.coverImageFileId && uploadedUrls[updatedFormData.coverImageFileId]) {
@@ -290,14 +290,14 @@ export default function EditBlogPage() {
       setIsLoadingPreview(true);
       // Obtener contenido actual del editor para la vista previa
       let contentToRender = formData.content;
-      
+
       if (editorRef.current) {
         contentToRender = await editorRef.current.getData();
       }
-      
+
       console.log('Preview - contentToRender:', contentToRender);
       console.log('Preview - blocks length:', contentToRender?.blocks?.length || 0);
-      
+
       setPreviewContent(contentToRender);
     } catch (error) {
       console.error('Error rendering preview:', error);
@@ -311,7 +311,7 @@ export default function EditBlogPage() {
     if (isLoadingPreview) {
       return <p className="text-gray-500">Cargando vista previa...</p>;
     }
-    
+
     if (!previewContent || !previewContent.blocks || previewContent.blocks.length === 0) {
       return <p className="text-gray-500">No hay contenido para mostrar</p>;
     }
@@ -556,7 +556,7 @@ export default function EditBlogPage() {
                     <p className="text-sm text-gray-600">
                       URL de la imagen de portada (opcional)
                     </p>
-                    
+
                     {/* File Upload */}
                     <div className="flex items-center gap-2">
                       <input

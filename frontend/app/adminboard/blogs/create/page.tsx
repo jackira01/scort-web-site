@@ -31,7 +31,7 @@ const BlogEditor = dynamic(() => import('../../../../src/components/blog/BlogEdi
 
 import { BlogEditorRef } from '../../../../src/components/blog/BlogEditor';
 import BlogRenderer from '../../../../src/components/blog/BlogRenderer';
-import { OutputData } from '@editorjs/editorjs';
+import type { OutputData } from '@editorjs/editorjs';
 
 interface BlogFormData {
   title: string;
