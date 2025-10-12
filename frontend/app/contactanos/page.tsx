@@ -38,6 +38,11 @@ const ContactPage = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [companyEmail, setCompanyEmail] = useState('soporte@prepagosvip.com');
   const [companyWhatsApp, setCompanyWhatsApp] = useState('');
+  const [lastSubmissionTime, setLastSubmissionTime] = useState<number | null>(null);
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+
+  // Constante para el tiempo de espera (3 minutos en milisegundos)
+  const COOLDOWN_TIME = 3 * 60 * 1000; // 3 minutos
 
   useEffect(() => {
     const fetchCompanyInfo = async () => {
@@ -54,7 +59,32 @@ const ContactPage = () => {
     };
 
     fetchCompanyInfo();
+
+    // Recuperar el último tiempo de envío del localStorage
+    const savedLastSubmission = localStorage.getItem('lastContactSubmission');
+    if (savedLastSubmission) {
+      setLastSubmissionTime(parseInt(savedLastSubmission));
+    }
   }, []);
+
+  // Efecto para manejar el countdown del cooldown
+  useEffect(() => {
+    if (lastSubmissionTime) {
+      const updateCooldown = () => {
+        const now = Date.now();
+        const timePassed = now - lastSubmissionTime;
+        const remaining = Math.max(0, COOLDOWN_TIME - timePassed);
+        
+        setCooldownRemaining(remaining);
+        
+        if (remaining > 0) {
+          setTimeout(updateCooldown, 1000);
+        }
+      };
+      
+      updateCooldown();
+    }
+  }, [lastSubmissionTime]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -64,9 +94,21 @@ const ContactPage = () => {
     }));
   };
 
+  const formatCooldownTime = (milliseconds: number): string => {
+    const minutes = Math.floor(milliseconds / 60000);
+    const seconds = Math.floor((milliseconds % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Verificar cooldown
+    if (cooldownRemaining > 0) {
+      toast.error(`Debes esperar ${formatCooldownTime(cooldownRemaining)} antes de enviar otro mensaje`);
+      return;
+    }
+
     // Validación básica
     if (!formData.name || !formData.email || !formData.subject || !formData.message) {
       toast.error('Por favor completa todos los campos');
@@ -88,6 +130,12 @@ const ContactPage = () => {
       if (response.data.success) {
         setIsSubmitted(true);
         toast.success('Mensaje enviado exitosamente. Te contactaremos pronto.');
+        
+        // Establecer el tiempo de último envío y guardarlo en localStorage
+        const now = Date.now();
+        setLastSubmissionTime(now);
+        localStorage.setItem('lastContactSubmission', now.toString());
+        
         // Limpiar formulario
         setFormData({
           name: '',
@@ -303,13 +351,18 @@ const ContactPage = () => {
                       </p>
                       <Button 
                         type="submit" 
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || cooldownRemaining > 0}
                         className="min-w-[120px]"
                       >
                         {isSubmitting ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                             Enviando...
+                          </>
+                        ) : cooldownRemaining > 0 ? (
+                          <>
+                            <Clock className="h-4 w-4 mr-2" />
+                            Espera {formatCooldownTime(cooldownRemaining)}
                           </>
                         ) : (
                           <>

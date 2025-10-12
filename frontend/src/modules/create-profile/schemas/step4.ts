@@ -4,7 +4,9 @@ import { z } from 'zod';
 export const step4Schema = z.object({
   photos: z
     .array(z.union([z.string(), z.instanceof(File)]))
-    .optional(),
+    .min(1, {
+      message: 'Debes subir al menos una foto para crear tu perfil',
+    }),
 
   videos: z
     .array(z.union([z.string(), z.instanceof(File)]))

@@ -31,11 +31,31 @@ export default function CouponModal({
   const [currentPage, setCurrentPage] = useState(1);
   const profilesPerPage = 6;
 
-  // Calcular paginación
-  const totalPages = Math.ceil(userProfiles.length / profilesPerPage);
+  // Filtrar perfiles según los planes elegibles del cupón
+  const getEligibleProfiles = () => {
+    if (!coupon || !coupon.applicablePlans || coupon.applicablePlans.length === 0) {
+      return userProfiles; // Si no hay restricciones, mostrar todos los perfiles
+    }
+
+    return userProfiles.filter(profile => {
+      // Si el perfil no tiene plan asignado, no es elegible
+      if (!profile.planAssignment?.planCode) {
+        return false;
+      }
+
+      // Verificar si el plan del perfil está en la lista de planes aplicables
+      const profilePlanId = `${profile.planAssignment.planId}-${profile.planAssignment.variantDays}`;
+      return coupon.applicablePlans.includes(profilePlanId);
+    });
+  };
+
+  const eligibleProfiles = getEligibleProfiles();
+
+  // Calcular paginación con perfiles elegibles
+  const totalPages = Math.ceil(eligibleProfiles.length / profilesPerPage);
   const startIndex = (currentPage - 1) * profilesPerPage;
   const endIndex = startIndex + profilesPerPage;
-  const currentProfiles = userProfiles.slice(startIndex, endIndex);
+  const currentProfiles = eligibleProfiles.slice(startIndex, endIndex);
 
   const handleApply = () => {
     if (selectedProfileId) {
@@ -130,18 +150,24 @@ export default function CouponModal({
                 <User className="h-5 w-5" />
                 <span>Selecciona un perfil para aplicar el cupón</span>
               </h4>
-              {userProfiles.length > profilesPerPage && (
+              {eligibleProfiles.length > profilesPerPage && (
                 <div className="text-sm text-gray-500">
-                  Mostrando {startIndex + 1}-{Math.min(endIndex, userProfiles.length)} de {userProfiles.length} perfiles
+                  Mostrando {startIndex + 1}-{Math.min(endIndex, eligibleProfiles.length)} de {eligibleProfiles.length} perfiles elegibles
                 </div>
               )}
             </div>
 
-            {userProfiles.length === 0 ? (
+            {eligibleProfiles.length === 0 ? (
               <Card className="p-6 text-center">
-                <p className="text-gray-500 dark:text-gray-400">
-                  No tienes perfiles disponibles. Crea un perfil primero para aplicar el cupón.
+                <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400 mb-2">
+                  No tienes perfiles elegibles para este cupón.
                 </p>
+                {coupon && coupon.applicablePlans && coupon.applicablePlans.length > 0 && (
+                  <p className="text-sm text-gray-400">
+                    Este cupón solo es válido para planes específicos. Asegúrate de tener perfiles con los planes correctos.
+                  </p>
+                )}
               </Card>
             ) : (
               <>

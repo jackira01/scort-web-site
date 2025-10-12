@@ -3,7 +3,7 @@ import { applyWatermarkToImage } from './watermark';
 import { ProcessedImageResult } from './imageProcessor';
 
 const upload_preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "";
-const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "";
+const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_NAME || "";
 
 /**
  * Carga dinámica de browser-image-compression solo en el cliente

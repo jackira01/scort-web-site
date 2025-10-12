@@ -207,27 +207,43 @@ export const getFilteredProfiles = async (
     }
 
     // Filtro por características (features)
-    console.log('🔍 DEBUG - Features object received:', JSON.stringify(features, null, 2));
     if (features && Object.keys(features).length > 0) {
-      console.log('🔍 DEBUG - Processing features with keys:', Object.keys(features));
       const featureConditions: any[] = [];
 
       // Manejo especial para ageRange
+      // Reemplaza esta sección en tu código:
+
+      // Manejo especial para ageRange
       if (features.ageRange && typeof features.ageRange === 'object') {
-        console.log('🔍 DEBUG - Processing ageRange:', features.ageRange);
         const { min, max } = features.ageRange as { min?: number; max?: number };
+
         if (min !== undefined || max !== undefined) {
-          const ageCondition: any = {};
+          // SOLUCIÓN: Usar $expr para convertir string a number en la comparación
+          const ageConditions: any[] = [];
+
           if (min !== undefined) {
-            ageCondition.$gte = min;
-            console.log('🔍 DEBUG - Age min condition:', min);
+            ageConditions.push({
+              $expr: {
+                $gte: [{ $toInt: "$age" }, min]
+              }
+            });
           }
+
           if (max !== undefined) {
-            ageCondition.$lte = max;
-            console.log('🔍 DEBUG - Age max condition:', max);
+            ageConditions.push({
+              $expr: {
+                $lte: [{ $toInt: "$age" }, max]
+              }
+            });
           }
-          query.age = ageCondition;
-          console.log('🔍 DEBUG - Final age query condition:', ageCondition);
+
+          // Si ya existe $and, agregar las condiciones, si no, crearla
+          if (query.$and) {
+            query.$and.push(...ageConditions);
+          } else {
+            query.$and = ageConditions;
+          }
+
         }
       }
 
@@ -239,20 +255,16 @@ export const getFilteredProfiles = async (
       if (Object.keys(otherFeatures).length > 0) {
         // Primero necesitamos obtener los IDs de los grupos por sus keys
         const groupKeys = Object.keys(otherFeatures);
-        console.log('🔍 DEBUG - Features keys to process:', groupKeys);
         const attributeGroups = await AttributeGroup.find({
           key: { $in: groupKeys },
         });
-        console.log('🔍 DEBUG - Found attribute groups:', attributeGroups.map(g => ({ key: g.key, id: g._id })));
         const groupKeyToId = new Map();
         attributeGroups.forEach((group) => {
           groupKeyToId.set(group.key, group._id);
         });
-        console.log('🔍 DEBUG - Group key to ID map:', Array.from(groupKeyToId.entries()));
 
         for (const [groupKey, value] of Object.entries(otherFeatures)) {
           const groupId = groupKeyToId.get(groupKey);
-          console.log('🔍 DEBUG - Processing feature:', { groupKey, value, groupId });
           if (!groupId) {
             console.warn('⚠️ WARNING - No groupId found for feature key:', groupKey);
             continue;
@@ -408,9 +420,6 @@ export const getFilteredProfiles = async (
       }
     ];
 
-    console.log('🔍 DEBUG - Final MongoDB query:', JSON.stringify(query, null, 2));
-    console.log('🔍 DEBUG - Aggregation pipeline:', JSON.stringify(aggregationPipeline, null, 2));
-
     // DEBUG getFilteredProfiles - Pipeline de agregación
 
     // Agregar lookup para verification si es necesario
@@ -495,11 +504,8 @@ export const getFilteredProfiles = async (
     ]);
 
     // DEBUG getFilteredProfiles - Perfiles encontrados y total count result
-    console.log('🔍 DEBUG - Profiles returned from aggregation:', allProfiles.length);
-    console.log('🔍 DEBUG - Sample profile ages (first 5):', allProfiles.slice(0, 5).map(p => ({ id: p._id, age: p.age })));
 
     const totalCount = totalCountResult[0]?.total || 0;
-    console.log('🔍 DEBUG - Total profiles found:', totalCount);
 
     // Ordenar perfiles usando el motor de visibilidad (nivel -> score -> lastShownAt -> createdAt)
     const sortedProfiles = await sortProfiles(allProfiles as any, now);

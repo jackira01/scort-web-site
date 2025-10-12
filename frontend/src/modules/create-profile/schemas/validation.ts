@@ -44,7 +44,7 @@ export const formSchema = z.object({
   }),
   age: z.string().optional(),
   skinColor: z.string().optional(),
-  sexuality: z.string().optional(),
+  // sexuality: z.string().optional(), // REMOVIDO
   eyeColor: z.string().optional(),
   hairColor: z.string().optional(),
   bodyType: z.string().optional(),

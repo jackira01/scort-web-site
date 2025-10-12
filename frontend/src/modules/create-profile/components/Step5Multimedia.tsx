@@ -60,6 +60,9 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
   });
   const [isProcessingImage, setIsProcessingImage] = useState(false);
 
+  // Estado para almacenar imágenes procesadas
+  const [processedImages, setProcessedImages] = useState<Map<number, ProcessedImageResult>>(new Map());
+
   // Estados para el modal de crop
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [currentImageToCrop, setCurrentImageToCrop] = useState<{
@@ -67,8 +70,17 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     index: number;
   } | null>(null);
 
-  // Estado para almacenar imágenes procesadas
-  const [processedImages, setProcessedImages] = useState<Map<number, ProcessedImageResult>>(new Map());
+  // Cleanup effect para revocar URLs cuando el componente se desmonte
+  useEffect(() => {
+    return () => {
+      // Limpiar todas las URLs de blob al desmontar el componente
+      processedImages.forEach((processedImage) => {
+        if (processedImage.url.startsWith('blob:')) {
+          URL.revokeObjectURL(processedImage.url);
+        }
+      });
+    };
+  }, [processedImages]);
 
   // Obtener planes disponibles
   const { data: plansResponse } = usePlans({
@@ -252,11 +264,26 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     // Para fotos, también eliminar de processedImages y actualizar el formulario
     if (type === 'photos') {
       const newProcessedImages = new Map(processedImages);
+      
+      // Revocar la URL del blob antes de eliminar para evitar memory leaks
+      const processedImage = newProcessedImages.get(index);
+      if (processedImage && processedImage.url.startsWith('blob:')) {
+        URL.revokeObjectURL(processedImage.url);
+      }
+      
       newProcessedImages.delete(index);
-      setProcessedImages(newProcessedImages);
+      
+      // Reindexar las imágenes procesadas restantes
+      const reindexedProcessedImages = new Map<number, ProcessedImageResult>();
+      Array.from(newProcessedImages.entries()).forEach(([key, value]) => {
+        const newIndex = key > index ? key - 1 : key;
+        reindexedProcessedImages.set(newIndex, value);
+      });
+      
+      setProcessedImages(reindexedProcessedImages);
 
       // Actualizar las imágenes procesadas en el formulario
-      const processedImagesArray = Array.from(newProcessedImages.values());
+      const processedImagesArray = Array.from(reindexedProcessedImages.values());
       setValue('processedImages', processedImagesArray);
     }
   };
@@ -278,14 +305,24 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       // Obtener dimensiones de la imagen procesada
       const img = new Image();
       const dimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
-        img.onload = () => resolve({ width: img.width, height: img.height });
-        img.onerror = () => reject(new Error('Error al cargar imagen'));
+        img.onload = () => {
+          // Revocar la URL temporal después de obtener las dimensiones
+          URL.revokeObjectURL(croppedUrl);
+          resolve({ width: img.width, height: img.height });
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(croppedUrl);
+          reject(new Error('Error al cargar imagen'));
+        };
         img.src = croppedUrl;
       });
 
+      // Crear una nueva URL para la imagen procesada que persista
+      const persistentUrl = URL.createObjectURL(processedFile);
+
       const processedResult: ProcessedImageResult = {
         file: processedFile,
-        url: croppedUrl,
+        url: persistentUrl, // Usar la URL persistente
         originalSize: currentImageToCrop.file.size,
         compressedSize: processedFile.size,
         compressionRatio: ((currentImageToCrop.file.size - processedFile.size) / currentImageToCrop.file.size) * 100,
@@ -293,6 +330,12 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
         originalIndex: currentImageToCrop.index,
         originalFileName: currentImageToCrop.file.name
       };
+
+      // Revocar la URL anterior si existe para evitar memory leaks
+      const previousProcessedImage = processedImages.get(currentImageToCrop.index || 0);
+      if (previousProcessedImage && previousProcessedImage.url.startsWith('blob:')) {
+        URL.revokeObjectURL(previousProcessedImage.url);
+      }
 
       // Guardar el resultado procesado
       const newProcessedImages = new Map(processedImages);
@@ -314,7 +357,12 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
         `Imagen procesada: ${Math.round(processedResult.compressionRatio)}% de compresión aplicada`
       );
     } catch (error) {
+      console.error('Error al procesar la imagen:', error);
       toast.error('Error al procesar la imagen');
+      // Revocar la URL en caso de error
+      if (croppedUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(croppedUrl);
+      }
     } finally {
       setIsProcessingImage(false);
       setCropModalOpen(false);
@@ -520,8 +568,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
             )}
           </div>
 
-          {/* Botón Ajustar debajo */}
-          {isImage && isValidFile && (
+          {/* Botón Ajustar debajo - solo para imagen de preview */}
+          {isImage && isValidFile && isPreviewImage && (
             <div className="mt-2">
               <Button
                 variant="outline"

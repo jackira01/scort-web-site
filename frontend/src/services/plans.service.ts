@@ -104,34 +104,23 @@ export const purchasePlan = async (request: PlanPurchaseRequest) => {
 };
 
 /**
- * Renueva un plan existente
+ * Renueva un plan existente (permite renovar planes expirados)
  */
 export const renewPlan = async (request: PlanRenewalRequest) => {
   try {
-    // Validar que el perfil tenga un plan activo
-    // Frontend: Validando plan antes de renovar
-
+    // Validar que el perfil tenga información de plan
     const planInfo = await getProfilePlanInfo(request.profileId);
-    // Frontend: Plan info obtenido
 
     if (!planInfo) {
-      // Frontend: Plan no encontrado
-      throw new Error('El perfil no tiene un plan activo para renovar');
+      throw new Error('El perfil no tiene información de plan para renovar');
     }
 
-    if (!planInfo.isActive) {
-      // Frontend: Plan no activo
-      throw new Error('No se puede renovar un plan expirado. Compra un nuevo plan.');
-    }
-
-    // Frontend: Plan válido, procediendo con renovación
-
+    // Permitir renovación tanto de planes activos como expirados
     const response = await axiosInstance.post('/api/plans/renew', request);
 
-    // Frontend: Plan renovado exitosamente
     return response.data;
   } catch (error: unknown) {
-    let errorMessage = 'Error al crear plan';
+    let errorMessage = 'Error al renovar plan';
     if (error instanceof Error) {
       errorMessage = error.message;
     } else if (typeof error === 'object' && error !== null && 'response' in error) {
@@ -240,6 +229,40 @@ export const getAvailablePlans = async () => {
 };
 
 /**
+ * Obtiene la lista de upgrades disponibles
+ */
+export const getAvailableUpgrades = async () => {
+  try {
+    const response = await axiosInstance.get('/api/plans/upgrades');
+    
+    // Validar estructura de respuesta
+    if (!response.data || typeof response.data !== 'object') {
+      throw new Error('Respuesta del backend inválida: no es un objeto');
+    }
+
+    if (!response.data.success) {
+      throw new Error(`Error del backend: ${response.data.message || 'Error desconocido'}`);
+    }
+
+    if (!Array.isArray(response.data.data)) {
+      throw new Error('Respuesta del backend inválida: data no es un array');
+    }
+
+    return response.data.data;
+
+  } catch (error: unknown) {
+    let errorMessage = 'Error al obtener upgrades';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null && 'response' in error) {
+      const responseError = error as { response?: { data?: { message?: string } } };
+      errorMessage = responseError.response?.data?.message || errorMessage;
+    }
+    throw new Error(errorMessage);
+  }
+};
+
+/**
  * Valida si se puede transferir un plan (siempre retorna false según las restricciones)
  */
 export const canTransferPlan = (): boolean => {
@@ -305,5 +328,6 @@ export const plansService = {
   renewPlan,
   getProfilePlanInfo,
   getAvailablePlans,
+  getAvailableUpgrades,
   validatePlanBusinessRules
 };

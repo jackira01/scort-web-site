@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { AppError } from '../../utils/AppError';
 import { logger } from '../../utils/logger';
+import { isCouponValidForPlan } from '../../utils/coupon-validation';
 import CouponModel from './coupon.model';
 import { PlanDefinitionModel } from '../plans/plan.model';
 import type {
@@ -18,7 +19,7 @@ export class CouponService {
    */
   async createCoupon(input: CreateCouponInput, createdBy: string): Promise<ICoupon> {
     const startTime = Date.now();
-    
+
     try {
       logger.info('Iniciando createCoupon service...', {
         code: input.code,
@@ -32,7 +33,7 @@ export class CouponService {
       const existingCoupon = await CouponModel.findByCode(input.code);
       const codeCheckDuration = Date.now() - codeCheckStart;
       logger.info(`Verificación de código completada en ${codeCheckDuration}ms - Existe: ${!!existingCoupon}`);
-      
+
       if (existingCoupon) {
         throw new AppError('El código de cupón ya existe', 400);
       }
@@ -48,7 +49,7 @@ export class CouponService {
             if (!plan) {
               throw new AppError('El plan especificado no existe', 400);
             }
-            
+
             // Validar que la variante de días existe en el plan
             if (input.variantDays) {
               const variant = plan.variants.find(v => v.days === input.variantDays);
@@ -56,7 +57,7 @@ export class CouponService {
                 throw new AppError(`La variante de ${input.variantDays} días no existe en el plan ${input.planCode}`, 400);
               }
             }
-            
+
             return plan;
           })
         );
@@ -104,15 +105,15 @@ export class CouponService {
       await coupon.save();
       const createDuration = Date.now() - createStart;
       logger.info(`Cupón guardado en ${createDuration}ms`);
-      
+
       const totalDuration = Date.now() - startTime;
       logger.info(`createCoupon service completado en ${totalDuration}ms - Cupón: ${coupon.code}`);
-      
+
       return coupon.toObject();
     } catch (error) {
       const errorDuration = Date.now() - startTime;
       logger.error(`Error en createCoupon service después de ${errorDuration}ms:`, error);
-      
+
       if (error instanceof AppError) throw error;
       logger.error('Error al crear cupón:', error);
       throw new AppError('Error interno al crear el cupón', 500);
@@ -185,8 +186,11 @@ export class CouponService {
         filter.type = type;
       }
 
+      // Si no se especifica isActive, por defecto mostrar solo activos
       if (typeof isActive === 'boolean') {
         filter.isActive = isActive;
+      } else {
+        filter.isActive = true; // Por defecto, solo mostrar cupones activos
       }
 
       if (validOnly) {
@@ -246,7 +250,7 @@ export class CouponService {
             if (!plan) {
               throw new AppError('El plan especificado no existe', 400);
             }
-            
+
             // Validar que la variante de días existe en el plan
             const variantDays = input.variantDays || coupon.variantDays;
             if (variantDays) {
@@ -255,7 +259,7 @@ export class CouponService {
                 throw new AppError(`La variante de ${variantDays} días no existe en el plan ${input.planCode}`, 400);
               }
             }
-            
+
             return plan;
           })
         );
@@ -328,10 +332,10 @@ export class CouponService {
   /**
    * Validar cupón para uso
    */
-  async validateCoupon(code: string, planCode?: string): Promise<CouponValidationResult> {
+  async validateCoupon(code: string, planCode?: string, variantDays?: number): Promise<CouponValidationResult> {
     try {
       const coupon = await CouponModel.findByCode(code);
-      
+
       if (!coupon) {
         return {
           isValid: false,
@@ -368,17 +372,27 @@ export class CouponService {
         };
       }
 
-      // NOTA: Se eliminó la validación de applicablePlans para permitir cambio de plan
-      // Los cupones ahora pueden aplicarse a cualquier plan, permitiendo upgrades/downgrades
-      // Validación original comentada:
-      // if (planCode && coupon.applicablePlans && coupon.applicablePlans.length > 0) {
-      //   if (!coupon.applicablePlans.includes(planCode.toUpperCase())) {
-      //     return {
-      //       isValid: false,
-      //       error: 'Cupón no aplicable a este plan'
-      //     };
-      //   }
-      // }
+      // Validar si el cupón es aplicable al plan específico (incluyendo variante)
+      if (planCode && variantDays && coupon.applicablePlans && coupon.applicablePlans.length > 0) {
+        // Buscar el plan por código para obtener su ID
+        const plan = await PlanDefinitionModel.findByCode(planCode);
+        if (!plan) {
+          return {
+            isValid: false,
+            error: 'Plan no encontrado'
+          };
+        }
+
+        // Construir el identificador plan-variante
+        const planVariantId = `${plan._id}-${variantDays}`;
+        
+        if (!coupon.applicablePlans.includes(planVariantId)) {
+          return {
+            isValid: false,
+            error: 'Cupón no aplicable a este plan y variante'
+          };
+        }
+      }
 
       return {
         isValid: true,
@@ -396,24 +410,37 @@ export class CouponService {
   /**
    * Aplicar cupón y calcular descuento
    */
-  async applyCoupon(code: string, originalPrice: number, planCode?: string, variantDays?: number): Promise<CouponApplicationResult> {
+  async applyCoupon(code: string, originalPrice: number, planCode?: string, variantDays?: number, upgradeId?: string): Promise<CouponApplicationResult> {
     console.log('🎫 [COUPON SERVICE] Iniciando aplicación de cupón:', {
       code,
       originalPrice,
       planCode,
       variantDays,
+      upgradeId,
       timestamp: new Date().toISOString()
     });
 
     try {
+      // 🚫 REGLA DE NEGOCIO: No se pueden aplicar cupones a planes gratuitos
+      if (originalPrice <= 0) {
+        console.log('❌ [COUPON SERVICE] No se puede aplicar cupón a plan gratuito');
+        return {
+          success: false,
+          originalPrice,
+          finalPrice: originalPrice,
+          discount: 0,
+          error: 'El cupón no puede aplicarse a planes gratuitos'
+        };
+      }
+
       const validation = await this.validateCoupon(code, planCode);
-      
+
       console.log('🔍 [COUPON SERVICE] Resultado de validación:', {
         isValid: validation.isValid,
         error: validation.error,
         couponFound: !!validation.coupon
       });
-      
+
       if (!validation.isValid || !validation.coupon) {
         console.log('❌ [COUPON SERVICE] Cupón no válido');
         return {
@@ -426,6 +453,27 @@ export class CouponService {
       }
 
       const coupon = validation.coupon;
+
+      // 🎯 NUEVA VALIDACIÓN: Verificar si el cupón es válido para el plan/upgrade específico
+      if (!isCouponValidForPlan(coupon, planCode, upgradeId)) {
+        console.log('❌ [COUPON SERVICE] Cupón no válido para este plan/upgrade:', {
+          couponCode: coupon.code,
+          couponType: coupon.type,
+          planCode,
+          upgradeId,
+          validPlanIds: coupon.validPlanIds,
+          validUpgradeIds: coupon.validUpgradeIds
+        });
+
+        return {
+          success: false,
+          originalPrice,
+          finalPrice: originalPrice,
+          discount: 0,
+          error: 'El cupón no es válido para el plan o upgrade seleccionado'
+        };
+      }
+
       let finalPrice = originalPrice;
       let discount = 0;
       let assignedPlanCode: string | undefined;
@@ -446,13 +494,13 @@ export class CouponService {
             calculatedDiscount: discount,
             finalPrice
           });
-          
+
           // Si se especifica un planCode, usar la variante seleccionada o la más económica
           if (planCode) {
             const plan = await PlanDefinitionModel.findByCode(planCode);
             if (plan && plan.variants.length > 0) {
               let selectedVariant;
-              
+
               if (variantDays) {
                 // Usar la variante específica seleccionada por el usuario
                 selectedVariant = plan.variants.find(v => v.days === variantDays);
@@ -461,17 +509,17 @@ export class CouponService {
                     requestedVariantDays: variantDays,
                     availableVariants: plan.variants.map(v => ({ days: v.days, price: v.price }))
                   });
-                  selectedVariant = plan.variants.reduce((min, variant) => 
+                  selectedVariant = plan.variants.reduce((min, variant) =>
                     variant.price < min.price ? variant : min
                   );
                 }
               } else {
                 // Si no se especifica variante, usar la más económica
-                selectedVariant = plan.variants.reduce((min, variant) => 
+                selectedVariant = plan.variants.reduce((min, variant) =>
                   variant.price < min.price ? variant : min
                 );
               }
-              
+
               assignedPlanCode = planCode;
               console.log('💰 [COUPON SERVICE] Aplicando variante para cupón porcentual:', {
                 planCode,
@@ -491,13 +539,13 @@ export class CouponService {
             discount,
             finalPrice
           });
-          
+
           // Si se especifica un planCode, usar la variante seleccionada o la más económica
           if (planCode) {
             const plan = await PlanDefinitionModel.findByCode(planCode);
             if (plan && plan.variants.length > 0) {
               let selectedVariant;
-              
+
               if (variantDays) {
                 // Usar la variante específica seleccionada por el usuario
                 selectedVariant = plan.variants.find(v => v.days === variantDays);
@@ -506,17 +554,17 @@ export class CouponService {
                     requestedVariantDays: variantDays,
                     availableVariants: plan.variants.map(v => ({ days: v.days, price: v.price }))
                   });
-                  selectedVariant = plan.variants.reduce((min, variant) => 
+                  selectedVariant = plan.variants.reduce((min, variant) =>
                     variant.price < min.price ? variant : min
                   );
                 }
               } else {
                 // Si no se especifica variante, usar la más económica
-                selectedVariant = plan.variants.reduce((min, variant) => 
+                selectedVariant = plan.variants.reduce((min, variant) =>
                   variant.price < min.price ? variant : min
                 );
               }
-              
+
               assignedPlanCode = planCode;
               console.log('💰 [COUPON SERVICE] Aplicando variante para cupón de monto fijo:', {
                 planCode,
@@ -559,7 +607,7 @@ export class CouponService {
           break;
       }
 
-      // Asegurar que el precio final no sea negativo
+      // 🛡️ REGLA DE NEGOCIO: Asegurar que el precio final no sea negativo
       const originalFinalPrice = finalPrice;
       finalPrice = Math.max(0, finalPrice);
       discount = originalPrice - finalPrice;
@@ -568,7 +616,8 @@ export class CouponService {
         console.log('⚠️ [COUPON SERVICE] Precio final ajustado (era negativo):', {
           calculatedFinalPrice: originalFinalPrice,
           adjustedFinalPrice: finalPrice,
-          adjustedDiscount: discount
+          adjustedDiscount: discount,
+          message: 'El descuento no puede exceder el valor del plan'
         });
       }
 
@@ -578,8 +627,8 @@ export class CouponService {
         finalPrice,
         discount,
         planCode: assignedPlanCode,
-        variantDays: coupon.type === 'plan_assignment' ? coupon.variantDays : 
-                    (assignedPlanCode && planCode ? (variantDays || await this.getCheapestVariantDays(assignedPlanCode)) : undefined)
+        variantDays: coupon.type === 'plan_assignment' ? coupon.variantDays :
+          (assignedPlanCode && planCode ? (variantDays || await this.getCheapestVariantDays(assignedPlanCode)) : undefined)
       };
 
       console.log('✅ [COUPON SERVICE] Aplicación de cupón exitosa:', {
@@ -597,7 +646,7 @@ export class CouponService {
         planCode,
         stack: error instanceof Error ? error.stack : undefined
       });
-      
+
       logger.error('Error al aplicar cupón:', error);
       return {
         success: false,
@@ -616,7 +665,7 @@ export class CouponService {
     try {
       const plan = await PlanDefinitionModel.findByCode(planCode);
       if (plan && plan.variants.length > 0) {
-        const cheapestVariant = plan.variants.reduce((min, variant) => 
+        const cheapestVariant = plan.variants.reduce((min, variant) =>
           variant.price < min.price ? variant : min
         );
         return cheapestVariant.days;
@@ -656,7 +705,7 @@ export class CouponService {
   async getCouponStats(): Promise<any> {
     const startTime = Date.now();
     logger.info('Iniciando getCouponStats...');
-    
+
     try {
       // Verificar si hay documentos en la colección
       const collectionCheckStart = Date.now();
@@ -682,7 +731,7 @@ export class CouponService {
       const [total, active, expired, exhausted, typeStats] = await Promise.all([
         CouponModel.countDocuments({}),
         CouponModel.countDocuments({ isActive: true }),
-        CouponModel.countDocuments({ 
+        CouponModel.countDocuments({
           isActive: true,
           validUntil: { $lt: new Date() }
         }),
@@ -713,7 +762,7 @@ export class CouponService {
 
       const totalDuration = Date.now() - startTime;
       logger.info(`getCouponStats completado en ${totalDuration}ms - Resultado:`, result);
-      
+
       return result;
     } catch (error) {
       const errorDuration = Date.now() - startTime;

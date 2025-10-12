@@ -49,6 +49,11 @@ const AUTH_REQUIRED_ROUTES = [
   '/adminboard',
 ];
 
+// Rutas que requieren rol de administrador
+const ADMIN_REQUIRED_ROUTES = [
+  '/adminboard',
+];
+
 // Rutas que requieren verificación de email
 const EMAIL_VERIFICATION_REQUIRED_ROUTES = [
   '/perfil',
@@ -114,6 +119,23 @@ export async function middleware(request: NextRequest) {
   if (requiresAuth) {
     if (!token) {
       // Redirigir a la ruta raíz para rutas protegidas sin sesión
+      const homeUrl = new URL('/', request.url);
+      return NextResponse.redirect(homeUrl);
+    }
+  }
+
+  // Verificar si la ruta requiere rol de administrador
+  const requiresAdmin = ADMIN_REQUIRED_ROUTES.some(route => pathname.startsWith(route));
+  
+  if (requiresAdmin) {
+    if (!token) {
+      // No autenticado, redirigir al home
+      const homeUrl = new URL('/', request.url);
+      return NextResponse.redirect(homeUrl);
+    }
+    
+    if (token.role !== 'admin') {
+      // No es admin, redirigir al home
       const homeUrl = new URL('/', request.url);
       return NextResponse.redirect(homeUrl);
     }

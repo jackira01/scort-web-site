@@ -176,14 +176,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
               <p className="text-white/90 text-xs lg:text-sm mb-4 line-clamp-3">
                 {profile.description}
               </p>
-              <Button
-                className={`w-full text-white text-sm ${profile.hasDestacadoUpgrade
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
-                  : 'bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600'
-                  }`}
-              >
-                Ver perfil
-              </Button>
+
             </div>
           </div>
         </div>

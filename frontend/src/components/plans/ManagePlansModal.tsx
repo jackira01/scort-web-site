@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import toast from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   purchasePlan,
   renewPlan,
@@ -158,6 +159,7 @@ export default function ManagePlansModal({
   onPlanChange,
 }: ManagePlansModalProps) {
   const { data: session } = useSession();
+  const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeProfilesCount, setActiveProfilesCount] = useState(0);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, number>>({});
@@ -287,6 +289,19 @@ export default function ManagePlansModal({
     return plan.variants.find(v => v.days === selectedDays) || plan.variants[0];
   };
 
+  // Refrescar datos del plan después de una operación exitosa
+  const refreshPlanData = async () => {
+    try {
+      await refetchProfilePlan();
+      // Forzar una nueva consulta para asegurar datos actualizados
+      await queryClient.invalidateQueries({
+        queryKey: ['profilePlan']
+      });
+    } catch (error) {
+      console.error('Error al refrescar datos del plan:', error);
+    }
+  };
+
   // Manejar compra/renovación/upgrade con validaciones de negocio
   const handlePlanAction = async (action: 'purchase' | 'renew' | 'upgrade', planCode: string) => {
     // Validar límite de perfiles con planes pagos
@@ -404,7 +419,7 @@ export default function ManagePlansModal({
             }
 
             // Construir detalles del plan actual
-            const currentPlanDetails = currentPlan 
+            const currentPlanDetails = currentPlan
               ? `Plan actual: ${currentPlanData?.name || currentPlan.planCode} (${currentPlan.variantDays} días)`
               : 'Sin plan activo';
 
@@ -452,8 +467,24 @@ export default function ManagePlansModal({
 
       toast.success(message);
 
-      // Refrescar datos del plan del perfil
-      refetchProfilePlan();
+      // Verificar si es admin para determinar el flujo
+      if (isAdmin) {
+        // Para admins: cambio instantáneo, solo refrescar datos
+        await refreshPlanData();
+      } else {
+        // Para usuarios regulares: verificar si hay URL de pago
+        if (result?.paymentUrl) {
+          // Redirigir a WhatsApp para el pago
+          window.open(result.paymentUrl, '_blank');
+
+          toast.success('Se ha abierto WhatsApp para completar el pago. El plan se activará una vez confirmado el pago.', {
+            duration: 4000,
+          });
+        } else {
+          // Si no hay URL de pago pero el resultado es exitoso, refrescar datos
+          await refreshPlanData();
+        }
+      }
 
       onPlanChange?.();
       onClose();
@@ -588,6 +619,62 @@ export default function ManagePlansModal({
                           ? `Renovar Plan (${formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})`
                           : `Renovar Plan (${formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})`
                         }
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Botón de renovación para planes expirados no gratuitos */}
+                {!isPlanActive() && currentPlanData.code !== 'AMATISTA' && (
+                  <div className="mt-4">
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium mb-2 text-orange-600">Plan Expirado - Renovar:</p>
+                      {/* Selector de variantes para renovación */}
+                      {currentPlanData.variants.length > 1 && (
+                        <div>
+                          <div className="grid grid-cols-1 gap-2">
+                            {currentPlanData.variants
+                              .sort((a, b) => a.days - b.days)
+                              .map((variant) => {
+                                const isSelected = getSelectedVariant(currentPlanData.code, currentPlanData).days === variant.days;
+                                return (
+                                  <button
+                                    key={variant.days}
+                                    onClick={() => setSelectedVariants(prev => ({
+                                      ...prev,
+                                      [currentPlanData.code]: variant.days
+                                    }))}
+                                    className={`p-2 text-xs rounded border transition-colors ${isSelected
+                                      ? 'border-orange-500 bg-orange-50 text-orange-700'
+                                      : 'border-gray-200 hover:border-gray-300'
+                                      }`}
+                                  >
+                                    <div className="flex justify-between items-center">
+                                      <span>{formatDuration(variant.days)}</span>
+                                      <span className="font-medium">
+                                        {formatPrice(variant.price)}
+                                      </span>
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      )}
+
+                      <Button
+                        onClick={() => handlePlanAction('renew', currentPlanData.code)}
+                        disabled={isProcessing}
+                        className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Procesando...
+                          </>
+                        ) : (
+                          `Renovar ${currentPlanData.name} (${formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})`
+                        )}
                       </Button>
                     </div>
                   </div>

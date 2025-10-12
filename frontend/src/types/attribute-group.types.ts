@@ -43,7 +43,7 @@ export interface UpdateGroupInput {
 
 // Tipos específicos para los filtros
 export interface FilterAttributeGroup {
-  key: 'gender' | 'category' | 'sex';
+  key: 'gender' | 'category'; // Removido 'sex'
   name: string;
   variants: Variant[];
 }

@@ -94,6 +94,31 @@ const CouponSchema = new Schema<ICouponDocument>(
         message: 'Los códigos de planes deben ser válidos'
       }
     },
+    validPlanIds: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: function(this: ICouponDocument, planIds: string[]) {
+          // Solo requerido para cupones percentage y fixed_amount
+          if (this.type === 'percentage' || this.type === 'fixed_amount') {
+            return planIds && planIds.length > 0;
+          }
+          return true;
+        },
+        message: 'Los IDs de planes válidos son requeridos para cupones porcentuales y de monto fijo'
+      }
+    },
+    validUpgradeIds: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: function(upgradeIds: string[]) {
+          // Validar que todos los IDs sean válidos
+          return upgradeIds.every(id => /^[A-Z0-9_-]+$/.test(id));
+        },
+        message: 'Los IDs de upgrades deben ser válidos'
+      }
+    },
     maxUses: {
       type: Number,
       required: true,

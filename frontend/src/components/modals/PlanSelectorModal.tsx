@@ -34,10 +34,23 @@ export default function PlanSelectorModal({
 
   // Filtrar planes aplicables según el cupón
   const applicablePlans = plans.filter(plan => {
-    if (!coupon?.applicablePlans || coupon.applicablePlans.length === 0) {
-      return true; // Si no hay restricciones, todos los planes son aplicables
+    if (!coupon) return true;
+    
+    // Para cupones de tipo plan_specific, usar validPlanIds
+    if (coupon.type === 'plan_specific' && coupon.validPlanIds && coupon.validPlanIds.length > 0) {
+      // Verificar si alguna variante del plan está en validPlanIds
+      return plan.variants.some(variant => 
+        coupon.validPlanIds!.includes(`${plan._id}-${variant.days}`)
+      );
     }
-    return coupon.applicablePlans.includes(plan.code);
+    
+    // Para otros tipos de cupones, usar applicablePlans (códigos de plan)
+    if (coupon.applicablePlans && coupon.applicablePlans.length > 0) {
+      return coupon.applicablePlans.includes(plan.code);
+    }
+    
+    // Si no hay restricciones, todos los planes son aplicables
+    return true;
   });
 
   const selectedPlan = applicablePlans.find(plan => plan.code === selectedPlanCode);
@@ -164,16 +177,24 @@ export default function PlanSelectorModal({
                     <SelectValue placeholder="Seleccionar duración" />
                   </SelectTrigger>
                   <SelectContent>
-                    {selectedPlan.variants.map((variant) => (
-                      <SelectItem key={variant.days} value={variant.days.toString()}>
-                        <div className="flex items-center justify-between w-full">
-                          <span>{variant.days} días</span>
-                          <span className="font-medium ml-2">
-                            {formatCurrency(variant.price)}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {selectedPlan.variants
+                      .filter(variant => {
+                        // Si es un cupón plan_specific, filtrar solo las variantes válidas
+                        if (coupon?.type === 'plan_specific' && coupon.validPlanIds && coupon.validPlanIds.length > 0) {
+                          return coupon.validPlanIds.includes(`${selectedPlan._id}-${variant.days}`);
+                        }
+                        return true;
+                      })
+                      .map((variant) => (
+                        <SelectItem key={variant.days} value={variant.days.toString()}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{variant.days} días</span>
+                            <span className="font-medium ml-2">
+                              {formatCurrency(variant.price)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>

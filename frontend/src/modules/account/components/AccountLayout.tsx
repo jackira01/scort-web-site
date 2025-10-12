@@ -56,14 +56,6 @@ export default function AccountLayout() {
     // Estado para el modal de verificación de email
     const [emailVerificationModalOpen, setEmailVerificationModalOpen] = useState(false);
 
-    // Debug: Monitorear cambios en el estado del modal
-    useEffect(() => {
-        console.log('🔍 DEBUG EmailModal - Estado del modal cambió:', {
-            emailVerificationModalOpen,
-            timestamp: new Date().toISOString()
-        });
-    }, [emailVerificationModalOpen]);
-
     // Detectar si es vista móvil
     useEffect(() => {
         const checkIsMobile = () => {
@@ -78,17 +70,12 @@ export default function AccountLayout() {
 
     // Verificar si el usuario necesita verificar su email
     useEffect(() => {
-        console.log('🔍 DEBUG EmailModal - Usuario:', user);
 
-        if (user && !user.emailVerified && user.emailVerified !== null) {
-            console.log('✅ DEBUG EmailModal - Abriendo modal de verificación');
+
+        if (user && user.emailVerified === null) {
             setEmailVerificationModalOpen(true);
         } else {
-            console.log('❌ DEBUG EmailModal - NO abriendo modal:', {
-                hasUser: !!user,
-                emailVerified: user?.emailVerified,
-                isNotNull: user?.emailVerified !== null
-            });
+
         }
     }, [user]);
 
@@ -167,14 +154,6 @@ export default function AccountLayout() {
             }
 
             // Aplicar cupón y calcular descuento usando el servicio del backend
-            console.log('🎯 [ACCOUNT LAYOUT] Aplicando cupón:', {
-                couponCode: validatedCoupon.code,
-                currentPlan: currentPlan,
-                originalPrice: originalPrice,
-                couponApplicablePlans: validatedCoupon.applicablePlans,
-                profileId: selectedProfileId,
-                timestamp: new Date().toISOString()
-            });
 
             const requestBody = {
                 code: validatedCoupon.code,
@@ -183,28 +162,12 @@ export default function AccountLayout() {
                 variantDays: planDays // Incluir variantDays en la petición
             };
 
-            console.log('📤 [ACCOUNT LAYOUT] Enviando petición a backend:', {
-                url: `${process.env.NEXT_PUBLIC_API_URL}/api/coupons/apply`,
-                method: 'POST',
-                body: requestBody,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
             const couponApplicationResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/coupons/apply`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(requestBody)
-            });
-
-            console.log('📥 [ACCOUNT LAYOUT] Respuesta del backend:', {
-                status: couponApplicationResponse.status,
-                statusText: couponApplicationResponse.statusText,
-                ok: couponApplicationResponse.ok,
-                headers: Object.fromEntries(couponApplicationResponse.headers.entries())
             });
 
             if (!couponApplicationResponse.ok) {
@@ -252,11 +215,6 @@ export default function AccountLayout() {
 
                 throw new Error('Error al procesar la respuesta del servidor');
             }
-            console.log('✅ [ACCOUNT LAYOUT] Cupón aplicado exitosamente:', {
-                couponResult,
-                savings: couponResult.data?.originalPrice - couponResult.data?.finalPrice,
-                discountPercentage: couponResult.data?.discountPercentage
-            });
 
             const { originalPrice: calculatedOriginalPrice, finalPrice, discount, discountPercentage } = couponResult.data;
 

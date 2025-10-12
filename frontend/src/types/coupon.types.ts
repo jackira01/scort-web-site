@@ -3,11 +3,13 @@ export interface ICoupon {
   code: string;
   name: string;
   description?: string;
-  type: 'percentage' | 'fixed_amount' | 'plan_assignment';
+  type: 'percentage' | 'fixed_amount' | 'plan_assignment' | 'plan_specific';
   value: number;
   planCode?: string;
   variantDays?: number; // Solo para type: 'plan_assignment' - días específicos de la variante
   applicablePlans?: string[];
+  validPlanIds?: string[]; // Para cupones plan_specific - IDs de planes válidos
+  validUpgradeIds?: string[]; // Para cupones plan_specific - IDs de upgrades válidos
   maxUses: number;
   currentUses: number;
   remainingUses?: number;
@@ -27,11 +29,13 @@ export interface CreateCouponInput {
   code: string;
   name: string;
   description?: string;
-  type: 'percentage' | 'fixed_amount' | 'plan_assignment';
+  type: 'percentage' | 'fixed_amount' | 'plan_assignment' | 'plan_specific';
   value: number;
   planCode?: string;
   variantDays?: number; // Solo para type: 'plan_assignment' - días específicos de la variante
   applicablePlans?: string[];
+  validPlanIds?: string[]; // Para cupones plan_specific - IDs de planes válidos
+  validUpgradeIds?: string[]; // Para cupones plan_specific - IDs de upgrades válidos
   maxUses: number;
   validFrom: string;
   validUntil: string;
@@ -45,6 +49,8 @@ export interface UpdateCouponInput {
   planCode?: string;
   variantDays?: number; // Solo para type: 'plan_assignment' - días específicos de la variante
   applicablePlans?: string[];
+  validPlanIds?: string[]; // Para cupones plan_specific - IDs de planes válidos
+  validUpgradeIds?: string[]; // Para cupones plan_specific - IDs de upgrades válidos
   maxUses?: number;
   validFrom?: string;
   validUntil?: string;
@@ -92,6 +98,7 @@ export interface CouponStats {
     percentage?: number;
     fixed_amount?: number;
     plan_assignment?: number;
+    plan_specific?: number;
   };
 }
 

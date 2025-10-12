@@ -320,9 +320,13 @@ export class CouponController {
   async validateCoupon(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { code } = req.params;
-      const { planCode } = req.query;
+      const { planCode, variantDays } = req.query;
       
-      const validation = await couponService.validateCoupon(code, planCode as string);
+      const validation = await couponService.validateCoupon(
+        code, 
+        planCode as string, 
+        variantDays ? parseInt(variantDays as string) : undefined
+      );
       
       if (!validation.isValid) {
         res.status(400).json({
@@ -370,7 +374,7 @@ export class CouponController {
     });
 
     try {
-      const { code, originalPrice, planCode, variantDays } = req.body;
+      const { code, originalPrice, planCode, variantDays, upgradeId } = req.body;
       
       console.log('📝 [COUPON CONTROLLER] Validando parámetros de entrada:', {
         code: code || 'NO_CODE',
@@ -378,6 +382,7 @@ export class CouponController {
         originalPriceType: typeof originalPrice,
         planCode: planCode || 'NO_PLAN',
         variantDays: variantDays || 'NO_VARIANT',
+        upgradeId: upgradeId || 'NO_UPGRADE',
         isValidPrice: typeof originalPrice === 'number' && originalPrice >= 0
       });
       
@@ -391,7 +396,7 @@ export class CouponController {
       }
 
       console.log('🔄 [COUPON CONTROLLER] Llamando al servicio de cupones...');
-      const result = await couponService.applyCoupon(code, originalPrice, planCode, variantDays);
+      const result = await couponService.applyCoupon(code, originalPrice, planCode, variantDays, upgradeId);
       
       console.log('📊 [COUPON CONTROLLER] Resultado del servicio:', {
         success: result.success,
@@ -404,9 +409,21 @@ export class CouponController {
       
       if (!result.success) {
         console.log('⚠️ [COUPON CONTROLLER] Aplicación de cupón falló:', result.error);
+        
+        // 📝 Mensajes de error específicos según las reglas de negocio
+        let userMessage = result.error;
+        if (result.error === 'El cupón no puede aplicarse a planes gratuitos') {
+          userMessage = 'Los cupones no pueden aplicarse a planes gratuitos';
+        } else if (result.error?.includes('negativo') || result.error?.includes('exceder')) {
+          userMessage = 'El descuento no puede exceder el valor del plan';
+        } else if (result.error === 'El cupón no es válido para el plan o upgrade seleccionado') {
+          userMessage = 'Este cupón no es válido para el plan o upgrade seleccionado';
+        }
+        
         res.status(400).json({
           success: false,
-          message: result.error
+          message: userMessage,
+          details: result.error
         });
         return;
       }

@@ -13,4 +13,4 @@ export const editSteps: Step[] = [
 ];
 
 // Re-exportar otros datos necesarios del módulo de creación
-export { services, upgradeOptions, genderOptions, workTypeOptions, skinColorOptions, sexualityOptions, eyeColorOptions, hairColorOptions, bodyTypeOptions } from '../create-profile/data';
+export { services, upgradeOptions, genderOptions, workTypeOptions, skinColorOptions, /* sexualityOptions, */ eyeColorOptions, hairColorOptions, bodyTypeOptions } from '../create-profile/data';

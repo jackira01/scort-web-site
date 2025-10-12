@@ -1513,10 +1513,10 @@ export const upgradePlan = async (profileId: string, newPlanCode: string, varian
     throw new Error('Perfil no encontrado');
   }
 
-  // Validar que tiene un plan activo
+  // Validar que tiene un plan asignado (puede estar expirado para admins)
   const now = new Date();
-  if (!profile.planAssignment || new Date(profile.planAssignment.expiresAt) <= now) {
-    throw new Error('El perfil debe tener un plan activo para hacer upgrade');
+  if (!profile.planAssignment) {
+    throw new Error('El perfil debe tener un plan asignado para hacer upgrade');
   }
 
   // Validar que el nuevo plan existe
@@ -1553,10 +1553,19 @@ export const upgradePlan = async (profileId: string, newPlanCode: string, varian
   }
 
   // Calcular nueva fecha de expiración
-  // Mantener el tiempo restante del plan actual y agregar los días del nuevo plan
+  // Si el plan actual está expirado, usar la fecha actual como base
+  // Si el plan actual está activo, mantener el tiempo restante y agregar los días del nuevo plan
   const currentExpiresAt = new Date(profile.planAssignment.expiresAt);
-  const remainingTime = Math.max(0, currentExpiresAt.getTime() - now.getTime());
-  const newExpiresAt = new Date(now.getTime() + remainingTime + (selectedVariant.days * 24 * 60 * 60 * 1000));
+  let newExpiresAt: Date;
+  
+  if (currentExpiresAt <= now) {
+    // Plan expirado: nueva fecha = ahora + días del nuevo plan
+    newExpiresAt = new Date(now.getTime() + (selectedVariant.days * 24 * 60 * 60 * 1000));
+  } else {
+    // Plan activo: mantener tiempo restante + días del nuevo plan
+    const remainingTime = currentExpiresAt.getTime() - now.getTime();
+    newExpiresAt = new Date(now.getTime() + remainingTime + (selectedVariant.days * 24 * 60 * 60 * 1000));
+  }
 
   // Actualizar el plan del perfil
   const updatedProfile = await ProfileModel.findByIdAndUpdate(

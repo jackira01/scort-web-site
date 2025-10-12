@@ -78,7 +78,7 @@ export const upgradeOptions: UpgradeOption[] = [
 export const genderOptions = ['Mujer', 'Hombre', 'Trans'];
 export const workTypeOptions = ['Yo mismo (independiente)', 'Agencia'];
 export const skinColorOptions = ['Blanca', 'Trigueña', 'Morena', 'Negra'];
-export const sexualityOptions = ['Straight', 'Gay', 'Lesbian', 'Bisexual', 'Other'];
+// export const sexualityOptions = ['Straight', 'Gay', 'Lesbian', 'Bisexual', 'Other']; // REMOVIDO
 export const eyeColorOptions = ['Negros', 'Café', 'Avellana', 'Verdes', 'Azul'];
 export const hairColorOptions = [
   'Negro',

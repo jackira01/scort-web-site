@@ -31,7 +31,7 @@ export interface FormData {
   };
   age: string;
   skinColor: string;
-  sexuality: string;
+  // sexuality: string; // REMOVIDO
   eyeColor: string;
   hairColor: string;
   bodyType: string;

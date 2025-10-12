@@ -7,6 +7,8 @@ export interface ICoupon {
   planCode?: string; // Solo para type: 'plan_assignment'
   variantDays?: number; // Solo para type: 'plan_assignment' - días específicos de la variante
   applicablePlans?: string[]; // Códigos de planes donde se puede aplicar el cupón
+  validPlanIds?: string[]; // Lista de planes específicos donde se puede usar (para percentage y fixed_amount)
+  validUpgradeIds?: string[]; // Lista de upgrades específicos donde se puede usar (para percentage y fixed_amount)
   maxUses: number; // -1 para ilimitado
   currentUses: number;
   validFrom: Date;
@@ -26,6 +28,8 @@ export interface CreateCouponInput {
   planCode?: string;
   variantDays?: number; // Solo para type: 'plan_assignment' - días específicos de la variante
   applicablePlans?: string[];
+  validPlanIds?: string[]; // Lista de planes específicos donde se puede usar (para percentage y fixed_amount)
+  validUpgradeIds?: string[]; // Lista de upgrades específicos donde se puede usar (para percentage y fixed_amount)
   maxUses: number;
   validFrom: Date;
   validUntil: Date;
@@ -39,6 +43,8 @@ export interface UpdateCouponInput {
   planCode?: string;
   variantDays?: number; // Solo para type: 'plan_assignment' - días específicos de la variante
   applicablePlans?: string[];
+  validPlanIds?: string[]; // Lista de planes específicos donde se puede usar (para percentage y fixed_amount)
+  validUpgradeIds?: string[]; // Lista de upgrades específicos donde se puede usar (para percentage y fixed_amount)
   maxUses?: number;
   validFrom?: Date;
   validUntil?: Date;

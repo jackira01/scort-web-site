@@ -101,102 +101,61 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
     if (profileDetails && attributeGroups) {
       // Cargando datos del perfil
 
-      // Debug: Log complete profile structure
-      console.log('🔍 DEBUG - Complete profileDetails structure:', {
-        profileDetails,
-        features: profileDetails.features,
-        rates: profileDetails.rates,
-        ratesType: typeof profileDetails.rates,
-        ratesIsArray: Array.isArray(profileDetails.rates),
-        ratesLength: profileDetails.rates?.length,
-        ratesContent: profileDetails.rates,
-      });
-
-      // Debug: Log each feature in detail
-      console.log('🔍 DEBUG - Features analysis:');
-      profileDetails.features?.forEach((feature: any, index: number) => {
-        console.log(`Feature ${index}:`, {
-          group: feature.group,
-          groupKey: feature.group?.key,
-          groupName: feature.groupName,
-          value: feature.value,
-          valueType: typeof feature.value,
-          valueIsArray: Array.isArray(feature.value),
-          firstValue: feature.value?.[0],
-        });
-      });
-
       // Función para obtener el valor de una característica por grupo
       const getFeatureValue = (groupKey: string) => {
         // Mapeo de claves a nombres de grupo en español
         const groupNameMap: Record<string, string[]> = {
           'skin': ['Color de piel', 'Piel'],
-          'sex': ['sexo', 'Orientación sexual', 'Sexualidad'],
+          // 'sex': ['sexo', 'Orientación sexual', 'Sexualidad'], // REMOVIDO
           'eyes': ['Color de ojos', 'Ojos'],
           'hair': ['Color de cabello', 'Cabello', 'Pelo'],
           'body': ['Cuerpo', 'Tipo de cuerpo', 'Contextura', 'contextura'],
         };
 
         const possibleNames = groupNameMap[groupKey] || [groupKey];
-        
-        console.log(`🔍 DEBUG getFeatureValue(${groupKey}) - Searching for:`, possibleNames);
-        console.log(`🔍 DEBUG - Available features:`, profileDetails.features?.map((f: any) => ({
-          groupName: f.groupName,
-          value: f.value
-        })));
-        
+
         const feature = profileDetails.features?.find((f: any) => {
           const groupName = f.groupName?.toLowerCase() || '';
-          const matches = possibleNames.some(name => 
-            groupName.includes(name.toLowerCase()) || 
+          const matches = possibleNames.some(name =>
+            groupName.includes(name.toLowerCase()) ||
             name.toLowerCase().includes(groupName)
           );
-          console.log(`🔍 DEBUG - Checking feature "${f.groupName}" against ${groupKey}:`, { groupName, matches });
           return matches;
         });
-        
+
         const value = feature?.value?.[0] || '';
-        console.log(`🔍 getFeatureValue(${groupKey}) RESULT:`, { 
-          feature, 
-          value, 
-          groupName: feature?.groupName,
-          possibleNames 
-        });
-        
+
         // Para bodyType, si no se encuentra la característica, devolver cadena vacía
         // Esto permite que perfiles sin esta característica puedan editarla
         if (groupKey === 'body' && !value) {
-          console.log(`🔍 DEBUG - bodyType not found, allowing empty value for editing`);
           return '';
         }
-        
+
         return value;
       };
 
       // Función específica para obtener el género
       const getGenderValue = () => {
         // Buscar por groupName que contenga género
-        const genderFeature = profileDetails.features?.find((f: any) => 
-          f.groupName?.toLowerCase().includes('género') || 
+        const genderFeature = profileDetails.features?.find((f: any) =>
+          f.groupName?.toLowerCase().includes('género') ||
           f.groupName?.toLowerCase().includes('genero') ||
           ['hombre', 'mujer', 'trans'].includes(f.value?.[0]?.toLowerCase())
         );
         const value = genderFeature?.value?.[0] || '';
-        console.log('🔍 getGenderValue:', { genderFeature, value });
         return value;
       };
 
       // Función específica para obtener la categoría
       const getCategoryValue = () => {
         // Buscar por groupName que contenga categoría
-        const categoryFeature = profileDetails.features?.find((f: any) => 
-          f.groupName?.toLowerCase().includes('categoría') || 
+        const categoryFeature = profileDetails.features?.find((f: any) =>
+          f.groupName?.toLowerCase().includes('categoría') ||
           f.groupName?.toLowerCase().includes('categoria') ||
           f.groupName?.toLowerCase().includes('escort') ||
           f.groupName?.toLowerCase().includes('agencia')
         );
         const value = categoryFeature?.value?.[0] || categoryFeature?.groupName || profileDetails.category || '';
-        console.log('🔍 getCategoryValue:', { categoryFeature, value, profileCategory: profileDetails.category });
         return value;
       };
 
@@ -219,15 +178,8 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
 
       // Convertir rates del backend al formato del formulario
       const convertRates = () => {
-        console.log('🔍 DEBUG - Converting rates:', {
-          originalRates: profileDetails.rates,
-          ratesType: typeof profileDetails.rates,
-          ratesIsArray: Array.isArray(profileDetails.rates),
-          ratesLength: profileDetails.rates?.length,
-        });
 
         if (!profileDetails.rates || !Array.isArray(profileDetails.rates)) {
-          console.log('🔍 DEBUG - No rates found or not array, returning empty array');
           return [];
         }
 
@@ -240,11 +192,9 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
               price: typeof rate.price === 'number' ? rate.price : parseFloat(rate.price) || 0,
               delivery: Boolean(rate.delivery),
             };
-            console.log(`🔍 DEBUG - Converting rate ${index}:`, { original: rate, converted });
             return converted;
           });
 
-        console.log('🔍 DEBUG - Final converted rates:', convertedRates);
         return convertedRates;
       };
 
@@ -283,27 +233,6 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       // Establecer cada valor individualmente para asegurar que los campos controlados se actualicen
       // Step 1 - Campos esenciales
       form.setValue('profileName', formData.profileName);
-      
-      // Debug: Verificar el valor del género
-      console.log('🔍 Debug - Valor del género extraído:', formData.gender);
-      console.log('🔍 Debug - profileDetails.features:', profileDetails.features);
-      console.log('🔍 Debug - Feature de género encontrada:', profileDetails.features?.find((f: any) => f.group?.key === 'gender'));
-      
-      // Debug adicional: Verificar estructura completa de features
-      console.log('🔍 Debug - Estructura completa de cada feature:');
-      profileDetails.features?.forEach((feature: any, index: number) => {
-        console.log(`Feature ${index}:`, {
-          group: feature.group,
-          groupName: feature.groupName,
-          value: feature.value,
-          completeFeature: feature
-        });
-      });
-      
-      // Debug: Verificar categoría
-      console.log('🔍 Debug - profileDetails.category:', profileDetails.category);
-      console.log('🔍 Debug - profileDetails completo:', profileDetails);
-      
       form.setValue('gender', formData.gender);
       form.setValue('category', formData.category);
       form.setValue('location.country', formData.location.country);
@@ -312,27 +241,17 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
 
       // Step 2 - Descripción y servicios
       form.setValue('description', formData.description);
-      
+
       // Calcular selectedServices como la unión de basicServices y additionalServices
       const allServices = [
         ...(profileDetails.basicServices || []),
         ...(profileDetails.additionalServices || [])
       ];
       const uniqueServices = [...new Set(allServices)]; // Eliminar duplicados
-      
+
       form.setValue('selectedServices', uniqueServices);
       form.setValue('basicServices', profileDetails.basicServices || []);
       form.setValue('additionalServices', profileDetails.additionalServices || []);
-
-      // Debug: Log services data being set
-      console.log('🔍 DEBUG - Services data being set:', {
-        selectedServices: uniqueServices,
-        basicServices: profileDetails.basicServices || [],
-        additionalServices: profileDetails.additionalServices || [],
-        profileDetailsBasicServices: profileDetails.basicServices,
-        profileDetailsAdditionalServices: profileDetails.additionalServices,
-        allServicesBeforeUnique: allServices,
-      });
 
       // Step 3 - Detalles y contacto
       form.setValue('contact.number', formData.contact.number);
@@ -346,24 +265,6 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       form.setValue('height', formData.height);
       form.setValue('rates', formData.rates);
       form.setValue('availability', formData.availability);
-
-      // Debug: Log Step 3 data being set
-      console.log('🔍 DEBUG - Step 3 data being set:', {
-        contactNumber: formData.contact.number,
-        contactWhatsapp: formData.contact.whatsapp,
-        contactTelegram: formData.contact.telegram,
-        age: formData.age,
-        skinColor: formData.skinColor,
-        sexuality: formData.sexuality,
-        eyeColor: formData.eyeColor,
-        hairColor: formData.hairColor,
-        bodyType: formData.bodyType,
-        height: formData.height,
-        rates: formData.rates,
-        ratesLength: formData.rates?.length || 0,
-        availability: formData.availability,
-        availabilityLength: formData.availability?.length || 0,
-      });
 
       // Step 4 - Multimedia
       form.setValue('photos', formData.photos);
@@ -419,28 +320,9 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
             basicServices: form.getValues('basicServices') || [],
             additionalServices: form.getValues('additionalServices') || [],
           };
-          
-          // Debug: Log Step 2 validation data
-          console.log('🔍 DEBUG Step 2 - Validation Data:', {
-            description: step2Data.description,
-            descriptionLength: step2Data.description.length,
-            selectedServices: step2Data.selectedServices,
-            selectedServicesCount: step2Data.selectedServices.length,
-            basicServices: step2Data.basicServices,
-            basicServicesCount: step2Data.basicServices.length,
-            additionalServices: step2Data.additionalServices,
-            additionalServicesCount: step2Data.additionalServices.length,
-          });
-          
+
           const validation = step2Schema.safeParse(step2Data);
-          
-          // Debug: Log validation result
-          console.log('🔍 DEBUG Step 2 - Validation Result:', {
-            success: validation.success,
-            errors: validation.success ? null : validation.error.issues,
-            data: validation.success ? validation.data : null,
-          });
-          
+
           return validation;
         }
 
@@ -468,30 +350,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
             availability: form.getValues('availability') || [],
           };
 
-          // Debug: Log Step 3 validation data
-          console.log('🔍 DEBUG Step 3 - Validation Data:', {
-            contact: step3Data.contact,
-            age: step3Data.age,
-            skinColor: step3Data.skinColor,
-            sexuality: step3Data.sexuality,
-            eyeColor: step3Data.eyeColor,
-            hairColor: step3Data.hairColor,
-            bodyType: step3Data.bodyType,
-            height: step3Data.height,
-            rates: step3Data.rates,
-            ratesCount: step3Data.rates.length,
-            availability: step3Data.availability,
-            availabilityCount: step3Data.availability.length,
-          });
-
           const validation = step3Schema.safeParse(step3Data);
-
-          // Debug: Log validation result
-          console.log('🔍 DEBUG Step 3 - Validation Result:', {
-            success: validation.success,
-            errors: validation.success ? null : validation.error.issues,
-            data: validation.success ? validation.data : null,
-          });
 
           return validation;
         }
@@ -564,13 +423,13 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       });
     }
 
-    // Sexuality
-    if (formData.sexuality && groupMap.sex?._id) {
-      features.push({
-        group_id: groupMap.sex._id,
-        value: [formData.sexuality],
-      });
-    }
+    // Sexuality - REMOVIDO
+    // if (formData.sexuality && groupMap.sex?._id) {
+    //   features.push({
+    //     group_id: groupMap.sex._id,
+    //     value: [formData.sexuality],
+    //   });
+    // }
 
     // Category feature
     if (formData.category && groupMap.category?._id) {
@@ -622,9 +481,9 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       rates,
       media: {
         gallery: formData.photos || [],
-        videos: formData.videos?.map(url => ({ 
-          link: typeof url === 'string' ? url : '', 
-          preview: typeof url === 'string' ? url : '' 
+        videos: formData.videos?.map(url => ({
+          link: typeof url === 'string' ? url : '',
+          preview: typeof url === 'string' ? url : ''
         })) || [],
         profilePicture: formData.photos?.[0] || '',
       },
@@ -633,17 +492,10 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
   };
 
   const handleNext = () => {
-    console.log('🔍 DEBUG - handleNext called for step:', currentStep);
-    
     const validation = validateStep(currentStep);
-    console.log('🔍 DEBUG - Validation result:', validation);
-    
     if (validation.success) {
-      console.log('✅ DEBUG - Validation successful, moving to next step');
       setCurrentStep((prev) => Math.min(prev + 1, editSteps.length));
-    } else {
-      console.log('❌ DEBUG - Validation failed:', validation.error?.issues);
-      // Validation errors
+    } else {      // Validation errors
       toast.error('Por favor completa todos los campos requeridos');
     }
   };

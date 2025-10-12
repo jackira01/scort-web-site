@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Mail, Clock, RefreshCw } from 'lucide-react';
+import { Mail, Clock, RefreshCw, Send, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -14,21 +14,79 @@ interface EmailVerificationModalProps {
   userEmail: string;
 }
 
-export default function EmailVerificationModal({ 
-  isOpen, 
-  onClose, 
-  userEmail 
+export default function EmailVerificationModal({
+  isOpen,
+  onClose,
+  userEmail
 }: EmailVerificationModalProps) {
-  console.log('🔍 DEBUG EmailVerificationModal - Renderizando con props:', {
-    isOpen,
-    userEmail,
-    timestamp: new Date().toISOString()
-  });
-
   const [verificationCode, setVerificationCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
-  const [isResending, setIsResending] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [codeSent, setCodeSent] = useState(false);
+  const [codeExpiration, setCodeExpiration] = useState<Date | null>(null);
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+  // Timer para el cooldown de reenvío
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (timeLeft > 0) {
+      timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [timeLeft]);
+
+  // Timer para la expiración del código
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (codeExpiration) {
+      timer = setInterval(() => {
+        const now = new Date();
+        if (now >= codeExpiration) {
+          setCodeSent(false);
+          setCodeExpiration(null);
+          toast.error('El código ha expirado. Solicita uno nuevo.');
+        }
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [codeExpiration]);
+
+  const handleSendCode = async () => {
+    setIsSending(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/auth/resend-verification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: userEmail,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success('Código de verificación enviado a tu email');
+        setCodeSent(true);
+        setTimeLeft(60); // Cooldown de 60 segundos
+
+        // Establecer expiración del código (15 minutos)
+        const expiration = new Date();
+        expiration.setMinutes(expiration.getMinutes() + 15);
+        setCodeExpiration(expiration);
+      } else {
+        toast.error(result.message || 'Error al enviar el código');
+      }
+    } catch (error) {
+      toast.error('Error al enviar el código. Inténtalo de nuevo.');
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const handleVerifyCode = async () => {
     if (!verificationCode.trim()) {
@@ -41,10 +99,18 @@ export default function EmailVerificationModal({
       return;
     }
 
+    // Verificar si el código ha expirado
+    if (codeExpiration && new Date() >= codeExpiration) {
+      toast.error('El código ha expirado. Solicita uno nuevo.');
+      setCodeSent(false);
+      setCodeExpiration(null);
+      return;
+    }
+
     setIsVerifying(true);
 
     try {
-      const response = await fetch('/api/auth/verify-email', {
+      const response = await fetch(`${API_URL}/api/auth/verify-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -72,49 +138,28 @@ export default function EmailVerificationModal({
   };
 
   const handleResendCode = async () => {
-    setIsResending(true);
-
-    try {
-      const response = await fetch('/api/auth/resend-verification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: userEmail,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success('Código de verificación reenviado');
-        setTimeLeft(60); // Iniciar countdown de 60 segundos
-        
-        // Countdown timer
-        const timer = setInterval(() => {
-          setTimeLeft((prev) => {
-            if (prev <= 1) {
-              clearInterval(timer);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      } else {
-        toast.error(result.message || 'Error al reenviar el código');
-      }
-    } catch (error) {
-      toast.error('Error al reenviar el código. Inténtalo de nuevo.');
-    } finally {
-      setIsResending(false);
-    }
+    await handleSendCode();
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleVerifyCode();
+      if (codeSent) {
+        handleVerifyCode();
+      } else {
+        handleSendCode();
+      }
     }
+  };
+
+  const getTimeRemaining = () => {
+    if (!codeExpiration) return null;
+    const now = new Date();
+    const diff = codeExpiration.getTime() - now.getTime();
+    if (diff <= 0) return null;
+
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -127,7 +172,6 @@ export default function EmailVerificationModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={onClose}
           />
 
           {/* Modal */}
@@ -139,13 +183,6 @@ export default function EmailVerificationModal({
           >
             {/* Header */}
             <div className="relative bg-gradient-to-r from-pink-500 to-purple-600 p-6 text-white">
-              <button
-                onClick={onClose}
-                className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-white/20 rounded-full">
                   <Mail className="w-6 h-6" />
@@ -161,68 +198,115 @@ export default function EmailVerificationModal({
 
             {/* Content */}
             <div className="p-6 space-y-6">
-              <Alert>
-                <Clock className="h-4 w-4" />
-                <AlertDescription>
-                  Hemos enviado un código de 6 dígitos a <strong>{userEmail}</strong>. 
-                  El código expira en 15 minutos.
-                </AlertDescription>
-              </Alert>
+              {!codeSent ? (
+                // Paso 1: Enviar código
+                <>
+                  <Alert>
+                    <Mail className="h-4 w-4" />
+                    <AlertDescription>
+                      Para verificar tu cuenta, necesitamos enviar un código de verificación a <strong>{userEmail}</strong>.
+                    </AlertDescription>
+                  </Alert>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Código de verificación
-                  </label>
-                  <Input
-                    type="text"
-                    placeholder="Ingresa el código de 6 dígitos"
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    onKeyPress={handleKeyPress}
-                    className="text-center text-lg tracking-widest"
-                    maxLength={6}
-                  />
-                </div>
-
-                <Button
-                  onClick={handleVerifyCode}
-                  disabled={isVerifying || verificationCode.length !== 6}
-                  className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
-                >
-                  {isVerifying ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Verificando...
-                    </>
-                  ) : (
-                    'Verificar Email'
-                  )}
-                </Button>
-
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-2">
-                    ¿No recibiste el código?
-                  </p>
                   <Button
-                    variant="ghost"
-                    onClick={handleResendCode}
-                    disabled={isResending || timeLeft > 0}
-                    className="text-pink-600 hover:text-pink-700"
+                    onClick={handleSendCode}
+                    disabled={isSending || timeLeft > 0}
+                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
                   >
-                    {isResending ? (
+                    {isSending ? (
                       <>
                         <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        Reenviando...
+                        Enviando código...
                       </>
                     ) : timeLeft > 0 ? (
-                      `Reenviar en ${timeLeft}s`
+                      <>
+                        <Clock className="w-4 h-4 mr-2" />
+                        Espera {timeLeft}s para reenviar
+                      </>
                     ) : (
-                      'Reenviar código'
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Enviar código
+                      </>
                     )}
                   </Button>
-                </div>
-              </div>
+                </>
+              ) : (
+                // Paso 2: Verificar código
+                <>
+                  <Alert>
+                    <CheckCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Hemos enviado un código de 6 dígitos a <strong>{userEmail}</strong>.
+                      {codeExpiration && (
+                        <div className="mt-2 text-sm">
+                          Tiempo restante: <strong>{getTimeRemaining()}</strong>
+                        </div>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Código de verificación
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder="Ingresa el código de 6 dígitos"
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        onKeyPress={handleKeyPress}
+                        className="text-center text-lg tracking-widest"
+                        maxLength={6}
+                      />
+                    </div>
+
+                    <Button
+                      onClick={handleVerifyCode}
+                      disabled={isVerifying || verificationCode.length !== 6}
+                      className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                    >
+                      {isVerifying ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Verificando...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Verificar Email
+                        </>
+                      )}
+                    </Button>
+
+                    {/* Botón de reenvío */}
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600 mb-2">
+                        ¿No recibiste el código?
+                      </p>
+                      <Button
+                        variant="outline"
+                        onClick={handleResendCode}
+                        disabled={timeLeft > 0 || isSending}
+                        className="text-sm"
+                      >
+                        {timeLeft > 0 ? (
+                          <>
+                            <Clock className="w-4 h-4 mr-2" />
+                            Reenviar en {timeLeft}s
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Reenviar código
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </motion.div>
         </div>

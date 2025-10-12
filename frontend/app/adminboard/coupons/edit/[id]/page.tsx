@@ -49,6 +49,8 @@ export default function EditCouponPage() {
           value: coupon.value,
           planCode: coupon.planCode || '',
           variantDays: coupon.variantDays,
+          validPlanIds: coupon.validPlanIds || [],
+          validUpgradeIds: coupon.validUpgradeIds || [],
           maxUses: coupon.maxUses,
           validFrom: coupon.validFrom ? new Date(coupon.validFrom).toISOString().split('T')[0] : '',
           validUntil: coupon.validUntil ? new Date(coupon.validUntil).toISOString().split('T')[0] : '',
@@ -97,6 +99,10 @@ export default function EditCouponPage() {
 
     if (coupon?.type === 'plan_assignment' && !state.formData.variantDays) {
       errors.variantDays = 'Debe seleccionar una variante de días para cupones de asignación';
+    }
+
+    if (coupon?.type === 'plan_specific' && (!state.formData.validPlanIds?.length && !state.formData.validUpgradeIds?.length)) {
+      errors.validPlanIds = 'Debe seleccionar al menos un plan o upgrade válido para cupones específicos';
     }
 
     if (state.formData.maxUses !== undefined && state.formData.maxUses < -1) {
@@ -247,7 +253,8 @@ export default function EditCouponPage() {
                   value={
                     coupon.type === 'percentage' ? 'Porcentaje' :
                     coupon.type === 'fixed_amount' ? 'Monto Fijo' :
-                    'Asignación de Plan'
+                    coupon.type === 'plan_assignment' ? 'Asignación de Plan' :
+                    'Específico de Plan/Upgrade'
                   }
                   disabled
                   className="bg-muted"
@@ -329,6 +336,76 @@ export default function EditCouponPage() {
                     )}
                   </div>
                 )}
+              </>
+            )}
+
+            {coupon.type === 'plan_specific' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Planes Válidos</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                    {state.plans.map((plan) => (
+                      <div key={plan.code} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`plan-${plan.code}`}
+                          checked={state.formData.validPlanIds?.includes(plan.code) || false}
+                          onChange={(e) => {
+                            const currentPlans = state.formData.validPlanIds || [];
+                            if (e.target.checked) {
+                              updateFormData('validPlanIds', [...currentPlans, plan.code]);
+                            } else {
+                              updateFormData('validPlanIds', currentPlans.filter(id => id !== plan.code));
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        <label htmlFor={`plan-${plan.code}`} className="text-sm font-medium">
+                          {plan.name} - ${plan.variants[0]?.price.toLocaleString() || 'N/A'}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {state.errors.validPlanIds && (
+                    <p className="text-sm text-red-500">{state.errors.validPlanIds}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Upgrades Válidos</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                    {state.plans.flatMap(plan => 
+                      plan.variants.map(variant => ({
+                        id: `${plan._id}-${variant.days}`,
+                        displayId: `${plan.code}-${variant.days}`,
+                        name: `${plan.name} - ${variant.days} días - $${variant.price.toLocaleString()}`,
+                        planId: plan._id,
+                        planCode: plan.code,
+                        days: variant.days
+                      }))
+                    ).map((upgrade) => (
+                      <div key={upgrade.displayId} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`upgrade-${upgrade.displayId}`}
+                          checked={state.formData.validUpgradeIds?.includes(upgrade.id) || false}
+                          onChange={(e) => {
+                            const currentUpgrades = state.formData.validUpgradeIds || [];
+                            if (e.target.checked) {
+                              updateFormData('validUpgradeIds', [...currentUpgrades, upgrade.id]);
+                            } else {
+                              updateFormData('validUpgradeIds', currentUpgrades.filter(id => id !== upgrade.id));
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        <label htmlFor={`upgrade-${upgrade.displayId}`} className="text-sm font-medium">
+                          {upgrade.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </>
             )}
           </CardContent>

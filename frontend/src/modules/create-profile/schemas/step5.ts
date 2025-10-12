@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
 export const step5Schema = z.object({
+  photos: z.array(z.string()).min(1, {
+    message: 'Debes subir al menos una foto para crear tu perfil',
+  }),
+  videos: z.array(z.any()).optional(),
+  audios: z.array(z.any()).optional(),
   selectedUpgrades: z.array(z.string()).optional(),
   selectedPlan: z.object({
     id: z.string(),

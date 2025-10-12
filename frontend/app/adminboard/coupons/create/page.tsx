@@ -19,6 +19,7 @@ import type { IPlanDefinition } from '@/types/plans.types';
 interface CreateCouponState {
   loading: boolean;
   plans: IPlanDefinition[];
+  upgrades: any[];
   formData: CreateCouponInput;
   errors: Record<string, string>;
 }
@@ -28,6 +29,7 @@ export default function CreateCouponPage() {
   const [state, setState] = useState<CreateCouponState>({
     loading: false,
     plans: [],
+    upgrades: [],
     formData: {
       code: '',
       name: '',
@@ -36,6 +38,8 @@ export default function CreateCouponPage() {
       value: 0,
       planCode: '',
       variantDays: undefined,
+      validPlanIds: [],
+      validUpgradeIds: [],
       maxUses: -1,
       validFrom: new Date().toISOString().split('T')[0],
       validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 días
@@ -51,6 +55,16 @@ export default function CreateCouponPage() {
     } catch (error) {
       console.error('Error loading plans:', error);
       toast.error('Error al cargar planes');
+    }
+  };
+
+  const loadUpgrades = async () => {
+    try {
+      const upgrades = await plansService.getAvailableUpgrades();
+      setState(prev => ({ ...prev, upgrades }));
+    } catch (error) {
+      console.error('Error loading upgrades:', error);
+      toast.error('Error al cargar upgrades');
     }
   };
 
@@ -85,6 +99,10 @@ export default function CreateCouponPage() {
       errors.variantDays = 'Debe seleccionar una variante de días para asignación';
     }
 
+    if (state.formData.type === 'plan_specific' && (!state.formData.validPlanIds?.length && !state.formData.validUpgradeIds?.length)) {
+      errors.validPlanIds = 'Debe seleccionar al menos un plan o upgrade válido para cupones específicos';
+    }
+
     if (state.formData.maxUses !== -1 && state.formData.maxUses <= 0) {
       errors.maxUses = 'Los usos máximos deben ser mayor a 0 o -1 para ilimitado';
     }
@@ -99,7 +117,7 @@ export default function CreateCouponPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -128,6 +146,7 @@ export default function CreateCouponPage() {
 
   useEffect(() => {
     loadPlans();
+    loadUpgrades();
   }, []);
 
   return (
@@ -208,16 +227,16 @@ export default function CreateCouponPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="percentage">Porcentual</SelectItem>
-                    <SelectItem value="fixed_amount">Monto Fijo</SelectItem>
                     <SelectItem value="plan_assignment">Asignación de Plan</SelectItem>
+                    <SelectItem value="fixed_amount">Monto Fijo</SelectItem>
+                    <SelectItem value="percentage">Porcentual</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="value">
-                  {state.formData.type === 'percentage' ? 'Porcentaje (%)' : 
-                   state.formData.type === 'fixed_amount' ? 'Monto ($)' : 'Valor'} *
+                  {state.formData.type === 'percentage' ? 'Porcentaje (%)' :
+                    state.formData.type === 'fixed_amount' ? 'Monto ($)' : 'Valor'} *
                 </Label>
                 <Input
                   id="value"
@@ -289,6 +308,79 @@ export default function CreateCouponPage() {
                     )}
                   </div>
                 )}
+              </>
+            )}
+
+            {(state.formData.type === 'percentage' || state.formData.type === 'fixed_amount') && (
+              <>
+                <div className="space-y-2">
+                  <Label>Planes Válidos</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                    {state.plans.flatMap(plan =>
+                      plan.variants.map(variant => ({
+                        id: `${plan._id}-${variant.days}`,
+                        displayId: `${plan.code}-${variant.days}`,
+                        name: `${plan.name} - ${variant.days} días - $${variant.price.toLocaleString()}`,
+                        planId: plan._id,
+                        planCode: plan.code,
+                        days: variant.days
+                      }))
+                    ).map((planVariant) => (
+                      <div key={planVariant.displayId} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`plan-${planVariant.displayId}`}
+                          checked={state.formData.validPlanIds?.includes(planVariant.id) || false}
+                          onChange={(e) => {
+                            const currentPlans = state.formData.validPlanIds || [];
+                            if (e.target.checked) {
+                              updateFormData('validPlanIds', [...currentPlans, planVariant.id]);
+                            } else {
+                              updateFormData('validPlanIds', currentPlans.filter(id => id !== planVariant.id));
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        <label htmlFor={`plan-${planVariant.id}`} className="text-sm font-medium">
+                          {planVariant.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {state.errors.validPlanIds && (
+                    <p className="text-sm text-red-500">{state.errors.validPlanIds}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Upgrades Válidos</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                    {state.upgrades.map((upgrade) => (
+                      <div key={upgrade.code} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`upgrade-${upgrade.code}`}
+                          checked={state.formData.validUpgradeIds?.includes(upgrade.code) || false}
+                          onChange={(e) => {
+                            const currentUpgrades = state.formData.validUpgradeIds || [];
+                            if (e.target.checked) {
+                              updateFormData('validUpgradeIds', [...currentUpgrades, upgrade.code]);
+                            } else {
+                              updateFormData('validUpgradeIds', currentUpgrades.filter(id => id !== upgrade.code));
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        <label htmlFor={`upgrade-${upgrade.code}`} className="text-sm font-medium">
+                          {upgrade.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {state.errors.validUpgradeIds && (
+                    <p className="text-sm text-red-500">{state.errors.validUpgradeIds}</p>
+                  )}
+                </div>
               </>
             )}
           </CardContent>

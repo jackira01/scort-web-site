@@ -8,6 +8,7 @@ import {
   MapPin,
   Plus,
   Shield,
+  DollarSign,
   Star,
   Trash2,
   Upload,
@@ -253,7 +254,7 @@ export default function AccountProfiles({
             {paginatedProfiles.map((profile, index) => (
               <Card
                 key={profile._id}
-                className={`group hover:shadow-xl transition-all duration-500 overflow-hidden  ${hasDestacadoUpgrade(profile as any)
+                className={`group w-60 hover:shadow-xl transition-all duration-500 overflow-hidden  ${hasDestacadoUpgrade(profile as any)
                   ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50'
                   : 'bg-card border-border hover:border-purple-500/50'
                   }`}
@@ -262,7 +263,7 @@ export default function AccountProfiles({
                 <div className="relative">
                   <Image
                     width={400}
-                    height={200}
+                    height={300}
                     src={profile.media?.gallery?.[0] || '/placeholder.svg'}
                     alt={profile.name}
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
@@ -482,7 +483,7 @@ export default function AccountProfiles({
                                 onClick={() => setManagePlansProfileId(profile._id)}
                                 className="p-2 bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200 transition-all duration-200"
                               >
-                                <Shield className="h-4 w-4" />
+                                <DollarSign className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
