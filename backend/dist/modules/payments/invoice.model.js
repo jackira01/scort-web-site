@@ -63,7 +63,17 @@ const invoiceItemSchema = new mongoose_1.Schema({
         default: 1
     }
 }, { _id: false });
+const counterSchema = new mongoose_1.Schema({
+    name: { type: String, required: true, unique: true },
+    seq: { type: Number, default: 999 },
+});
+const Counter = mongoose_1.default.model("Counter", counterSchema);
 const invoiceSchema = new mongoose_1.Schema({
+    invoiceNumber: {
+        type: Number,
+        unique: true,
+        index: true,
+    },
     profileId: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'Profile',
@@ -150,6 +160,16 @@ invoiceSchema.pre('save', function (next) {
         this.totalAmount = this.items.reduce((total, item) => {
             return total + (item.price * item.quantity);
         }, 0);
+    }
+    next();
+});
+invoiceSchema.pre("save", async function (next) {
+    if (this.isNew) {
+        const counter = await Counter.findOneAndUpdate({ name: "invoice" }, { $inc: { seq: 1 } }, { new: true, upsert: true });
+        if (!counter) {
+            return next(new Error("No se pudo generar el número de factura"));
+        }
+        this.invoiceNumber = counter.seq;
     }
     next();
 });

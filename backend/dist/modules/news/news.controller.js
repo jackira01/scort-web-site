@@ -18,6 +18,7 @@ class NewsController {
             const newsData = {
                 title: req.body.title,
                 content: req.body.content,
+                imageUrl: req.body.imageUrl || req.body.bannerImage,
                 published: req.body.published !== undefined ? req.body.published : true
             };
             const news = await news_service_1.NewsService.createNews(newsData);
@@ -103,6 +104,7 @@ class NewsController {
             const updateData = {
                 title: req.body.title,
                 content: req.body.content,
+                imageUrl: req.body.imageUrl || req.body.bannerImage,
                 published: req.body.published
             };
             Object.keys(updateData).forEach(key => {

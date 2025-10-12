@@ -52,6 +52,7 @@ class InvoiceService {
         }
         const items = [];
         let totalAmount = 0;
+        let planDetails = '';
         if (planCode && planDays) {
             const plan = await plan_model_1.PlanDefinitionModel.findByCode(planCode);
             if (!plan) {
@@ -71,6 +72,7 @@ class InvoiceService {
             };
             items.push(planItem);
             totalAmount += variant.price;
+            planDetails = `Plan: ${plan.name} (${planCode}) - Variante: ${planDays} días - Precio: $${variant.price}`;
         }
         if (upgradeCodes.length > 0) {
             for (const upgradeCode of upgradeCodes) {
@@ -138,6 +140,13 @@ class InvoiceService {
         }
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 24);
+        let enhancedNotes = notes || '';
+        if (planDetails) {
+            const planDetailsNote = `Detalles del plan: ${planDetails}`;
+            enhancedNotes = enhancedNotes
+                ? `${enhancedNotes}\n\n${planDetailsNote}`
+                : planDetailsNote;
+        }
         const invoiceData = {
             profileId: new mongoose_1.default.Types.ObjectId(profileId),
             userId: new mongoose_1.default.Types.ObjectId(userId),
@@ -146,7 +155,7 @@ class InvoiceService {
             totalAmount: finalAmount,
             coupon: couponInfo,
             expiresAt,
-            notes
+            notes: enhancedNotes
         };
         const invoice = new invoice_model_1.default(invoiceData);
         const savedInvoice = await invoice.save();

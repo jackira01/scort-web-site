@@ -5,13 +5,12 @@ const calculateVerificationProgress = (verification, user) => {
     let completedSteps = 0;
     const totalSteps = 3;
     if ((verification.steps?.documentPhotos?.frontPhoto ||
-        verification.steps?.documentPhotos?.backPhoto ||
-        verification.steps?.documentPhotos?.selfieWithDocument) &&
+        verification.steps?.documentPhotos?.backPhoto) &&
         verification.steps?.documentPhotos?.isVerified === true) {
         completedSteps++;
     }
-    if (verification.steps?.videoVerification?.videoLink &&
-        verification.steps?.videoVerification?.isVerified === true) {
+    if (verification.steps?.mediaVerification?.mediaLink &&
+        verification.steps?.mediaVerification?.isVerified === true) {
         completedSteps++;
     }
     if (verification.steps?.socialMedia?.isVerified === true) {

@@ -201,6 +201,7 @@ const getUserById = async (req, res) => {
             accountType: user.accountType,
             agencyInfo: user.agencyInfo,
             hasPassword: user.hasPassword,
+            emailVerified: user.emailVerified,
         });
     }
     catch (error) {
@@ -235,22 +236,26 @@ const registerUserController = async (req, res) => {
             password: hashedPassword,
             providers: ['credentials'],
             hasPassword: true,
-            emailVerified: new Date(),
+            emailVerified: null,
         });
         try {
-            await (0, welcome_email_util_1.sendWelcomeEmail)(user.email, user.name);
+            const { EmailVerificationService } = await Promise.resolve().then(() => __importStar(require('./email-verification.service')));
+            const emailVerificationService = new EmailVerificationService();
+            await emailVerificationService.sendVerificationCode(user.email, user.name);
         }
         catch (emailError) {
+            console.error('Error enviando código de verificación:', emailError);
         }
         res.status(201).json({
             success: true,
-            message: 'Usuario registrado exitosamente',
+            message: 'Usuario registrado exitosamente. Revisa tu email para verificar tu cuenta.',
             user: {
                 _id: user._id,
                 email: user.email,
                 name: user.name,
                 isVerified: user.isVerified,
                 role: user.role,
+                emailVerified: user.emailVerified,
             }
         });
     }
@@ -303,6 +308,8 @@ const loginUserController = async (req, res) => {
                 isVerified: user.isVerified,
                 verification_in_progress: user.verification_in_progress,
                 role: user.role,
+                emailVerified: user.emailVerified,
+                hasPassword: user.hasPassword,
             }
         });
     }
@@ -448,7 +455,8 @@ const authGoogleUserController = async (req, res) => {
             isVerified: user.isVerified,
             verification_in_progress: user.verification_in_progress,
             role: user.role,
-            hasPassword: user.hasPassword
+            hasPassword: user.hasPassword,
+            emailVerified: user.emailVerified,
         }
     });
 };

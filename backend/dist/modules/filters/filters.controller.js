@@ -37,6 +37,7 @@ exports.getFilterOptions = exports.getFilteredProfilesPost = void 0;
 const service = __importStar(require("./filters.service"));
 const getFilteredProfilesPost = async (req, res) => {
     try {
+        console.log('🔍 DEBUG Controller - Request body received:', JSON.stringify(req.body, null, 2));
         const { category, location, features, priceRange, availability, isActive, isVerified, profileVerified, documentVerified, hasDestacadoUpgrade, hasVideos, page, limit, sortBy, sortOrder, fields } = req.body;
         const filters = {};
         if (category)
@@ -63,6 +64,7 @@ const getFilteredProfilesPost = async (req, res) => {
                 filters.location.city = location.city;
         }
         if (features) {
+            console.log('🔍 DEBUG Controller - Features received:', JSON.stringify(features, null, 2));
             filters.features = features;
         }
         if (priceRange) {
@@ -126,6 +128,7 @@ const getFilteredProfilesPost = async (req, res) => {
                 message: 'sortOrder debe ser "asc" o "desc"'
             });
         }
+        console.log('🔍 DEBUG Controller - Final filters object:', JSON.stringify(filters, null, 2));
         const result = await service.getFilteredProfiles(filters);
         const response = {
             success: true,

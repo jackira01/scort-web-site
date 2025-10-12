@@ -56,11 +56,11 @@ const ProfileVerificationSchema = new mongoose_1.Schema({
         documentPhotos: {
             frontPhoto: { type: String, default: undefined },
             backPhoto: { type: String, default: undefined },
-            selfieWithDocument: { type: String, default: undefined },
             isVerified: { type: Boolean, default: false },
         },
-        videoVerification: {
-            videoLink: { type: String, default: undefined },
+        mediaVerification: {
+            mediaLink: { type: String, default: undefined },
+            mediaType: { type: String, enum: ['video', 'image'], default: undefined },
             isVerified: { type: Boolean, default: false },
         },
         videoCallRequested: {

@@ -7,6 +7,7 @@ exports.couponService = exports.CouponService = void 0;
 const mongoose_1 = require("mongoose");
 const AppError_1 = require("../../utils/AppError");
 const logger_1 = require("../../utils/logger");
+const coupon_validation_1 = require("../../utils/coupon-validation");
 const coupon_model_1 = __importDefault(require("./coupon.model"));
 const plan_model_1 = require("../plans/plan.model");
 class CouponService {
@@ -134,6 +135,9 @@ class CouponService {
             if (typeof isActive === 'boolean') {
                 filter.isActive = isActive;
             }
+            else {
+                filter.isActive = true;
+            }
             if (validOnly) {
                 const now = new Date();
                 filter.validFrom = { $lte: now };
@@ -238,7 +242,7 @@ class CouponService {
             throw new AppError_1.AppError('Error interno al eliminar el cupón', 500);
         }
     }
-    async validateCoupon(code, planCode) {
+    async validateCoupon(code, planCode, variantDays) {
         try {
             const coupon = await coupon_model_1.default.findByCode(code);
             if (!coupon) {
@@ -272,6 +276,22 @@ class CouponService {
                     error: 'Cupón agotado'
                 };
             }
+            if (planCode && variantDays && coupon.applicablePlans && coupon.applicablePlans.length > 0) {
+                const plan = await plan_model_1.PlanDefinitionModel.findByCode(planCode);
+                if (!plan) {
+                    return {
+                        isValid: false,
+                        error: 'Plan no encontrado'
+                    };
+                }
+                const planVariantId = `${plan._id}-${variantDays}`;
+                if (!coupon.applicablePlans.includes(planVariantId)) {
+                    return {
+                        isValid: false,
+                        error: 'Cupón no aplicable a este plan y variante'
+                    };
+                }
+            }
             return {
                 isValid: true,
                 coupon: coupon.toObject()
@@ -285,15 +305,26 @@ class CouponService {
             };
         }
     }
-    async applyCoupon(code, originalPrice, planCode, variantDays) {
+    async applyCoupon(code, originalPrice, planCode, variantDays, upgradeId) {
         console.log('🎫 [COUPON SERVICE] Iniciando aplicación de cupón:', {
             code,
             originalPrice,
             planCode,
             variantDays,
+            upgradeId,
             timestamp: new Date().toISOString()
         });
         try {
+            if (originalPrice <= 0) {
+                console.log('❌ [COUPON SERVICE] No se puede aplicar cupón a plan gratuito');
+                return {
+                    success: false,
+                    originalPrice,
+                    finalPrice: originalPrice,
+                    discount: 0,
+                    error: 'El cupón no puede aplicarse a planes gratuitos'
+                };
+            }
             const validation = await this.validateCoupon(code, planCode);
             console.log('🔍 [COUPON SERVICE] Resultado de validación:', {
                 isValid: validation.isValid,
@@ -311,6 +342,23 @@ class CouponService {
                 };
             }
             const coupon = validation.coupon;
+            if (!(0, coupon_validation_1.isCouponValidForPlan)(coupon, planCode, upgradeId)) {
+                console.log('❌ [COUPON SERVICE] Cupón no válido para este plan/upgrade:', {
+                    couponCode: coupon.code,
+                    couponType: coupon.type,
+                    planCode,
+                    upgradeId,
+                    validPlanIds: coupon.validPlanIds,
+                    validUpgradeIds: coupon.validUpgradeIds
+                });
+                return {
+                    success: false,
+                    originalPrice,
+                    finalPrice: originalPrice,
+                    discount: 0,
+                    error: 'El cupón no es válido para el plan o upgrade seleccionado'
+                };
+            }
             let finalPrice = originalPrice;
             let discount = 0;
             let assignedPlanCode;
@@ -426,7 +474,8 @@ class CouponService {
                 console.log('⚠️ [COUPON SERVICE] Precio final ajustado (era negativo):', {
                     calculatedFinalPrice: originalFinalPrice,
                     adjustedFinalPrice: finalPrice,
-                    adjustedDiscount: discount
+                    adjustedDiscount: discount,
+                    message: 'El descuento no puede exceder el valor del plan'
                 });
             }
             const result = {

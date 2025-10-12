@@ -8,6 +8,7 @@ class NewsService {
             const news = new news_model_1.News({
                 title: data.title,
                 content: data.content,
+                imageUrl: data.imageUrl,
                 published: data.published ?? true
             });
             return await news.save();
@@ -65,6 +66,9 @@ class NewsService {
             }
             if (data.content !== undefined) {
                 updateData.content = data.content;
+            }
+            if (data.imageUrl !== undefined) {
+                updateData.imageUrl = data.imageUrl;
             }
             if (data.published !== undefined) {
                 updateData.published = data.published;

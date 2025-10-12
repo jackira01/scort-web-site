@@ -1029,8 +1029,8 @@ const upgradePlan = async (profileId, newPlanCode, variantDays) => {
         throw new Error('Perfil no encontrado');
     }
     const now = new Date();
-    if (!profile.planAssignment || new Date(profile.planAssignment.expiresAt) <= now) {
-        throw new Error('El perfil debe tener un plan activo para hacer upgrade');
+    if (!profile.planAssignment) {
+        throw new Error('El perfil debe tener un plan asignado para hacer upgrade');
     }
     const newPlan = await plan_model_1.PlanDefinitionModel.findOne({ code: normalizedPlanCode, active: true });
     if (!newPlan) {
@@ -1053,8 +1053,14 @@ const upgradePlan = async (profileId, newPlanCode, variantDays) => {
         throw new Error(upgradeValidation.reason || 'No se puede hacer upgrade a este plan');
     }
     const currentExpiresAt = new Date(profile.planAssignment.expiresAt);
-    const remainingTime = Math.max(0, currentExpiresAt.getTime() - now.getTime());
-    const newExpiresAt = new Date(now.getTime() + remainingTime + (selectedVariant.days * 24 * 60 * 60 * 1000));
+    let newExpiresAt;
+    if (currentExpiresAt <= now) {
+        newExpiresAt = new Date(now.getTime() + (selectedVariant.days * 24 * 60 * 60 * 1000));
+    }
+    else {
+        const remainingTime = currentExpiresAt.getTime() - now.getTime();
+        newExpiresAt = new Date(now.getTime() + remainingTime + (selectedVariant.days * 24 * 60 * 60 * 1000));
+    }
     const updatedProfile = await profile_model_1.ProfileModel.findByIdAndUpdate(profileId, {
         planAssignment: {
             planId: newPlan._id,
