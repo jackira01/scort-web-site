@@ -10,8 +10,6 @@ import type { FilterQuery } from './filters.types';
  */
 export const getFilteredProfilesPost = async (req: Request, res: Response) => {
   try {
-    console.log('🔍 DEBUG Controller - Request body received:', JSON.stringify(req.body, null, 2));
-    
     // Procesar el body de la misma manera que GET procesa query params
     const {
       category,
@@ -92,7 +90,7 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
     if (sortBy) filters.sortBy = sortBy;
     if (sortOrder) filters.sortOrder = sortOrder;
     if (fields) filters.fields = fields;
-    
+
 
 
     // Validaciones adicionales
@@ -137,15 +135,15 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
       data: result,
       message: 'Perfiles obtenidos exitosamente'
     };
-    
 
-    
+
+
     res.status(200).json(response);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     const errorStack = error instanceof Error ? error.stack : undefined;
     const errorName = error instanceof Error ? error.name : 'UnknownError';
-    
+
     // Error in getFilteredProfilesPost controller
     res.status(500).json({
       success: false,

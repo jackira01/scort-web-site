@@ -21,6 +21,7 @@ export interface IProfileUpgrade {
 }
 
 export interface IProfile extends Document {
+    _id: Types.ObjectId;
     user: Types.ObjectId;
     name: string;
     description: string;
@@ -84,14 +85,14 @@ export interface IProfile extends Document {
     paymentHistory: Types.ObjectId[];
     plan: Types.ObjectId;
     lastLogin: Date;
-    
+
     // Nuevos campos para motor de visibilidad
     planAssignment: IPlanAssignment | null;
     upgrades: IProfileUpgrade[];
     lastShownAt?: Date;           // para rotación
     visible: boolean;             // default true mientras no expire plan
     isDeleted: boolean;           // borrado lógico - true significa eliminado
-    
+
     // Campos de timestamps de Mongoose
     createdAt: Date;
     updatedAt: Date;
@@ -146,7 +147,7 @@ export interface CreateProfileDTO {
     rates?: string[];
     paymentHistory?: string[];
     verification?: string;
-    
+
     // Nuevos campos opcionales para motor de visibilidad
     planAssignment?: {
         planId?: Types.ObjectId;
@@ -214,7 +215,7 @@ export interface IProfileInput {
     rates?: Types.ObjectId[];
     paymentHistory?: Types.ObjectId[];
     plan?: Types.ObjectId;
-    
+
     // Nuevos campos opcionales para motor de visibilidad
     planAssignment?: IPlanAssignment;
     upgrades?: IProfileUpgrade[];
@@ -224,6 +225,7 @@ export interface IProfileInput {
 }
 
 export interface IProfileVerification extends Document {
+    _id: Types.ObjectId;
     profile: Types.ObjectId;
     verificationStatus: 'pending' | 'verified' | 'rejected';
     verificationProgress: number;

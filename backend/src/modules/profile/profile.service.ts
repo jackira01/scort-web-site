@@ -223,7 +223,7 @@ export const createProfile = async (data: CreateProfileDTO): Promise<IProfile> =
 
         // Asignar el plan por defecto al perfil
         const subscriptionResult = await subscribeProfile(
-          profile._id as string,
+          profile._id.toString(),
           defaultPlan.code, // Usar el código del plan encontrado
           defaultVariant.days,
           false // No generar factura para plan por defecto
@@ -410,7 +410,7 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
 
 export const getProfiles = async (page: number = 1, limit: number = 10, fields?: string): Promise<{ profiles: IProfile[]; pagination: { page: number; limit: number; total: number; pages: number } }> => {
   const skip = (page - 1) * limit;
-  
+
   // Filtrar solo perfiles visibles y no eliminados lógicamente
   let query = ProfileModel.find({
     visible: true,
@@ -479,7 +479,7 @@ export const getProfiles = async (page: number = 1, limit: number = 10, fields?:
       isVerified,
       featured
     };
-  });
+  }) as unknown as IProfile[];
 
   const total = await ProfileModel.countDocuments({});
 
@@ -713,9 +713,9 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
       }
 
       // Mismo nivel efectivo: priorizar por duración del plan (durationRank mayor = mayor prioridad)
-      const aPlanDurationRank = a.planAssignment?.variantDays ? 
+      const aPlanDurationRank = a.planAssignment?.variantDays ?
         planDefinitions.find(p => p.code === aInfo.planCode)?.variants.find(v => v.days === a.planAssignment?.variantDays)?.durationRank || 0 : 0;
-      const bPlanDurationRank = b.planAssignment?.variantDays ? 
+      const bPlanDurationRank = b.planAssignment?.variantDays ?
         planDefinitions.find(p => p.code === bInfo.planCode)?.variants.find(v => v.days === b.planAssignment?.variantDays)?.durationRank || 0 : 0;
 
       if (aPlanDurationRank !== bPlanDurationRank) {
@@ -746,9 +746,9 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
     }
 
     // 3. Mismo nivel de plan: ordenar por duración (durationRank mayor = mayor prioridad)
-    const aPlanDurationRank = a.planAssignment?.variantDays ? 
+    const aPlanDurationRank = a.planAssignment?.variantDays ?
       planDefinitions.find(p => p.code === aInfo.planCode)?.variants.find(v => v.days === a.planAssignment?.variantDays)?.durationRank || 0 : 0;
-    const bPlanDurationRank = b.planAssignment?.variantDays ? 
+    const bPlanDurationRank = b.planAssignment?.variantDays ?
       planDefinitions.find(p => p.code === bInfo.planCode)?.variants.find(v => v.days === b.planAssignment?.variantDays)?.durationRank || 0 : 0;
 
     if (aPlanDurationRank !== bPlanDurationRank) {
@@ -1557,7 +1557,7 @@ export const upgradePlan = async (profileId: string, newPlanCode: string, varian
   // Si el plan actual está activo, mantener el tiempo restante y agregar los días del nuevo plan
   const currentExpiresAt = new Date(profile.planAssignment.expiresAt);
   let newExpiresAt: Date;
-  
+
   if (currentExpiresAt <= now) {
     // Plan expirado: nueva fecha = ahora + días del nuevo plan
     newExpiresAt = new Date(now.getTime() + (selectedVariant.days * 24 * 60 * 60 * 1000));
@@ -1837,13 +1837,13 @@ export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 1
       (upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT') &&
       new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
     ) || false;
-    
+
     return {
       ...profile,
       isVerified,
       featured
     };
-  });
+  }) as unknown as IProfile[];
 
   const total = await ProfileModel.countDocuments({}); // Contar todos los perfiles
 

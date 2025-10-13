@@ -3,6 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   providers: [
     GoogleProvider({
       clientId: process.env.AUTH_GOOGLE_ID!,
@@ -223,6 +224,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   // Configuración de debug para desarrollo
   debug: process.env.NODE_ENV === 'development',
-
   secret: process.env.AUTH_SECRET,
 });

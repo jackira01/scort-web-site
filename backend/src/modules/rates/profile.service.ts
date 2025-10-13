@@ -12,11 +12,11 @@ export const crearPerfil = async (perfilData: Partial<IProfile>): Promise<IProfi
 };
 
 export const obtenerPerfiles = async (): Promise<IProfile[]> => {
-  return await ProfileModel.find().populate('user', 'name email').lean();
+  return await ProfileModel.find().populate('user', 'name email').lean() as unknown as IProfile[];
 };
 
 export const obtenerPerfilPorId = async (id: string): Promise<IProfile | null> => {
-  return await ProfileModel.findById(id).populate('user', 'name email').lean();
+  return await ProfileModel.findById(id).populate('user', 'name email').lean() as unknown as IProfile | null;
 };
 
 export const actualizarPerfil = async (id: string, updateData: Partial<IProfile>): Promise<IProfile | null> => {
@@ -24,7 +24,7 @@ export const actualizarPerfil = async (id: string, updateData: Partial<IProfile>
     id,
     updateData,
     { new: true, runValidators: true }
-  ).populate('user', 'name email').lean();
+  ).populate('user', 'name email').lean() as unknown as IProfile | null;
 };
 
 export const eliminarPerfil = async (id: string): Promise<IProfile | null> => {

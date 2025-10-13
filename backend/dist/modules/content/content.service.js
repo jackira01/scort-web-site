@@ -173,8 +173,17 @@ class ContentService {
             }
             if (data.title !== undefined)
                 existingPage.title = data.title;
-            if (data.sections !== undefined)
-                existingPage.sections = data.sections;
+            if (data.sections !== undefined) {
+                existingPage.sections = data.sections.map(section => ({
+                    title: section.title ?? '',
+                    order: section.order ?? 0,
+                    blocks: section.blocks?.map(block => ({
+                        type: block.type,
+                        value: block.value ?? '',
+                        order: block.order ?? 0
+                    })) ?? []
+                }));
+            }
             if (data.isActive !== undefined)
                 existingPage.isActive = data.isActive;
             if (typeof data.modifiedBy === 'string') {

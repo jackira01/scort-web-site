@@ -26,7 +26,6 @@ const BlogEditor = dynamic(() => import('../../../../../src/components/blog/Blog
 });
 
 import { BlogEditorRef } from '../../../../../src/components/blog/BlogEditor';
-import BlogRenderer from '../../../../../src/components/blog/BlogRenderer';
 import type { OutputData } from '@editorjs/editorjs';
 import { Switch } from '../../../../../src/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../../src/components/ui/card';
@@ -34,6 +33,19 @@ import { Badge } from '../../../../../src/components/ui/badge';
 import { Separator } from '../../../../../src/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../../../src/components/ui/alert-dialog';
 import toast from 'react-hot-toast';
+import { Loader2 } from 'lucide-react';
+
+const BlogRenderer = dynamic(
+  () => import('@/components/blog/BlogRenderer'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    )
+  }
+);
 
 interface BlogFormData {
   title: string;

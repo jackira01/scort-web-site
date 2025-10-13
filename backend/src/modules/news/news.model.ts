@@ -1,6 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
 
-export interface INews extends Document {
+export interface INews {
+  _id: string;
   title: string;
   content: string[]; // Array de strings para los patch notes
   imageUrl?: string; // URL de la imagen/banner de la noticia

@@ -2,18 +2,19 @@
 const path = require("path");
 
 const nextConfig = {
-  // ⚙️ Configuración de compilación
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // 📦 Evita advertencias por tracing
+  outputFileTracingRoot: path.join(__dirname, "../"),
 
+  // ⚙️ Compilación más tolerante para producción
+  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true },
+
+  // 🧹 Limpieza de consola en producción
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },
 
+  // 🖼️ Configuración de imágenes optimizada
   images: {
     domains: [
       "res.cloudinary.com",
@@ -29,6 +30,7 @@ const nextConfig = {
 
   compress: true,
 
+  // 🧱 Headers de seguridad
   async headers() {
     return [
       {
@@ -50,6 +52,7 @@ const nextConfig = {
     ];
   },
 
+  // 🔁 API rewrites
   async rewrites() {
     return [
       {
@@ -60,7 +63,7 @@ const nextConfig = {
     ];
   },
 
-  // 🚀 Ajustes experimentales seguros
+  // 🧱 Opciones experimentales válidas
   experimental: {
     optimizeCss: true,
     optimizePackageImports: [
@@ -78,54 +81,87 @@ const nextConfig = {
     serverSourceMaps: false,
   },
 
-  // 🔧 Forzar Webpack (no Turbopack)
-  webpack: (config, { dev, isServer, webpack }) => {
-    // Fallbacks Node.js
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      net: false,
-      tls: false,
-      crypto: false,
-    };
+  // 🚀 Paquetes externos del servidor (Next.js 13+)
+  serverExternalPackages: [
+    "@editorjs/editorjs",
+    "@editorjs/header",
+    "@editorjs/list",
+    "@editorjs/image",
+    "@editorjs/quote",
+    "@editorjs/embed",
+    "editorjs-react-renderer",
+    "browser-image-compression",
+  ],
 
-    // Alias
+  // 🧱 Configuración avanzada de Webpack
+  webpack: (config, { dev, isServer }) => {
+    // 🔑 Cambiar globalObject para evitar 'self' en el servidor
+    if (isServer) {
+      config.output = config.output || {};
+      config.output.globalObject = "globalThis";
+    }
+
+    // Fallbacks solo para el cliente
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        crypto: false,
+      };
+    }
+
+    // Alias globales
     config.resolve.alias = {
       ...config.resolve.alias,
       "@": path.resolve(__dirname, "src"),
       "date-fns": path.dirname(require.resolve("date-fns/package.json")),
     };
 
-    // 🔑 Evitar duplicados DefinePlugin
-    config.plugins = config.plugins.filter(
-      (plugin) => !(plugin instanceof webpack.DefinePlugin)
-    );
-    config.plugins.push(
-      new webpack.DefinePlugin({
-        global: "globalThis",
-        self: "globalThis",
-        "typeof self": JSON.stringify("object"),
-      })
-    );
-
+    // 🔒 Externals simplificados para el servidor
     if (isServer) {
-      config.externals = config.externals || [];
-      config.externals.push("browser-image-compression");
-      config.externals.push("@editorjs/editorjs");
-      config.externals.push("@editorjs/header");
-      config.externals.push("@editorjs/list");
-      config.externals.push("@editorjs/image");
-      config.externals.push("@editorjs/quote");
-      config.externals.push("@editorjs/embed");
+      // Agregar paquetes del cliente como externos (strings simples)
+      const clientOnlyPackages = [
+        "@editorjs/editorjs",
+        "@editorjs/header",
+        "@editorjs/list",
+        "@editorjs/image",
+        "@editorjs/quote",
+        "@editorjs/embed",
+        "editorjs-react-renderer",
+        "browser-image-compression",
+      ];
+
+      // Forma correcta de agregar externals sin romper los existentes
+      if (typeof config.externals === "function") {
+        const originalExternals = config.externals;
+        config.externals = async (context, request, callback) => {
+          if (clientOnlyPackages.includes(request)) {
+            return callback(null, `commonjs ${request}`);
+          }
+          return originalExternals(context, request, callback);
+        };
+      } else {
+        config.externals = [
+          ...(Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean)),
+          ...clientOnlyPackages,
+        ];
+      }
     }
 
+    // Optimización de chunks solo en producción
     if (!dev) {
-      config.optimization.splitChunks = {
+      /* config.optimization.splitChunks = {
         chunks: "all",
         minSize: 20000,
         maxSize: 244000,
         cacheGroups: {
-          default: { minChunks: 2, priority: -20, reuseExistingChunk: true },
+          default: {
+            minChunks: 2,
+            priority: -20,
+            reuseExistingChunk: true,
+          },
           vendor: {
             test: /[\\/]node_modules[\\/]/,
             name: "vendors",
@@ -151,7 +187,7 @@ const nextConfig = {
             chunks: "all",
           },
         },
-      };
+      }; */
       config.optimization.usedExports = true;
       config.optimization.sideEffects = false;
     }
@@ -159,13 +195,13 @@ const nextConfig = {
     return config;
   },
 
+  // 🌍 Variables de entorno
   env: {
-    NEXT_PUBLIC_APP_NAME:
-      process.env.NEXT_PUBLIC_APP_NAME || "Scort Web Site",
-    NEXT_PUBLIC_APP_VERSION:
-      process.env.npm_package_version || "1.0.0",
+    NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME || "Scort Web Site",
+    NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version || "1.0.0",
   },
 
+  // 🔀 Redirecciones automáticas
   async redirects() {
     return [
       {

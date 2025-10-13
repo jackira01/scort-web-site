@@ -49,7 +49,7 @@ export class ContentService {
 
       return {
         success: true,
-        data: pages as IContentPage[],
+        data: pages as unknown as IContentPage[],
         total
       };
     } catch (error: any) {
@@ -79,7 +79,7 @@ export class ContentService {
 
       return {
         success: true,
-        data: page as IContentPage
+        data: page as unknown as IContentPage
       };
     } catch (error: any) {
       console.error('Error al obtener página por slug:', error);
@@ -108,7 +108,7 @@ export class ContentService {
 
       return {
         success: true,
-        data: page as IContentPage
+        data: page as unknown as IContentPage
       };
     } catch (error: any) {
       console.error('Error al obtener página por slug (admin):', error);
@@ -144,7 +144,7 @@ export class ContentService {
 
       return {
         success: true,
-        data: page as IContentPage
+        data: page as unknown as IContentPage
       };
     } catch (error: any) {
       console.error('Error al obtener página por ID:', error);
@@ -190,7 +190,7 @@ export class ContentService {
 
       return {
         success: true,
-        data: createdPage as IContentPage,
+        data: createdPage as unknown as IContentPage,
         message: 'Página creada exitosamente'
       };
     } catch (error: any) {
@@ -226,7 +226,17 @@ export class ContentService {
 
       // Actualizar campos
       if (data.title !== undefined) existingPage.title = data.title;
-      if (data.sections !== undefined) existingPage.sections = data.sections;
+      if (data.sections !== undefined) {
+        existingPage.sections = data.sections.map(section => ({
+          title: section.title ?? '',
+          order: section.order ?? 0,
+          blocks: section.blocks?.map(block => ({
+            type: block.type!,
+            value: block.value ?? '',
+            order: block.order ?? 0
+          })) ?? []
+        }));
+      }
       if (data.isActive !== undefined) existingPage.isActive = data.isActive;
 
       // Convertir modifiedBy a ObjectId si es string
@@ -256,7 +266,7 @@ export class ContentService {
 
       return {
         success: true,
-        data: updatedPage as IContentPage,
+        data: updatedPage as unknown as IContentPage,
         message: 'Página actualizada exitosamente'
       };
     } catch (error: any) {
@@ -345,7 +355,7 @@ export class ContentService {
 
       return {
         success: true,
-        data: createdPage as IContentPage,
+        data: createdPage as unknown as IContentPage,
         message: 'Página duplicada exitosamente'
       };
     } catch (error: any) {

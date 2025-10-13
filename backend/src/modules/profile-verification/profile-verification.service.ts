@@ -1,7 +1,7 @@
 import ProfileVerification from './profile-verification.model';
 import type { IProfileVerification } from '../profile/profile.types';
 import type { Types } from 'mongoose';
-import UserModel, { type IUser } from '../user/User.model';
+import { type IUser } from '../user/User.model';
 import { ProfileModel } from '../profile/profile.model';
 import type { IProfile } from '../profile/profile.types';
 
@@ -100,7 +100,7 @@ const recalculateVerificationProgress = async (verification: IProfileVerificatio
           model: 'User'
         }
       })
-      .lean() as IProfileVerificationWithPopulatedProfile | null;
+      .lean() as unknown as IProfileVerificationWithPopulatedProfile | null;
 
     if (!populatedVerification?.profile) {
 
@@ -172,7 +172,7 @@ export const createProfileVerification = async (verificationData: CreateProfileV
 
     if (verificationData.profile) {
       // Buscar el perfil y su usuario asociado
-      const profile = await ProfileModel.findById(verificationData.profile).populate('user') as IProfileWithUser | null;
+      const profile = await ProfileModel.findById(verificationData.profile).populate('user') as unknown as IProfileWithUser | null;
       // Verificar que user esté poblado correctamente
       if (profile && profile.user) {
         accountType = profile.user.accountType || 'common';
@@ -237,7 +237,7 @@ export const updateProfileVerification = async (
 
     // Recalcular progreso solo si se actualizaron pasos de verificación
     if (isUpdatingSteps) {
-      await recalculateVerificationProgress(verification);
+      await recalculateVerificationProgress(verification as unknown as IProfileVerification);
 
       // Obtener la verificación actualizada con el nuevo progreso
       const updatedVerification = await ProfileVerification.findById(verificationId)
@@ -312,7 +312,7 @@ export const updateVerificationSteps = async (
 
 
     // Recalcular progreso automáticamente
-    await recalculateVerificationProgress(verification);
+    await recalculateVerificationProgress(verification as unknown as IProfileVerification);
 
     // Retornar verificación actualizada
     const finalVerification = await ProfileVerification.findById(verificationId)

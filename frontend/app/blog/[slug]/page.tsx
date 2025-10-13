@@ -4,14 +4,25 @@ import { use } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Calendar, Eye, Clock } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock } from 'lucide-react';
 import { useBlog, useRelatedBlogs } from '../../../src/hooks/use-blogs';
 import { blogService } from '../../../src/services/blog.service';
 import { Button } from '../../../src/components/ui/button';
 import { Skeleton } from '../../../src/components/ui/skeleton';
-import { Badge } from '../../../src/components/ui/badge';
-import BlogRenderer from '../../../src/components/blog/BlogRenderer';
+import dynamic from 'next/dynamic';
+import { Loader2 } from 'lucide-react';
 
+const BlogRenderer = dynamic(
+  () => import('@/components/blog/BlogRenderer'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    )
+  }
+);
 interface BlogDetailPageProps {
   params: Promise<{
     slug: string;

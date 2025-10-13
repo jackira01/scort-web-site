@@ -123,7 +123,7 @@ export const getSponsoredProfiles = async (
     const hasPrevPage = pageNum > 1;
 
     return {
-      profiles: profiles as IProfile[],
+      profiles: profiles as unknown as IProfile[],
       pagination: {
         currentPage: pageNum,
         totalPages,

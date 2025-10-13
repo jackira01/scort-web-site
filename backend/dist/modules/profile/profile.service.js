@@ -166,7 +166,7 @@ const createProfile = async (data) => {
             }
             if (defaultPlan && defaultPlan.variants && defaultPlan.variants.length > 0) {
                 const defaultVariant = defaultPlan.variants[0];
-                const subscriptionResult = await (0, exports.subscribeProfile)(profile._id, defaultPlan.code, defaultVariant.days, false);
+                const subscriptionResult = await (0, exports.subscribeProfile)(profile._id.toString(), defaultPlan.code, defaultVariant.days, false);
                 if (subscriptionResult.profile) {
                     const updatedProfile = await profile_model_1.ProfileModel.findById(profile._id);
                     if (updatedProfile) {
