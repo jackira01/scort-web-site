@@ -13,7 +13,7 @@ import {
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import {
     Dialog,
@@ -146,7 +146,7 @@ export default function AccountVerificationModal({
                                     <FileText className="h-4 w-4 mr-2" />
                                     Actualizar Documentos
                                 </Button>
-                                
+
                                 <Button
                                     onClick={handleClose}
                                     variant="outline"
@@ -383,11 +383,10 @@ export default function AccountVerificationModal({
                             <Button
                                 onClick={handleSubmitVerification}
                                 disabled={!canSubmit || loading}
-                                className={`flex-1 transition-all duration-200 ${
-                                    canSubmit
+                                className={`flex-1 transition-all duration-200 ${canSubmit
                                         ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105'
                                         : 'bg-muted text-muted-foreground cursor-not-allowed'
-                                }`}
+                                    }`}
                             >
                                 Enviar a Verificación
                             </Button>

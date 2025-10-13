@@ -10,6 +10,7 @@ interface UseAllInvoicesOptions {
   userId?: string;
   profileId?: string;
   _id?: string;
+  invoiceNumber?: string;
   startDate?: string;
   endDate?: string;
 }
@@ -41,6 +42,7 @@ export const useAllInvoices = (options: UseAllInvoicesOptions = {}): UseAllInvoi
     userId,
     profileId,
     _id,
+    invoiceNumber,
     startDate,
     endDate
   } = options;
@@ -52,13 +54,14 @@ export const useAllInvoices = (options: UseAllInvoicesOptions = {}): UseAllInvoi
     error: invoicesError,
     refetch: refetchInvoices
   } = useQuery({
-    queryKey: ['allInvoices', page, limit, status, userId, profileId, _id, startDate, endDate],
+    queryKey: ['allInvoices', page, limit, status, userId, profileId, _id, invoiceNumber, startDate, endDate],
     queryFn: async () => {
       const filters: InvoiceFilters = {};
       if (status) filters.status = status;
       if (userId) filters.userId = userId;
       if (profileId) filters.profileId = profileId;
       if (_id) filters._id = _id;
+      if (invoiceNumber) filters.invoiceNumber = invoiceNumber;
       if (startDate) filters.startDate = startDate;
       if (endDate) filters.endDate = endDate;
 

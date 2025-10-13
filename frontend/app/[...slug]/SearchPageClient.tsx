@@ -113,14 +113,6 @@ export default function SearchPageClient({
     }
   );
 
-
-
-
-
-
-
-
-
   // Función wrapper para limpiar filtros y refrescar datos
   const handleClearFilters = async () => {
     clearFilters();
@@ -226,7 +218,7 @@ export default function SearchPageClient({
 
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar de filtros - Desktop */}
-          <div className="hidden lg:block w-80 flex-shrink-0">
+          <div className="hidden lg:block w-64 flex-shrink-0">
             <Card className="sticky top-32">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -301,7 +293,7 @@ export default function SearchPageClient({
               filters={filters.verification}
               onFiltersChange={updateVerification}
               onClearFilters={handleClearFilters}
-              className="mb-6"
+              className="mb-4"
             />
             {/* Controles superiores */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -321,7 +313,7 @@ export default function SearchPageClient({
                         Filtros
                       </SheetTitle>
                     </SheetHeader>
-                    
+
                     {/* Botón restaurar filtros separado del header */}
                     <div className="sticky top-16 bg-white dark:bg-gray-900 z-10 pb-4 pt-2">
                       <Button

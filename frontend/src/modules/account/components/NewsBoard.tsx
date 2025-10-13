@@ -13,24 +13,38 @@ import Loader from '@/components/Loader';
 
 const NewsBoard = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
   // Obtener las últimas noticias
   const { data: latestNews, isLoading: isLoadingLatest, error: latestError } = useLatestNews(10);
 
-  // Búsqueda de noticias (solo cuando hay término de búsqueda)
+  // Búsqueda de noticias (solo cuando hay término de búsqueda activo)
   const { data: searchResults, isLoading: isLoadingSearch } = useSearchNews(
-    searchTerm,
+    searchQuery,
     10
   );
 
-  const handleSearch = (value: string) => {
+  const handleInputChange = (value: string) => {
     setSearchTerm(value);
-    setIsSearching(value.length >= 2);
+  };
+
+  const handleSearch = () => {
+    if (searchTerm.trim().length >= 2) {
+      setSearchQuery(searchTerm.trim());
+      setIsSearching(true);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   const clearSearch = () => {
     setSearchTerm('');
+    setSearchQuery('');
     setIsSearching(false);
   };
 
@@ -150,10 +164,19 @@ const NewsBoard = () => {
             <Input
               placeholder="Buscar en noticias..."
               value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => handleInputChange(e.target.value)}
+              onKeyPress={handleKeyPress}
               className="pl-10"
             />
           </div>
+          <Button 
+            onClick={handleSearch}
+            disabled={searchTerm.trim().length < 2}
+            className="shrink-0"
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Buscar
+          </Button>
           {isSearching && (
             <Button variant="outline" onClick={clearSearch}>
               Limpiar búsqueda
@@ -165,11 +188,11 @@ const NewsBoard = () => {
         {isSearching && (
           <div className="flex items-center space-x-2">
             <Badge variant="secondary">
-              Buscando: "{searchTerm}"
+              Buscando: "{searchQuery}"
             </Badge>
             {searchResults && (
               <span className="text-sm text-muted-foreground">
-                {searchResults.length} resultado{searchResults.length !== 1 ? 's' : ''} encontrado{searchResults.length !== 1 ? 's' : ''}
+                {searchResults.data.length} resultado{searchResults.data.length !== 1 ? 's' : ''} encontrado{searchResults.data.length !== 1 ? 's' : ''}
               </span>
             )}
           </div>
@@ -188,7 +211,7 @@ const NewsBoard = () => {
           <EmptyState
             message={
               isSearching
-                ? `No se encontraron noticias que coincidan con "${searchTerm}"`
+                ? `No se encontraron noticias que coincidan con "${searchQuery}"`
                 : "No hay noticias disponibles en este momento"
             }
           />

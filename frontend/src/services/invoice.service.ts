@@ -64,6 +64,7 @@ export interface CreateInvoiceData {
 
 export interface InvoiceFilters {
   _id?: string;
+  invoiceNumber?: string;
   status?: string;
   userId?: string;
   profileId?: string;

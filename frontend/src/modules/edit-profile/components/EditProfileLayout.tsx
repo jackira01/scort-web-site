@@ -226,6 +226,13 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         photos: profileDetails.media?.gallery || [],
         videos: profileDetails.media?.videos || [],
         audios: profileDetails.media?.audios || [],
+        socialMedia: {
+          instagram: profileDetails.socialMedia?.instagram || '',
+          facebook: profileDetails.socialMedia?.facebook || '',
+          tiktok: profileDetails.socialMedia?.tiktok || '',
+          twitter: profileDetails.socialMedia?.twitter || '',
+          onlyFans: profileDetails.socialMedia?.onlyFans || '',
+        },
         selectedUpgrades: [],
         acceptTerms: true, // Ya aceptó términos al crear el perfil
       };
@@ -265,6 +272,13 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       form.setValue('height', formData.height);
       form.setValue('rates', formData.rates);
       form.setValue('availability', formData.availability);
+
+      // Social Media
+      form.setValue('socialMedia.instagram', formData.socialMedia.instagram);
+      form.setValue('socialMedia.facebook', formData.socialMedia.facebook);
+      form.setValue('socialMedia.tiktok', formData.socialMedia.tiktok);
+      form.setValue('socialMedia.twitter', formData.socialMedia.twitter);
+      form.setValue('socialMedia.onlyFans', formData.socialMedia.onlyFans);
 
       // Step 4 - Multimedia
       form.setValue('photos', formData.photos);

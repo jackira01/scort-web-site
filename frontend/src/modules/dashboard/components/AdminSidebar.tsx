@@ -115,7 +115,7 @@ export function AdminSidebar({
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center space-x-2">
+                                        {/*  <div className="flex items-center space-x-2">
                                             {item.badge && (
                                                 <Badge
                                                     variant={activeSection === item.id ? 'secondary' : 'default'}
@@ -137,7 +137,7 @@ export function AdminSidebar({
                                                         : 'text-gray-400 dark:text-gray-500 group-hover:text-purple-600 dark:group-hover:text-purple-400 group-hover:translate-x-1'
                                                 )}
                                             />
-                                        </div>
+                                        </div> */}
                                     </button>
                                 ))}
                             </nav>

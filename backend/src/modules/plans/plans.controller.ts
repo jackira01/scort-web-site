@@ -469,7 +469,8 @@ export class PlansController {
             }
 
             const { profileId, planCode, variantDays } = req.body;
-            const result = await plansService.purchasePlan(profileId, planCode, variantDays);
+            const isAdmin = (req as any).user?.role === 'admin';
+            const result = await plansService.purchasePlan(profileId, planCode, variantDays, isAdmin);
 
             res.status(200).json({
                 success: true,
@@ -516,7 +517,8 @@ export class PlansController {
             }
 
             const planCode = profile.planAssignment.planCode;
-            const result = await plansService.renewPlan(profileId, planCode, extensionDays);
+            const isAdmin = (req as any).user?.role === 'admin';
+            const result = await plansService.renewPlan(profileId, planCode, extensionDays, isAdmin);
 
             res.status(200).json({
                 success: true,

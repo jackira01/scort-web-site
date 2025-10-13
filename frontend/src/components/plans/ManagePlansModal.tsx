@@ -251,8 +251,27 @@ export default function ManagePlansModal({
   const isPlanActive = () => {
     const planToUse = profilePlanInfo || currentPlan;
     if (!planToUse) return false;
+    
     const expiresAt = new Date(planToUse.expiresAt);
+    const tempDate = new Date('1970-01-01');
+    
+    // Si la fecha de expiración es la fecha temporal, considerar como pendiente de pago
+    if (expiresAt.getTime() === tempDate.getTime()) {
+      return false; // Plan pendiente de pago
+    }
+    
     return expiresAt > new Date();
+  };
+
+  // Verificar si el plan está pendiente de pago
+  const isPlanPending = () => {
+    const planToUse = profilePlanInfo || currentPlan;
+    if (!planToUse) return false;
+    
+    const expiresAt = new Date(planToUse.expiresAt);
+    const tempDate = new Date('1970-01-01');
+    
+    return expiresAt.getTime() === tempDate.getTime();
   };
 
   // Calcular días restantes
@@ -469,8 +488,15 @@ export default function ManagePlansModal({
 
       // Verificar si es admin para determinar el flujo
       if (isAdmin) {
-        // Para admins: cambio instantáneo, solo refrescar datos
+        // Para admins: cambio instantáneo, refrescar datos inmediatamente
         await refreshPlanData();
+        
+        // Invalidar queries adicionales para asegurar actualización
+        queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
+        queryClient.invalidateQueries({ queryKey: ['profilePlan', profileId] });
+        
+        // Llamar onPlanChange para actualizar el componente padre
+        onPlanChange?.();
       } else {
         // Para usuarios regulares: verificar si hay URL de pago
         if (result?.paymentUrl) {
@@ -483,10 +509,15 @@ export default function ManagePlansModal({
         } else {
           // Si no hay URL de pago pero el resultado es exitoso, refrescar datos
           await refreshPlanData();
+          
+          // Invalidar queries adicionales para asegurar actualización
+          queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
+          queryClient.invalidateQueries({ queryKey: ['profilePlan', profileId] });
+          
+          // Llamar onPlanChange para actualizar el componente padre
+          onPlanChange?.();
         }
       }
-
-      onPlanChange?.();
       onClose();
     } catch (error: any) {
       const errorMessage = error.message || 'Error al procesar la solicitud';
@@ -544,6 +575,11 @@ export default function ManagePlansModal({
                       <CheckCircle className="h-3 w-3 mr-1" />
                       Activo
                     </Badge>
+                  ) : isPlanPending() ? (
+                    <Badge className="bg-yellow-100 text-yellow-800">
+                      <AlertTriangle className="h-3 w-3 mr-1" />
+                      Pendiente de Pago
+                    </Badge>
                   ) : (
                     <Badge variant="destructive">
                       <X className="h-3 w-3 mr-1" />
@@ -565,9 +601,14 @@ export default function ManagePlansModal({
                     </div>
                     <div>
                       <p className="text-muted-foreground">Días restantes</p>
-                      <p className={`font-medium ${getDaysRemaining() <= 7 ? 'text-red-600' : 'text-green-600'
-                        }`}>
-                        {getDaysRemaining()} días
+                      <p className={`font-medium ${
+                        isPlanPending() 
+                          ? 'text-yellow-600' 
+                          : getDaysRemaining() <= 7 
+                            ? 'text-red-600' 
+                            : 'text-green-600'
+                      }`}>
+                        {isPlanPending() ? 'Pendiente de pago' : `${getDaysRemaining()} días`}
                       </p>
                     </div>
                   </div>

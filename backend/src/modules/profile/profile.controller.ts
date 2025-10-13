@@ -611,27 +611,25 @@ export const getProfilePlanInfoController = async (req: AuthRequest, res: Respon
       return res.status(404).json({ error: 'Perfil no encontrado' });
     }
 
-    // Verificar si tiene un plan activo
-    const now = new Date();
-    const expiresAt = profile.planAssignment ? new Date(profile.planAssignment.expiresAt) : null;
-    const hasActivePlan = profile.planAssignment && expiresAt && expiresAt > now;
-
-    // Debug getProfilePlanInfo
-
-    if (!hasActivePlan) {
-      return res.status(404).json({ error: 'El perfil no tiene un plan activo' });
+    // Verificar si tiene un plan asignado (activo o expirado)
+    if (!profile.planAssignment) {
+      return res.status(404).json({ error: 'El perfil no tiene un plan asignado' });
     }
 
-    // Calcular días restantes y estado activo
-    const daysRemaining = Math.max(0, Math.ceil((expiresAt!.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+    const now = new Date();
+    const expiresAt = new Date(profile.planAssignment.expiresAt);
+    const isActive = expiresAt > now;
 
-    // Devolver información del plan
+    // Calcular días restantes (puede ser negativo si está expirado)
+    const daysRemaining = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Devolver información del plan (activo o expirado)
     const planInfo = {
-      planCode: profile.planAssignment!.planCode,
-      variantDays: profile.planAssignment!.variantDays,
-      startAt: profile.planAssignment!.startAt,
-      expiresAt: profile.planAssignment!.expiresAt,
-      isActive: true,
+      planCode: profile.planAssignment.planCode,
+      variantDays: profile.planAssignment.variantDays,
+      startAt: profile.planAssignment.startAt,
+      expiresAt: profile.planAssignment.expiresAt,
+      isActive,
       daysRemaining
     };
 

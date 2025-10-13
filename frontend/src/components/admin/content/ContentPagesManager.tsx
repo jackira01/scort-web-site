@@ -95,8 +95,8 @@ const ContentPagesManager = () => {
               )}
             </Badge>
             <div className="flex space-x-1">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => handleEdit(page)}
               >
@@ -104,8 +104,8 @@ const ContentPagesManager = () => {
                 Editar
               </Button>
               {page.isActive && (
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
                   onClick={() => handleViewPublic(page)}
                 >
@@ -119,7 +119,7 @@ const ContentPagesManager = () => {
       </CardHeader>
       <CardContent className="pt-0">
         <div className="text-sm text-muted-foreground">
-          <span className="font-medium">{page.sections?.length || 0}</span> secciones • 
+          <span className="font-medium">{page.sections?.length || 0}</span> secciones •
           <span className="ml-1">
             {page.sections?.reduce((total, section) => total + (section.blocks?.length || 0), 0) || 0}
           </span> bloques
@@ -152,11 +152,19 @@ const ContentPagesManager = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Páginas de Contenido</h1>
+          <h1 className="text-2xl font-bold text-foreground">Contenido de Páginas</h1>
           <p className="text-muted-foreground">
             Gestiona el contenido de páginas estáticas como FAQ, Términos y Condiciones, etc.
           </p>
         </div>
+        <Button
+          onClick={() => window.location.href = '/adminboard?section=contenido&sub=tips-formulario'}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <FileText className="h-4 w-4" />
+          Tips del Formulario
+        </Button>
       </div>
 
       {/* Search */}
@@ -182,7 +190,7 @@ const ContentPagesManager = () => {
             No hay páginas de contenido
           </h3>
           <p className="text-muted-foreground mb-4">
-            {searchTerm 
+            {searchTerm
               ? 'No se encontraron páginas que coincidan con tu búsqueda.'
               : 'Las páginas de contenido aparecerán aquí una vez que se inicialicen.'
             }

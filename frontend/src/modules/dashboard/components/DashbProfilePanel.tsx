@@ -51,7 +51,7 @@ export const DashProfilePanel = () => {
       </div>
 
       {/* Perfiles */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {profilesData?.docs?.map((profile: any, index: number) => (
           <DashbProfileCard
             key={profile._id}

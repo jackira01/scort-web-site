@@ -67,21 +67,21 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
   // Variante por defecto: card completa con información responsive
   return (
     <Link href={`/perfil/${profile._id}`} className="block">
-      <Card className={`group hover:shadow-xl transition-all duration-300 overflow-hidden relative ${profile.hasDestacadoUpgrade
+      <Card className={`group hover:shadow-xl transition-all duration-300 overflow-hidden relative h-80 ${profile.hasDestacadoUpgrade
         ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30'
         : 'bg-card border-border'
         }`}>
         {/* Layout responsive: horizontal en mobile, vertical en desktop */}
         <div className="flex flex-row sm:flex-col">
           {/* Imagen */}
-          <div className="relative w-32 h-32 sm:w-full flex-shrink-0">
+          <div className="relative w-32 h-44 sm:w-full flex-shrink-0">
             <Image
               width={300}
-              height={300}
+              height={400}
               src={profile.media.gallery?.[0] || '/placeholder.svg'}
               alt={profile.name}
               className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${viewMode === 'grid'
-                ? 'sm:h-48 md:h-56 lg:h-64'
+                ? 'sm:h-48 md:h-56 lg:h-80'
                 : 'sm:h-40 md:h-48'
                 }`}
             />

@@ -16,6 +16,7 @@ export interface CreateInvoiceData {
 
 export interface InvoiceFilters {
   _id?: string;
+  invoiceNumber?: string;
   profileId?: string;
   userId?: string;
   status?: 'pending' | 'paid' | 'cancelled' | 'expired';
@@ -233,6 +234,18 @@ class InvoiceService {
       } else {
         // Búsqueda por aproximación usando regex en los últimos 8 caracteres del ID
         query._id = { $regex: new RegExp(filters._id, 'i') };
+      }
+    }
+
+    if (filters.invoiceNumber) {
+      // Búsqueda por número de factura (puede ser parcial)
+      const invoiceNumberValue = parseInt(filters.invoiceNumber);
+      if (!isNaN(invoiceNumberValue)) {
+        // Si es un número válido, buscar por coincidencia exacta
+        query.invoiceNumber = invoiceNumberValue;
+      } else {
+        // Si no es un número válido, buscar por coincidencia parcial en string
+        query.invoiceNumber = { $regex: new RegExp(filters.invoiceNumber, 'i') };
       }
     }
 

@@ -421,7 +421,7 @@ export class PlansService {
 
     // ==================== OPERACIONES DE PLANES ====================
 
-    async purchasePlan(profileId: string, planCode: string, variantDays: number): Promise<{
+    async purchasePlan(profileId: string, planCode: string, variantDays: number, isAdmin: boolean = false): Promise<{
         profileId: string;
         planCode: string;
         variantDays: number;
@@ -459,9 +459,9 @@ export class PlansService {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + variantDays);
 
-        // Generar factura si el plan tiene precio
+        // Generar factura si el plan tiene precio y NO es admin
         let invoiceId: string | undefined;
-        if (variant.price > 0) {
+        if (variant.price > 0 && !isAdmin) {
             try {
                 const invoice = await InvoiceService.generateInvoice({
                     userId: profile.user.toString(),
@@ -496,7 +496,7 @@ export class PlansService {
                 throw new Error('Error al generar factura para el plan');
             }
         } else {
-            // Plan gratuito - asignar inmediatamente
+            // Plan gratuito o usuario admin - asignar inmediatamente
             profile.planAssignment = {
                 planId: plan._id as Types.ObjectId,           // Referencia al _id del plan
                 planCode: planCode,         // Mantener para compatibilidad
@@ -504,6 +504,9 @@ export class PlansService {
                 startAt: now,
                 expiresAt: expiresAt
             };
+            
+            // Activar el perfil inmediatamente para admins o planes gratuitos
+            profile.isActive = true;
             
             // Agregar automáticamente los upgrades incluidos en el plan
             if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
@@ -556,7 +559,7 @@ export class PlansService {
         };
     }
 
-    async renewPlan(profileId: string, planCode: string, variantDays: number): Promise<{
+    async renewPlan(profileId: string, planCode: string, variantDays: number, isAdmin: boolean = false): Promise<{
         profileId: string;
         planCode: string;
         variantDays: number;
@@ -587,24 +590,25 @@ export class PlansService {
             throw new Error('Variante de plan no encontrada');
         }
 
-        // Verificar si el perfil tiene un plan activo del mismo tipo
-        const now = new Date();
+        // Verificar si el perfil tiene un plan del mismo tipo (activo o expirado)
         if (!profile.planAssignment || profile.planAssignment.planCode !== planCode) {
-            throw new Error('El perfil no tiene un plan activo del tipo especificado para renovar');
+            throw new Error('El perfil no tiene un plan del tipo especificado para renovar');
         }
 
         // Plan actual expira
 
-        // Extender la fecha de expiración desde la fecha actual de expiración
+        // Extender la fecha de expiración desde la fecha actual de expiración o desde ahora si ya expiró
         const currentExpiresAt = profile.planAssignment.expiresAt;
-        const newExpiresAt = new Date(currentExpiresAt);
+        const now = new Date();
+        const baseDate = currentExpiresAt > now ? currentExpiresAt : now;
+        const newExpiresAt = new Date(baseDate);
         newExpiresAt.setDate(newExpiresAt.getDate() + variantDays);
 
         // Nueva fecha de expiración
 
-        // Generar factura si el plan tiene precio
+        // Generar factura si el plan tiene precio y NO es admin
         let invoiceId: string | undefined;
-        if (variant.price > 0) {
+        if (variant.price > 0 && !isAdmin) {
             try {
                 const invoice = await InvoiceService.generateInvoice({
                     userId: profile.user.toString(),
@@ -631,9 +635,12 @@ export class PlansService {
                 throw new Error('Error al generar factura para la renovación del plan');
             }
         } else {
-            // Plan gratuito - renovar inmediatamente
+            // Plan gratuito o usuario admin - renovar inmediatamente
             profile.planAssignment.expiresAt = newExpiresAt;
             profile.planAssignment.variantDays = variantDays;
+            
+            // Activar el perfil inmediatamente para admins o planes gratuitos
+            profile.isActive = true;
             
             // Agregar automáticamente los upgrades incluidos en el plan
             if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {

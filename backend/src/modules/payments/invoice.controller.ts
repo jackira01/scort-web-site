@@ -86,6 +86,7 @@ class InvoiceController {
     try {
       const filters: InvoiceFilters = {
         _id: req.query._id as string,
+        invoiceNumber: req.query.invoiceNumber as string,
         profileId: req.query.profileId as string,
         userId: req.query.userId as string,
         status: req.query.status as any,

@@ -64,10 +64,6 @@ export function Step1EssentialInfo({
               name="gender"
               control={control}
               render={({ field }) => {
-                // Debug: Verificar el valor del campo
-                console.log('🔍 Debug Step1 - field.value para género:', field.value);
-                console.log('🔍 Debug Step1 - genderGroup.variants:', genderGroup?.variants);
-                
                 return (
                   <Select
                     onValueChange={field.onChange}
@@ -75,7 +71,7 @@ export function Step1EssentialInfo({
                     key={`gender-${field.value}`} // Forzar re-render cuando cambie el valor
                   >
                     <SelectTrigger>
-                      <SelectValue 
+                      <SelectValue
                         placeholder="Selecciona tu género"
                         className={field.value ? 'text-foreground' : 'text-muted-foreground'}
                       />
@@ -136,9 +132,6 @@ export function Step1EssentialInfo({
               name="category"
               control={control}
               render={({ field }) => {
-                // Debug: Verificar el valor del campo categoría
-                console.log('🔍 Debug Step1 - field.value para categoría:', field.value);
-                
                 return (
                   <Select
                     onValueChange={field.onChange}
@@ -146,7 +139,7 @@ export function Step1EssentialInfo({
                     key={`category-${field.value}`} // Forzar re-render cuando cambie el valor
                   >
                     <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
-                      <SelectValue 
+                      <SelectValue
                         placeholder="Selecciona una categoría"
                         className={field.value ? 'text-foreground' : 'text-muted-foreground'}
                       />
@@ -191,9 +184,6 @@ export function Step1EssentialInfo({
                 name="location.department"
                 control={control}
                 render={({ field }) => {
-                  // Debug: Verificar el valor del campo departamento
-                  console.log('🔍 Debug Step1 - field.value para departamento:', field.value);
-                  
                   return (
                     <Select
                       onValueChange={(value) => {
@@ -204,7 +194,7 @@ export function Step1EssentialInfo({
                       key={`department-${field.value}`} // Forzar re-render cuando cambie el valor
                     >
                       <SelectTrigger className={errors.location?.department ? 'border-red-500' : ''}>
-                        <SelectValue 
+                        <SelectValue
                           placeholder="Selecciona departamento"
                           className={field.value ? 'text-foreground' : 'text-muted-foreground'}
                         />
@@ -231,9 +221,6 @@ export function Step1EssentialInfo({
                 name="location.city"
                 control={control}
                 render={({ field }) => {
-                  // Debug: Verificar el valor del campo ciudad
-                  console.log('🔍 Debug Step1 - field.value para ciudad:', field.value);
-                  
                   return (
                     <Select
                       onValueChange={field.onChange}
@@ -242,7 +229,7 @@ export function Step1EssentialInfo({
                       disabled={!locationDepartment}
                     >
                       <SelectTrigger className={errors.location?.city ? 'border-red-500' : ''}>
-                        <SelectValue 
+                        <SelectValue
                           placeholder="Selecciona ciudad"
                           className={field.value ? 'text-foreground' : 'text-muted-foreground'}
                         />

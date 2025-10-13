@@ -14,6 +14,7 @@ import CouponsManager from '@/components/admin/coupons/CouponsManager';
 import EmailManager from '@/components/admin/emails/EmailManager';
 import ContentPagesManager from '@/components/admin/content/ContentPagesManager';
 import ContentEditor from '@/components/admin/content/ContentEditor';
+import ProfileFormTipsManager from '@/components/admin/content/ProfileFormTipsManager';
 import { AdminSidebar } from '@/modules/dashboard/components/AdminSidebar';
 import { AdminOverlay } from '@/modules/dashboard/components/AdminOverlay';
 import { DashProfilePanel } from './DashbProfilePanel';
@@ -104,6 +105,8 @@ export default function DashboardLayout() {
 
             case 'contenido':
                 const editSlug = searchParams.get('edit');
+                const subSection = searchParams.get('sub');
+                
                 if (editSlug) {
                     return (
                         <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
@@ -116,6 +119,15 @@ export default function DashboardLayout() {
                         </div>
                     );
                 }
+                
+                if (subSection === 'tips-formulario') {
+                    return (
+                        <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                            <ProfileFormTipsManager />
+                        </div>
+                    );
+                }
+                
                 return (
                     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
                         <ContentPagesManager />

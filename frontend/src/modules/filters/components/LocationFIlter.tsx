@@ -35,7 +35,7 @@ const LocationFilter = ({
         <label className="block text-sm font-medium mb-2">Departamento</label>
         <Select value={selectedDepartment} onValueChange={handleDepartmentChange}>
           <SelectTrigger>
-            <SelectValue placeholder="Selecciona un departamento" />
+            <SelectValue placeholder="Seleccionar departamento" />
           </SelectTrigger>
           <SelectContent>
             {departments.map((department) => (

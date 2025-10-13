@@ -24,8 +24,6 @@ interface DefaultPlanConfig {
 type Step5MultimediaProps = {};
 
 export function Step5Multimedia({ }: Step5MultimediaProps) {
-  console.log('🔄 [DEBUG] Step5Multimedia - Componente renderizado');
-
   const {
     watch,
     setValue,
@@ -40,17 +38,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
   const coverImageIndex = watch('coverImageIndex');
   const videoCoverImages = watch('videoCoverImages') || {};
   const acceptTerms = watch('acceptTerms');
-
-  // Debug: Rastrear cambios en las variables observadas
-  console.log('📊 [DEBUG] Variables observadas:', {
-    selectedPlan: selectedPlan ? { id: selectedPlan._id, name: selectedPlan.name } : null,
-    photosLength: photos.length,
-    videosLength: videos.length,
-    audiosLength: audios.length,
-    coverImageIndex,
-    videoCoverImagesKeys: Object.keys(videoCoverImages).length,
-    acceptTerms
-  });
 
   // Estados para el procesamiento de imágenes
   const [contentLimits, setContentLimits] = useState({
@@ -91,7 +78,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
   // Memoizar plans para evitar re-renders innecesarios
   const plans = useMemo(() => {
-    console.log('🔄 [DEBUG] Memoizando plans:', plansResponse?.plans?.length || 0);
     return plansResponse?.plans || [];
   }, [plansResponse?.plans]);
 
@@ -106,21 +92,13 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
   // Memoizar defaultConfig para evitar re-renders innecesarios
   const defaultConfig = useMemo(() => {
-    console.log('🔄 [DEBUG] Memoizando defaultConfig:', defaultConfigRaw);
     return defaultConfigRaw;
   }, [defaultConfigRaw?.enabled, defaultConfigRaw?.planId, defaultConfigRaw?.planCode]);
 
   // Cargar límites del plan por defecto o seleccionado
   useEffect(() => {
-    console.log('🔧 [DEBUG] useEffect ejecutado - Dependencias:', {
-      selectedPlan: selectedPlan ? { id: selectedPlan._id, name: selectedPlan.name } : null,
-      defaultConfig,
-      plansLength: plans.length
-    });
-
     if (selectedPlan && selectedPlan.contentLimits) {
       // Usar límites del plan seleccionado
-      console.log('📋 [DEBUG] Aplicando límites del plan seleccionado:', selectedPlan.name, selectedPlan.contentLimits);
       setContentLimits({
         maxPhotos: selectedPlan.contentLimits.photos?.max || 20,
         maxVideos: selectedPlan.contentLimits.videos?.max || 8,
@@ -131,7 +109,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       const defaultPlan = plans.find(plan => plan._id === defaultConfig.planId);
 
       if (defaultPlan && defaultPlan.contentLimits) {
-        console.log('📋 [DEBUG] Aplicando límites del plan por defecto:', defaultPlan.name, defaultPlan.contentLimits);
         setContentLimits({
           maxPhotos: defaultPlan.contentLimits.photos?.max || 20,
           maxVideos: defaultPlan.contentLimits.videos?.max || 8,
@@ -140,7 +117,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       }
     } else {
       // Usar límites básicos por defecto
-      console.log('📋 [DEBUG] Aplicando límites básicos por defecto');
       setContentLimits({
         maxPhotos: 5, // Plan básico
         maxVideos: 2,
@@ -173,14 +149,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       videos: contentLimits.maxVideos,
       audios: contentLimits.maxAudios,
     };
-
-    console.log(`📊 [DEBUG] Validando límites para ${type}:`, {
-      currentCount: currentFiles.length,
-      newFiles: fileArray.length,
-      totalAfterAdd: currentFiles.length + fileArray.length,
-      limit: limits[type],
-      selectedPlan: selectedPlan?.name || 'Plan por defecto'
-    });
 
     if (currentFiles.length + fileArray.length > limits[type]) {
       const planName = selectedPlan?.name || 'tu plan actual';
@@ -264,22 +232,22 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     // Para fotos, también eliminar de processedImages y actualizar el formulario
     if (type === 'photos') {
       const newProcessedImages = new Map(processedImages);
-      
+
       // Revocar la URL del blob antes de eliminar para evitar memory leaks
       const processedImage = newProcessedImages.get(index);
       if (processedImage && processedImage.url.startsWith('blob:')) {
         URL.revokeObjectURL(processedImage.url);
       }
-      
+
       newProcessedImages.delete(index);
-      
+
       // Reindexar las imágenes procesadas restantes
       const reindexedProcessedImages = new Map<number, ProcessedImageResult>();
       Array.from(newProcessedImages.entries()).forEach(([key, value]) => {
         const newIndex = key > index ? key - 1 : key;
         reindexedProcessedImages.set(newIndex, value);
       });
-      
+
       setProcessedImages(reindexedProcessedImages);
 
       // Actualizar las imágenes procesadas en el formulario

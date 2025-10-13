@@ -55,8 +55,24 @@ export const useUpgradeValidation = () => {
 
     // Verificar reglas específicas por tipo de upgrade
     if (upgradeCode === 'IMPULSO') {
-      // IMPULSO requiere DESTACADO activo
-      if (!profile.hasDestacadoUpgrade) {
+      // IMPULSO requiere DESTACADO activo - calcular directamente
+      let hasDestacadoActive = false;
+      
+      // Si es plan DIAMANTE, incluye DESTACADO automáticamente
+      if (profile.planAssignment?.planCode === 'DIAMANTE') {
+        hasDestacadoActive = true;
+      } else {
+        // Verificar upgrades activos
+        const activeUpgrades = profile.activeUpgrades || profile.upgrades?.filter((upgrade: any) =>
+          new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
+        ) || [];
+        
+        hasDestacadoActive = activeUpgrades.some((upgrade: any) =>
+          upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT'
+        );
+      }
+      
+      if (!hasDestacadoActive) {
         return {
           canPurchase: false,
           reason: 'Necesitas tener "Destacado" activo para comprar "Impulso"'

@@ -202,7 +202,7 @@ export const sidebarItems = [
     },
     {
         id: 'contenido',
-        label: 'Páginas de Contenido',
+        label: 'Contenido de Páginas',
         icon: FileText,
         badge: null,
         description:

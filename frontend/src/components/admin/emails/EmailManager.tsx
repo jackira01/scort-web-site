@@ -18,6 +18,7 @@ import { useAllEmailUsers, useSearchEmailUsersAction } from '@/hooks/use-email-u
 
 interface EmailUser {
     _id?: string;
+    id?: string; // Agregar id para compatibilidad con resultados de búsqueda
     username: string;
     email?: string;
     profileName: string;
@@ -106,7 +107,8 @@ export default function EmailManager() {
     };
 
     const addUserToSelection = (user: EmailUser) => {
-        if (user._id && !selectedUsers.find(u => u?._id === user._id)) {
+        const userId = user._id || user.id;
+        if (userId && !selectedUsers.find(u => (u._id || u.id) === userId)) {
             const newSelection = [...selectedUsers, user];
             setSelectedUsers(newSelection);
             setEmailData(prev => ({
@@ -117,7 +119,7 @@ export default function EmailManager() {
     };
 
     const removeUserFromSelection = (userId: string) => {
-        const newSelection = selectedUsers.filter(u => u._id !== userId);
+        const newSelection = selectedUsers.filter(u => (u._id || u.id) !== userId);
         setSelectedUsers(newSelection);
         setEmailData(prev => ({
             ...prev,
@@ -280,7 +282,7 @@ export default function EmailManager() {
                                     <Label>Resultados de búsqueda</Label>
                                     <div className="max-h-60 overflow-y-auto space-y-2">
                                         {searchResults.map((user) => (
-                                            <div key={user._id || user.email} className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div key={user._id || user.id || user.email} className="flex items-center justify-between p-3 border rounded-lg">
                                                 <div className="space-y-1">
                                                     <p className="font-medium">{user.profileName}</p>
                                                     <p className="text-sm text-muted-foreground">@{user.username}</p>
@@ -290,9 +292,9 @@ export default function EmailManager() {
                                                 <Button
                                                     size="sm"
                                                     onClick={() => addUserToSelection(user)}
-                                                    disabled={Boolean(user._id && selectedUsers.some(u => u?._id === user._id))}
+                                                    disabled={Boolean((user._id || user.id) && selectedUsers.some(u => (u._id || u.id) === (user._id || user.id)))}
                                                 >
-                                                    {user._id && selectedUsers.some(u => u?._id === user._id) ? (
+                                                    {(user._id || user.id) && selectedUsers.some(u => (u._id || u.id) === (user._id || user.id)) ? (
                                                         <CheckCircle className="h-4 w-4" />
                                                     ) : (
                                                         'Agregar'
@@ -309,10 +311,13 @@ export default function EmailManager() {
                                     <Label>Usuarios seleccionados ({selectedUsers.length})</Label>
                                     <div className="flex flex-wrap gap-2">
                                         {selectedUsers.map((user) => (
-                                            <Badge key={user._id || user.email} variant="secondary" className="flex items-center gap-1">
+                                            <Badge key={user._id || user.id || user.email} variant="secondary" className="flex items-center gap-1">
                                                 {user.profileName}
                                                 <button
-                                                    onClick={() => user._id && removeUserFromSelection(user._id)}
+                                                    onClick={() => {
+                                                        const userId = user._id || user.id;
+                                                        if (userId) removeUserFromSelection(userId);
+                                                    }}
                                                     className="ml-1 hover:text-destructive"
                                                 >
                                                     ×
