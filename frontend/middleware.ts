@@ -89,10 +89,10 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
   // Content Security Policy
-  const backendUrl = process.env.NODE_ENV === 'production' 
+  const backendUrl = process.env.NODE_ENV === 'production'
     ? process.env.NEXT_PUBLIC_API_URL || 'https://api.midominio.com'
     : 'http://localhost:5000';
-    
+
   response.headers.set(
     'Content-Security-Policy',
     `default-src 'self' ${backendUrl}; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob: https://res.cloudinary.com https://lh3.googleusercontent.com; media-src 'self' blob: https://res.cloudinary.com; connect-src 'self' ${backendUrl} https://api.cloudinary.com https://accounts.google.com https://oauth2.googleapis.com https://apis.google.com; worker-src 'self' blob:; frame-src 'self' https://accounts.google.com;`
@@ -108,14 +108,14 @@ export async function middleware(request: NextRequest) {
   }
 
   // Obtener token JWT
-  const token = await getToken({ 
-    req: request, 
-    secret: process.env.AUTH_SECRET 
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET
   });
 
   // Verificar si la ruta requiere autenticación
   const requiresAuth = AUTH_REQUIRED_ROUTES.some(route => pathname.startsWith(route));
-  
+
   if (requiresAuth) {
     if (!token) {
       // Redirigir a la ruta raíz para rutas protegidas sin sesión
@@ -126,14 +126,14 @@ export async function middleware(request: NextRequest) {
 
   // Verificar si la ruta requiere rol de administrador
   const requiresAdmin = ADMIN_REQUIRED_ROUTES.some(route => pathname.startsWith(route));
-  
+
   if (requiresAdmin) {
     if (!token) {
       // No autenticado, redirigir al home
       const homeUrl = new URL('/', request.url);
       return NextResponse.redirect(homeUrl);
     }
-    
+
     if (token.role !== 'admin') {
       // No es admin, redirigir al home
       const homeUrl = new URL('/', request.url);
@@ -143,7 +143,7 @@ export async function middleware(request: NextRequest) {
 
   // Verificar si la ruta requiere verificación de email
   const requiresEmailVerification = EMAIL_VERIFICATION_REQUIRED_ROUTES.some(route => pathname.startsWith(route));
-  
+
   if (requiresEmailVerification && token) {
     // Si el usuario no tiene email verificado, redirigir a página de verificación
     if (!token.emailVerified) {
@@ -167,7 +167,7 @@ export async function middleware(request: NextRequest) {
       const loginUrl = new URL('/autenticacion/ingresar', request.url);
       return NextResponse.redirect(loginUrl);
     }
-    
+
     if (token.hasPassword === true) {
       // Usuario ya tiene contraseña, redirigir al home
       console.log('🔒 Middleware - Usuario con contraseña intentando acceder a post-register:', {
@@ -181,7 +181,7 @@ export async function middleware(request: NextRequest) {
       const homeUrl = new URL('/', request.url);
       return NextResponse.redirect(homeUrl);
     }
-    
+
     console.log('✅ Middleware - Usuario sin contraseña puede acceder a post-register:', {
       timestamp: new Date().toISOString(),
       hasPassword: token.hasPassword,
