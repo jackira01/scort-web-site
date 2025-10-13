@@ -4,6 +4,7 @@ import AccountProfiles from './AccountProfiles';
 import PaymentHistory from '@/modules/payments/components/PaymentHistory';
 import AccountSettings from '@/modules/settings/components/AccountSettings';
 import NewsBoard from './NewsBoard';
+import CouponSection from '@/components/account/coupons/CouponSection';
 import {
   getProgressColor,
   getProgressTextColor,
@@ -53,6 +54,11 @@ export default function AccountContent({ activeSection }: Props) {
   if (activeSection === 'tablero-noticias') {
     return <NewsBoard />;
   }
+
+  // Sección de cupones temporalmente deshabilitada
+  // if (activeSection === 'cupones') {
+  //   return <CouponSection />;
+  // }
 
   return null;
 }

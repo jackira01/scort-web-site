@@ -1,17 +1,34 @@
 "use client";
 
 import React, { useEffect, useRef, useImperativeHandle, forwardRef, useState } from "react";
-import EditorJS, { OutputData } from "@editorjs/editorjs";
+import EditorJS from "@editorjs/editorjs";
+import type { OutputData } from "@editorjs/editorjs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import toast from 'react-hot-toast';
 
-// Importaciones dinámicas para evitar errores de tipos
-const Header = require("@editorjs/header");
-const List = require("@editorjs/list");
-const ImageTool = require("@editorjs/image");
-const Quote = require("@editorjs/quote");
-const Embed = require("@editorjs/embed");
+// Función para cargar dinámicamente las herramientas de EditorJS
+const loadEditorTools = async () => {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+
+  const [Header, List, ImageTool, Quote, Embed] = await Promise.all([
+    import("@editorjs/header"),
+    import("@editorjs/list"),
+    import("@editorjs/image"),
+    import("@editorjs/quote"),
+    import("@editorjs/embed")
+  ]);
+
+  return {
+    Header: Header.default,
+    List: List.default,
+    ImageTool: ImageTool.default,
+    Quote: Quote.default,
+    Embed: Embed.default
+  };
+};
 // Nota: Paragraph ya está incluido en el core de EditorJS, no necesita importación
 
 type BlogEditorProps = {
@@ -59,7 +76,7 @@ const BlogEditor = forwardRef<BlogEditorRef, BlogEditorProps>((
     if (typeof window === "undefined" || editorRef.current || isInitializedRef.current) return;
 
     // Usar setTimeout para asegurar que el DOM esté completamente renderizado
-    const initializeEditor = () => {
+    const initializeEditor = async () => {
       // Verificar que el elemento DOM existe antes de inicializar
       const holderElement = document.getElementById(editorId.current);
       if (!holderElement) {
@@ -67,147 +84,154 @@ const BlogEditor = forwardRef<BlogEditorRef, BlogEditorProps>((
         return;
       }
 
+      // Cargar las herramientas dinámicamente
+      const tools = await loadEditorTools();
+      if (!tools.Header) {
+        console.error('Failed to load EditorJS tools');
+        return;
+      }
+
       isInitializedRef.current = true;
 
-    const editor = new EditorJS({
-      holder: editorId.current,
-      autofocus: false,
-      data: initialData || undefined,
-      placeholder: "Comienza a escribir tu blog aquí...",
-      // Configuración global de herramientas inline
-      inlineToolbar: ['link', 'bold', 'italic'],
-      tools: {
-        // Paragraph ya está incluido por defecto en EditorJS
-        header: {
-          class: Header,
-          inlineToolbar: ['link', 'bold', 'italic'],
-          config: {
-            placeholder: "Ingresa un encabezado",
-            levels: [1, 2, 3, 4],
-            defaultLevel: 2
-          }
-        },
-        list: {
-          class: List,
-          inlineToolbar: ['link', 'bold', 'italic'],
-          config: {
-            defaultStyle: 'unordered'
-          }
-        },
-        image: {
-          class: ImageTool,
-          config: {
-            uploader: {
-              async uploadByFile(file: File) {
-                try {
-                  // Validar tipo de archivo
-                  if (!file.type.startsWith('image/')) {
-                    throw new Error('Solo se permiten archivos de imagen');
-                  }
+      const editor = new EditorJS({
+        holder: editorId.current,
+        autofocus: false,
+        data: initialData || undefined,
+        placeholder: "Comienza a escribir tu blog aquí...",
+        // Configuración global de herramientas inline
+        inlineToolbar: ['link', 'bold', 'italic'],
+        tools: {
+          // Paragraph ya está incluido por defecto en EditorJS
+          header: {
+            class: tools.Header,
+            inlineToolbar: ['link', 'bold', 'italic'],
+            config: {
+              placeholder: "Ingresa un encabezado",
+              levels: [1, 2, 3, 4],
+              defaultLevel: 2
+            }
+          },
+          list: {
+            class: tools.List,
+            inlineToolbar: ['link', 'bold', 'italic'],
+            config: {
+              defaultStyle: 'unordered'
+            }
+          },
+          image: {
+            class: tools.ImageTool,
+            config: {
+              uploader: {
+                async uploadByFile(file: File) {
+                  try {
+                    // Validar tipo de archivo
+                    if (!file.type.startsWith('image/')) {
+                      throw new Error('Solo se permiten archivos de imagen');
+                    }
 
-                  // Validar tamaño (máximo 10MB)
-                  if (file.size > 10 * 1024 * 1024) {
-                    throw new Error('El archivo es demasiado grande. Máximo 10MB.');
-                  }
+                    // Validar tamaño (máximo 10MB)
+                    if (file.size > 10 * 1024 * 1024) {
+                      throw new Error('El archivo es demasiado grande. Máximo 10MB.');
+                    }
 
-                  // Si hay sistema de subida diferida, usarlo
-                  if (deferredUpload) {
-                    const { id, preview } = deferredUpload.addPendingFile(file, 'image');
-                    toast.success('Imagen agregada - Se subirá al guardar el blog.');
-                    
+                    // Si hay sistema de subida diferida, usarlo
+                    if (deferredUpload) {
+                      const { id, preview } = deferredUpload.addPendingFile(file, 'image');
+                      toast.success('Imagen agregada - Se subirá al guardar el blog.');
+
+                      return {
+                        success: 1,
+                        file: {
+                          url: preview,
+                          // Agregar metadatos temporales
+                          width: 800, // Valor por defecto
+                          height: 600, // Valor por defecto
+                          size: file.size,
+                          // Guardar el ID para referencia posterior
+                          pendingId: id
+                        },
+                      };
+                    }
+
+                    // Fallback: subir directamente a Cloudinary
+                    const upload_preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "";
+                    const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_NAME || "";
+
+                    if (!upload_preset || !cloud_name) {
+                      throw new Error('Configuración de Cloudinary no encontrada');
+                    }
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('upload_preset', upload_preset);
+                    formData.append('folder', 'blog-images');
+
+                    const response = await fetch(
+                      `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
+                      {
+                        method: 'POST',
+                        body: formData,
+                      }
+                    );
+
+                    if (!response.ok) {
+                      throw new Error('Error al subir la imagen a Cloudinary');
+                    }
+
+                    const result = await response.json();
+
                     return {
                       success: 1,
                       file: {
-                        url: preview,
-                        // Agregar metadatos temporales
-                        width: 800, // Valor por defecto
-                        height: 600, // Valor por defecto
-                        size: file.size,
-                        // Guardar el ID para referencia posterior
-                        pendingId: id
+                        url: result.secure_url,
+                        width: result.width,
+                        height: result.height,
+                        size: result.bytes
                       },
                     };
+                  } catch (error) {
+                    // Error al subir imagen
+                    toast.error(`Error al subir imagen: ${error instanceof Error ? error.message : 'Error al subir la imagen'}`);
+                    return {
+                      success: 0,
+                      message: error instanceof Error ? error.message : 'Error al subir la imagen'
+                    };
                   }
-
-                  // Fallback: subir directamente a Cloudinary
-                  const upload_preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "";
-                  const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_NAME || "";
-
-                  if (!upload_preset || !cloud_name) {
-                    throw new Error('Configuración de Cloudinary no encontrada');
-                  }
-
-                  const formData = new FormData();
-                  formData.append('file', file);
-                  formData.append('upload_preset', upload_preset);
-                  formData.append('folder', 'blog-images');
-
-                  const response = await fetch(
-                    `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
-                    {
-                      method: 'POST',
-                      body: formData,
-                    }
-                  );
-
-                  if (!response.ok) {
-                    throw new Error('Error al subir la imagen a Cloudinary');
-                  }
-
-                  const result = await response.json();
-
-                  return {
-                    success: 1,
-                    file: {
-                      url: result.secure_url,
-                      width: result.width,
-                      height: result.height,
-                      size: result.bytes
-                    },
-                  };
-                } catch (error) {
-                  // Error al subir imagen
-                  toast.error(`Error al subir imagen: ${error instanceof Error ? error.message : 'Error al subir la imagen'}`);
-                  return {
-                    success: 0,
-                    message: error instanceof Error ? error.message : 'Error al subir la imagen'
-                  };
                 }
-              }
+              },
+              captionPlaceholder: "Ingresa una descripción para la imagen"
             },
-            captionPlaceholder: "Ingresa una descripción para la imagen"
           },
-        },
-        quote: {
-          class: Quote,
-          inlineToolbar: ['link', 'bold', 'italic'],
-          config: {
-            quotePlaceholder: 'Ingresa una cita',
-            captionPlaceholder: 'Autor de la cita',
+          quote: {
+            class: tools.Quote,
+            inlineToolbar: ['link', 'bold', 'italic'],
+            config: {
+              quotePlaceholder: 'Ingresa una cita',
+              captionPlaceholder: 'Autor de la cita',
+            },
           },
-        },
-        embed: {
-          class: Embed,
-          config: {
-            services: {
-              youtube: true,
-              vimeo: true,
-              twitter: true,
-              instagram: true,
-              codepen: true,
-              github: true
+          embed: {
+            class: tools.Embed,
+            config: {
+              services: {
+                youtube: true,
+                vimeo: true,
+                twitter: true,
+                instagram: true,
+                codepen: true,
+                github: true
+              }
             }
-          }
+          },
         },
-      },
-      onReady: () => {
-        setIsReady(true);
-      },
-      // onChange removido para evitar problemas de reinicio del editor
-      // El contenido se guardará solo cuando el usuario haga submit
-    });
-    
-    editorRef.current = editor;
+        onReady: () => {
+          setIsReady(true);
+        },
+        // onChange removido para evitar problemas de reinicio del editor
+        // El contenido se guardará solo cuando el usuario haga submit
+      });
+
+      editorRef.current = editor;
     };
 
     // Usar setTimeout para asegurar que el DOM esté listo
@@ -228,7 +252,7 @@ const BlogEditor = forwardRef<BlogEditorRef, BlogEditorProps>((
   useEffect(() => {
     if (editorRef.current && initialData && isReady) {
       // Solo actualizar si el editor está listo y hay datos iniciales
-      editorRef.current.render(initialData).catch(() => {});
+      editorRef.current.render(initialData).catch(() => { });
     }
   }, [initialData, isReady]);
 

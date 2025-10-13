@@ -23,18 +23,23 @@ const getHomeFeed = async (options = {}) => {
             }
         },
         {
-            $match: {
-                'userInfo.isVerified': true
+            $lookup: {
+                from: 'plandefinitions',
+                localField: 'planAssignment.planId',
+                foreignField: '_id',
+                as: 'planAssignmentPlan'
             }
         },
         {
             $addFields: {
-                user: { $arrayElemAt: ['$userInfo', 0] }
+                user: { $arrayElemAt: ['$userInfo', 0] },
+                'planAssignment.plan': { $arrayElemAt: ['$planAssignmentPlan', 0] }
             }
         },
         {
             $project: {
-                userInfo: 0
+                userInfo: 0,
+                planAssignmentPlan: 0
             }
         }
     ]);

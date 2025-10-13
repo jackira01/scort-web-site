@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from '@/lib/axios';
+import { ConfigParameterService } from '@/services/config-parameter.service';
 
 interface ContactFormData {
   name: string;
@@ -35,6 +36,55 @@ const ContactPage = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [companyEmail, setCompanyEmail] = useState('soporte@prepagosvip.com');
+  const [companyWhatsApp, setCompanyWhatsApp] = useState('');
+  const [lastSubmissionTime, setLastSubmissionTime] = useState<number | null>(null);
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+
+  // Constante para el tiempo de espera (3 minutos en milisegundos)
+  const COOLDOWN_TIME = 3 * 60 * 1000; // 3 minutos
+
+  useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      try {
+        const [email, whatsapp] = await Promise.all([
+          ConfigParameterService.getByKey('company.email').then(param => param.value as string).catch(() => 'soporte@prepagosvip.com'),
+          ConfigParameterService.getByKey('company.whatsapp.number').then(param => param.value as string).catch(() => '')
+        ]);
+        setCompanyEmail(email);
+        setCompanyWhatsApp(whatsapp);
+      } catch (error) {
+        console.error('Error fetching company info:', error);
+      }
+    };
+
+    fetchCompanyInfo();
+
+    // Recuperar el último tiempo de envío del localStorage
+    const savedLastSubmission = localStorage.getItem('lastContactSubmission');
+    if (savedLastSubmission) {
+      setLastSubmissionTime(parseInt(savedLastSubmission));
+    }
+  }, []);
+
+  // Efecto para manejar el countdown del cooldown
+  useEffect(() => {
+    if (lastSubmissionTime) {
+      const updateCooldown = () => {
+        const now = Date.now();
+        const timePassed = now - lastSubmissionTime;
+        const remaining = Math.max(0, COOLDOWN_TIME - timePassed);
+        
+        setCooldownRemaining(remaining);
+        
+        if (remaining > 0) {
+          setTimeout(updateCooldown, 1000);
+        }
+      };
+      
+      updateCooldown();
+    }
+  }, [lastSubmissionTime]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -44,9 +94,21 @@ const ContactPage = () => {
     }));
   };
 
+  const formatCooldownTime = (milliseconds: number): string => {
+    const minutes = Math.floor(milliseconds / 60000);
+    const seconds = Math.floor((milliseconds % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Verificar cooldown
+    if (cooldownRemaining > 0) {
+      toast.error(`Debes esperar ${formatCooldownTime(cooldownRemaining)} antes de enviar otro mensaje`);
+      return;
+    }
+
     // Validación básica
     if (!formData.name || !formData.email || !formData.subject || !formData.message) {
       toast.error('Por favor completa todos los campos');
@@ -68,6 +130,12 @@ const ContactPage = () => {
       if (response.data.success) {
         setIsSubmitted(true);
         toast.success('Mensaje enviado exitosamente. Te contactaremos pronto.');
+        
+        // Establecer el tiempo de último envío y guardarlo en localStorage
+        const now = Date.now();
+        setLastSubmissionTime(now);
+        localStorage.setItem('lastContactSubmission', now.toString());
+        
         // Limpiar formulario
         setFormData({
           name: '',
@@ -114,9 +182,27 @@ const ContactPage = () => {
                   <Mail className="h-5 w-5 text-primary mt-1" />
                   <div>
                     <h3 className="font-semibold text-foreground">Email</h3>
-                    <p className="text-muted-foreground">soporte@prepagosvip.com</p>
+                    <p className="text-muted-foreground">{companyEmail}</p>
                   </div>
                 </div>
+                
+                {companyWhatsApp && (
+                  <div className="flex items-start gap-3">
+                    <MessageCircle className="h-5 w-5 text-primary mt-1" />
+                    <div>
+                      <h3 className="font-semibold text-foreground">WhatsApp</h3>
+                      <p className="text-muted-foreground">{companyWhatsApp}</p>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="mt-2"
+                        onClick={() => window.open(`https://wa.me/${companyWhatsApp.replace(/\D/g, '')}`, '_blank')}
+                      >
+                        Contactar por WhatsApp
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 
                 <div className="flex items-start gap-3">
                   <Clock className="h-5 w-5 text-primary mt-1" />
@@ -265,13 +351,18 @@ const ContactPage = () => {
                       </p>
                       <Button 
                         type="submit" 
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || cooldownRemaining > 0}
                         className="min-w-[120px]"
                       >
                         {isSubmitting ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                             Enviando...
+                          </>
+                        ) : cooldownRemaining > 0 ? (
+                          <>
+                            <Clock className="h-4 w-4 mr-2" />
+                            Espera {formatCooldownTime(cooldownRemaining)}
                           </>
                         ) : (
                           <>

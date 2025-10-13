@@ -1,22 +1,28 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import type { Profile } from '@/types/profile.types';
-import { getProfilesForCards } from '@/services/filters.service';
 import { ProfileCard } from '@/modules/catalogs/components/ProfileCard';
+import { useFeaturedSponsoredProfiles } from '@/hooks/use-sponsored-profiles';
 
 interface FeaturedProfilesSectionProps {
   className?: string;
 }
 
 export default function FeaturedProfilesSection({ className = '' }: FeaturedProfilesSectionProps) {
-  const [featuredProfiles, setFeaturedProfiles] = useState<Profile[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  // Usar el hook personalizado para perfiles patrocinados
+  const {
+    profiles: featuredProfiles,
+    isLoading,
+    isError,
+    error,
+    isFetching,
+    prefetchNextPage,
+  } = useFeaturedSponsoredProfiles(1, 10);
 
   // Número de perfiles visibles según el tamaño de pantalla
   const getVisibleCount = () => {
@@ -40,32 +46,12 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Cargar perfiles destacados
+  // Prefetch siguiente página cuando se acerque al final
   useEffect(() => {
-    const loadFeaturedProfiles = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        // Obtener perfiles destacados
-        const response = await getProfilesForCards({
-          limit: 10,
-          page: 1,
-          sortBy: 'createdAt',
-          sortOrder: 'desc',
-          featured: true // Filtrar solo perfiles destacados
-        });
-
-        setFeaturedProfiles(response.profiles);
-      } catch (err) {
-        setError('Error al cargar perfiles destacados');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadFeaturedProfiles();
-  }, []);
+    if (featuredProfiles.length > 0 && currentIndex >= featuredProfiles.length - visibleCount - 2) {
+      prefetchNextPage(1, 10);
+    }
+  }, [currentIndex, featuredProfiles.length, visibleCount, prefetchNextPage]);
 
   const nextSlide = () => {
     setCurrentIndex((prev) => {
@@ -83,18 +69,12 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
 
   if (isLoading) {
     return (
-      <div className={`border border-gray-200 rounded-lg p-6 ${className}`}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Star className="h-5 w-5 text-yellow-500" />
-            PERFILES DESTACADOS
-          </h2>
-        </div>
+      <div className={`${className}`}>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {Array.from({ length: visibleCount }).map((_, index) => (
-            <div key={index} className="animate-pulse">
+            <div key={index} className="animate-pulse h-72 w-48">
               <Card className="overflow-hidden">
-                <div className="aspect-[4/3] bg-gray-200" />
+                <div className="aspect-[4/3] bg-gray-200 h-72 w-48" />
               </Card>
             </div>
           ))}
@@ -103,27 +83,31 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
     );
   }
 
-  if (error || featuredProfiles.length === 0) {
+  if (isError || error || featuredProfiles.length === 0) {
     return null;
   }
 
   return (
-    <div className={`border border-gray-200 rounded-lg p-6 ${className}`}>
+    <div className={`${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-          <Star className="h-5 w-5 text-yellow-500" />
-          PERFILES DESTACADOS
-        </h2>
+        {/* Indicador de carga en tiempo real */}
+        {isFetching && (
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="w-3 h-3 border border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+            Actualizando...
+          </div>
+        )}
 
         {/* Navigation buttons */}
         {featuredProfiles.length > visibleCount && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 ml-auto">
             <Button
               variant="outline"
               size="sm"
               onClick={prevSlide}
               className="h-8 w-8 p-0"
+              disabled={isFetching}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -132,6 +116,7 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
               size="sm"
               onClick={nextSlide}
               className="h-8 w-8 p-0"
+              disabled={isFetching}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -150,13 +135,14 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
           {featuredProfiles.map((profile) => (
             <div
               key={profile._id}
-              className="flex-shrink-0"
-              style={{ width: `${100 / visibleCount}%` }}
+              className="flex-shrink-0 h-72 w-48"
+
             >
               <ProfileCard
-                profile={profile}
+                profile={profile as any}
                 viewMode="grid"
                 variant="featured"
+
               />
             </div>
           ))}

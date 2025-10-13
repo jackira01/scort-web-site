@@ -42,7 +42,6 @@ const blogSchema = new mongoose_1.Schema({
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
 });
-blogSchema.index({ slug: 1 });
 blogSchema.index({ published: 1, createdAt: -1 });
 blogSchema.index({ title: 'text', content: 'text' });
 blogSchema.pre('save', function (next) {

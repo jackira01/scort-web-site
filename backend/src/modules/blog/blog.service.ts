@@ -115,7 +115,7 @@ export class BlogService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        blogs: blogs as IBlog[],
+        blogs: blogs as unknown as IBlog[],
         total,
         page,
         totalPages
@@ -249,7 +249,7 @@ export class BlogService {
         .limit(limit)
         .lean();
 
-      return blogs as IBlog[];
+      return blogs as unknown as IBlog[];
     } catch (error: any) {
       throw new Error(`Error al obtener blogs relacionados: ${error.message}`);
     }
@@ -275,7 +275,7 @@ export class BlogService {
         .limit(limit)
         .lean();
 
-      return blogs as IBlog[];
+      return blogs as unknown as IBlog[];
     } catch (error: any) {
       throw new Error(`Error al buscar blogs: ${error.message}`);
     }

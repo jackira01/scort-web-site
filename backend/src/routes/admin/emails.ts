@@ -11,7 +11,7 @@ const router = Router();
 
 // Función para obtener la instancia del servicio de forma lazy
 const getEmailService = () => {
-  return new EmailService();
+    return new EmailService();
 };
 
 // Ruta para obtener todos los correos (para envío masivo)
@@ -30,10 +30,10 @@ router.get('/all-emails', authenticateToken, requireAdmin, async (req: AuthReque
                 { email: { $ne: '' } }
             ]
         })
-        .select('username email')
-        .skip(skip)
-        .limit(limitNum)
-        .sort({ username: 1 });
+            .select('username email')
+            .skip(skip)
+            .limit(limitNum)
+            .sort({ username: 1 });
 
         // Simplificar respuesta - solo enviar datos necesarios para el frontend
         const allEmails = users.map(user => ({
@@ -53,7 +53,7 @@ router.get('/all-emails', authenticateToken, requireAdmin, async (req: AuthReque
 router.get('/users/search', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
     try {
         const { q, type = 'all' } = req.query;
-        
+
         if (!q || typeof q !== 'string') {
             return res.status(400).json({ error: 'Parámetro de búsqueda requerido' });
         }
@@ -71,8 +71,8 @@ router.get('/users/search', authenticateToken, requireAdmin, async (req: AuthReq
                         { name: { $regex: searchTerm, $options: 'i' } }
                     ]
                 }).populate('profiles', 'name _id')
-                  .select('name email profiles')
-                  .limit(20);
+                    .select('name email profiles')
+                    .limit(20);
                 break;
 
             case 'id':
@@ -88,8 +88,8 @@ router.get('/users/search', authenticateToken, requireAdmin, async (req: AuthReq
                             { _id: searchTerm }
                         ]
                     }).populate('profiles', 'name _id')
-                      .select('username email profiles')
-                      .limit(10);
+                        .select('username email profiles')
+                        .limit(10);
                 }
 
                 // Para búsqueda por ID de perfil, solo buscar si es un ObjectId válido
@@ -97,9 +97,9 @@ router.get('/users/search', authenticateToken, requireAdmin, async (req: AuthReq
                     const profiles = await ProfileModel.find({
                         _id: searchTerm
                     }).select('user').limit(10);
-                    
+
                     const profileUserIds = profiles.map((profile: any) => profile.user);
-                    
+
                     if (profileUserIds.length > 0) {
                         usersByProfileId = await User.find({
                             $and: [
@@ -107,8 +107,8 @@ router.get('/users/search', authenticateToken, requireAdmin, async (req: AuthReq
                                 { _id: { $in: profileUserIds } }
                             ]
                         }).populate('profiles', 'name _id')
-                          .select('username email profiles')
-                          .limit(10);
+                            .select('username email profiles')
+                            .limit(10);
                     }
                 }
 
@@ -124,31 +124,31 @@ router.get('/users/search', authenticateToken, requireAdmin, async (req: AuthReq
                         { name: { $regex: searchTerm, $options: 'i' } }
                     ]
                 }).populate('profiles', 'name _id')
-                  .select('name email profiles')
-                  .limit(10);
+                    .select('name email profiles')
+                    .limit(10);
 
                 // Buscar usuarios por nombre de perfil
                 const profilesAll = await ProfileModel.find({
                     name: { $regex: searchTerm, $options: 'i' }
                 }).select('user').limit(10);
-                
+
                 const profileUserIdsAll = profilesAll.map((profile: any) => profile.user);
-                
+
                 const usersByProfile = await User.find({
                     $and: [
                         { email: { $ne: null, $exists: true } },
                         { _id: { $in: profileUserIdsAll } }
                     ]
                 }).populate('profiles', 'name _id')
-                  .select('username email profiles')
-                  .limit(10);
+                    .select('username email profiles')
+                    .limit(10);
 
                 users = [...usersByUsername, ...usersByProfile];
                 break;
         }
 
         // Eliminar duplicados
-        const uniqueUsers = users.filter((user, index, self) => 
+        const uniqueUsers = users.filter((user, index, self) =>
             index === self.findIndex(u => (u as any)._id.toString() === (user as any)._id.toString())
         );
 
@@ -158,7 +158,7 @@ router.get('/users/search', authenticateToken, requireAdmin, async (req: AuthReq
         const formattedUsers = finalUsers.map(user => {
             const userProfiles = (user as any).profiles || [];
             const primaryProfile = userProfiles[0]; // Tomar el primer perfil como principal
-            
+
             return {
                 id: (user as any)._id.toString(),
                 username: (user as any).name,
@@ -181,18 +181,18 @@ router.post('/send', authenticateToken, requireAdmin, async (req: AuthRequest, r
         const { subject, content, recipients } = req.body;
 
         if (!subject || !content || !recipients || !Array.isArray(recipients) || recipients.length === 0) {
-            return res.status(400).json({ 
-                error: 'Asunto, contenido y destinatarios son requeridos' 
+            return res.status(400).json({
+                error: 'Asunto, contenido y destinatarios son requeridos'
             });
         }
 
         // Validar que todos los destinatarios sean emails válidos
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const invalidEmails = recipients.filter(email => !emailRegex.test(email));
-        
+
         if (invalidEmails.length > 0) {
-            return res.status(400).json({ 
-                error: `Emails inválidos: ${invalidEmails.join(', ')}` 
+            return res.status(400).json({
+                error: `Emails inválidos: ${invalidEmails.join(', ')}`
             });
         }
 
@@ -247,7 +247,7 @@ router.post('/send', authenticateToken, requireAdmin, async (req: AuthRequest, r
 
         res.json({
             success: true,
-            message: results.length === recipients.length 
+            message: results.length === recipients.length
                 ? `Correo enviado exitosamente a todos los ${recipients.length} destinatarios`
                 : `Correo enviado a ${results.length} de ${recipients.length} destinatarios`,
             successful: results.length,

@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import type React from 'react';
 import '@/styles/globals.css';
-import HeaderComponent from '@/components/header/Header';
 import { Providers } from '@/config/providers';
 import { Poppins } from "next/font/google";
+import ConditionalHeader from '@/components/layout/ConditionalHeader';
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -15,8 +14,10 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: 'Online Escorts - Premium Escort Services',
   description:
-    'Find premium escort services in your city. Professional, verified, and discreet companions.',
-  generator: 'v0.dev',
+    'Encuentra servicios de Escorts premium en tu ciudad. Profesionales, verificados y compañeros discretos.',
+  icons: {
+    icon: "/images/kiss.png", // o /logo.png
+  },
 };
 
 export default function RootLayout({
@@ -28,8 +29,7 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body className={`${poppins.variable} font-poppins`}>
         <Providers>
-          <HeaderComponent />
-
+          <ConditionalHeader />
           {children}
         </Providers>
       </body>

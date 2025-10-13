@@ -69,7 +69,12 @@ export interface QueryOptions {
 const generateWhatsAppMessage = async (
     userId: string,
     profileId: string,
-    invoiceId?: string
+    planCode?: string,
+    variantDays?: number,
+    invoiceId?: string,
+    isRenewal?: boolean,
+    price?: number,
+    expiresAt?: Date
 ): Promise<WhatsAppMessage | null> => {
     try {
         const [companyName, companyWhatsApp] = await Promise.all([
@@ -83,10 +88,45 @@ const generateWhatsAppMessage = async (
         }
 
         let message: string;
-        if (invoiceId) {
-            message = `¡Hola! 👋\n\nTu compra ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}\n\n¡Gracias por confiar en ${companyName}! 🙏\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+        if (isRenewal) {
+            // Mensaje específico para renovaciones
+            if (invoiceId) {
+                const planInfo = planCode && variantDays 
+                    ? `\n• Plan: ${planCode} (${variantDays} días)`
+                    : '';
+                
+                const totalPrice = (price || 0) * (variantDays || 1);
+                const expirationDate = expiresAt ? new Date(expiresAt).toLocaleDateString('es-ES', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : 'No disponible';
+                
+                message = `¡Hola! 👋\n\n🔄 **Quiero renovar mi plan** 🔄\n\nTu solicitud de renovación ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n• Total a pagar: $${(price || 0).toLocaleString()} x${variantDays || 0}\n\n💰 **"Total a pagar: $${totalPrice.toLocaleString()}"**\n\n📅 **"Vence el:"** ${expirationDate} 📅\n\nPor favor, confirma el pago para activar tu perfil. ¡Gracias! 💎`;
+            } else {
+                const planInfo = planCode && variantDays 
+                    ? `\n• Plan: ${planCode} (${variantDays} días)`
+                    : '';
+                
+                message = `¡Hola! 👋\n\n🔄 **Quiero renovar mi plan** 🔄\n\nTu plan gratuito ha sido renovado exitosamente. ✅\n\n📋 **Detalles:**\n• Perfil: ${profileId}${planInfo}\n\n¡Bienvenido de nuevo a ${companyName}! 🎉\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+            }
         } else {
-            message = `¡Hola! 👋\n\nTu plan gratuito ha sido activado exitosamente. ✅\n\n📋 **Detalles:**\n• Perfil: ${profileId}\n\n¡Bienvenido a ${companyName}! 🎉\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+            // Mensaje para compras normales
+            if (invoiceId) {
+                const planInfo = planCode && variantDays 
+                    ? `\n• Plan: ${planCode} (${variantDays} días)`
+                    : '';
+                
+                message = `¡Hola! 👋\n\nTu compra ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n\n¡Gracias por confiar en ${companyName}! 🙏\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+            } else {
+                const planInfo = planCode && variantDays 
+                    ? `\n• Plan: ${planCode} (${variantDays} días)`
+                    : '';
+                
+                message = `¡Hola! 👋\n\nTu plan gratuito ha sido activado exitosamente. ✅\n\n📋 **Detalles:**\n• Perfil: ${profileId}${planInfo}\n\n¡Bienvenido a ${companyName}! 🎉\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+            }
         }
 
         return {
@@ -354,30 +394,6 @@ export class PlansService {
 
     // ==================== UTILIDADES ====================
 
-    async validatePlanUpgrades(planCode: string): Promise<{
-        valid: boolean;
-        invalidUpgrades: string[];
-    }> {
-        const plan = await PlanDefinitionModel.findByCode(planCode);
-        if (!plan) {
-            throw new Error(`Plan '${planCode}' no encontrado`);
-        }
-
-        const invalidUpgrades: string[] = [];
-
-        for (const upgradeCode of plan.includedUpgrades) {
-            const upgrade = await UpgradeDefinitionModel.findByCode(upgradeCode);
-            if (!upgrade || !upgrade.active) {
-                invalidUpgrades.push(upgradeCode);
-            }
-        }
-
-        return {
-            valid: invalidUpgrades.length === 0,
-            invalidUpgrades
-        };
-    }
-
     async getUpgradeDependencyTree(upgradeCode: string): Promise<{
         upgrade: IUpgradeDefinition;
         dependencies: IUpgradeDefinition[];
@@ -405,7 +421,7 @@ export class PlansService {
 
     // ==================== OPERACIONES DE PLANES ====================
 
-    async purchasePlan(profileId: string, planCode: string, variantDays: number): Promise<{
+    async purchasePlan(profileId: string, planCode: string, variantDays: number, isAdmin: boolean = false): Promise<{
         profileId: string;
         planCode: string;
         variantDays: number;
@@ -443,9 +459,9 @@ export class PlansService {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + variantDays);
 
-        // Generar factura si el plan tiene precio
+        // Generar factura si el plan tiene precio y NO es admin
         let invoiceId: string | undefined;
-        if (variant.price > 0) {
+        if (variant.price > 0 && !isAdmin) {
             try {
                 const invoice = await InvoiceService.generateInvoice({
                     userId: profile.user.toString(),
@@ -466,7 +482,8 @@ export class PlansService {
                 // Usar fechas temporales que serán actualizadas cuando se confirme el pago
                 const tempDate = new Date('1970-01-01'); // Fecha temporal para indicar pendiente
                 profile.planAssignment = {
-                    planCode: planCode,
+                    planId: plan._id as Types.ObjectId,           // Referencia al _id del plan
+                    planCode: planCode,         // Mantener para compatibilidad
                     variantDays: variantDays,
                     startAt: tempDate, // Se asignará cuando se pague
                     expiresAt: tempDate // Se calculará cuando se pague
@@ -479,22 +496,55 @@ export class PlansService {
                 throw new Error('Error al generar factura para el plan');
             }
         } else {
-            // Plan gratuito - asignar inmediatamente
+            // Plan gratuito o usuario admin - asignar inmediatamente
             profile.planAssignment = {
-                planCode: planCode,
+                planId: plan._id as Types.ObjectId,           // Referencia al _id del plan
+                planCode: planCode,         // Mantener para compatibilidad
                 variantDays: variantDays,
                 startAt: now,
                 expiresAt: expiresAt
             };
+            
+            // Activar el perfil inmediatamente para admins o planes gratuitos
+            profile.isActive = true;
+            
+            // Agregar automáticamente los upgrades incluidos en el plan
+            if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
+                for (const upgradeCode of plan.includedUpgrades) {
+                    // Verificar si el upgrade ya existe y está activo
+                    const existingUpgrade = profile.upgrades.find(
+                        upgrade => upgrade.code === upgradeCode && upgrade.endAt > now
+                    );
+                    
+                    if (!existingUpgrade) {
+                        // Agregar el upgrade incluido en el plan
+                        const newUpgrade = {
+                            code: upgradeCode,
+                            startAt: now,
+                            endAt: expiresAt, // Los upgrades del plan duran lo mismo que el plan
+                            purchaseAt: now
+                        };
+                        
+                        profile.upgrades.push(newUpgrade);
+                        console.log(`🎁 Upgrade incluido agregado: ${upgradeCode}`);
+                    }
+                }
+            }
+            
             profile.isActive = true;
             await profile.save();
         }
 
-        // Generar mensaje de WhatsApp
+        // Generar mensaje de WhatsApp para renovación
         const whatsAppMessage = await generateWhatsAppMessage(
             profile.user.toString(),
             profileId,
-            invoiceId
+            planCode,
+            variantDays,
+            invoiceId,
+            true, // isRenewal = true
+            variant.price,
+            expiresAt
         );
 
         return {
@@ -509,7 +559,7 @@ export class PlansService {
         };
     }
 
-    async renewPlan(profileId: string, planCode: string, variantDays: number): Promise<{
+    async renewPlan(profileId: string, planCode: string, variantDays: number, isAdmin: boolean = false): Promise<{
         profileId: string;
         planCode: string;
         variantDays: number;
@@ -540,24 +590,25 @@ export class PlansService {
             throw new Error('Variante de plan no encontrada');
         }
 
-        // Verificar si el perfil tiene un plan activo del mismo tipo
-        const now = new Date();
+        // Verificar si el perfil tiene un plan del mismo tipo (activo o expirado)
         if (!profile.planAssignment || profile.planAssignment.planCode !== planCode) {
-            throw new Error('El perfil no tiene un plan activo del tipo especificado para renovar');
+            throw new Error('El perfil no tiene un plan del tipo especificado para renovar');
         }
 
         // Plan actual expira
 
-        // Extender la fecha de expiración desde la fecha actual de expiración
+        // Extender la fecha de expiración desde la fecha actual de expiración o desde ahora si ya expiró
         const currentExpiresAt = profile.planAssignment.expiresAt;
-        const newExpiresAt = new Date(currentExpiresAt);
+        const now = new Date();
+        const baseDate = currentExpiresAt > now ? currentExpiresAt : now;
+        const newExpiresAt = new Date(baseDate);
         newExpiresAt.setDate(newExpiresAt.getDate() + variantDays);
 
         // Nueva fecha de expiración
 
-        // Generar factura si el plan tiene precio
+        // Generar factura si el plan tiene precio y NO es admin
         let invoiceId: string | undefined;
-        if (variant.price > 0) {
+        if (variant.price > 0 && !isAdmin) {
             try {
                 const invoice = await InvoiceService.generateInvoice({
                     userId: profile.user.toString(),
@@ -584,18 +635,50 @@ export class PlansService {
                 throw new Error('Error al generar factura para la renovación del plan');
             }
         } else {
-            // Plan gratuito - renovar inmediatamente
+            // Plan gratuito o usuario admin - renovar inmediatamente
             profile.planAssignment.expiresAt = newExpiresAt;
             profile.planAssignment.variantDays = variantDays;
+            
+            // Activar el perfil inmediatamente para admins o planes gratuitos
+            profile.isActive = true;
+            
+            // Agregar automáticamente los upgrades incluidos en el plan
+            if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
+                for (const upgradeCode of plan.includedUpgrades) {
+                    // Verificar si el upgrade ya existe y está activo
+                    const existingUpgrade = profile.upgrades.find(
+                        upgrade => upgrade.code === upgradeCode && upgrade.endAt > newExpiresAt
+                    );
+                    
+                    if (!existingUpgrade) {
+                        // Agregar el upgrade incluido en el plan
+                        const newUpgrade = {
+                            code: upgradeCode,
+                            startAt: now,
+                            endAt: newExpiresAt, // Los upgrades del plan duran lo mismo que el plan
+                            purchaseAt: now
+                        };
+                        
+                        profile.upgrades.push(newUpgrade);
+                        console.log(`🎁 Upgrade incluido agregado en renovación: ${upgradeCode}`);
+                    }
+                }
+            }
+            
             await profile.save();
             // Plan renovado exitosamente para perfil
         }
 
-        // Generar mensaje de WhatsApp
+        // Generar mensaje de WhatsApp para renovación
         const whatsAppMessage = await generateWhatsAppMessage(
             profile.user.toString(),
             profileId,
-            invoiceId
+            planCode,
+            variantDays,
+            invoiceId,
+            true, // isRenewal = true
+            variant.price,
+            newExpiresAt
         );
 
         return {

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { NewsService, CreateNewsData, UpdateNewsData, NewsFilters } from './news.service';
 import { validationResult } from 'express-validator';
+import { AuthRequest } from '../../types/auth.types';
 
 export class NewsController {
   /**
@@ -22,6 +23,7 @@ export class NewsController {
       const newsData: CreateNewsData = {
         title: req.body.title,
         content: req.body.content,
+        imageUrl: req.body.imageUrl || req.body.bannerImage,
         published: req.body.published !== undefined ? req.body.published : true
       };
 
@@ -127,6 +129,7 @@ export class NewsController {
       const updateData: UpdateNewsData = {
         title: req.body.title,
         content: req.body.content,
+        imageUrl: req.body.imageUrl || req.body.bannerImage,
         published: req.body.published
       };
 

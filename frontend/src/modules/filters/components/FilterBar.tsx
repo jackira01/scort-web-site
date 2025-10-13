@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
 import { useFilterOptions } from '@/hooks/use-filter-options';
+import { getCitiesByDepartment } from '@/utils/colombiaData';
+import { useSearchFilters } from '@/hooks/use-search-filters';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -14,42 +16,73 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { createSlug } from '@/utils/slug';
+import HorizontalFilterBar from './HorizontalFilterBar';
 
 const FilterBar = () => {
   const router = useRouter();
-  const [categoria, setCategoria] = useState('');
-  const [departamento, setDepartamento] = useState('');
-  const [ciudad, setCiudad] = useState('');
-  
-  // Función para manejar cambio de departamento
-  const handleDepartmentChange = (value: string) => {
-    setDepartamento(value);
-    // Limpiar ciudad cuando se cambie el departamento
-    setCiudad('');
-  };
-  
-  // Obtener opciones de filtros de la API
-  const { data: filterOptions, loading: optionsLoading, error: optionsError } = useFilterOptions();
-  
+  const { filters, updateFilter, updateCategory, updateLocation } = useSearchFilters();
 
+  // Usar los valores del hook en lugar de estados locales
+  const categoria = filters.category || '';
+  const departamento = filters.location?.department || '';
+  const ciudad = filters.location?.city || '';
+
+  const {
+    data: filterOptions,
+    loading: isLoadingFilterOptions,
+    error: filterOptionsError,
+  } = useFilterOptions();
+
+  // Extraer las opciones específicas del objeto de datos
+  const categories = filterOptions?.categories || [];
+  const departments = filterOptions?.locations?.departments || [];
+
+  // Estados de carga y error derivados
+  const isLoadingCategories = isLoadingFilterOptions;
+  const isLoadingDepartments = isLoadingFilterOptions;
+  const categoriesError = filterOptionsError;
+  const departmentsError = filterOptionsError;
+
+  const cities = departamento ? getCitiesByDepartment(departamento) : [];
 
   const handleSearch = () => {
-    // Validar que al menos la categoría esté seleccionada
-    if (!categoria) {
-      alert('Por favor selecciona al menos una categoría para buscar');
-      return;
+    // Construir la ruta dinámica basada en los filtros seleccionados
+    let route = '/filtros';
+
+    const params = new URLSearchParams();
+
+    // La categoría siempre va como parte de la ruta (slug)
+    if (categoria) {
+      route += `/${createSlug(categoria)}`;
     }
 
-    // Construir la ruta dinámica basada en los parámetros seleccionados
-    // Convertir los nombres de la API a slugs amigables para URLs
-    const segments = [createSlug(categoria)];
-    if (departamento) segments.push(createSlug(typeof departamento === 'string' ? departamento : (departamento as any).value || (departamento as any).label));
-    if (ciudad && departamento) segments.push(createSlug(typeof ciudad === 'string' ? ciudad : (ciudad as any).value || (ciudad as any).label));
-    
+    // El departamento y ciudad van como query parameters
+    if (departamento) {
+      params.append('departamento', departamento);
+    }
 
-    
-    // Navegar a la nueva ruta dinámica
-    router.push(`/${segments.join('/')}`);
+    if (ciudad) {
+      params.append('ciudad', ciudad);
+    }
+
+    const queryString = params.toString();
+    const finalRoute = queryString ? `${route}?${queryString}` : route;
+    router.push(finalRoute);
+  };
+
+  // Función para manejar cambio de categoría
+  const handleCategoryChange = (value: string) => {
+    updateCategory(value);
+  };
+
+  // Función para manejar cambio de departamento
+  const handleDepartmentChange = (value: string) => {
+    updateLocation({ department: value, city: '' }); // Limpiar ciudad cuando se cambie el departamento
+  };
+
+  // Función para manejar cambio de ciudad
+  const handleCityChange = (value: string) => {
+    updateLocation({ department: departamento, city: value });
   };
 
   return (
@@ -61,25 +94,29 @@ const FilterBar = () => {
             className="animate-in slide-in-from-bottom-2"
             style={{ animationDelay: '0ms' }}
           >
-            {optionsLoading ? (
+            {isLoadingCategories ? (
               <Skeleton className="h-10 w-full" />
-            ) : optionsError || !filterOptions?.categories ? (
+            ) : categoriesError || !categories ? (
               <Select disabled>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Error al cargar categorías" />
                 </SelectTrigger>
               </Select>
             ) : (
-              <Select value={categoria} onValueChange={setCategoria}>
+              <Select value={categoria} onValueChange={handleCategoryChange}>
                 <SelectTrigger className="w-full hover:border-purple-500 transition-all duration-200 focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/10">
                   <SelectValue placeholder="Seleccionar categoría" />
                 </SelectTrigger>
                 <SelectContent>
-                  {filterOptions.categories.map((category) => (
+                  {categories && Array.isArray(categories) ? categories.map((category) => (
                     <SelectItem key={category.value} value={category.value}>
                       {category.label}
                     </SelectItem>
-                  ))}
+                  )) : (
+                    <SelectItem value="loading" disabled>
+                      Cargando categorías...
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             )}
@@ -90,18 +127,28 @@ const FilterBar = () => {
             className="animate-in slide-in-from-bottom-2"
             style={{ animationDelay: '100ms' }}
           >
-            <Select value={departamento} onValueChange={handleDepartmentChange}>
-              <SelectTrigger className="w-full hover:border-purple-500 transition-all duration-200 focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/10">
-                <SelectValue placeholder="Seleccionar departamento" />
-              </SelectTrigger>
-              <SelectContent>
-                 {filterOptions?.locations?.departments?.map((department) => (
-                   <SelectItem key={typeof department === 'string' ? department : department.value} value={typeof department === 'string' ? department : department.value}>
-                     {typeof department === 'string' ? department : department.label}
-                   </SelectItem>
-                 ))}
-               </SelectContent>
-            </Select>
+            {isLoadingDepartments ? (
+              <Skeleton className="h-10 w-full" />
+            ) : departmentsError || !departments ? (
+              <Select disabled>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Error al cargar departamentos" />
+                </SelectTrigger>
+              </Select>
+            ) : (
+              <Select value={departamento} onValueChange={handleDepartmentChange}>
+                <SelectTrigger className="w-full hover:border-purple-500 transition-all duration-200 focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/10">
+                  <SelectValue placeholder="Seleccionar departamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((department) => (
+                    <SelectItem key={department.value} value={department.value}>
+                      {department.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Ciudad */}
@@ -109,17 +156,23 @@ const FilterBar = () => {
             className="animate-in slide-in-from-bottom-2"
             style={{ animationDelay: '200ms' }}
           >
-            <Select value={ciudad} onValueChange={setCiudad} disabled={!departamento}>
+            <Select value={ciudad} onValueChange={handleCityChange} disabled={!departamento}>
               <SelectTrigger className="w-full hover:border-purple-500 transition-all duration-200 focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/10">
                 <SelectValue placeholder="Seleccionar ciudad" />
               </SelectTrigger>
               <SelectContent>
-                 {filterOptions?.locations?.cities?.map((city) => (
-                   <SelectItem key={typeof city === 'string' ? city : city.value} value={typeof city === 'string' ? city : city.value}>
-                     {typeof city === 'string' ? city : city.label}
-                   </SelectItem>
-                 ))}
-               </SelectContent>
+                {cities.length > 0 ? (
+                  cities.map((city) => (
+                    <SelectItem key={city} value={city}>
+                      {city}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-cities" disabled>
+                    {departamento ? 'No hay ciudades disponibles' : 'Selecciona un departamento primero'}
+                  </SelectItem>
+                )}
+              </SelectContent>
             </Select>
           </div>
 
@@ -129,14 +182,38 @@ const FilterBar = () => {
             style={{ animationDelay: '300ms' }}
           >
             <Button
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium transition-all duration-200 shadow-lg hover:shadow-xl disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed disabled:shadow-none"
               onClick={handleSearch}
+              disabled={!categoria && !departamento}
             >
               <Search className="w-4 h-4 mr-2" />
               Buscar
             </Button>
           </div>
         </div>
+        {/* <HorizontalFilterBar 
+          filters={filters.verification}
+          onFiltersChange={(verificationFilters) => {
+            // Actualizar filtros y navegar a la página de búsqueda
+            const params = new URLSearchParams();
+            
+            if (verificationFilters.identityVerified) {
+              params.append('profileVerified', 'true');
+            }
+            if (verificationFilters.hasVideo) {
+              params.append('hasVideo', 'true');
+            }
+            if (verificationFilters.documentVerified) {
+              params.append('documentVerified', 'true');
+            }
+            
+            const queryString = params.toString();
+            const route = queryString ? `/filtros?${queryString}` : '/filtros';
+            router.push(route);
+          }}
+          onClearFilters={clearFilters}
+          className="mt-4"
+        /> */}
       </div>
     </div>
   );

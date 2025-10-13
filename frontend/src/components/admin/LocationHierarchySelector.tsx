@@ -83,7 +83,9 @@ export const LocationHierarchySelector: React.FC<LocationHierarchySelectorProps>
     }, [selectedDepartment, selectedCity, validateSelection, onCityChange]);
 
     const handleDepartmentChange = (departmentValue: string | undefined) => {
-        onDepartmentChange(departmentValue);
+        // Si el valor es "none", tratarlo como undefined
+        const actualValue = departmentValue === "none" ? undefined : departmentValue;
+        onDepartmentChange(actualValue);
         onCityChange(undefined); // Reset city when department changes
     };
 
@@ -229,7 +231,7 @@ export const LocationHierarchySelector: React.FC<LocationHierarchySelectorProps>
                             <SelectValue placeholder="Seleccionar departamento" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">Seleccionar departamento</SelectItem>
+                            <SelectItem value="none">Seleccionar departamento</SelectItem>
                             {getDepartmentOptions().map((dept: any) => (
                                 <SelectItem key={dept.value} value={dept.value}>
                                     <div className="flex items-center justify-between w-full">
@@ -252,14 +254,18 @@ export const LocationHierarchySelector: React.FC<LocationHierarchySelectorProps>
                     </Label>
                     <Select
                         value={selectedCity || ''}
-                        onValueChange={(value: string) => onCityChange(value || undefined)}
+                        onValueChange={(value: string) => {
+                            // Si el valor es "none", tratarlo como undefined
+                            const actualValue = value === "none" ? undefined : value;
+                            onCityChange(actualValue);
+                        }}
                         disabled={disabled || (!selectedDepartment && !allowCityOnly)}
                     >
                         <SelectTrigger id="city-select">
                             <SelectValue placeholder="Seleccionar ciudad" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">Seleccionar ciudad</SelectItem>
+                            <SelectItem value="none">Seleccionar ciudad</SelectItem>
                             {selectedDepartment &&
                                 getCityOptions(selectedDepartment).map((city: any) => (
                                     <SelectItem key={city.value} value={city.value}>

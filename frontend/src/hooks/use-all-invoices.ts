@@ -9,6 +9,8 @@ interface UseAllInvoicesOptions {
   status?: string;
   userId?: string;
   profileId?: string;
+  _id?: string;
+  invoiceNumber?: string;
   startDate?: string;
   endDate?: string;
 }
@@ -39,6 +41,8 @@ export const useAllInvoices = (options: UseAllInvoicesOptions = {}): UseAllInvoi
     status,
     userId,
     profileId,
+    _id,
+    invoiceNumber,
     startDate,
     endDate
   } = options;
@@ -50,19 +54,21 @@ export const useAllInvoices = (options: UseAllInvoicesOptions = {}): UseAllInvoi
     error: invoicesError,
     refetch: refetchInvoices
   } = useQuery({
-    queryKey: ['allInvoices', page, limit, status, userId, profileId, startDate, endDate],
+    queryKey: ['allInvoices', page, limit, status, userId, profileId, _id, invoiceNumber, startDate, endDate],
     queryFn: async () => {
       const filters: InvoiceFilters = {};
       if (status) filters.status = status;
       if (userId) filters.userId = userId;
       if (profileId) filters.profileId = profileId;
+      if (_id) filters._id = _id;
+      if (invoiceNumber) filters.invoiceNumber = invoiceNumber;
       if (startDate) filters.startDate = startDate;
       if (endDate) filters.endDate = endDate;
 
       return await invoiceService.getInvoices(filters, page, limit);
     },
     staleTime: 30000, // 30 segundos
-    gcTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos,
   });
 
   // Query separada para estadísticas (menos frecuente)

@@ -77,11 +77,15 @@ export const publicApiRateLimit = rateLimit({
 export const validateContentType = (req: Request, res: Response, next: NextFunction) => {
   if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
     const contentType = req.get('Content-Type');
+    const contentLength = req.get('Content-Length');
     
-    if (!contentType || !contentType.includes('application/json')) {
-      return res.status(400).json({
-        error: 'Content-Type debe ser application/json'
-      });
+    // Solo validar Content-Type si hay contenido en el cuerpo
+    if (contentLength && parseInt(contentLength) > 0) {
+      if (!contentType || !contentType.includes('application/json')) {
+        return res.status(400).json({
+          error: 'Content-Type debe ser application/json'
+        });
+      }
     }
   }
   

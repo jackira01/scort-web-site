@@ -21,6 +21,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { hardDeleteProfile } from '@/services/user.service';
 import toast from 'react-hot-toast';
+import { hasDestacadoUpgrade } from '@/utils/profile.utils';
 export const DashbProfileCard = ({
   profile,
   index,
@@ -71,7 +72,7 @@ export const DashbProfileCard = ({
                   .join('')}
               </AvatarFallback>
             </Avatar>
-            {profile.featured && (
+            {hasDestacadoUpgrade(profile) && (
               <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center animate-pulse">
                 <Star className="h-3 w-3 text-white fill-white" />
               </div>
@@ -100,10 +101,7 @@ export const DashbProfileCard = ({
                 <Calendar className="h-3 w-3 mr-1" />
                 {profile.age || 'N/A'} años
               </span>
-              {/* <span className="flex items-center">
-                <MapPin className="h-3 w-3 mr-1" />
-                {profile.location || 'Sin ubicación'}
-              </span> */}
+
             </div>
 
             <div className="flex items-center space-x-4 text-sm">
@@ -147,18 +145,18 @@ export const DashbProfileCard = ({
                   <TooltipTrigger asChild>
                     <Button
                       size="sm"
-                      variant={profile.hasDestacadoUpgrade ? "default" : "outline"}
-                      className={`p-2 ${profile.hasDestacadoUpgrade
+                      variant={hasDestacadoUpgrade(profile) ? "default" : "outline"}
+                      className={`p-2 ${hasDestacadoUpgrade(profile)
                         ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white'
                         : 'hover:bg-yellow-50 dark:hover:bg-yellow-950/20 hover:border-yellow-500'
                         } transition-all duration-200`}
-                      disabled={profile.hasDestacadoUpgrade}
+                      disabled={hasDestacadoUpgrade(profile)}
                     >
                       <Star className="h-3 w-3" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{profile.hasDestacadoUpgrade ? 'Destacado Activo' : 'Destacado Disponible'}</p>
+                    <p>{hasDestacadoUpgrade(profile) ? 'Destacado Activo' : 'Destacado Disponible'}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

@@ -184,13 +184,17 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
             <div className='flex flex-col min-w-[80px]'>
               <Label className="text-sm text-muted-foreground">Días</Label>
               <Select
+                key={`days-${newRate.days}`}
                 value={newRate.days}
                 onValueChange={(value) =>
                   setNewRate((prev) => ({ ...prev, days: value }))
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="0" />
+                  <SelectValue 
+                    placeholder="0"
+                    className={newRate.days ? 'text-foreground' : 'text-muted-foreground'}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {Array.from({ length: 31 }, (_, i) => (
@@ -205,13 +209,17 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
             <div className='flex flex-col min-w-[80px]'>
               <Label className="text-sm text-muted-foreground">Horas</Label>
               <Select
+                key={`hours-${newRate.hours}`}
                 value={newRate.hours}
                 onValueChange={(value) =>
                   setNewRate((prev) => ({ ...prev, hours: value }))
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="0" />
+                  <SelectValue 
+                    placeholder="0"
+                    className={newRate.hours ? 'text-foreground' : 'text-muted-foreground'}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {Array.from({ length: 24 }, (_, i) => (
@@ -226,13 +234,17 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
             <div className='flex flex-col min-w-[80px]'>
               <Label className="text-sm text-muted-foreground">Minutos</Label>
               <Select
+                key={`minutes-${newRate.minutes}`}
                 value={newRate.minutes}
                 onValueChange={(value) =>
                   setNewRate((prev) => ({ ...prev, minutes: value }))
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="0" />
+                  <SelectValue 
+                    placeholder="0"
+                    className={newRate.minutes ? 'text-foreground' : 'text-muted-foreground'}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {Array.from({ length: 60 }, (_, i) => (

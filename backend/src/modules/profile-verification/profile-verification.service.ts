@@ -1,7 +1,7 @@
 import ProfileVerification from './profile-verification.model';
 import type { IProfileVerification } from '../profile/profile.types';
 import type { Types } from 'mongoose';
-import UserModel, { type IUser } from '../user/User.model';
+import { type IUser } from '../user/User.model';
 import { ProfileModel } from '../profile/profile.model';
 import type { IProfile } from '../profile/profile.types';
 
@@ -38,15 +38,20 @@ const shouldRequireIndependentVerification = async (userId: string | Types.Objec
 const getDefaultVerificationSteps = (accountType: string, requiresIndependentVerification: boolean, lastLoginVerified: boolean, userLastLoginDate: Date | null) => {
   const baseSteps = {
     documentPhotos: {
-      documents: [],
+      frontPhoto: undefined,
+      backPhoto: undefined,
+      selfieWithDocument: undefined,
       isVerified: false
     },
-    video: {
+    videoVerification: {
+      videoLink: undefined,
+      isVerified: false
+    },
+    videoCallRequested: {
       videoLink: undefined,
       isVerified: false
     },
     socialMedia: {
-      accounts: [],
       isVerified: false
     },
     phoneChangeDetected: false,
@@ -56,13 +61,15 @@ const getDefaultVerificationSteps = (accountType: string, requiresIndependentVer
     }
   };
 
-  // Para usuarios comunes con múltiples perfiles, heredar verificación del usuario
+  // Para usuarios comunes con múltiples perfiles, mantener verificación manual
   if (accountType === 'common' && !requiresIndependentVerification) {
     return {
       ...baseSteps,
       documentPhotos: {
-        documents: [],
-        isVerified: true // Heredar verificación del usuario
+        frontPhoto: undefined,
+        backPhoto: undefined,
+        selfieWithDocument: undefined,
+        isVerified: false // Mantener false hasta verificación manual del admin
       }
     };
   }
@@ -93,7 +100,7 @@ const recalculateVerificationProgress = async (verification: IProfileVerificatio
           model: 'User'
         }
       })
-      .lean() as IProfileVerificationWithPopulatedProfile | null;
+      .lean() as unknown as IProfileVerificationWithPopulatedProfile | null;
 
     if (!populatedVerification?.profile) {
 
@@ -165,7 +172,7 @@ export const createProfileVerification = async (verificationData: CreateProfileV
 
     if (verificationData.profile) {
       // Buscar el perfil y su usuario asociado
-      const profile = await ProfileModel.findById(verificationData.profile).populate('user') as IProfileWithUser | null;
+      const profile = await ProfileModel.findById(verificationData.profile).populate('user') as unknown as IProfileWithUser | null;
       // Verificar que user esté poblado correctamente
       if (profile && profile.user) {
         accountType = profile.user.accountType || 'common';
@@ -230,7 +237,7 @@ export const updateProfileVerification = async (
 
     // Recalcular progreso solo si se actualizaron pasos de verificación
     if (isUpdatingSteps) {
-      await recalculateVerificationProgress(verification);
+      await recalculateVerificationProgress(verification as unknown as IProfileVerification);
 
       // Obtener la verificación actualizada con el nuevo progreso
       const updatedVerification = await ProfileVerification.findById(verificationId)
@@ -305,7 +312,7 @@ export const updateVerificationSteps = async (
 
 
     // Recalcular progreso automáticamente
-    await recalculateVerificationProgress(verification);
+    await recalculateVerificationProgress(verification as unknown as IProfileVerification);
 
     // Retornar verificación actualizada
     const finalVerification = await ProfileVerification.findById(verificationId)

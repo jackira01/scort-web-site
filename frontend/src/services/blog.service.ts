@@ -1,6 +1,7 @@
 import { Blog, BlogFilters, CreateBlogData, UpdateBlogData, BlogsResponse } from '../hooks/use-blogs';
+import { API_URL } from '@/lib/config';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE_URL = API_URL;
 
 interface ApiResponse<T> {
   success: boolean;
@@ -12,6 +13,18 @@ interface ApiResponse<T> {
     totalPages: number;
     limit: number;
   };
+}
+
+interface EditorBlock {
+  type: string;
+  data: {
+    text?: string;
+    items?: (string | { content?: string; text?: string })[];
+  };
+}
+
+interface EditorContent {
+  blocks: EditorBlock[];
 }
 
 class BlogService {
@@ -46,7 +59,7 @@ class BlogService {
     const data: ApiResponse<T> = await response.json();
 
     if (!data.success) {
-      throw new Error(data.message || 'Error en la respuesta del servidor');
+      throw new Error(data.message || 'Error al obtener blogs');
     }
 
     return data.data;
@@ -95,8 +108,12 @@ class BlogService {
         totalPages: data.pagination?.totalPages || 1,
         limit: data.pagination?.limit || 10,
       };
-    } catch (error: any) {
-      throw new Error(error.message || 'Error al obtener los blogs');
+    } catch (error: unknown) {
+      let errorMessage = 'Error al obtener últimos blogs';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -113,8 +130,12 @@ class BlogService {
       });
 
       return await this.handleResponse<Blog>(response);
-    } catch (error: any) {
-      throw new Error(error.message || 'Error al obtener el blog');
+    } catch (error: unknown) {
+      let errorMessage = 'Error al obtener el blog';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -131,8 +152,12 @@ class BlogService {
       });
 
       return await this.handleResponse<Blog[]>(response);
-    } catch (error: any) {
-      throw new Error(error.message || 'Error al obtener blogs relacionados');
+    } catch (error: unknown) {
+      let errorMessage = 'Error al obtener blogs relacionados';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -149,8 +174,12 @@ class BlogService {
       });
 
       return await this.handleResponse<Blog[]>(response);
-    } catch (error: any) {
-      throw new Error(error.message || 'Error al buscar blogs');
+    } catch (error: unknown) {
+      let errorMessage = 'Error al buscar blogs';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -170,8 +199,12 @@ class BlogService {
       });
 
       return await this.handleResponse<Blog>(response);
-    } catch (error: any) {
-      throw new Error(error.message || 'Error al crear el blog');
+    } catch (error: unknown) {
+      let errorMessage = 'Error al crear blog';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -187,8 +220,12 @@ class BlogService {
       });
 
       return await this.handleResponse<Blog>(response);
-    } catch (error: any) {
-      throw new Error(error.message || 'Error al actualizar el blog');
+    } catch (error: unknown) {
+      let errorMessage = 'Error al actualizar blog';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -203,8 +240,12 @@ class BlogService {
       });
 
       return await this.handleResponse<Blog>(response);
-    } catch (error: any) {
-      throw new Error(error.message || 'Error al cambiar el estado del blog');
+    } catch (error: unknown) {
+      let errorMessage = 'Error al cambiar el estado del blog';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -219,8 +260,12 @@ class BlogService {
       });
 
       await this.handleResponse<void>(response);
-    } catch (error: any) {
-      throw new Error(error.message || 'Error al eliminar el blog');
+    } catch (error: unknown) {
+      let errorMessage = 'Error al eliminar blog';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -246,7 +291,12 @@ class BlogService {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Error al obtener blogs para administración');
+        const errorData = await response.json().catch(() => ({}));
+        let errorMessage = 'Error al obtener blog para admin';
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+        throw new Error(errorMessage);
       }
 
       return {
@@ -256,8 +306,12 @@ class BlogService {
         totalPages: data.pagination?.totalPages || 1,
         limit: data.pagination?.limit || 10,
       };
-    } catch (error: any) {
-      throw new Error(error.message || 'Error al obtener blogs para administración');
+    } catch (error: unknown) {
+      let errorMessage = 'Error al obtener blogs para administración';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -272,8 +326,12 @@ class BlogService {
       });
 
       return await this.handleResponse<Blog>(response);
-    } catch (error: any) {
-      throw new Error(error.message || 'Error al obtener el blog para administración');
+    } catch (error: unknown) {
+      let errorMessage = 'Error al obtener blog por slug';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      throw new Error(errorMessage);
     }
   }
 
@@ -316,19 +374,20 @@ class BlogService {
   /**
    * Extraer texto plano del contenido JSON (para previews)
    */
-  extractTextFromContent(content: any): string {
+  extractTextFromContent(content: EditorContent | unknown): string {
     if (!content || typeof content !== 'object') return '';
 
     // Implementar según el formato del Rich Text Editor usado
     // Ejemplo para Editor.js:
-    if (content.blocks && Array.isArray(content.blocks)) {
-      const textBlocks = content.blocks
-        .filter((block: any) => block.type === 'paragraph' || block.type === 'header' || block.type === 'list')
-        .map((block: any) => {
+    const editorContent = content as EditorContent;
+    if (editorContent.blocks && Array.isArray(editorContent.blocks)) {
+      const textBlocks = editorContent.blocks
+        .filter((block: EditorBlock) => block.type === 'paragraph' || block.type === 'header' || block.type === 'list')
+        .map((block: EditorBlock) => {
           if (block.type === 'list' && block.data?.items) {
             // Para listas, extraer texto de todos los items
             return block.data.items
-              .map((item: any) => {
+              .map((item: string | { content?: string; text?: string }) => {
                 const text = typeof item === 'string' ? item : (item.content || item.text || '');
                 return this.stripHtmlTags(text);
               })

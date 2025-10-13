@@ -1,6 +1,7 @@
 export interface ProfileMediaItem {
   _id?: string;
   link?: string;
+  preview?: string;
   type?: 'image' | 'video';
 }
 
@@ -122,7 +123,8 @@ export interface FilterQuery {
     city?: string;
   };
   features?: {
-    gender?: string;
+    gender?: string[];
+    sex?: string[];
     age?: string[];
     height?: string[];
     weight?: string[];
@@ -143,9 +145,15 @@ export interface FilterQuery {
       end?: string;
     };
   };
+  verification?: {
+    identityVerified?: boolean;
+    hasVideo?: boolean;
+    documentVerified?: boolean;
+  };
   isActive?: boolean;
   isVerified?: boolean;
   featured?: boolean;
+  showInSponsored?: boolean; // Filtrar por perfiles con planes que tengan showInSponsored: true
   page?: number;
   limit?: number;
   sortBy?: string;
@@ -155,8 +163,10 @@ export interface FilterQuery {
 
 
 
+import type { Profile as UserProfile } from '@/types/user.types';
+
 export interface ProfilesResponse {
-  profiles: Profile[];
+  profiles: UserProfile[];
   pagination: {
     currentPage: number;
     totalPages: number;
@@ -164,7 +174,6 @@ export interface ProfilesResponse {
     hasNextPage: boolean;
     hasPrevPage: boolean;
   };
-
 }
 
 export interface ProfileCardData {
@@ -178,6 +187,7 @@ export interface ProfileCardData {
   featured?: boolean;
   online?: boolean;
   hasVideo?: boolean;
+  hasDestacadoUpgrade?: boolean;
 }
 
 // Tipos para el feed de Home

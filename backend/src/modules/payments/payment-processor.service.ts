@@ -4,6 +4,7 @@ import { PlanDefinitionModel } from '../plans/plan.model';
 import { UpgradeDefinitionModel } from '../plans/upgrade.model';
 import type { IProfile } from '../profile/profile.types';
 import type { IInvoice } from './invoice.model';
+import { Types } from 'mongoose';
 
 /**
  * Servicio para procesar pagos confirmados y actualizar perfiles
@@ -92,11 +93,35 @@ export class PaymentProcessorService {
     
     // NUEVO FLUJO: Asignar el plan comprado (reemplaza el plan Amatista por defecto)
     profile.planAssignment = {
-      planCode: planItem.code,
+      planId: plan._id as Types.ObjectId,           // Referencia al _id del plan
+      planCode: planItem.code,    // Mantener para compatibilidad
       variantDays: planItem.days,
       startAt: now,
       expiresAt: expiresAt
     };
+    
+    // Agregar automáticamente los upgrades incluidos en el plan
+    if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
+      for (const upgradeCode of plan.includedUpgrades) {
+        // Verificar si el upgrade ya existe y está activo
+        const existingUpgrade = profile.upgrades.find(
+          upgrade => upgrade.code === upgradeCode && upgrade.endAt > now
+        );
+        
+        if (!existingUpgrade) {
+          // Agregar el upgrade incluido en el plan
+          const newUpgrade = {
+            code: upgradeCode,
+            startAt: now,
+            endAt: expiresAt, // Los upgrades del plan duran lo mismo que el plan
+            purchaseAt: now
+          };
+          
+          profile.upgrades.push(newUpgrade);
+          console.log(`🎁 Upgrade incluido agregado: ${upgradeCode}`);
+        }
+      }
+    }
     
     console.log(`✅ Plan ${planItem.code} asignado al perfil ${profile._id}, reemplazando plan anterior`);
   }

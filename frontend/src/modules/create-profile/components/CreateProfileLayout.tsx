@@ -31,6 +31,7 @@ import { ProcessedImageResult } from '@/utils/imageProcessor';
 import { FormProvider } from '../context/FormContext';
 import { steps } from '../data';
 import type { FormData } from '../schemas';
+import type { AttributeGroup, Rate } from '../types';
 import { normalizeSimpleText } from '@/utils/normalize-text';
 import {
   step1Schema,
@@ -39,13 +40,34 @@ import {
   step4Schema,
   step5Schema,
 } from '../schemas';
-import type { AttributeGroup, Rate } from '../types';
+
+// Interfaces para manejo de errores de validación
+interface ValidationError {
+  path: string[];
+  message: string;
+}
+
+interface ValidationResult {
+  error?: {
+    issues: ValidationError[];
+  };
+}
+
+interface ApiError {
+  response?: {
+    status: number;
+    data?: {
+      message: string;
+    };
+  };
+  message?: string;
+}
 import { SidebarContent } from './SidebarContent';
 import { Step1EssentialInfo } from './Step1EssentialInfo';
 import { Step2Description } from './Step2Description';
 import { Step3Details } from './Step3Details';
-import { Step4Multimedia } from './Step4Multimedia';
-import { Step5Finalize } from './Step5Finalize';
+import { Step4Plan } from './Step4Plan';
+import { Step5Multimedia } from './Step5Multimedia';
 
 
 export function CreateProfileLayout() {
@@ -73,6 +95,8 @@ export function CreateProfileLayout() {
       // Step 2 - Descripción
       description: '',
       selectedServices: [],
+      basicServices: [],
+      additionalServices: [],
 
       // Step 3 - Detalles
       contact: {
@@ -82,8 +106,7 @@ export function CreateProfileLayout() {
       },
       age: '',
       skinColor: '',
-      sexuality: '',
-      eyeColor: '',
+    eyeColor: '',
       hairColor: '',
       bodyType: '',
       height: '',
@@ -144,6 +167,8 @@ export function CreateProfileLayout() {
           const step2Data = {
             description: form.getValues('description') || '',
             selectedServices: form.getValues('selectedServices') || [],
+            basicServices: form.getValues('basicServices') || [],
+            additionalServices: form.getValues('additionalServices') || [],
           };
           return step2Schema.safeParse(step2Data);
         }
@@ -154,16 +179,16 @@ export function CreateProfileLayout() {
             whatsapp: '',
             telegram: '',
           };
+          const ageValue = form.getValues('age');
           const step3Data = {
             contact: {
               number: contactData.number || '',
               whatsapp: contactData.whatsapp || undefined,
               telegram: contactData.telegram || undefined,
             },
-            age: form.getValues('age') || '',
+            age: ageValue && ageValue !== '' ? ageValue : undefined,
             skinColor: form.getValues('skinColor') || '',
-            sexuality: form.getValues('sexuality') || '',
-            eyeColor: form.getValues('eyeColor') || '',
+        eyeColor: form.getValues('eyeColor') || '',
             hairColor: form.getValues('hairColor') || '',
             bodyType: form.getValues('bodyType') || '',
             height: form.getValues('height') || '',
@@ -176,23 +201,37 @@ export function CreateProfileLayout() {
         }
 
         case 4: {
+          // Validamos plan selection y términos en paso 4
           const step4Data = {
-            photos: form.getValues('photos') || [],
-            videos: form.getValues('videos') || [],
-            audios: form.getValues('audios') || [],
-          };
-
-          return step4Schema.safeParse(step4Data);
-        }
-
-        case 5: {
-          const step5Data = {
-            acceptTerms: form.getValues('acceptTerms') || false,
             selectedUpgrades: form.getValues('selectedUpgrades') || [],
             selectedPlan: form.getValues('selectedPlan'),
             selectedVariant: form.getValues('selectedVariant'),
+            acceptTerms: form.getValues('acceptTerms') || false,
           };
-          return step5Schema.safeParse(step5Data);
+
+          const result = step4Schema.safeParse(step4Data);
+
+          if (!result.success) {
+          }
+
+          return result;
+        }
+
+        case 5: {
+          // Validamos multimedia en paso 5
+          const step5Data = {
+            photos: form.getValues('photos') || [],
+            videos: form.getValues('videos') || [],
+            audios: form.getValues('audios') || [],
+            acceptTerms: form.getValues('acceptTerms') || false,
+          };
+
+          const result = step5Schema.safeParse(step5Data);
+
+          if (!result.success) {
+          }
+
+          return result;
         }
 
 
@@ -206,17 +245,17 @@ export function CreateProfileLayout() {
     }
   };
 
-  const setValidationErrors = (result: any) => {
+  const setValidationErrors = (result: ValidationResult) => {
     if (result.error && result.error.issues) {
-      result.error.issues.forEach((error: any) => {
+      result.error.issues.forEach((error: ValidationError) => {
         const path = error.path;
         if (path.length === 1) {
-          form.setError(path[0] as any, {
+          form.setError(path[0] as keyof FormData, {
             type: 'manual',
             message: error.message,
           });
         } else if (path.length === 2) {
-          form.setError(`${path[0]}.${path[1]}` as any, {
+          form.setError(`${path[0]}.${path[1]}` as keyof FormData, {
             type: 'manual',
             message: error.message,
           });
@@ -227,6 +266,7 @@ export function CreateProfileLayout() {
 
   const handleNext = async () => {
     try {
+
       const result = validateStep(currentStep);
 
       if (!result.success) {
@@ -237,9 +277,9 @@ export function CreateProfileLayout() {
 
       if (currentStep < 5) {
         setCurrentStep(currentStep + 1);
+      } else {
       }
     } catch (error) {
-      // Error in handleNext
       toast.error('Error inesperado en la validación');
     }
   };
@@ -255,7 +295,7 @@ export function CreateProfileLayout() {
   const transformDataToBackendFormat = (
     formData: FormData & {
       photos?: string[];
-      videos?: string[];
+      videos?: (string | { link: string; preview: string })[];
       audios?: string[];
     },
   ) => {
@@ -293,11 +333,11 @@ export function CreateProfileLayout() {
       });
     }
 
-    // Sexuality
-    if (formData.sexuality && groupMap.sex?._id) {
+    // Body type feature
+    if (formData.bodyType && groupMap.body?._id) {
       features.push({
-        group_id: groupMap.sex._id,
-        value: [formData.sexuality],
+        group_id: groupMap.body._id,
+        value: [formData.bodyType],
       });
     }
 
@@ -357,11 +397,24 @@ export function CreateProfileLayout() {
       age: formData.age,
       contact: formData.contact,
       height: formData.height,
+      socialMedia: formData.socialMedia,
+      // Nuevos campos de servicios clasificados
+      basicServices: formData.basicServices || [],
+      additionalServices: formData.additionalServices || [],
       media: {
         gallery: formData.photos || [],
-        videos: formData.videos || [],
+        videos: (formData.videos || [])
+          .filter((video): video is string | { link: string; preview: string } => video !== null)
+          .map(video => {
+            if (typeof video === 'string') {
+              return { link: video, preview: '' };
+            } else {
+              return { link: video.link, preview: video.preview };
+            }
+          }),
         audios: formData.audios || [],
         stories: [], // Las stories se llenan en otra sección, no durante la creación del perfil
+        profilePicture: formData.photos?.[0] || '', // Usar la primera foto como profilePicture
       },
       verification: null,
       availability: formData.availability,
@@ -372,7 +425,9 @@ export function CreateProfileLayout() {
 
   const handleCreateProfileClick = () => {
     const formData = form.getValues();
-    const hasPaidPlan = formData.selectedPlan && formData.selectedPlan.code !== 'FREE';
+    const hasPaidPlan = formData.selectedPlan && 
+      formData.selectedPlan.code !== 'FREE' && 
+      formData.selectedPlan.price > 0;
 
     if (hasPaidPlan) {
       setShowConfirmModal(true);
@@ -391,6 +446,7 @@ export function CreateProfileLayout() {
       let audioUrls: (string | null)[] = [];
 
       if (data.photos && data.photos.length > 0) {
+
         // Si hay imágenes procesadas, usarlas exclusivamente
         if (data.processedImages && data.processedImages.length > 0) {
           toast.loading('Subiendo fotos procesadas...', { id: 'upload-photos' });
@@ -406,6 +462,7 @@ export function CreateProfileLayout() {
         } else {
           // Si no hay imágenes procesadas, usar el flujo original
           const photoFiles = data.photos.filter((photo): photo is File => photo instanceof File);
+
           if (photoFiles.length > 0) {
             toast.loading('Procesando y subiendo fotos...', { id: 'upload-photos' });
             const originalUrls = await uploadMultipleImages(
@@ -427,297 +484,324 @@ export function CreateProfileLayout() {
       }
 
       if (data.videos && data.videos.length > 0) {
+
         // Filtrar solo archivos File, no strings (URLs existentes)
-        const videoFiles = data.videos.filter((video): video is File => video instanceof File);
+        const videoFiles = data.videos.filter((video): video is File => video instanceof File && video !== null);
+
         if (videoFiles.length > 0) {
           toast.loading('Subiendo videos...');
-          videoUrls = await uploadMultipleVideos(videoFiles);
+
+          // Obtener imágenes de preview de videos si existen
+          const videoCoverImages = data.videoCoverImages || {};
+
+          const uploadedVideos = await uploadMultipleVideos(videoFiles, videoCoverImages);
           toast.dismiss();
-          toast.success(`${videoUrls.length} videos subidos exitosamente`);
+          toast.success(`${uploadedVideos.length} videos subidos exitosamente`);
+
+          // Convertir a formato de objetos con link y preview
+          videoUrls = uploadedVideos as any;
         }
-        // Mantener URLs existentes
-        const existingVideoUrls = data.videos.filter((video): video is string => typeof video === 'string');
-        videoUrls = [...videoUrls, ...existingVideoUrls];
+
+        // Mantener URLs existentes (convertir strings a objetos si es necesario)
+        const existingVideoUrls = data.videos.filter((video): video is string => typeof video === 'string' && video !== null);
+        const existingVideoObjects = existingVideoUrls.map(url => ({
+          link: url,
+          preview: '' // Las URLs existentes no tienen preview por ahora
+        }));
+
+        videoUrls = [...(videoUrls as any), ...existingVideoObjects];
       }
 
       if (data.audios && data.audios.length > 0) {
+        console.log('🎵 Procesando audios...');
+
         // Filtrar solo archivos File, no strings (URLs existentes)
         const audioFiles = data.audios.filter((audio): audio is File => audio instanceof File);
+        console.log(`📤 Subiendo ${audioFiles.length} audios nuevos`);
+
         if (audioFiles.length > 0) {
           toast.loading('Subiendo audios...');
-          audioUrls = await uploadMultipleAudios(audioFiles);
+          const uploadedAudios = await uploadMultipleAudios(audioFiles);
           toast.dismiss();
-          toast.success(`${audioUrls.length} audios subidos exitosamente`);
+          
+          const successfulAudios = uploadedAudios.filter(url => url !== null);
+          toast.success(`${successfulAudios.length} audios subidos exitosamente`);
+          audioUrls = [...audioUrls, ...uploadedAudios];
         }
-        // Mantener URLs existentes
+
+        // Mantener URLs existentes (strings)
         const existingAudioUrls = data.audios.filter((audio): audio is string => typeof audio === 'string');
         audioUrls = [...audioUrls, ...existingAudioUrls];
+        console.log(`📊 Total audios: ${audioUrls.length} (${existingAudioUrls.length} existentes)`);
       }
 
       // Crear datos con URLs de Cloudinary (filtrar valores null)
-      const dataWithUrls = {
+      const backendData = transformDataToBackendFormat({
         ...data,
-        photos: photoUrls.filter((url): url is string => url !== null),
-        videos: videoUrls.filter((url): url is string => url !== null),
-        audios: audioUrls.filter((url): url is string => url !== null),
-      };
+        photos: photoUrls.filter(url => url !== null) as string[],
+        videos: videoUrls as any,
+        audios: audioUrls.filter(url => url !== null) as string[],
+      });
 
-      const backendData = transformDataToBackendFormat(dataWithUrls);
+      console.log('📤 Enviando datos al backend:', {
+        photos: backendData.media?.gallery?.length || 0,
+        videos: backendData.media?.videos?.length || 0,
+        audios: backendData.media?.audios?.length || 0
+      });
 
-      // Preparar purchasedPlan si se seleccionó un plan de pago
-      const purchasedPlan = data.selectedPlan && data.selectedVariant ? {
-        planCode: data.selectedPlan.code,
-        variantDays: data.selectedVariant.days
-      } : null;
+      console.log('Datos del backend:', {
+        mediaGallery: backendData.media?.gallery?.length || 0,
+        mediaVideos: backendData.media?.videos?.length || 0,
+        mediaAudios: backendData.media?.audios?.length || 0,
+        fullMediaObject: backendData.media
+      });
+
+  // Preparar purchasedPlan si se seleccionó un plan de pago
+  const purchasedPlan = data.selectedPlan && data.selectedVariant ? {
+    planCode: data.selectedPlan.code,
+    variantDays: data.selectedVariant.days
+  } : null;
 
 
+  // Crear el perfil usando el servicio
+  const loadingToast = toast.loading('Creando perfil...');
+  try {
+    const response = await createProfile(backendData, purchasedPlan);
 
-      // Crear el perfil usando el servicio
-      const loadingToast = toast.loading('Creando perfil...');
-      try {
-        const response = await createProfile(backendData, purchasedPlan);
-        toast.dismiss(loadingToast);
+    toast.dismiss(loadingToast);
 
-        // Invalidar la query de userProfiles para refrescar los datos
-        if (session?.user?._id) {
-          await queryClient.invalidateQueries({
-            queryKey: ['userProfiles', session.user._id],
-          });
-        }
-
-        // Debug: Verificar si se creó el profileverification
-        try {
-          const { getProfileVerification } = await import('../../../services/user.service');
-          const verification = await getProfileVerification(response.profile._id);
-          console.log('✅ ProfileVerification creado:', verification);
-        } catch (verificationError) {
-          console.error('❌ Error al obtener ProfileVerification:', verificationError);
-        }
-
-        toast.success('Perfil creado exitosamente');
-
-        // Debug: Verificar la respuesta del backend
-        console.log('🔍 Respuesta completa del backend:', response);
-        console.log('💰 paymentRequired:', response.paymentRequired);
-        console.log('📱 whatsAppMessage:', response.whatsAppMessage);
-
-        // Redirigir a la página de cuenta
-        router.push('/cuenta');
-
-        // Verificar si se requiere pago y hay mensaje de WhatsApp
-        if (response.paymentRequired && response.whatsAppMessage) {
-          const { companyNumber, message } = response.whatsAppMessage;
-          const whatsappUrl = `https://wa.me/${companyNumber}?text=${encodeURIComponent(message)}`;
-          console.log('🚀 Abriendo WhatsApp:', whatsappUrl);
-          // Abrir WhatsApp después de un pequeño delay para permitir la navegación
-          setTimeout(() => {
-            window.open(whatsappUrl, '_blank');
-          }, 1000);
-        } else {
-          console.log('❌ No se cumplieron las condiciones para WhatsApp');
-          console.log('   - paymentRequired:', response.paymentRequired);
-          console.log('   - whatsAppMessage existe:', !!response.whatsAppMessage);
-        }
-      } catch (profileError: any) {
-        toast.dismiss(loadingToast);
-
-        // Manejo específico de errores
-        if (profileError?.response?.status === 409) {
-          const errorMessage = profileError?.response?.data?.message || 'Límite de perfiles excedido';
-          toast.error(errorMessage, {
-            duration: 6000
-          });
-        } else if (profileError?.response?.status === 400) {
-          toast.error('Datos del perfil inválidos. Revisa la información ingresada.');
-        } else if (profileError?.response?.status === 401) {
-          toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-          router.push('/login');
-        } else if (profileError?.response?.status >= 500) {
-          toast.error('Error del servidor. Inténtalo más tarde.');
-        } else {
-          toast.error('Error al crear perfil. Contacta con servicio al cliente.');
-        }
-      }
-    } catch (error) {
-      // Error uploading files
-      toast.error('Error al subir archivos. Inténtalo de nuevo.');
-    } finally {
-      setUploading(false);
+    // Invalidar la query de userProfiles para refrescar los datos
+    if (session?.user?._id) {
+      await queryClient.invalidateQueries({
+        queryKey: ['userProfiles', session.user._id],
+      });
     }
+
+    // Debug: Verificar si se creó el profileverification
+    try {
+      const { getProfileVerification } = await import('../../../services/user.service');
+      const verification = await getProfileVerification(response.profile._id);
+    } catch (verificationError) {
+      console.error('❌ Error al obtener ProfileVerification:', verificationError);
+    }
+
+    toast.success('Perfil creado exitosamente');
+
+    // Debug: Verificar la respuesta del backend
+
+    // Redirigir a la página de cuenta
+    router.push('/cuenta');
+
+    // Verificar si se requiere pago y hay mensaje de WhatsApp
+    if (response.paymentRequired && response.whatsAppMessage) {
+      const { companyNumber, message } = response.whatsAppMessage;
+      const whatsappUrl = `https://wa.me/${companyNumber}?text=${encodeURIComponent(message)}`;
+      // Abrir WhatsApp después de un pequeño delay para permitir la navegación
+      setTimeout(() => {
+        window.open(whatsappUrl, '_blank');
+      }, 1000);
+    } else {
+    }
+  } catch (profileError: unknown) {
+    toast.dismiss(loadingToast);
+
+    // Manejo específico de errores
+    const error = profileError as ApiError;
+    if (error?.response?.status === 409) {
+      const errorMessage = error?.response?.data?.message || 'Límite de perfiles excedido';
+      toast.error(errorMessage, {
+        duration: 6000
+      });
+    } else if (profileError?.response?.status === 400) {
+      toast.error('Datos del perfil inválidos. Revisa la información ingresada.');
+    } else if (profileError?.response?.status === 401) {
+      toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      router.push('/login');
+    } else if (profileError?.response?.status >= 500) {
+      toast.error('Error del servidor. Inténtalo más tarde.');
+    } else {
+      toast.error('Error al crear perfil. Contacta con servicio al cliente.');
+    }
+  }
+} catch (error) {
+  // Error uploading files
+  toast.error('Error al subir archivos. Inténtalo de nuevo.');
+} finally {
+  setUploading(false);
+}
   };
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <Step1EssentialInfo
-            /* formData={formData} */
-            /* onChange={handleFormDataChange} */
-            genderGroup={groupMap.gender}
-            categoryGroup={groupMap.category}
-          />
-        );
-      case 2:
-        return <Step2Description serviceGroup={groupMap.services} />;
-      case 3:
-        return (
-          <Step3Details
-            skinGroup={groupMap.skin}
-            sexualityGroup={groupMap.sex}
-            eyeGroup={groupMap.eyes}
-            hairGroup={groupMap.hair}
-            bodyGroup={groupMap.body}
-          />
-        );
-      case 4:
-        return <Step4Multimedia />;
-      case 5:
-        return <Step5Finalize />;
+const renderStepContent = () => {
+  switch (currentStep) {
+    case 1:
+      return (
+        <Step1EssentialInfo
+          /* formData={formData} */
+          /* onChange={handleFormDataChange} */
+          genderGroup={groupMap.gender}
+          categoryGroup={groupMap.category}
+        />
+      );
+    case 2:
+      return <Step2Description serviceGroup={groupMap.services} />;
+    case 3:
+      return (
+        <Step3Details
+          skinGroup={groupMap.skin}
+          eyeGroup={groupMap.eyes}
+          hairGroup={groupMap.hair}
+          bodyGroup={groupMap.body}
+        />
+      );
+    case 4:
+      return <Step4Plan />; // Plan selection es paso 4
+    case 5:
+      return <Step5Multimedia />; // Multimedia es paso 5
 
-      default:
-        return null;
-    }
-  };
+    default:
+      return null;
+  }
+};
 
-  if (isLoading) return <Loader />;
+if (isLoading) return <Loader />;
 
-  if (error) return <p>Error al cargar atributos</p>;
+if (error) return <p>Error al cargar atributos</p>;
 
-  return (
-    <FormProvider form={form} currentStep={currentStep}>
-      <div className="min-h-screen mb-20 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Sidebar - Guidelines */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-24 space-y-4">
-                <SidebarContent currentStep={currentStep} />
-              </div>
+return (
+  <FormProvider form={form} currentStep={currentStep}>
+    <div className="min-h-screen mb-20 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar - Guidelines */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24 space-y-4">
+              <SidebarContent currentStep={currentStep} />
             </div>
+          </div>
 
-            {/* Main Content */}
-            <div className="lg:col-span-3">
-              <div className="bg-background rounded-xl shadow-sm border border-border p-8">
-                {renderStepContent()}
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            <div className="bg-background rounded-xl shadow-sm border border-border p-8">
+              {renderStepContent()}
 
-                {/* Navigation Buttons */}
-                <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
-                  {currentStep === 1 ? (
-                    <Link href="/cuenta">
-                      <Button
-                        variant="outline"
-                        onClick={handlePrevious}
-                        className="hover:bg-muted/50 transition-colors duration-200"
-                      >
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Volver
-                      </Button>
-                    </Link>
-                  ) : (
+              {/* Navigation Buttons */}
+              <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
+                {currentStep === 1 ? (
+                  <Link href="/cuenta">
                     <Button
                       variant="outline"
                       onClick={handlePrevious}
-                      disabled={currentStep === 1}
                       className="hover:bg-muted/50 transition-colors duration-200"
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" />
-                      Atrás
+                      Volver
                     </Button>
-                  )}
+                  </Link>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={handlePrevious}
+                    disabled={currentStep === 1}
+                    className="hover:bg-muted/50 transition-colors duration-200"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Atrás
+                  </Button>
+                )}
 
-                  {currentStep === 5 ? (
-                    <Button
-                      className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold px-8"
-                      disabled={!acceptTerms || uploading}
-                      onClick={handleCreateProfileClick}
-                    >
-                      {uploading ? (
-                        <>
-                          <Loader className="h-4 w-4 mr-2 animate-spin" />
-                          Subiendo archivos...
-                        </>
-                      ) : (
-                        'Crear perfil'
-                      )}
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleNext}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                    >
-                      próximo
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  )}
-                </div>
+                {currentStep === 5 ? (
+                  <Button
+                    className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold px-8"
+                    disabled={!acceptTerms || uploading}
+                    onClick={handleCreateProfileClick}
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader className="h-4 w-4 mr-2 animate-spin" />
+                        Subiendo archivos...
+                      </>
+                    ) : (
+                      'Crear perfil'
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleNext}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  >
+                    próximo
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                )}
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Progress Steps */}
-        <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex justify-center space-x-4">
-              {steps.map((step) => (
-                <div
-                  key={step.id}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 ${currentStep === step.id
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                    : currentStep > step.id
-                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
-                      : 'bg-muted text-muted-foreground'
-                    }`}
-                >
-                  <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
-                    {currentStep > step.id ? (
-                      <CheckCircle className="h-3 w-3" />
-                    ) : (
-                      step.id
-                    )}
-                  </div>
-                  <span className="hidden sm:block font-medium">
-                    {step.title}
-                  </span>
+      {/* Progress Steps */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-center space-x-4">
+            {steps.map((step) => (
+              <div
+                key={step.id}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 ${currentStep === step.id
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                  : currentStep > step.id
+                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
+                    : 'bg-muted text-muted-foreground'
+                  }`}
+              >
+                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+                  {currentStep > step.id ? (
+                    <CheckCircle className="h-3 w-3" />
+                  ) : (
+                    step.id
+                  )}
                 </div>
-              ))}
-            </div>
+                <span className="hidden sm:block font-medium">
+                  {step.title}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
-
-        {/* Modal de Confirmación */}
-        <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>💎 Crear Perfil Premium</DialogTitle>
-              <DialogDescription>
-                Tienes 24 horas para completar el pago. Tu perfil estará visible si no superas el límite gratuito, de lo contrario permanecerá oculto hasta el pago.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowConfirmModal(false);
-                  router.push('/cuenta');
-                }}
-                className="w-full sm:w-auto"
-              >
-                ⏰ Crear más tarde
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowConfirmModal(false);
-                  form.handleSubmit(handleFinalSave)();
-                }}
-                className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-              >
-                🚀 Crear y pagar ahora
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
-    </FormProvider>
-  );
+
+      {/* Modal de Confirmación */}
+      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>💎 Crear Perfil Premium</DialogTitle>
+            <DialogDescription>
+              Tienes 24 horas para completar el pago. Tu perfil estará visible si no superas el límite gratuito, de lo contrario permanecerá oculto hasta el pago.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowConfirmModal(false);
+                router.push('/cuenta');
+              }}
+              className="w-full sm:w-auto"
+            >
+              ⏰ Crear más tarde
+            </Button>
+            <Button
+              onClick={() => {
+                setShowConfirmModal(false);
+                form.handleSubmit(handleFinalSave)();
+              }}
+              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            >
+              🚀 Crear y pagar ahora
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  </FormProvider>
+);
 }

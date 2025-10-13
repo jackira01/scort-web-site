@@ -287,12 +287,6 @@ router.delete('/:id',
     plansController.deletePlan.bind(plansController)
 );
 
-// GET /api/plans/:code/validate-upgrades - Validar upgrades de un plan
-router.get('/:code/validate-upgrades', 
-    codeParamValidation,
-    plansController.validatePlanUpgrades.bind(plansController)
-);
-
 // POST /api/upgrades - Crear nuevo upgrade
 router.post('/upgrades', [
     upgradeCodeValidation,

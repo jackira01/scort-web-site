@@ -136,23 +136,13 @@ export interface UpdateVerificationStatusDTO {
 // DTO para actualizar pasos específicos de verificación
 export interface UpdateVerificationStepsDTO {
   documentPhotos?: {
-    documents?: string[];
+    frontPhoto?: string;
+    backPhoto?: string;
     isVerified?: boolean;
   };
-  selfieWithPoster?: {
-    photo?: string;
-    isVerified?: boolean;
-  };
-  selfieWithDoc?: {
-    photo?: string;
-    isVerified?: boolean;
-  };
-  fullBodyPhotos?: {
-    photos?: string[];
-    isVerified?: boolean;
-  };
-  video?: {
-    videoUrl?: string;
+  mediaVerification?: {
+    mediaLink?: string;
+    mediaType?: 'video' | 'image';
     isVerified?: boolean;
   };
   videoCallRequested?: {
@@ -160,7 +150,6 @@ export interface UpdateVerificationStepsDTO {
     isVerified?: boolean;
   };
   socialMedia?: {
-    accounts?: string[];
     isVerified?: boolean;
   };
   phoneChangeDetected?: boolean;

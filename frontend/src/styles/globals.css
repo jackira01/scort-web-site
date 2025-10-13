@@ -83,16 +83,6 @@
   }
 }
 
-/* Custom scrollbar hide for horizontal scroll */
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
 /* Line clamp utilities */
 .line-clamp-2 {
   overflow: hidden;
@@ -197,4 +187,22 @@
   .dark .title-gradient {
     background-image: linear-gradient(to right, #3f3cbb, #6c5ce7);
   }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f3f4f6; /* Tailwind gray-100 */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #9ca3af; /* Tailwind gray-400 */
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280; /* Tailwind gray-500 */
 }

@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertTriangle, Building2, Info } from 'lucide-react';
-import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import type { User } from '@/types/user.types';
 import { useRequestAgencyConversion, type AgencyConversionRequest } from '@/hooks/useAgencyConversion';
@@ -55,27 +54,16 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
   };
 
   const getStatusBadge = () => {
-    if (isCommonUser && !hasAgencyInfo) {
-      return (
-        <Badge variant="outline" className="text-blue-600">
-          Usuario Común
-        </Badge>
-      );
-    }
-    if (hasPendingRequest) {
-      return (
-        <Badge variant="outline" className="text-yellow-600">
-          Conversión Pendiente
-        </Badge>
-      );
-    }
-    if (isApproved || isAgency) {
+    // Si es agencia confirmada
+    if (isAgency || isApproved) {
       return (
         <Badge variant="outline" className="text-green-600">
           Cuenta de Agencia
         </Badge>
       );
     }
+
+    // Si tiene solicitud rechazada
     if (isRejected) {
       return (
         <Badge variant="outline" className="text-red-600">
@@ -83,7 +71,17 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
         </Badge>
       );
     }
-    // Caso por defecto para usuarios comunes con agencyInfo vacío
+
+    // Si tiene solicitud pendiente Y existe una fecha de solicitud
+    if (hasPendingRequest && user.agencyInfo?.conversionRequestedAt) {
+      return (
+        <Badge variant="outline" className="text-yellow-600">
+          Conversión Pendiente
+        </Badge>
+      );
+    }
+
+    // Por defecto, usuario común (incluso si tiene agencyInfo sin solicitud válida)
     return (
       <Badge variant="outline" className="text-blue-600">
         Usuario Común
@@ -92,19 +90,22 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
   };
 
   const getDescription = () => {
-    if (isCommonUser && !hasAgencyInfo) {
-      return 'Como usuario común, todos tus perfiles comparten la misma verificación de identidad.';
-    }
-    if (hasPendingRequest) {
-      return 'Tu solicitud de conversión está siendo revisada por nuestro equipo administrativo.';
-    }
-    if (isApproved || isAgency) {
+    // Si es agencia confirmada
+    if (isAgency || isApproved) {
       return 'Como agencia, cada perfil requiere verificación independiente de documentos.';
     }
+
+    // Si tiene solicitud rechazada
     if (isRejected) {
       return 'Tu solicitud fue rechazada. Puedes enviar una nueva solicitud con información actualizada.';
     }
-    // Caso por defecto para usuarios comunes con agencyInfo vacío
+
+    // Si tiene solicitud pendiente Y existe una fecha de solicitud
+    if (hasPendingRequest && user.agencyInfo?.conversionRequestedAt) {
+      return 'Tu solicitud de conversión está siendo revisada por nuestro equipo administrativo.';
+    }
+
+    // Por defecto, usuario común
     return 'Como usuario común, todos tus perfiles comparten la misma verificación de identidad.';
   };
 
@@ -154,14 +155,14 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
           </div>
 
           {/* Botón de acción */}
-          {(isCommonUser && (!hasAgencyInfo || !user.agencyInfo?.conversionStatus)) || isRejected ? (
+          {(isCommonUser && (!hasAgencyInfo || !user.agencyInfo?.conversionStatus || isRejected)) ? (
             <Button
               onClick={() => setShowWarningModal(true)}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
             >
               Solicitar conversión
             </Button>
-          ) : hasPendingRequest ? (
+          ) : (hasPendingRequest && user.agencyInfo?.conversionRequestedAt) ? (
             <Button
               variant="outline"
               disabled

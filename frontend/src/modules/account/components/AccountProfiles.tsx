@@ -8,6 +8,7 @@ import {
   MapPin,
   Plus,
   Shield,
+  DollarSign,
   Star,
   Trash2,
   Upload,
@@ -28,6 +29,7 @@ import ManagePlansModal from '@/components/plans/ManagePlansModal';
 import { deleteProfile, updateProfile, getProfileById } from '@/services/user.service';
 import { useUpgradePurchase, useUpgradeValidation } from '@/hooks/use-upgrade-purchase';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { hasDestacadoUpgrade } from '@/utils/profile.utils';
 
 interface ProfileResponse {
   _id: string;
@@ -252,55 +254,28 @@ export default function AccountProfiles({
             {paginatedProfiles.map((profile, index) => (
               <Card
                 key={profile._id}
-                className={`group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card  ${profile.hasDestacadoUpgrade
-                  ? 'border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:border-yellow-300 ring-1 ring-yellow-400/50'
-                  : 'border-border hover:border-purple-500/50'
+                className={`group w-60 hover:shadow-xl transition-all duration-500 overflow-hidden  ${hasDestacadoUpgrade(profile as any)
+                  ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50'
+                  : 'bg-card border-border hover:border-purple-500/50'
                   }`}
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="relative">
                   <Image
                     width={400}
-                    height={200}
+                    height={300}
                     src={profile.media?.gallery?.[0] || '/placeholder.svg'}
                     alt={profile.name}
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute top-3 left-3 flex space-x-2">
-                    {profile.hasDestacadoUpgrade && (
-                      <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white animate-pulse">
-                        <Star className="h-3 w-3 mr-1" />
-                        DESTACADO
-                      </Badge>
-                    )}
-                    {profile.hasImpulsoUpgrade && (
-                      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-pulse">
-                        <Zap className="h-3 w-3 mr-1" />
-                        IMPULSO
-                      </Badge>
-                    )}
-                  </div>
+
                   <div className="absolute top-3 right-3 flex space-x-2">
                     {profile.verification?.verificationStatus === 'Activo' && (
                       <Badge className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100">
                         <CheckCircle className="h-3 w-3" />
                       </Badge>
                     )}
-                    <Badge
-                      variant={
-                        profile.verification?.verificationStatus === 'Activo'
-                          ? 'default'
-                          : 'secondary'
-                      }
-                      className={
-                        profile.verification?.verificationStatus === 'Activo'
-                          ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
-                          : ''
-                      }
-                    >
-                      {profile.verification?.verificationStatus}
-                    </Badge>
                   </div>
                 </div>
                 <CardContent className="p-4">
@@ -438,19 +413,19 @@ export default function AccountProfiles({
                               <TooltipTrigger asChild>
                                 <Button
                                   size="sm"
-                                  variant={profile.hasDestacadoUpgrade ? "default" : "outline"}
-                                  className={`p-2 ${profile.hasDestacadoUpgrade
+                                  variant={hasDestacadoUpgrade(profile as any) ? "default" : "outline"}
+                                  className={`p-2 ${hasDestacadoUpgrade(profile as any)
                                     ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white'
                                     : 'hover:bg-yellow-50 dark:hover:bg-yellow-950/20 hover:border-yellow-500'
                                     } transition-all duration-200`}
                                   onClick={() => handleUpgradePurchase(profile._id, 'DESTACADO')}
-                                  disabled={isPurchasing || profile.hasDestacadoUpgrade}
+                                  disabled={isPurchasing || hasDestacadoUpgrade(profile as any)}
                                 >
                                   <Star className="h-3 w-3" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>{profile.hasDestacadoUpgrade ? 'Destacado Activo' : 'Activar Destacado'}</p>
+                                <p>{hasDestacadoUpgrade(profile as any) ? 'Destacado Activo' : 'Activar Destacado'}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -508,7 +483,7 @@ export default function AccountProfiles({
                                 onClick={() => setManagePlansProfileId(profile._id)}
                                 className="p-2 bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200 transition-all duration-200"
                               >
-                                <Shield className="h-4 w-4" />
+                                <DollarSign className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>

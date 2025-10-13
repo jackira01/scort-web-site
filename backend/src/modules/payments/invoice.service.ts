@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Invoice, { type IInvoice, type InvoiceItem } from './invoice.model';
 import { PlanDefinitionModel } from '../plans/plan.model';
 import { UpgradeDefinitionModel } from '../plans/upgrade.model';
+import { couponService } from '../coupons/coupon.service';
 
 export interface CreateInvoiceData {
   profileId: string;
@@ -9,11 +10,13 @@ export interface CreateInvoiceData {
   planCode?: string;
   planDays?: number;
   upgradeCodes?: string[];
+  couponCode?: string; // Código de cupón a aplicar
   notes?: string;
 }
 
 export interface InvoiceFilters {
   _id?: string;
+  invoiceNumber?: string;
   profileId?: string;
   userId?: string;
   status?: 'pending' | 'paid' | 'cancelled' | 'expired';
@@ -26,7 +29,7 @@ class InvoiceService {
    * Genera una nueva factura basada en el plan y upgrades seleccionados
    */
   async generateInvoice(data: CreateInvoiceData): Promise<IInvoice> {
-    const { profileId, userId, planCode, planDays, upgradeCodes = [], notes } = data;
+    const { profileId, userId, planCode, planDays, upgradeCodes = [], couponCode, notes } = data;
 
     // Iniciando generación de factura
 
@@ -40,6 +43,7 @@ class InvoiceService {
 
     const items: InvoiceItem[] = [];
     let totalAmount = 0;
+    let planDetails = '';
 
     // Agregar plan si se especifica
     if (planCode && planDays) {
@@ -63,6 +67,9 @@ class InvoiceService {
       };
       items.push(planItem);
       totalAmount += variant.price;
+
+      // Construir detalles del plan para las notas
+      planDetails = `Plan: ${plan.name} (${planCode}) - Variante: ${planDays} días - Precio: $${variant.price}`;
 
       // Item de plan agregado
     }
@@ -98,25 +105,88 @@ class InvoiceService {
 
     // Resumen de items procesados
 
+    let finalAmount = totalAmount;
+    let couponInfo: any = undefined;
+
+    // Aplicar cupón si se proporciona
+    if (couponCode) {
+      const couponResult = await couponService.applyCoupon(couponCode, totalAmount, planCode);
+
+      if (couponResult.success) {
+        finalAmount = couponResult.finalPrice;
+        // Si es un cupón de asignación de plan, actualizar el plan
+        if (couponResult.planCode && couponResult.planCode !== planCode) {
+          // Reemplazar el item del plan con el nuevo plan del cupón
+          const newPlan = await PlanDefinitionModel.findByCode(couponResult.planCode);
+          if (newPlan && planDays) {
+            const newVariant = newPlan.variants.find((v: any) => v.days === planDays);
+            if (newVariant) {
+              // Actualizar el item del plan existente
+              const planItemIndex = items.findIndex(item => item.type === 'plan');
+              if (planItemIndex !== -1) {
+                items[planItemIndex] = {
+                  type: 'plan' as const,
+                  code: couponResult.planCode,
+                  name: newPlan.name,
+                  days: planDays,
+                  price: newVariant.price,
+                  quantity: 1
+                };
+              }
+            }
+          }
+        }
+
+        // Obtener información del cupón para guardar en la factura
+        const couponData = await couponService.getCouponByCode(couponCode);
+        if (couponData) {
+          couponInfo = {
+            code: couponData.code,
+            name: couponData.name,
+            type: couponData.type,
+            value: couponData.value,
+            originalAmount: totalAmount,
+            discountAmount: couponResult.discount,
+            finalAmount: finalAmount
+          };
+        }
+      } else {
+        // Si el cupón no es válido, lanzar error
+        console.error('❌ [INVOICE SERVICE] Error aplicando cupón:', couponResult.error);
+        throw new Error(`Error al aplicar cupón: ${couponResult.error}`);
+      }
+    }
+
     // Crear fecha de expiración (24 horas desde ahora)
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
     // Fecha de expiración calculada
+
+    // Construir notas automáticas con detalles del plan
+    let enhancedNotes = notes || '';
+    if (planDetails) {
+      const planDetailsNote = `Detalles del plan: ${planDetails}`;
+      enhancedNotes = enhancedNotes 
+        ? `${enhancedNotes}\n\n${planDetailsNote}` 
+        : planDetailsNote;
+    }
 
     const invoiceData = {
       profileId: new mongoose.Types.ObjectId(profileId),
       userId: new mongoose.Types.ObjectId(userId),
       status: 'pending',
       items,
-      totalAmount,
+      totalAmount: finalAmount, // Usar el precio final después del cupón
+      coupon: couponInfo,
       expiresAt,
-      notes
+      notes: enhancedNotes
     };
-
     // Creando factura con datos
 
     const invoice = new Invoice(invoiceData);
     const savedInvoice = await invoice.save();
+
+
 
     // Factura creada y guardada exitosamente
 
@@ -154,10 +224,29 @@ class InvoiceService {
     const query: any = {};
 
     if (filters._id) {
-      if (!mongoose.Types.ObjectId.isValid(filters._id)) {
-        throw new Error('ID de factura inválido');
+      // Búsqueda por aproximación para ID de factura
+      if (filters._id.length >= 8) {
+        // Si el ID tiene al menos 8 caracteres, buscar por coincidencia exacta
+        if (!mongoose.Types.ObjectId.isValid(filters._id)) {
+          throw new Error('ID de factura inválido');
+        }
+        query._id = new mongoose.Types.ObjectId(filters._id);
+      } else {
+        // Búsqueda por aproximación usando regex en los últimos 8 caracteres del ID
+        query._id = { $regex: new RegExp(filters._id, 'i') };
       }
-      query._id = new mongoose.Types.ObjectId(filters._id);
+    }
+
+    if (filters.invoiceNumber) {
+      // Búsqueda por número de factura (puede ser parcial)
+      const invoiceNumberValue = parseInt(filters.invoiceNumber);
+      if (!isNaN(invoiceNumberValue)) {
+        // Si es un número válido, buscar por coincidencia exacta
+        query.invoiceNumber = invoiceNumberValue;
+      } else {
+        // Si no es un número válido, buscar por coincidencia parcial en string
+        query.invoiceNumber = { $regex: new RegExp(filters.invoiceNumber, 'i') };
+      }
     }
 
     if (filters.profileId) {
@@ -245,6 +334,16 @@ class InvoiceService {
       invoice.paymentMethod = paymentMethod;
     }
 
+    // Si la factura tiene un cupón aplicado, incrementar su uso
+    if (invoice.coupon && invoice.coupon.code) {
+      try {
+        await couponService.incrementCouponUsage(invoice.coupon.code);
+      } catch (error) {
+        // Log el error pero no fallar el pago
+        console.error(`Error al incrementar uso del cupón ${invoice.coupon.code}:`, error);
+      }
+    }
+
     return await invoice.save();
   }
 
@@ -313,6 +412,18 @@ class InvoiceService {
         // Factura marcada como pagada, procesando planAssignment
         const PaymentProcessorService = await import('./payment-processor.service');
         const result = await PaymentProcessorService.PaymentProcessorService.processInvoicePayment(invoiceId);
+
+        // INCREMENTAR CONTADOR DE USOS DEL CUPÓN SI LA FACTURA TIENE CUPÓN APLICADO
+        if (updatedInvoice.coupon && updatedInvoice.coupon.code) {
+          try {
+            const { couponService } = await import('../coupons/coupon.service');
+            await couponService.incrementCouponUsage(updatedInvoice.coupon.code);
+          } catch (couponError) {
+            console.error(`❌ Error incrementando contador de cupón ${updatedInvoice.coupon.code}:`, couponError);
+            // No lanzar error para no afectar el proceso principal
+          }
+        }
+
         // PlanAssignment procesado
       } else if (['cancelled', 'expired'].includes(newStatus) && oldStatus === 'pending') {
         // Factura cancelada o expirada - mantener plan actual (no hacer cambios)

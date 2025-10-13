@@ -63,26 +63,37 @@ export function Step1EssentialInfo({
             <Controller
               name="gender"
               control={control}
-              render={({ field }) => (
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona tu género" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {genderGroup.variants
-                      .filter((v) => v.active)
-                      .map((variant) => (
-                        <SelectItem key={variant._id} value={variant.value}>
-                          {variant.label || variant.value}
+              render={({ field }) => {
+                return (
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ''}
+                    key={`gender-${field.value}`} // Forzar re-render cuando cambie el valor
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder="Selecciona tu género"
+                        className={field.value ? 'text-foreground' : 'text-muted-foreground'}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {genderGroup?.variants && genderGroup.variants.length > 0 ? (
+                        genderGroup.variants
+                          .filter((v) => v.active)
+                          .map((variant) => (
+                            <SelectItem key={variant._id} value={variant.value}>
+                              {variant.label || variant.value}
+                            </SelectItem>
+                          ))
+                      ) : (
+                        <SelectItem value="loading" disabled>
+                          Cargando opciones...
                         </SelectItem>
-                      ))}
-                  </SelectContent>
-
-                </Select>
-              )}
+                      )}
+                    </SelectContent>
+                  </Select>
+                );
+              }}
             />
             {errors.gender && (
               <p className="text-red-500 text-sm mt-1">{errors.gender.message}</p>
@@ -120,25 +131,37 @@ export function Step1EssentialInfo({
             <Controller
               name="category"
               control={control}
-              render={({ field }) => (
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                >
-                  <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Selecciona una categoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categoryGroup.variants
-                      .filter((variant) => variant.active)
-                      .map((variant) => (
-                        <SelectItem key={variant._id} value={variant.value}>
-                          {variant.value}
+              render={({ field }) => {
+                return (
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ''}
+                    key={`category-${field.value}`} // Forzar re-render cuando cambie el valor
+                  >
+                    <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
+                      <SelectValue
+                        placeholder="Selecciona una categoría"
+                        className={field.value ? 'text-foreground' : 'text-muted-foreground'}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categoryGroup?.variants && categoryGroup.variants.length > 0 ? (
+                        categoryGroup.variants
+                          .filter((variant) => variant.active)
+                          .map((variant) => (
+                            <SelectItem key={variant._id} value={variant.value}>
+                              {variant.value}
+                            </SelectItem>
+                          ))
+                      ) : (
+                        <SelectItem value="loading" disabled>
+                          Cargando categorías...
                         </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              )}
+                      )}
+                    </SelectContent>
+                  </Select>
+                );
+              }}
             />
             {errors.category && (
               <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>
@@ -160,26 +183,32 @@ export function Step1EssentialInfo({
               <Controller
                 name="location.department"
                 control={control}
-                render={({ field }) => (
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setValue('location.city', ''); // Reset city when department changes
-                    }}
-                    value={field.value}
-                  >
-                    <SelectTrigger className={errors.location?.department ? 'border-red-500' : ''}>
-                      <SelectValue placeholder="Selecciona departamento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.values(colombiaLocations).map((department) => (
-                        <SelectItem key={department.original} value={department.original}>
-                          {department.original}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+                render={({ field }) => {
+                  return (
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setValue('location.city', ''); // Reset city when department changes
+                      }}
+                      value={field.value || ''}
+                      key={`department-${field.value}`} // Forzar re-render cuando cambie el valor
+                    >
+                      <SelectTrigger className={errors.location?.department ? 'border-red-500' : ''}>
+                        <SelectValue
+                          placeholder="Selecciona departamento"
+                          className={field.value ? 'text-foreground' : 'text-muted-foreground'}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.values(colombiaLocations).map((department) => (
+                          <SelectItem key={department.original} value={department.original}>
+                            {department.original}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                }}
               />
               {errors.location?.department && (
                 <p className="text-red-500 text-sm mt-1">{errors.location.department.message}</p>
@@ -191,27 +220,33 @@ export function Step1EssentialInfo({
               <Controller
                 name="location.city"
                 control={control}
-                render={({ field }) => (
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={!locationDepartment}
-                  >
-                    <SelectTrigger className={errors.location?.city ? 'border-red-500' : ''}>
-                      <SelectValue placeholder="Selecciona ciudad" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locationDepartment &&
-                        Object.values(colombiaLocations)
-                          .find(dept => dept.original === locationDepartment)
-                          ?.cities.map((city) => (
-                            <SelectItem key={city.original} value={city.original}>
-                              {city.original}
-                            </SelectItem>
-                          ))}
-                    </SelectContent>
-                  </Select>
-                )}
+                render={({ field }) => {
+                  return (
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || ''}
+                      key={`city-${field.value}`} // Forzar re-render cuando cambie el valor
+                      disabled={!locationDepartment}
+                    >
+                      <SelectTrigger className={errors.location?.city ? 'border-red-500' : ''}>
+                        <SelectValue
+                          placeholder="Selecciona ciudad"
+                          className={field.value ? 'text-foreground' : 'text-muted-foreground'}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {locationDepartment &&
+                          Object.values(colombiaLocations)
+                            .find(dept => dept.original === locationDepartment)
+                            ?.cities.map((city) => (
+                              <SelectItem key={city.original} value={city.original}>
+                                {city.original}
+                              </SelectItem>
+                            ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                }}
               />
               {errors.location?.city && (
                 <p className="text-red-500 text-sm mt-1">{errors.location.city.message}</p>

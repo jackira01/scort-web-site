@@ -2,8 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const jwt_service_1 = require("../services/jwt.service");
+const auth_controller_1 = require("../controllers/auth.controller");
 const router = (0, express_1.Router)();
 const jwtService = new jwt_service_1.JWTService();
+router.post('/verify-email', auth_controller_1.verifyEmailController);
+router.post('/resend-verification', auth_controller_1.resendVerificationController);
 router.post('/generate-token', async (req, res) => {
     try {
         const { userId, role } = req.body;

@@ -141,9 +141,9 @@ export const runCleanupTasks = async (now: Date = new Date()): Promise<{
 };
 
 /**
- * Obtiene estadísticas de perfiles por estado de visibilidad y eliminación
- * @returns Estadísticas de perfiles
- */
+  * Obtiene estadísticas de perfiles por estado de visibilidad y eliminación
+  * @returns Estadísticas de perfiles
+  */
 export const getProfileVisibilityStats = async (): Promise<{
   visible: number;
   hidden: number;

@@ -5,10 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { VerificationBar } from '@/components/VerificationBar/VerificationBar';
-import type { IProfile } from '@/types/profile.types';
+import type { ProfileCardData } from '@/types/profile.types';
+import type { Profile } from '@/types/user.types';
+import { hasDestacadoUpgrade } from '@/utils/profile.utils';
 
 interface CardComponentProps {
-  profiles?: IProfile[];
+  profiles?: ProfileCardData[];
 }
 
 const CardComponent = ({ profiles = [] }: CardComponentProps) => {
@@ -25,9 +27,9 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
       {profiles.map((profile, index) => (
         <Card
           key={profile._id}
-          className={`group hover:shadow-2xl transition-all duration-500 overflow-hidden bg-card cursor-pointer  ${profile.hasDestacadoUpgrade
-              ? 'border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 hover:border-yellow-300 ring-1 ring-yellow-400/50'
-              : 'border-border hover:border-purple-500/50'
+          className={`group hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer  ${profile.hasDestacadoUpgrade
+            ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50'
+            : 'bg-card border-border hover:border-purple-500/50'
             }`}
           style={{ animationDelay: `${index * 200}ms` }}
         >
@@ -40,10 +42,9 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                 height={300}
                 src={profile.media?.gallery?.[0] || '/placeholder.svg'}
                 alt={profile.name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 "
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
               <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
                 {profile.hasDestacadoUpgrade && (
                   <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white animate-pulse text-xs">
@@ -54,12 +55,12 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                 )}
               </div>
               <div className="absolute top-2 right-2 sm:top-3 sm:right-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
-                {((typeof profile.verification === 'object' && profile.verification?.isVerified) || profile.verification === true) && (
+                {profile.verification?.isVerified && (
                   <Badge className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 hover:scale-110 transition-transform duration-200 text-xs">
                     <CheckCircle className="h-2 w-2 sm:h-3 sm:w-3" />
                   </Badge>
                 )}
-                {profile.isOnline && (
+                {profile.online && (
                   <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800 animate-pulse" />
                 )}
               </div>
@@ -96,7 +97,12 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                 </div>
               </div>
               <Link href={`/perfil/${profile._id}`} className="mt-2 sm:mt-3">
-                <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 text-xs sm:text-sm py-1 sm:py-2">
+                <Button
+                  className={`w-full text-white transition-all duration-300 hover:scale-105 hover:shadow-lg text-xs sm:text-sm py-1 sm:py-2 ${profile.hasDestacadoUpgrade
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/25'
+                    : 'bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 hover:shadow-slate-500/25'
+                    }`}
+                >
                   Ver perfil
                 </Button>
               </Link>

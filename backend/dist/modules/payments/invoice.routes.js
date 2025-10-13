@@ -88,37 +88,6 @@ const validateCancelReason = [
 ];
 router.get('/stats', invoice_controller_1.default.getInvoiceStats);
 router.post('/expire-overdue', invoice_controller_1.default.expireOverdueInvoices);
-router.get('/user/:userId/pending', validateObjectId('userId'), invoice_controller_1.default.getPendingInvoicesByUser);
-router.get('/user/:userId', [
-    validateObjectId('userId')[0],
-    (0, express_validator_1.query)('page')
-        .optional()
-        .isInt({ min: 1 })
-        .withMessage('page debe ser un número entero positivo'),
-    (0, express_validator_1.query)('limit')
-        .optional()
-        .isInt({ min: 1, max: 100 })
-        .withMessage('limit debe ser un número entre 1 y 100'),
-    (0, express_validator_1.query)('status')
-        .optional()
-        .isIn(['pending', 'paid', 'cancelled', 'expired'])
-        .withMessage('status debe ser: pending, paid, cancelled o expired')
-], invoice_controller_1.default.getAllInvoicesByUser);
-router.post('/', validateCreateInvoice, invoice_controller_1.default.createInvoice);
-router.get('/', validatePaginationQuery, invoice_controller_1.default.getInvoices);
-router.get('/:id', validateObjectId('id'), invoice_controller_1.default.getInvoiceById);
-router.get('/:id/whatsapp-data', validateObjectId('id'), invoice_controller_1.default.getWhatsAppData);
-router.put('/:id/pay', validateObjectId('id'), validatePaymentMethod, invoice_controller_1.default.markAsPaid);
-router.put('/:id/cancel', validateObjectId('id'), validateCancelReason, invoice_controller_1.default.cancelInvoice);
-router.patch('/:id/status', validateObjectId('id'), [
-    (0, express_validator_1.body)('status')
-        .isIn(['pending', 'paid', 'cancelled', 'expired'])
-        .withMessage('Estado debe ser uno de: pending, paid, cancelled, expired'),
-    (0, express_validator_1.body)('reason')
-        .optional()
-        .isString()
-        .withMessage('La razón debe ser una cadena de texto')
-], invoice_controller_1.default.updateInvoiceStatus);
 router.post('/webhook/payment-confirmed', [
     (0, express_validator_1.body)('invoiceId')
         .isMongoId()
@@ -138,5 +107,36 @@ router.post('/webhook/payment-cancelled', [
         .isLength({ max: 500 })
         .withMessage('reason no puede exceder 500 caracteres')
 ], payment_webhook_controller_1.default.cancelPayment);
+router.get('/user/:userId/pending', validateObjectId('userId'), invoice_controller_1.default.getPendingInvoicesByUser);
+router.get('/user/:userId', [
+    validateObjectId('userId')[0],
+    (0, express_validator_1.query)('page')
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage('page debe ser un número entero positivo'),
+    (0, express_validator_1.query)('limit')
+        .optional()
+        .isInt({ min: 1, max: 100 })
+        .withMessage('limit debe ser un número entre 1 y 100'),
+    (0, express_validator_1.query)('status')
+        .optional()
+        .isIn(['pending', 'paid', 'cancelled', 'expired'])
+        .withMessage('status debe ser: pending, paid, cancelled o expired')
+], invoice_controller_1.default.getAllInvoicesByUser);
+router.post('/', validateCreateInvoice, invoice_controller_1.default.createInvoice);
+router.get('/', validatePaginationQuery, invoice_controller_1.default.getInvoices);
+router.get('/:id/whatsapp-data', validateObjectId('id'), invoice_controller_1.default.getWhatsAppData);
 router.get('/:id/status', validateObjectId('id'), payment_webhook_controller_1.default.getInvoiceStatus);
+router.put('/:id/pay', validateObjectId('id'), validatePaymentMethod, invoice_controller_1.default.markAsPaid);
+router.put('/:id/cancel', validateObjectId('id'), validateCancelReason, invoice_controller_1.default.cancelInvoice);
+router.patch('/:id/status', validateObjectId('id'), [
+    (0, express_validator_1.body)('status')
+        .isIn(['pending', 'paid', 'cancelled', 'expired'])
+        .withMessage('Estado debe ser uno de: pending, paid, cancelled, expired'),
+    (0, express_validator_1.body)('reason')
+        .optional()
+        .isString()
+        .withMessage('La razón debe ser una cadena de texto')
+], invoice_controller_1.default.updateInvoiceStatus);
+router.get('/:id', validateObjectId('id'), invoice_controller_1.default.getInvoiceById);
 exports.default = router;

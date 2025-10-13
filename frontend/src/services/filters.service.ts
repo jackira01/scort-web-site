@@ -74,6 +74,10 @@ export const getProfilesForCards = async (
       'media',
       'verification',
       'isActive',
+      'planAssignment',
+      'upgrades',
+      'activeUpgrades',
+      'hasDestacadoUpgrade',
     ],
     limit: params.limit || 12,
     page: params.page || 1,
@@ -81,6 +85,7 @@ export const getProfilesForCards = async (
     sortOrder: params.sortOrder || 'desc',
   };
 
+  console.log('getProfilesForCards: Sending request with params', optimizedParams);
 
 
   // Usar POST para mejor rendimiento con campos específicos

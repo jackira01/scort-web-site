@@ -29,15 +29,28 @@ const profileSchema = new Schema<IProfile>(
     ],
     age: { type: String, required: true, },
     contact: {
-      number: { type: String, required: true, },
+      number: { type: String, required: false },
       whatsapp: { type: String, required: false },
       telegram: { type: String, required: false },
       changedAt: Date,
     },
     height: { type: String, required: true },
+    // Nuevos campos para clasificación de servicios
+    basicServices: [{ type: String }],
+    additionalServices: [{ type: String }],
+    socialMedia: {
+      instagram: { type: String, required: false },
+      facebook: { type: String, required: false },
+      tiktok: { type: String, required: false },
+      twitter: { type: String, required: false },
+      onlyFans: { type: String, required: false },
+    },
     media: {
       gallery: [String],
-      videos: [String],
+      videos: [{
+        link: String,
+        preview: String, // URL de la imagen de preview del video
+      }],
       audios: [String],
       stories: [{
         link: String,

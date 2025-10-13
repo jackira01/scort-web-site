@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ProfilesResponse, FilterQuery } from '@/types/profile.types';
 import { getProfilesForCards } from '@/services/filters.service';
+import { transformProfilesToCards } from '@/utils/profile.utils';
 
 interface SearchProfilesSSGProps {
   viewMode: 'grid' | 'list';
@@ -31,7 +32,7 @@ export default function SearchProfilesSSG({
   const refreshData = async (newFilters: FilterQuery) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // Usar getProfilesForCards que ya está optimizado para excluir features
       const newData = await getProfilesForCards(newFilters);
@@ -47,9 +48,9 @@ export default function SearchProfilesSSG({
   // Efecto para refrescar datos cuando cambian los filtros
   useEffect(() => {
 
-    
+
     // Solo refrescar si hay filtros activos aplicados (no en la carga inicial)
-    const hasActiveFilters = 
+    const hasActiveFilters =
       (filters.category !== undefined && filters.category !== '') ||
       (filters.location?.department !== undefined && filters.location?.department !== '') ||
       (filters.location?.city !== undefined && filters.location?.city !== '') ||
@@ -69,7 +70,7 @@ export default function SearchProfilesSSG({
       (filters.sortOrder && filters.sortOrder !== 'desc');
 
 
-    
+
     // Ejecutar refreshData si hay filtros activos, independientemente de los datos iniciales
     if (hasActiveFilters) {
 
@@ -101,11 +102,10 @@ export default function SearchProfilesSSG({
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className={`grid gap-4 ${
-          viewMode === 'grid' 
-            ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+        <div className={`grid gap-4 ${viewMode === 'grid'
+            ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
             : 'grid-cols-1'
-        }`}>
+          }`}>
           {Array.from({ length: 8 }).map((_, index) => (
             <ProfileCardSkeleton key={index} viewMode={viewMode} />
           ))}
@@ -116,9 +116,10 @@ export default function SearchProfilesSSG({
 
   const { profiles, pagination } = profilesData;
 
+  // Transform profiles to include hasDestacadoUpgrade highlighting
+  const transformedProfiles = profiles ? transformProfilesToCards(profiles) : [];
 
-
-  if (!profiles || profiles.length === 0) {
+  if (!transformedProfiles || transformedProfiles.length === 0) {
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-semibold text-muted-foreground mb-2">
@@ -134,23 +135,23 @@ export default function SearchProfilesSSG({
   return (
     <div className="space-y-6">
       {/* Results count */}
-      <div className="flex items-center justify-between">
+      {/* <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Mostrando {profiles.length} de {pagination.totalProfiles} perfiles
+          Mostrando {transformedProfiles.length} de {pagination.totalProfiles} perfiles
         </p>
-      </div>
+      </div> */}
 
       {/* Profiles Grid */}
-      <div className={`grid gap-4 ${
-        viewMode === 'grid' 
-          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+      <div className={`grid gap-4 ${viewMode === 'grid'
+          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
           : 'grid-cols-1'
-      }`}>
-        {profiles.map((profile) => (
-          <ProfileCard 
-            key={profile._id} 
-            profile={profile} 
+        }`}>
+        {transformedProfiles.map((profile) => (
+          <ProfileCard
+            key={profile._id}
+            profile={profile}
             viewMode={viewMode}
+            variant="default"
           />
         ))}
       </div>
@@ -167,12 +168,12 @@ export default function SearchProfilesSSG({
             <ChevronLeft className="h-4 w-4 mr-1" />
             Anterior
           </Button>
-          
+
           <div className="flex items-center space-x-1">
             {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
               const pageNumber = i + 1;
               const isCurrentPage = pageNumber === pagination.currentPage;
-              
+
               return (
                 <Button
                   key={pageNumber}
@@ -187,7 +188,7 @@ export default function SearchProfilesSSG({
               );
             })}
           </div>
-          
+
           <Button
             variant="outline"
             size="sm"

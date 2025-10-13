@@ -130,37 +130,6 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
-      {/* Header */}
-      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-b sticky top-0 z-50 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent hover:scale-105 transition-transform duration-200 cursor-pointer">
-                  Online Escorts
-                </h1>
-              </Link>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <ThemeToggle />
-              <Link href="/dashboard">
-                <Button
-                  variant="outline"
-                  className="hover:bg-muted/50 transition-colors duration-200"
-                >
-                  Dashboard
-                </Button>
-              </Link>
-              <Link href="/create-profile">
-                <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
-                  Crear Perfil
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Hero Section */}

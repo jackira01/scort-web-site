@@ -39,7 +39,7 @@ export function ConfigParameterList({
                 setDeleteLoadingStates(prev => ({ ...prev, [parameter._id]: true }));
                 await deleteParameter.mutateAsync(parameter._id);
             } catch (error) {
-          
+
             } finally {
                 setDeleteLoadingStates(prev => ({ ...prev, [parameter._id]: false }));
             }
@@ -51,7 +51,7 @@ export function ConfigParameterList({
             setLoadingStates(prev => ({ ...prev, [parameter._id]: true }));
             await toggleActive.mutateAsync(parameter._id);
         } catch (error) {
-      
+
         } finally {
             setLoadingStates(prev => ({ ...prev, [parameter._id]: false }));
         }
@@ -86,11 +86,11 @@ export function ConfigParameterList({
 
     const formatValue = (value: any, type: string) => {
         if (value === null || value === undefined) return 'N/A';
-        
+
         if (typeof value === 'object') {
             return JSON.stringify(value, null, 2).substring(0, 100) + '...';
         }
-        
+
         const stringValue = String(value);
         return stringValue.length > 50 ? stringValue.substring(0, 50) + '...' : stringValue;
     };
@@ -131,14 +131,14 @@ export function ConfigParameterList({
     }
 
     return (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 shadow overflow-hidden">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div className="px-6 py-4 border-b ">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium text-gray-900">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                         Parámetros de Configuración
                     </h3>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
                         {totalCount} parámetros en total
                     </span>
                 </div>
@@ -147,50 +147,50 @@ export function ConfigParameterList({
             {/* Table */}
             <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                    <thead className="">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-white">
                                 Parámetro
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-white">
                                 Tipo
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-white">
                                 Categoría
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-white">
                                 Valor
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-white">
                                 Estado
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-white">
                                 Modificado
                             </th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-white">
                                 Acciones
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-200">
                         {parameters.map((parameter) => (
-                            <tr key={parameter._id} className="hover:bg-gray-50">
+                            <tr key={parameter._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                 {/* Parámetro */}
                                 <td className="px-6 py-4">
                                     <div>
-                                        <div className="text-sm font-medium text-gray-900">
+                                        <div className="text-sm font-medium text-gray-900 dark:text-white">
                                             {parameter.name}
                                         </div>
                                         <div className="flex items-center space-x-2 mt-1">
-                                            <code className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                                            <code className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded dark:bg-gray-700 dark:text-gray-200">
                                                 {parameter.key}
                                             </code>
                                             <button
                                                 onClick={() => handleCopyKey(parameter.key)}
-                                                className="text-gray-400 hover:text-gray-600"
+                                                className="text-gray-400 hover:text-gray-600 dark:text-white"
                                                 title="Copiar clave"
                                             >
-                                                <Copy className="w-3 h-3" />
+                                                <Copy className="w-3 h-3 dark:text-white" />
                                             </button>
                                         </div>
                                         {parameter.metadata?.description && (
@@ -217,7 +217,7 @@ export function ConfigParameterList({
 
                                 {/* Valor */}
                                 <td className="px-6 py-4">
-                                    <div className="text-sm text-gray-900 font-mono max-w-xs">
+                                    <div className="text-sm text-gray-900 font-mono max-w-xs dark:text-white">
                                         {formatValue(parameter.value, parameter.type)}
                                     </div>
                                 </td>
@@ -226,11 +226,10 @@ export function ConfigParameterList({
                                 <td className="px-6 py-4">
                                     <button
                                         onClick={() => handleToggleActive(parameter)}
-                                        className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
-                                            parameter.isActive
-                                                ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                                : 'bg-red-100 text-red-800 hover:bg-red-200'
-                                        }`}
+                                        className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${parameter.isActive
+                                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                            : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                            }`}
                                         disabled={loadingStates[parameter._id] || false}
                                     >
                                         {parameter.isActive ? (
@@ -244,7 +243,7 @@ export function ConfigParameterList({
 
                                 {/* Modificado */}
                                 <td className="px-6 py-4">
-                                    <div className="text-sm text-gray-900">
+                                    <div className="text-sm text-gray-900 dark:text-white">
                                         {new Date(parameter.lastModified).toLocaleDateString('es-ES')}
                                     </div>
                                     <div className="text-xs text-gray-500">
@@ -262,7 +261,7 @@ export function ConfigParameterList({
                                         >
                                             <Edit className="w-4 h-4" />
                                         </button>
-                                        
+
                                         <button
                                             onClick={() => handleDelete(parameter)}
                                             className="text-red-600 hover:text-red-800 p-1 rounded"
@@ -271,7 +270,7 @@ export function ConfigParameterList({
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
-                                        
+
                                         {parameter.metadata?.ui_config?.external_link && (
                                             <a
                                                 href={parameter.metadata.ui_config.external_link}
@@ -298,7 +297,7 @@ export function ConfigParameterList({
                         <div className="text-sm text-gray-700">
                             Mostrando página {currentPage} de {totalPages}
                         </div>
-                        
+
                         <div className="flex items-center space-x-2">
                             <button
                                 onClick={() => onPageChange(currentPage - 1)}
@@ -307,27 +306,26 @@ export function ConfigParameterList({
                             >
                                 Anterior
                             </button>
-                            
+
                             {/* Números de página */}
                             {[...Array(Math.min(5, totalPages))].map((_, i) => {
                                 const pageNum = Math.max(1, currentPage - 2) + i;
                                 if (pageNum > totalPages) return null;
-                                
+
                                 return (
                                     <button
                                         key={pageNum}
                                         onClick={() => onPageChange(pageNum)}
-                                        className={`px-3 py-1 text-sm border rounded-md ${
-                                            pageNum === currentPage
-                                                ? 'bg-blue-600 text-white border-blue-600'
-                                                : 'border-gray-300 hover:bg-gray-100'
-                                        }`}
+                                        className={`px-3 py-1 text-sm border rounded-md ${pageNum === currentPage
+                                            ? 'bg-blue-600 text-white border-blue-600'
+                                            : 'border-gray-300 hover:bg-gray-100'
+                                            }`}
                                     >
                                         {pageNum}
                                     </button>
                                 );
                             })}
-                            
+
                             <button
                                 onClick={() => onPageChange(currentPage + 1)}
                                 disabled={!hasNextPage}

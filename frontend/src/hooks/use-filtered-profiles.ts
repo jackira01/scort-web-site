@@ -15,9 +15,12 @@ export const useFilteredProfiles = (
     queryKey: ['filtered-profiles', filters],
     queryFn: async () => {
       try {
+        console.log('useFilteredProfiles: Fetching profiles with filters', filters);
         const result = await getProfilesForCards(filters);
+        console.log('useFilteredProfiles: Received profiles', result);
         return result;
       } catch (error) {
+        console.error('useFilteredProfiles: Error fetching profiles', error);
         throw error;
       }
     },

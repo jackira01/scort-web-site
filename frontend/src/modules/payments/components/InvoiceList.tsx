@@ -64,9 +64,11 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
   }, [filters, currentPage]);
 
   const handleFilterChange = (key: keyof InvoiceFilters, value: string) => {
+    // Si el valor es "all", tratarlo como undefined para mostrar todos
+    const actualValue = value === "all" ? undefined : value;
     setFilters(prev => ({
       ...prev,
-      [key]: value || undefined,
+      [key]: actualValue,
     }));
     setCurrentPage(1);
   };
@@ -163,14 +165,14 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
               <div>
                 <Label htmlFor="status">Estado</Label>
                 <Select
-                  value={filters.status || ''}
+                  value={filters.status || 'all'}
                   onValueChange={(value) => handleFilterChange('status', value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Todos los estados" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los estados</SelectItem>
+                    <SelectItem value="all">Todos los estados</SelectItem>
                     <SelectItem value="pending">Pendiente</SelectItem>
                     <SelectItem value="paid">Pagada</SelectItem>
                     <SelectItem value="cancelled">Cancelada</SelectItem>
@@ -246,9 +248,31 @@ export function InvoiceList({ userId, showFilters = true, pageSize = 10 }: Invoi
                     </div>
 
                     <div>
-                      <p className="font-medium text-lg">
-                        ${invoice.totalAmount.toLocaleString()}
-                      </p>
+                      {/* Mostrar información de descuento si hay cupón aplicado */}
+                      {invoice.coupon ? (
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                              Cupón: {invoice.coupon.code}
+                            </Badge>
+                          </div>
+                          <div className="text-sm">
+                            <p className="text-muted-foreground line-through">
+                              Precio original: ${invoice.coupon.originalAmount?.toLocaleString()}
+                            </p>
+                            <p className="text-green-600 dark:text-green-400 font-medium">
+                              Descuento: -${invoice.coupon.discountAmount?.toLocaleString()}
+                            </p>
+                            <p className="font-medium text-lg">
+                              Precio final: ${invoice.totalAmount.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="font-medium text-lg">
+                          ${invoice.totalAmount.toLocaleString()}
+                        </p>
+                      )}
                       <p className="text-sm text-muted-foreground">
                         {invoice.items.map(item => {
                           const daysText = item.days ? ` (${item.days} días)` : '';

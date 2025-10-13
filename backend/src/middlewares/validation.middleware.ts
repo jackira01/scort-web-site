@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult, ValidationChain } from 'express-validator';
+import { param } from 'express-validator';
+import mongoose from 'mongoose';
 
 export const validateRequest = (validations: ValidationChain[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -21,6 +23,16 @@ export const validateRequest = (validations: ValidationChain[]) => {
     
     next();
   };
+};
+
+export const validateObjectId = (paramName: string) => {
+  return param(paramName)
+    .custom((value) => {
+      if (!mongoose.Types.ObjectId.isValid(value)) {
+        throw new Error(`${paramName} debe ser un ObjectId válido`);
+      }
+      return true;
+    });
 };
 
 export const validateQuery = (validations: ValidationChain[]) => {

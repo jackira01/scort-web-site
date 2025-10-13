@@ -40,9 +40,10 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const invoice_model_1 = __importDefault(require("./invoice.model"));
 const plan_model_1 = require("../plans/plan.model");
 const upgrade_model_1 = require("../plans/upgrade.model");
+const coupon_service_1 = require("../coupons/coupon.service");
 class InvoiceService {
     async generateInvoice(data) {
-        const { profileId, userId, planCode, planDays, upgradeCodes = [], notes } = data;
+        const { profileId, userId, planCode, planDays, upgradeCodes = [], couponCode, notes } = data;
         if (!mongoose_1.default.Types.ObjectId.isValid(profileId)) {
             throw new Error('ID de perfil inválido');
         }
@@ -51,6 +52,7 @@ class InvoiceService {
         }
         const items = [];
         let totalAmount = 0;
+        let planDetails = '';
         if (planCode && planDays) {
             const plan = await plan_model_1.PlanDefinitionModel.findByCode(planCode);
             if (!plan) {
@@ -70,6 +72,7 @@ class InvoiceService {
             };
             items.push(planItem);
             totalAmount += variant.price;
+            planDetails = `Plan: ${plan.name} (${planCode}) - Variante: ${planDays} días - Precio: $${variant.price}`;
         }
         if (upgradeCodes.length > 0) {
             for (const upgradeCode of upgradeCodes) {
@@ -92,16 +95,67 @@ class InvoiceService {
         if (items.length === 0) {
             throw new Error('No se pueden crear facturas sin items');
         }
+        let finalAmount = totalAmount;
+        let couponInfo = undefined;
+        if (couponCode) {
+            const couponResult = await coupon_service_1.couponService.applyCoupon(couponCode, totalAmount, planCode);
+            if (couponResult.success) {
+                finalAmount = couponResult.finalPrice;
+                if (couponResult.planCode && couponResult.planCode !== planCode) {
+                    const newPlan = await plan_model_1.PlanDefinitionModel.findByCode(couponResult.planCode);
+                    if (newPlan && planDays) {
+                        const newVariant = newPlan.variants.find((v) => v.days === planDays);
+                        if (newVariant) {
+                            const planItemIndex = items.findIndex(item => item.type === 'plan');
+                            if (planItemIndex !== -1) {
+                                items[planItemIndex] = {
+                                    type: 'plan',
+                                    code: couponResult.planCode,
+                                    name: newPlan.name,
+                                    days: planDays,
+                                    price: newVariant.price,
+                                    quantity: 1
+                                };
+                            }
+                        }
+                    }
+                }
+                const couponData = await coupon_service_1.couponService.getCouponByCode(couponCode);
+                if (couponData) {
+                    couponInfo = {
+                        code: couponData.code,
+                        name: couponData.name,
+                        type: couponData.type,
+                        value: couponData.value,
+                        originalAmount: totalAmount,
+                        discountAmount: couponResult.discount,
+                        finalAmount: finalAmount
+                    };
+                }
+            }
+            else {
+                console.error('❌ [INVOICE SERVICE] Error aplicando cupón:', couponResult.error);
+                throw new Error(`Error al aplicar cupón: ${couponResult.error}`);
+            }
+        }
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 24);
+        let enhancedNotes = notes || '';
+        if (planDetails) {
+            const planDetailsNote = `Detalles del plan: ${planDetails}`;
+            enhancedNotes = enhancedNotes
+                ? `${enhancedNotes}\n\n${planDetailsNote}`
+                : planDetailsNote;
+        }
         const invoiceData = {
             profileId: new mongoose_1.default.Types.ObjectId(profileId),
             userId: new mongoose_1.default.Types.ObjectId(userId),
             status: 'pending',
             items,
-            totalAmount,
+            totalAmount: finalAmount,
+            coupon: couponInfo,
             expiresAt,
-            notes
+            notes: enhancedNotes
         };
         const invoice = new invoice_model_1.default(invoiceData);
         const savedInvoice = await invoice.save();
@@ -122,10 +176,15 @@ class InvoiceService {
     async getInvoices(filters = {}, page = 1, limit = 10) {
         const query = {};
         if (filters._id) {
-            if (!mongoose_1.default.Types.ObjectId.isValid(filters._id)) {
-                throw new Error('ID de factura inválido');
+            if (filters._id.length >= 8) {
+                if (!mongoose_1.default.Types.ObjectId.isValid(filters._id)) {
+                    throw new Error('ID de factura inválido');
+                }
+                query._id = new mongoose_1.default.Types.ObjectId(filters._id);
             }
-            query._id = new mongoose_1.default.Types.ObjectId(filters._id);
+            else {
+                query._id = { $regex: new RegExp(filters._id, 'i') };
+            }
         }
         if (filters.profileId) {
             if (!mongoose_1.default.Types.ObjectId.isValid(filters.profileId)) {
@@ -194,6 +253,14 @@ class InvoiceService {
         if (paymentMethod) {
             invoice.paymentMethod = paymentMethod;
         }
+        if (invoice.coupon && invoice.coupon.code) {
+            try {
+                await coupon_service_1.couponService.incrementCouponUsage(invoice.coupon.code);
+            }
+            catch (error) {
+                console.error(`Error al incrementar uso del cupón ${invoice.coupon.code}:`, error);
+            }
+        }
         return await invoice.save();
     }
     async cancelInvoice(invoiceId, reason) {
@@ -239,6 +306,15 @@ class InvoiceService {
             if (newStatus === 'paid' && oldStatus !== 'paid') {
                 const PaymentProcessorService = await Promise.resolve().then(() => __importStar(require('./payment-processor.service')));
                 const result = await PaymentProcessorService.PaymentProcessorService.processInvoicePayment(invoiceId);
+                if (updatedInvoice.coupon && updatedInvoice.coupon.code) {
+                    try {
+                        const { couponService } = await Promise.resolve().then(() => __importStar(require('../coupons/coupon.service')));
+                        await couponService.incrementCouponUsage(updatedInvoice.coupon.code);
+                    }
+                    catch (couponError) {
+                        console.error(`❌ Error incrementando contador de cupón ${updatedInvoice.coupon.code}:`, couponError);
+                    }
+                }
             }
             else if (['cancelled', 'expired'].includes(newStatus) && oldStatus === 'pending') {
             }

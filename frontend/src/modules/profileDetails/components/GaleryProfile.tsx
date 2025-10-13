@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, Search } from 'lucide-react';
+import { CheckCircle, Search, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -10,17 +10,52 @@ export const ProfileGallery = ({
   images,
   verified,
   name,
+  isIdentityVerified = false,
 }: {
   images: string[];
   verified: boolean;
   name: string;
+  isIdentityVerified?: boolean;
 }) => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImageIndex, setModalImageIndex] = useState(0);
 
+  const scrollToTrustFactors = () => {
+    const trustSection = document.getElementById('trust-factors');
+    if (trustSection) {
+      trustSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="space-y-4 animate-in fade-in-50 slide-in-from-left-4 duration-500">
+      {/* Identity Verification Banner */}
+      {isIdentityVerified && (
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-6">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0">
+                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400 mt-0.5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-md font-semibold text-green-800 dark:text-green-200 mb-1">
+                  La identidad del usuario ha sido confirmada
+                </h3>
+        
+              </div>
+            </div>
+            <button
+              onClick={scrollToTrustFactors}
+              className="flex items-center space-x-1 text-green-700 dark:text-green-300 hover:text-green-800 dark:hover:text-green-200 transition-colors duration-200 text-sm font-medium whitespace-nowrap ml-4"
+            >
+              <span>Ver más</span>
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Image */}
       <div className="relative overflow-hidden rounded-xl bg-muted group cursor-pointer"
         onClick={() => {
@@ -59,8 +94,6 @@ export const ProfileGallery = ({
             key={index + image}
             onClick={() => {
               setSelectedImage(index);
-              setModalImageIndex(index);
-              setIsModalOpen(true);
             }}
             className={`relative overflow-hidden rounded-lg aspect-square group transition-all duration-200 ${selectedImage === index
               ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-background'
@@ -75,13 +108,6 @@ export const ProfileGallery = ({
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
             />
             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-200" />
-
-            {/* Hover Overlay with Small Magnifying Glass */}
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-              <div className="bg-white/20 backdrop-blur-sm rounded-full p-1 transform scale-75 group-hover:scale-100 transition-transform duration-200">
-                <Search className="h-3 w-3 text-white" />
-              </div>
-            </div>
           </button>
         ))}
       </div>

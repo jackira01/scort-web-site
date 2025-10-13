@@ -14,7 +14,10 @@ class CacheService {
     this.initializeRedis();
   }
 
-  private async initializeRedis() {
+  /**
+   * Inicializar conexión a Redis con configuración mejorada
+   */
+  private async initializeRedis(): Promise<void> {
     try {
       const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
       
@@ -22,8 +25,8 @@ class CacheService {
         maxRetriesPerRequest: null,
         lazyConnect: true,
         keepAlive: 30000,
-        connectTimeout: 5000,
-        commandTimeout: 3000,
+        connectTimeout: 10000, // 10 segundos
+        commandTimeout: 5000,  // 5 segundos para comandos
       });
 
       this.redis.on('connect', () => {

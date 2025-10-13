@@ -70,10 +70,13 @@ exports.publicApiRateLimit = (0, express_rate_limit_1.default)({
 const validateContentType = (req, res, next) => {
     if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
         const contentType = req.get('Content-Type');
-        if (!contentType || !contentType.includes('application/json')) {
-            return res.status(400).json({
-                error: 'Content-Type debe ser application/json'
-            });
+        const contentLength = req.get('Content-Length');
+        if (contentLength && parseInt(contentLength) > 0) {
+            if (!contentType || !contentType.includes('application/json')) {
+                return res.status(400).json({
+                    error: 'Content-Type debe ser application/json'
+                });
+            }
         }
     }
     next();

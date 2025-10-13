@@ -6,6 +6,10 @@ import { SessionProvider } from 'next-auth/react';
 import { type PropsWithChildren, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from '@/components/theme-provider';
+import AuthRedirectHandler from '@/components/authentication/AuthRedirectHandler';
+import { CookieConsentProvider } from '@/contexts/CookieConsentContext';
+import CookieConsentWrapper from '@/components/CookieConsentWrapper';
+import { AgeVerificationProvider } from '@/contexts/AgeVerificationContext';
 
 const enviroment = process.env.NODE_ENV;
 
@@ -60,9 +64,20 @@ export function Providers({ children }: PropsWithChildren) {
         enableSystem
         disableTransitionOnChange
       >
-        <SessionProvider>
-          <Toaster position="top-right" />
-          {children}
+        <SessionProvider
+          refetchInterval={0}
+          refetchOnWindowFocus={false}
+          refetchWhenOffline={false}
+        >
+          <CookieConsentProvider>
+            <AgeVerificationProvider>
+              <AuthRedirectHandler />
+              <Toaster position="top-right" />
+              <CookieConsentWrapper>
+                {children}
+              </CookieConsentWrapper>
+            </AgeVerificationProvider>
+          </CookieConsentProvider>
         </SessionProvider>
       </ThemeProvider>
     </QueryProvider>

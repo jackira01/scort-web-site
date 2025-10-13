@@ -16,6 +16,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import toast from 'react-hot-toast';
+import { useSession } from 'next-auth/react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   purchasePlan,
   renewPlan,
@@ -26,6 +28,7 @@ import {
   type PlanRenewalRequest,
   type PlanUpgradeRequest,
 } from '@/services/plans.service';
+import { invoiceService, type CreateInvoiceData } from '@/services/invoice.service';
 import { Plan } from '@/types/plans';
 import { useAvailablePlans } from '@/hooks/use-available-plans';
 import { useProfilePlan } from '@/hooks/use-profile-plan';
@@ -155,9 +158,14 @@ export default function ManagePlansModal({
   currentPlan,
   onPlanChange,
 }: ManagePlansModalProps) {
+  const { data: session } = useSession();
+  const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeProfilesCount, setActiveProfilesCount] = useState(0);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, number>>({});
+
+  // Verificar si el usuario es administrador
+  const isAdmin = session?.user?.role === 'admin';
 
   // Usar React Query hooks para obtener datos
   const {
@@ -243,8 +251,27 @@ export default function ManagePlansModal({
   const isPlanActive = () => {
     const planToUse = profilePlanInfo || currentPlan;
     if (!planToUse) return false;
+    
     const expiresAt = new Date(planToUse.expiresAt);
+    const tempDate = new Date('1970-01-01');
+    
+    // Si la fecha de expiración es la fecha temporal, considerar como pendiente de pago
+    if (expiresAt.getTime() === tempDate.getTime()) {
+      return false; // Plan pendiente de pago
+    }
+    
     return expiresAt > new Date();
+  };
+
+  // Verificar si el plan está pendiente de pago
+  const isPlanPending = () => {
+    const planToUse = profilePlanInfo || currentPlan;
+    if (!planToUse) return false;
+    
+    const expiresAt = new Date(planToUse.expiresAt);
+    const tempDate = new Date('1970-01-01');
+    
+    return expiresAt.getTime() === tempDate.getTime();
   };
 
   // Calcular días restantes
@@ -264,11 +291,9 @@ export default function ManagePlansModal({
       return false;
     }
 
-    const planHierarchy = ['AMATISTA', 'ESMERALDA', 'ORO', 'DIAMANTE'];
-    const currentIndex = planHierarchy.indexOf(planToUse.planCode);
-    const targetIndex = planHierarchy.indexOf(planCode);
-
-    return targetIndex > currentIndex; // Solo upgrades, no downgrades
+    // RESTRICCIÓN ELIMINADA: Ahora se permite cambiar a cualquier plan
+    // Ya no validamos jerarquía de planes, permitiendo tanto upgrades como downgrades
+    return true; // Permitir cambio a cualquier plan
   };
 
   // Obtener la variante seleccionada para un plan
@@ -283,6 +308,19 @@ export default function ManagePlansModal({
     return plan.variants.find(v => v.days === selectedDays) || plan.variants[0];
   };
 
+  // Refrescar datos del plan después de una operación exitosa
+  const refreshPlanData = async () => {
+    try {
+      await refetchProfilePlan();
+      // Forzar una nueva consulta para asegurar datos actualizados
+      await queryClient.invalidateQueries({
+        queryKey: ['profilePlan']
+      });
+    } catch (error) {
+      console.error('Error al refrescar datos del plan:', error);
+    }
+  };
+
   // Manejar compra/renovación/upgrade con validaciones de negocio
   const handlePlanAction = async (action: 'purchase' | 'renew' | 'upgrade', planCode: string) => {
     // Validar límite de perfiles con planes pagos
@@ -293,11 +331,8 @@ export default function ManagePlansModal({
 
     // Validar restricciones específicas
     if (action === 'upgrade' && !validatePlanBusinessRules.canEditActivePlan()) {
-      // Los upgrades son la única excepción permitida para "editar" un plan activo
-      if (!canUpgradeTo(planCode)) {
-        toast.error('Solo se permiten upgrades a planes superiores');
-        return;
-      }
+      // RESTRICCIÓN ELIMINADA: Ahora se permite cambiar a cualquier plan
+      // Ya no validamos jerarquía de planes, permitiendo tanto upgrades como downgrades
     }
 
     setIsProcessing(true);
@@ -327,33 +362,162 @@ export default function ManagePlansModal({
           // Intentando renovar plan
 
           const renewSelectedVariant = getSelectedVariant(planCode, currentPlanData);
-          const renewRequest: PlanRenewalRequest = {
-            profileId,
-            extensionDays: renewSelectedVariant.days,
-          };
-          result = await renewPlan(renewRequest);
-          message = `Plan ${currentPlanData.name} renovado exitosamente`;
+
+          // Diferenciar entre admin y usuario normal
+          if (isAdmin) {
+            // Admin: renovación directa usando el endpoint del backend
+            const renewRequest: PlanRenewalRequest = {
+              profileId,
+              extensionDays: renewSelectedVariant.days,
+            };
+            result = await renewPlan(renewRequest);
+            message = `Plan ${currentPlanData.name} renovado exitosamente`;
+          } else {
+            // Usuario normal: SOLO generar factura (NO llamar al endpoint de renovación)
+            if (!session?.user?._id) {
+              throw new Error('Usuario no autenticado');
+            }
+
+            const invoiceData: CreateInvoiceData = {
+              profileId,
+              userId: session.user._id,
+              planCode: currentPlanData.code,
+              planDays: renewSelectedVariant.days,
+              notes: `Renovación de plan ${currentPlanData.name} para perfil ${profileName}`
+            };
+
+            // Crear SOLO la factura (el plan se renovará cuando se confirme el pago)
+            const invoice = await invoiceService.createInvoice(invoiceData);
+
+            // Generar mensaje de WhatsApp para el pago
+            const whatsappData = await invoiceService.getWhatsAppData(invoice._id);
+
+            // Mensaje específico para renovación con factura
+            message = `Factura de renovación generada. Completa el pago para renovar tu plan.`;
+
+            // Mostrar toast con información adicional
+            toast.success('Factura creada. El plan se renovará después del pago confirmado.', {
+              duration: 4000,
+            });
+
+            // Abrir WhatsApp inmediatamente
+            window.open(whatsappData.whatsappUrl, '_blank');
+
+            result = {
+              invoice,
+              whatsappData,
+              requiresPayment: true,
+              totalAmount: renewSelectedVariant.price
+            };
+
+            // NO mostrar el toast de éxito general para usuarios normales
+            // porque el plan no se ha renovado aún
+            return;
+          }
           break;
 
         case 'upgrade':
+
           const targetUpgradePlan = processedPlans.find((p: Plan) => p.code === planCode);
           const upgradeSelectedVariant = targetUpgradePlan ? getSelectedVariant(planCode, targetUpgradePlan) : null;
-          const upgradeRequest: PlanUpgradeRequest = {
-            profileId,
-            newPlanCode: planCode,
-            variantDays: upgradeSelectedVariant?.days
-          };
-          result = await upgradePlan(upgradeRequest);
-          message = `Upgrade a ${processedPlans.find((p: Plan) => p.code === planCode)?.name} realizado exitosamente`;
+
+          // Diferenciar entre admin y usuario normal
+          if (isAdmin) {
+            // Admin: upgrade directo usando el endpoint del backend
+            const upgradeRequest: PlanUpgradeRequest = {
+              profileId,
+              newPlanCode: planCode,
+              variantDays: upgradeSelectedVariant?.days
+            };
+            result = await upgradePlan(upgradeRequest);
+            message = `Actualización directa del plan a ${targetUpgradePlan?.name} realizada exitosamente`;
+          } else {
+            // Usuario normal: generar factura para compra del nuevo plan
+            if (!session?.user?._id) {
+              throw new Error('Usuario no autenticado');
+            }
+
+            // Construir detalles del plan actual
+            const currentPlanDetails = currentPlan
+              ? `Plan actual: ${currentPlanData?.name || currentPlan.planCode} (${currentPlan.variantDays} días)`
+              : 'Sin plan activo';
+
+            // Construir detalles del nuevo plan
+            const newPlanDetails = `Nuevo plan: ${targetUpgradePlan?.name || planCode} (${upgradeSelectedVariant?.days || 30} días) - $${upgradeSelectedVariant?.price || 0}`;
+
+            const invoiceData: CreateInvoiceData = {
+              profileId,
+              userId: session.user._id,
+              planCode: planCode,
+              planDays: upgradeSelectedVariant?.days || 30,
+              notes: `Cambio de plan para perfil ${profileName}\n${currentPlanDetails}\n${newPlanDetails}`
+            };
+
+            // Crear factura para el nuevo plan
+            const invoice = await invoiceService.createInvoice(invoiceData);
+
+
+            // Generar mensaje de WhatsApp para el pago
+            const whatsappData = await invoiceService.getWhatsAppData(invoice._id);
+
+            // Mensaje específico para cambio de plan con factura
+            message = `Factura generada para cambio de plan. Completa el pago para activar tu nuevo plan ${targetUpgradePlan?.name}.`;
+
+            // Mostrar toast con información adicional
+            toast.success('Factura creada. El plan se actualizará después del pago confirmado.', {
+              duration: 4000,
+            });
+
+            // Abrir WhatsApp inmediatamente
+            window.open(whatsappData.whatsappUrl, '_blank');
+
+            result = {
+              invoice,
+              whatsappData,
+              requiresPayment: true,
+              totalAmount: upgradeSelectedVariant?.price || 0
+            };
+            // NO mostrar el toast de éxito general para usuarios normales
+            // porque el plan no se ha actualizado aún
+            return;
+          }
           break;
       }
 
       toast.success(message);
 
-      // Refrescar datos del plan del perfil
-      refetchProfilePlan();
+      // Verificar si es admin para determinar el flujo
+      if (isAdmin) {
+        // Para admins: cambio instantáneo, refrescar datos inmediatamente
+        await refreshPlanData();
+        
+        // Invalidar queries adicionales para asegurar actualización
+        queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
+        queryClient.invalidateQueries({ queryKey: ['profilePlan', profileId] });
+        
+        // Llamar onPlanChange para actualizar el componente padre
+        onPlanChange?.();
+      } else {
+        // Para usuarios regulares: verificar si hay URL de pago
+        if (result?.paymentUrl) {
+          // Redirigir a WhatsApp para el pago
+          window.open(result.paymentUrl, '_blank');
 
-      onPlanChange?.();
+          toast.success('Se ha abierto WhatsApp para completar el pago. El plan se activará una vez confirmado el pago.', {
+            duration: 4000,
+          });
+        } else {
+          // Si no hay URL de pago pero el resultado es exitoso, refrescar datos
+          await refreshPlanData();
+          
+          // Invalidar queries adicionales para asegurar actualización
+          queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
+          queryClient.invalidateQueries({ queryKey: ['profilePlan', profileId] });
+          
+          // Llamar onPlanChange para actualizar el componente padre
+          onPlanChange?.();
+        }
+      }
       onClose();
     } catch (error: any) {
       const errorMessage = error.message || 'Error al procesar la solicitud';
@@ -411,6 +575,11 @@ export default function ManagePlansModal({
                       <CheckCircle className="h-3 w-3 mr-1" />
                       Activo
                     </Badge>
+                  ) : isPlanPending() ? (
+                    <Badge className="bg-yellow-100 text-yellow-800">
+                      <AlertTriangle className="h-3 w-3 mr-1" />
+                      Pendiente de Pago
+                    </Badge>
                   ) : (
                     <Badge variant="destructive">
                       <X className="h-3 w-3 mr-1" />
@@ -432,9 +601,14 @@ export default function ManagePlansModal({
                     </div>
                     <div>
                       <p className="text-muted-foreground">Días restantes</p>
-                      <p className={`font-medium ${getDaysRemaining() <= 7 ? 'text-red-600' : 'text-green-600'
-                        }`}>
-                        {getDaysRemaining()} días
+                      <p className={`font-medium ${
+                        isPlanPending() 
+                          ? 'text-yellow-600' 
+                          : getDaysRemaining() <= 7 
+                            ? 'text-red-600' 
+                            : 'text-green-600'
+                      }`}>
+                        {isPlanPending() ? 'Pendiente de pago' : `${getDaysRemaining()} días`}
                       </p>
                     </div>
                   </div>
@@ -482,7 +656,66 @@ export default function ManagePlansModal({
                         disabled={isProcessing}
                         className="w-full sm:w-auto"
                       >
-                        Renovar Plan ({formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})
+                        {isAdmin
+                          ? `Renovar Plan (${formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})`
+                          : `Renovar Plan (${formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})`
+                        }
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Botón de renovación para planes expirados no gratuitos */}
+                {!isPlanActive() && currentPlanData.code !== 'AMATISTA' && (
+                  <div className="mt-4">
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium mb-2 text-orange-600">Plan Expirado - Renovar:</p>
+                      {/* Selector de variantes para renovación */}
+                      {currentPlanData.variants.length > 1 && (
+                        <div>
+                          <div className="grid grid-cols-1 gap-2">
+                            {currentPlanData.variants
+                              .sort((a, b) => a.days - b.days)
+                              .map((variant) => {
+                                const isSelected = getSelectedVariant(currentPlanData.code, currentPlanData).days === variant.days;
+                                return (
+                                  <button
+                                    key={variant.days}
+                                    onClick={() => setSelectedVariants(prev => ({
+                                      ...prev,
+                                      [currentPlanData.code]: variant.days
+                                    }))}
+                                    className={`p-2 text-xs rounded border transition-colors ${isSelected
+                                      ? 'border-orange-500 bg-orange-50 text-orange-700'
+                                      : 'border-gray-200 hover:border-gray-300'
+                                      }`}
+                                  >
+                                    <div className="flex justify-between items-center">
+                                      <span>{formatDuration(variant.days)}</span>
+                                      <span className="font-medium">
+                                        {formatPrice(variant.price)}
+                                      </span>
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      )}
+
+                      <Button
+                        onClick={() => handlePlanAction('renew', currentPlanData.code)}
+                        disabled={isProcessing}
+                        className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Procesando...
+                          </>
+                        ) : (
+                          `Renovar ${currentPlanData.name} (${formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})`
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -508,7 +741,7 @@ export default function ManagePlansModal({
           <Alert className="border-amber-200 bg-amber-50">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
-              <strong>Importante:</strong> Al realizar una compra o mejora de plan, el nuevo plan reemplazará inmediatamente el plan activo actual, independientemente de los días restantes de vigencia.
+              <strong>Importante:</strong> Al realizar una compra, renovacion, mejora de plan, etc. El nuevo plan reemplazará inmediatamente el plan activo actual, independientemente de los días restantes de vigencia.
             </AlertDescription>
           </Alert>
 
@@ -605,12 +838,14 @@ export default function ManagePlansModal({
                           </Badge>
                         ) : canUpgrade && isPlanActive() ? (
                           <Button
-                            onClick={() => handlePlanAction('upgrade', plan.code)}
+                            onClick={() => {
+                              handlePlanAction('upgrade', plan.code);
+                            }}
                             disabled={isProcessing || (activeProfilesCount >= 10 && plan.code !== 'AMATISTA')}
                             className="w-full bg-purple-600 hover:bg-purple-700"
                             size="sm"
                           >
-                            Mejorar a {plan.name}
+                            {isAdmin ? `Actualizar a ${plan.name}` : `Comprar ${plan.name}`}
                           </Button>
                         ) : canPurchase ? (
                           <Button

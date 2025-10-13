@@ -44,9 +44,16 @@ export interface SearchFilters {
     };
   };
 
+  // Verificación
+  verification?: {
+    identityVerified?: boolean;
+    hasVideo?: boolean;
+    documentVerified?: boolean;
+  };
+
   // Estados
   isActive?: boolean;
-  isVerified?: boolean;
+  profileVerified?: boolean;
   hasVideos?: boolean;
   hasDestacadoUpgrade?: boolean;
 
@@ -115,21 +122,27 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
     [],
   );
 
-  // Actualizar disponibilidad
-  const updateAvailability = useCallback(
-    (availability: SearchFilters['availability']) => {
-      setFilters((prev) => ({
-        ...prev,
-        availability,
-        page: 1,
-      }));
-    },
-    [],
-  );
+  // Método para actualizar disponibilidad
+  const updateAvailability = useCallback((availability: SearchFilters['availability']) => {
+    setFilters((prev) => ({
+      ...prev,
+      availability,
+      page: 1, // Reset page when changing filters
+    }));
+  }, []);
+
+  // Método para actualizar filtros de verificación
+  const updateVerification = useCallback((verificationFilters: SearchFilters['verification']) => {
+    setFilters((prev) => ({
+      ...prev,
+      verification: verificationFilters,
+      page: 1, // Reset page when changing filters
+    }));
+  }, []);
 
   // Actualizar estados (verificado, activo)
   const updateStates = useCallback(
-    (states: { isActive?: boolean; isVerified?: boolean }) => {
+    (states: { isActive?: boolean; profileVerified?: boolean }) => {
       setFilters((prev) => ({
         ...prev,
         ...states,
@@ -169,7 +182,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
       sortBy: 'createdAt',
       sortOrder: 'desc',
       isActive: true,
-      // No establecer isVerified por defecto para mostrar todos los perfiles
+      // No establecer profileVerified por defecto para mostrar todos los perfiles
     });
   }, []);
 
@@ -188,12 +201,10 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
 
   // Método genérico para actualizar filtros
   const updateFilter = useCallback((key: string, value: any) => {
-
-    
     setFilters((prev) => {
       const newFilters = { ...prev };
       
-
+      console.log('🔍 DEBUG useSearchFilters - updateFilter called', { key, value });
       
       // Manejar filtros anidados en features
       if (['gender', 'sex', 'age', 'height', 'weight', 'bodyType', 'ethnicity', 'hairColor', 'eyeColor', 'services', 'ageRange'].includes(key)) {
@@ -201,7 +212,16 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
           ...prev.features,
           [key]: value,
         };
-
+        
+        if (key === 'ageRange') {
+          console.log('🔍 DEBUG useSearchFilters - Processing ageRange in features:', {
+            key,
+            value,
+            updatedFeatures: newFilters.features
+          });
+        }
+        
+        console.log('useSearchFilters: Updated features', newFilters.features);
       }
       // Manejar filtros de ubicación
       else if (['department', 'city'].includes(key)) {
@@ -230,6 +250,13 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
         };
         
       }
+      // Manejar filtros de verificación
+      else if (['identityVerified', 'hasVideo', 'documentVerified'].includes(key)) {
+        newFilters.verification = {
+          ...prev.verification,
+          [key]: value,
+        };
+      }
       // Manejar filtros directos
       else {
         (newFilters as any)[key] = value;
@@ -241,7 +268,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
         page: 1, // Reset page when changing filters
       };
       
-
+      console.log('useSearchFilters: Final filters after update', finalFilters);
       
       return finalFilters;
     });
@@ -256,6 +283,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
     updateFeatures,
     updatePriceRange,
     updateAvailability,
+    updateVerification,
     updateStates,
     updatePagination,
     updateSorting,

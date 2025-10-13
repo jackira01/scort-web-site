@@ -1,5 +1,6 @@
 import axios from '@/lib/axios';
-import type { BaseUser, User } from '@/types/user.types';
+import { isAxiosError } from 'axios';
+import type { BaseUser, User, Profile } from '@/types/user.types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -21,16 +22,31 @@ export const authUser = async (data: User): Promise<BaseUser> => {
 } */
 
 export const getUserById = async (userId: string | undefined): Promise<User> => {
+    if (!userId || userId === 'undefined') {
+        throw new Error('User ID is required and cannot be undefined');
+    }
     const response = await axios.get(`${API_URL}/api/user/${userId}`);
     return response.data;
 };
 
-export const updateUser = async (userId: string, data: any) => {
+export const getUserByEmail = async (email: string): Promise<User | null> => {
+    try {
+        const response = await axios.get(`${API_URL}/api/user/email/${email}`);
+        return response.data;
+    } catch (error) {
+        if (isAxiosError(error) && error.response?.status === 404) {
+            return null;
+        }
+        throw error;
+    }
+};
+
+export const updateUser = async (userId: string, data: Partial<User>) => {
     const response = await axios.put(`${API_URL}/api/user/${userId}`, data);
     return response.data;
 };
 
-export const getUsers = async (page: number, limit: number, filters: any) => {
+export const getUsers = async (page: number, limit: number, filters: Record<string, unknown>) => {
     const response = await axios.post(`${API_URL}/api/user/?page=${page}&limit=${limit}`, filters);
 
     return response.data;
@@ -46,11 +62,11 @@ export const getUserProfiles = async (userId: string) => {
     return response.data;
 }
 
-export const createProfile = async (profileData: any, purchasedPlan: any) => {
-  const requestBody = {
-    profileData,
-    purchasedPlan
-  };
+export const createProfile = async (profileData: Partial<Profile>, purchasedPlan: Record<string, unknown>) => {
+    const requestBody = {
+        profileData,
+        purchasedPlan
+    };
     const response = await axios.post(`${API_URL}/api/profile/`, requestBody);
     return response.data;
 }
@@ -61,11 +77,59 @@ export const getProfileById = async (profileId: string) => {
 }
 
 export const getProfileVerification = async (profileId: string) => {
-    const response = await axios.get(`${API_URL}/api/profile-verification/profile/${profileId}`);
-    return response.data;
+    try {
+        console.log('🔍 Fetching profile verification for profileId:', profileId);
+        const response = await axios.get(`${API_URL}/api/profile-verification/profile/${profileId}`);
+        console.log('📊 Profile verification response:', response.data);
+
+        // Si el backend devuelve { success: true, data: {} } pero data está vacío,
+        // crear una estructura de verificación por defecto
+        if (response.data.success && (!response.data.data || Object.keys(response.data.data).length === 0)) {
+            console.log('⚠️ No verification data found, creating default structure');
+
+            // Crear un nuevo registro de verificación
+            const createResponse = await axios.post(`${API_URL}/api/profile-verification`, {
+                profile: profileId,
+                verificationStatus: 'pending',
+                verificationProgress: 0,
+                data: {
+                    steps: {
+                        documentPhotos: {
+                            frontPhoto: '',
+                            backPhoto: '',
+                            selfieWithDocument: '',
+                            isVerified: false
+                        },
+                        videoVerification: {
+                            videoLink: '',
+                            isVerified: false
+                        },
+                        videoCallRequested: {
+                            videoLink: '',
+                            isVerified: false
+                        },
+                        socialMedia: {
+                            isVerified: false
+                        }
+                    }
+                }
+            });
+
+            console.log('✅ Created new verification record:', createResponse.data);
+            
+            // Devolver directamente los datos creados
+            return createResponse.data;
+        }
+
+        // Devolver directamente la respuesta del backend
+        return response.data;
+    } catch (error) {
+        console.error('❌ Error fetching profile verification:', error);
+        throw error;
+    }
 }
 
-export const updateProfile = async (profileId: string, data: any) => {
+export const updateProfile = async (profileId: string, data: Partial<Profile>) => {
     const response = await axios.put(`${API_URL}/api/profile/${profileId}`, data);
     return response.data;
 }

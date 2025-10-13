@@ -42,11 +42,16 @@ const userSchema = new mongoose_1.Schema({
     email: { type: String, required: true, unique: true },
     name: String,
     verificationDocument: [String],
+    password: { type: String },
     isVerified: { type: Boolean, default: false },
     verification_in_progress: { type: Boolean, default: false },
     profiles: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Profile' }],
     role: { type: String, enum: ['admin', 'user', 'guest'], default: 'user' },
     accountType: { type: String, enum: ['common', 'agency'], default: 'common' },
+    providers: { type: [String], default: [] },
+    hasPassword: { type: Boolean, default: false },
+    emailVerified: { type: Date },
+    image: { type: String },
     agencyInfo: {
         businessName: { type: String },
         businessDocument: { type: String },
@@ -61,8 +66,11 @@ const userSchema = new mongoose_1.Schema({
         isVerified: { type: Boolean, default: false },
         date: { type: Date, default: null },
     },
+    resetPasswordCode: { type: String },
+    resetPasswordExpires: { type: Date },
+    resetPasswordToken: { type: String },
+    resetPasswordTokenExpires: { type: Date },
 });
-userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ isVerified: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ accountType: 1 });

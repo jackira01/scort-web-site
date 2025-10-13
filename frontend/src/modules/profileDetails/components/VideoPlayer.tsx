@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 
 interface VideoPlayerProps {
-  videos: string[];
+  videos: Array<{ link: string; preview: string } | string>;
 }
 
 export default function VideoPlayer({ videos }: VideoPlayerProps) {
@@ -19,6 +19,19 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
   const [videoError, setVideoError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const modalVideoRef = useRef<HTMLVideoElement>(null);
+
+  // Función para obtener la URL del video
+  const getVideoUrl = (video: { link: string; preview: string } | string): string => {
+    return typeof video === 'string' ? video : video.link;
+  };
+
+  // Función para obtener la URL del preview
+  const getPreviewUrl = (video: { link: string; preview: string } | string): string => {
+    return typeof video === 'string' ? '/placeholder.svg' : video.preview;
+  };
+
+  const currentVideoUrl = videos.length > 0 ? getVideoUrl(videos[currentVideoIndex]) : '';
+  const currentPreviewUrl = videos.length > 0 ? getPreviewUrl(videos[currentVideoIndex]) : '/placeholder.svg';
 
   const handlePlayPause = () => {
     if (videoRef.current) {
@@ -99,13 +112,13 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
                 onEnded={handleVideoEnded}
                 onError={handleVideoError}
                 onLoadStart={handleVideoLoad}
-                poster="/placeholder.svg"
+                poster={currentPreviewUrl}
                 preload="metadata"
                 crossOrigin="anonymous"
               >
-                <source src={videos[currentVideoIndex]} type="video/mp4" />
-                <source src={videos[currentVideoIndex]} type="video/webm" />
-                <source src={videos[currentVideoIndex]} type="video/ogg" />
+                <source src={currentVideoUrl} type="video/mp4" />
+                <source src={currentVideoUrl} type="video/webm" />
+                <source src={currentVideoUrl} type="video/ogg" />
                 Tu navegador no soporta el elemento video.
               </video>
             )}
@@ -202,9 +215,9 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
                   preload="metadata"
                   crossOrigin="anonymous"
                 >
-                  <source src={videos[currentVideoIndex]} type="video/mp4" />
-                  <source src={videos[currentVideoIndex]} type="video/webm" />
-                  <source src={videos[currentVideoIndex]} type="video/ogg" />
+                  <source src={currentVideoUrl} type="video/mp4" />
+                  <source src={currentVideoUrl} type="video/webm" />
+                  <source src={currentVideoUrl} type="video/ogg" />
                   Tu navegador no soporta el elemento video.
                 </video>
              )}

@@ -30,7 +30,7 @@ const FilterToglles = ({ filters, onFilterChange }: FilterToggleProps) => {
             checked={filters[key as keyof typeof filters] || false}
             onCheckedChange={(checked) => {
               if (key === 'verified') {
-                onFilterChange('isVerified', checked);
+                onFilterChange('profileVerified', checked);
               } else if (key === 'video') {
                 onFilterChange('hasVideos', checked);
               } else if (key === 'destacado') {

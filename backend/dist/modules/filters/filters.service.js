@@ -9,7 +9,7 @@ const cache_service_1 = require("../../services/cache.service");
 const logger_1 = require("../../utils/logger");
 const getFilteredProfiles = async (filters) => {
     try {
-        const { category, location, priceRange, availability, isActive, isVerified, hasDestacadoUpgrade, hasVideos, page = 1, limit = 20, fields, } = filters;
+        const { category, location, priceRange, availability, isActive, isVerified, profileVerified, documentVerified, hasDestacadoUpgrade, hasVideos, page = 1, limit = 20, fields, } = filters;
         const cacheKey = cache_service_1.cacheService.generateKey(cache_service_1.CACHE_KEYS.FILTERS, JSON.stringify(filters));
         const cachedResult = await cache_service_1.cacheService.get(cacheKey);
         if (cachedResult) {
@@ -44,6 +44,80 @@ const getFilteredProfiles = async (filters) => {
         if (isVerified !== undefined) {
             query['user.isVerified'] = isVerified;
         }
+        if (profileVerified !== undefined) {
+            const profileVerificationQuery = await profile_model_1.ProfileModel.aggregate([
+                {
+                    $lookup: {
+                        from: 'profileverifications',
+                        localField: 'verification',
+                        foreignField: '_id',
+                        as: 'verificationData'
+                    }
+                },
+                {
+                    $match: {
+                        'verificationData.steps.videoVerification.isVerified': profileVerified
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1
+                    }
+                }
+            ]);
+            const verifiedProfileIds = profileVerificationQuery.map(p => p._id);
+            if (profileVerified) {
+                query._id = { $in: verifiedProfileIds };
+            }
+            else {
+                query._id = { $nin: verifiedProfileIds };
+            }
+        }
+        if (documentVerified !== undefined) {
+            const documentVerificationQuery = await profile_model_1.ProfileModel.aggregate([
+                {
+                    $lookup: {
+                        from: 'profileverifications',
+                        localField: 'verification',
+                        foreignField: '_id',
+                        as: 'verificationData'
+                    }
+                },
+                {
+                    $match: {
+                        'verificationData.steps.documentPhotos.isVerified': documentVerified
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1
+                    }
+                }
+            ]);
+            const documentVerifiedProfileIds = documentVerificationQuery.map(p => p._id);
+            if (documentVerified) {
+                if (query._id && query._id.$in) {
+                    query._id = { $in: query._id.$in.filter((id) => documentVerifiedProfileIds.some(docId => docId.equals(id))) };
+                }
+                else if (query._id && query._id.$nin) {
+                    query._id = { $in: documentVerifiedProfileIds, $nin: query._id.$nin };
+                }
+                else {
+                    query._id = { $in: documentVerifiedProfileIds };
+                }
+            }
+            else {
+                if (query._id && query._id.$in) {
+                    query._id = { $in: query._id.$in.filter((id) => !documentVerifiedProfileIds.some(docId => docId.equals(id))) };
+                }
+                else if (query._id && query._id.$nin) {
+                    query._id = { $nin: [...query._id.$nin, ...documentVerifiedProfileIds] };
+                }
+                else {
+                    query._id = { $nin: documentVerifiedProfileIds };
+                }
+            }
+        }
         if (hasDestacadoUpgrade !== undefined && hasDestacadoUpgrade) {
             const now = new Date();
             query.$or = [
@@ -66,46 +140,76 @@ const getFilteredProfiles = async (filters) => {
         }
         if (features && Object.keys(features).length > 0) {
             const featureConditions = [];
-            const groupKeys = Object.keys(features);
-            const attributeGroups = await attribute_group_model_1.AttributeGroupModel.find({
-                key: { $in: groupKeys },
-            });
-            const groupKeyToId = new Map();
-            attributeGroups.forEach((group) => {
-                groupKeyToId.set(group.key, group._id);
-            });
-            for (const [groupKey, value] of Object.entries(features)) {
-                const groupId = groupKeyToId.get(groupKey);
-                if (!groupId) {
-                    continue;
-                }
-                if (Array.isArray(value)) {
-                    const normalizedValues = value.map((v) => v.toLowerCase().trim());
-                    const condition = {
-                        features: {
-                            $elemMatch: {
-                                group_id: groupId,
-                                value: { $in: normalizedValues },
-                            },
-                        },
-                    };
-                    featureConditions.push(condition);
-                }
-                else {
-                    const normalizedValue = value.toLowerCase().trim();
-                    const condition = {
-                        features: {
-                            $elemMatch: {
-                                group_id: groupId,
-                                value: { $in: [normalizedValue] },
-                            },
-                        },
-                    };
-                    featureConditions.push(condition);
+            if (features.ageRange && typeof features.ageRange === 'object') {
+                const { min, max } = features.ageRange;
+                if (min !== undefined || max !== undefined) {
+                    const ageConditions = [];
+                    if (min !== undefined) {
+                        ageConditions.push({
+                            $expr: {
+                                $gte: [{ $toInt: "$age" }, min]
+                            }
+                        });
+                    }
+                    if (max !== undefined) {
+                        ageConditions.push({
+                            $expr: {
+                                $lte: [{ $toInt: "$age" }, max]
+                            }
+                        });
+                    }
+                    if (query.$and) {
+                        query.$and.push(...ageConditions);
+                    }
+                    else {
+                        query.$and = ageConditions;
+                    }
                 }
             }
-            if (featureConditions.length > 0) {
-                query.$and = featureConditions;
+            const otherFeatures = Object.fromEntries(Object.entries(features).filter(([key]) => key !== 'ageRange'));
+            if (Object.keys(otherFeatures).length > 0) {
+                const groupKeys = Object.keys(otherFeatures);
+                const attributeGroups = await attribute_group_model_1.AttributeGroupModel.find({
+                    key: { $in: groupKeys },
+                });
+                const groupKeyToId = new Map();
+                attributeGroups.forEach((group) => {
+                    groupKeyToId.set(group.key, group._id);
+                });
+                for (const [groupKey, value] of Object.entries(otherFeatures)) {
+                    const groupId = groupKeyToId.get(groupKey);
+                    if (!groupId) {
+                        console.warn('⚠️ WARNING - No groupId found for feature key:', groupKey);
+                        continue;
+                    }
+                    if (Array.isArray(value)) {
+                        const normalizedValues = value.map((v) => v.toLowerCase().trim());
+                        const condition = {
+                            features: {
+                                $elemMatch: {
+                                    group_id: groupId,
+                                    value: { $in: normalizedValues },
+                                },
+                            },
+                        };
+                        featureConditions.push(condition);
+                    }
+                    else {
+                        const normalizedValue = value.toLowerCase().trim();
+                        const condition = {
+                            features: {
+                                $elemMatch: {
+                                    group_id: groupId,
+                                    value: { $in: [normalizedValue] },
+                                },
+                            },
+                        };
+                        featureConditions.push(condition);
+                    }
+                }
+                if (featureConditions.length > 0) {
+                    query.$and = featureConditions;
+                }
             }
         }
         if (priceRange) {
@@ -163,9 +267,20 @@ const getFilteredProfiles = async (filters) => {
         }
         const skip = (page - 1) * limit;
         const requiredFields = ['planAssignment', 'upgrades', 'lastShownAt', 'createdAt'];
+        const profileCardFields = [
+            '_id',
+            'name',
+            'age',
+            'location',
+            'description',
+            'verification',
+            'media.gallery',
+            'online',
+            'hasVideo'
+        ];
         const finalFields = Array.isArray(fields) && fields.length > 0
             ? Array.from(new Set([...fields, ...requiredFields]))
-            : ['_id', 'name', 'age', 'location', 'description', 'verification', 'media', 'isActive', ...requiredFields];
+            : Array.from(new Set([...profileCardFields, ...requiredFields]));
         const selectFields = finalFields.join(' ');
         const startTime = Date.now();
         const aggregationPipeline = [
@@ -178,11 +293,6 @@ const getFilteredProfiles = async (filters) => {
                     localField: 'user',
                     foreignField: '_id',
                     as: 'userInfo'
-                }
-            },
-            {
-                $match: {
-                    'userInfo.isVerified': true
                 }
             },
             {
@@ -211,6 +321,24 @@ const getFilteredProfiles = async (filters) => {
                 }
             });
         }
+        aggregationPipeline.push({
+            $lookup: {
+                from: 'plandefinitions',
+                localField: 'planAssignment.plan',
+                foreignField: '_id',
+                as: 'planAssignmentPlan'
+            }
+        });
+        aggregationPipeline.push({
+            $addFields: {
+                'planAssignment.plan': { $arrayElemAt: ['$planAssignmentPlan', 0] }
+            }
+        });
+        aggregationPipeline.push({
+            $project: {
+                planAssignmentPlan: 0
+            }
+        });
         if (fields && fields.includes('features')) {
             aggregationPipeline.push({
                 $lookup: {
@@ -221,6 +349,14 @@ const getFilteredProfiles = async (filters) => {
                 }
             });
         }
+        const projectionFields = {};
+        finalFields.forEach(field => {
+            projectionFields[field] = 1;
+        });
+        projectionFields['user'] = 1;
+        aggregationPipeline.push({
+            $project: projectionFields
+        });
         const [allProfiles, totalCountResult] = await Promise.all([
             profile_model_1.ProfileModel.aggregate(aggregationPipeline),
             profile_model_1.ProfileModel.aggregate([
@@ -233,11 +369,6 @@ const getFilteredProfiles = async (filters) => {
                         localField: 'user',
                         foreignField: '_id',
                         as: 'userInfo'
-                    }
-                },
-                {
-                    $match: {
-                        'userInfo.isVerified': true
                     }
                 },
                 { $count: 'total' }
@@ -276,8 +407,19 @@ const getFilteredProfiles = async (filters) => {
                     verificationLevel = 'partial';
                 }
             }
+            const now = new Date();
+            let hasDestacadoUpgrade = false;
+            if (profile.planAssignment?.planCode === 'DIAMANTE') {
+                hasDestacadoUpgrade = true;
+            }
+            else if (profile.upgrades && Array.isArray(profile.upgrades)) {
+                hasDestacadoUpgrade = profile.upgrades.some((upgrade) => ['DESTACADO', 'HIGHLIGHT'].includes(upgrade.code) &&
+                    new Date(upgrade.startAt) <= now &&
+                    new Date(upgrade.endAt) > now);
+            }
             return {
                 ...profile,
+                hasDestacadoUpgrade,
                 verification: {
                     isVerified,
                     verificationLevel

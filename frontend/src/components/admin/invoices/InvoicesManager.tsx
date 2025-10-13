@@ -49,8 +49,12 @@ const getStatusText = (status: string) => {
 const InvoicesManager = ({ className }: InvoicesManagerProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [userIdFilter, setUserIdFilter] = useState<string>('');
-  const [profileIdFilter, setProfileIdFilter] = useState<string>('');
+  const [invoiceIdFilter, setInvoiceIdFilter] = useState<string>('');
+  const [invoiceIdSearch, setInvoiceIdSearch] = useState<string>(''); // Estado separado para la búsqueda
+  const [invoiceNumberFilter, setInvoiceNumberFilter] = useState<string>('');
+  const [invoiceNumberSearch, setInvoiceNumberSearch] = useState<string>(''); // Estado separado para la búsqueda por número
+  // const [userIdFilter, setUserIdFilter] = useState<string>('');
+  // const [profileIdFilter, setProfileIdFilter] = useState<string>('');
   const [pageSize] = useState(10);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -67,8 +71,10 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
     page: currentPage,
     limit: pageSize,
     status: statusFilter || undefined,
-    userId: userIdFilter || undefined,
-    profileId: profileIdFilter || undefined
+    _id: invoiceIdFilter || undefined,
+    invoiceNumber: invoiceNumberFilter || undefined,
+    // userId: userIdFilter || undefined,
+    // profileId: profileIdFilter || undefined
   });
 
   const handleStatusChange = (value: string) => {
@@ -76,15 +82,33 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
     setCurrentPage(1);
   };
 
-  const handleUserIdFilterChange = (value: string) => {
-    setUserIdFilter(value);
+  const handleInvoiceIdFilterChange = (value: string) => {
+    setInvoiceIdSearch(value); // Solo actualiza el estado de búsqueda, no el filtro
+  };
+
+  const handleSearchInvoice = () => {
+    setInvoiceIdFilter(invoiceIdSearch); // Aplica el filtro cuando se hace clic en buscar
     setCurrentPage(1);
   };
 
-  const handleProfileIdFilterChange = (value: string) => {
-    setProfileIdFilter(value);
+  const handleInvoiceNumberFilterChange = (value: string) => {
+    setInvoiceNumberSearch(value); // Solo actualiza el estado de búsqueda, no el filtro
+  };
+
+  const handleSearchInvoiceNumber = () => {
+    setInvoiceNumberFilter(invoiceNumberSearch); // Aplica el filtro cuando se hace clic en buscar
     setCurrentPage(1);
   };
+
+  // const handleUserIdFilterChange = (value: string) => {
+  //   setUserIdFilter(value);
+  //   setCurrentPage(1);
+  // };
+
+  // const handleProfileIdFilterChange = (value: string) => {
+  //   setProfileIdFilter(value);
+  //   setCurrentPage(1);
+  // };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -92,8 +116,12 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
 
   const clearFilters = () => {
     setStatusFilter('');
-    setUserIdFilter('');
-    setProfileIdFilter('');
+    setInvoiceIdFilter('');
+    setInvoiceIdSearch(''); // Limpiar también el estado de búsqueda
+    setInvoiceNumberFilter('');
+    setInvoiceNumberSearch('');
+    // setUserIdFilter('');
+    // setProfileIdFilter('');
     setCurrentPage(1);
   };
 
@@ -129,7 +157,7 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
 
   return (
     <div className={`space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500 ${className}`}>
-      <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+      <h1 className="text-2xl lg:text-3xl font-bold text-gray-700 dark:text-gray-200">
         Saldo y Facturas
       </h1>
 
@@ -193,17 +221,17 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
       </div>
 
       {/* Filtros */}
-      <Card className="border-gray-200 bg-white/50 backdrop-blur-sm">
+      <Card className="backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-gray-800">
+          <CardTitle className="flex items-center gap-2 text-gray-800 dark:text-gray-300">
             <Search className="h-5 w-5" />
             Filtros
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Estado:
               </label>
               <Select value={statusFilter || 'all'} onValueChange={handleStatusChange}>
@@ -221,35 +249,57 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                ID de Usuario:
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                ID de Factura:
               </label>
-              <Input
-                placeholder="Filtrar por ID de usuario"
-                value={userIdFilter}
-                onChange={(e) => handleUserIdFilterChange(e.target.value)}
-              />
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Filtrar por ID de factura"
+                  value={invoiceIdSearch}
+                  onChange={(e) => handleInvoiceIdFilterChange(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearchInvoice()}
+                />
+                <Button
+                  onClick={handleSearchInvoice}
+                  variant="outline"
+                  className="px-3"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                ID de Perfil:
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Número de Factura:
               </label>
-              <Input
-                placeholder="Filtrar por ID de perfil"
-                value={profileIdFilter}
-                onChange={(e) => handleProfileIdFilterChange(e.target.value)}
-              />
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Filtrar por número de factura"
+                  value={invoiceNumberSearch}
+                  onChange={(e) => handleInvoiceNumberFilterChange(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearchInvoiceNumber()}
+                />
+                <Button
+                  onClick={handleSearchInvoiceNumber}
+                  variant="outline"
+                  className="px-3"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
-            <Button onClick={clearFilters} variant="outline">
-              Limpiar Filtros
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={clearFilters} variant="outline">
+                Limpiar Filtros
+              </Button>
+            </div>
           </div>
 
           {total > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 Mostrando {invoices.length} de {total} facturas
               </p>
             </div>
@@ -258,9 +308,9 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
       </Card>
 
       {/* Lista de Facturas */}
-      <Card className="border-gray-200 bg-white/50 backdrop-blur-sm">
+      <Card className="backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-gray-800">
+          <CardTitle className="flex items-center gap-2 text-gray-800 dark:text-gray-300">
             <Receipt className="h-5 w-5" />
             Facturas
           </CardTitle>
@@ -269,25 +319,37 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-              <span className="ml-2 text-gray-600">Cargando facturas...</span>
+              <span className="ml-2 text-gray-600 dark:text-gray-300">Cargando facturas...</span>
             </div>
           ) : invoices.length === 0 ? (
             <div className="text-center py-8">
               <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-2">No se encontraron facturas</p>
-              <p className="text-sm text-gray-500">
-                {statusFilter || userIdFilter || profileIdFilter
-                  ? 'Intenta cambiar los filtros'
+              <p className="text-gray-600 mb-2 dark:text-gray-300">No se encontraron facturas</p>
+              <p className="text-sm text-gray-500 dark:text-gray-300">
+                {invoiceIdFilter || invoiceNumberFilter
+                  ? 'No se encontró ninguna factura con ese ID o número'
+                  : statusFilter
+                  ? 'No hay facturas con ese estado'
                   : 'Aún no hay facturas registradas'
                 }
               </p>
+              {(invoiceIdFilter || invoiceNumberFilter || statusFilter) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="mt-3"
+                >
+                  Limpiar filtros
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
               {invoices.map((invoice) => (
                 <div
                   key={invoice._id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-gray-100 bg-white/70 hover:bg-white/90 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg border border-gray-100 bg-white/70 hover:bg-white/90 transition-colors dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
                 >
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded-full bg-purple-100">
@@ -295,8 +357,8 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium text-gray-900">
-                          Factura #{invoice._id.slice(-8)}
+                        <p className="font-medium text-gray-900 dark:text-gray-300">
+                          Factura #{invoice.invoiceNumber || invoice._id.slice(-8)}
                         </p>
                         {invoice.profileId && (
                           <Badge variant="outline" className="text-xs">
@@ -305,13 +367,13 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
                           </Badge>
                         )}
                         {invoice.userId && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-xs dark:text-gray-300">
                             Usuario: {invoice.userId.name || invoice.userId.email}
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <span className="flex items-center gap-1">
+                      <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-300">
+                        <span className="flex items-center gap-1 dark:text-gray-300">
                           <Calendar className="h-3 w-3" />
                           {new Date(invoice.createdAt).toLocaleDateString('es-ES')}
                         </span>
@@ -336,7 +398,7 @@ const InvoicesManager = ({ className }: InvoicesManagerProps) => {
                   </div>
                   <div className="text-right flex items-center gap-3">
                     <div>
-                      <p className="font-semibold text-gray-900 mb-1">
+                      <p className="font-semibold text-gray-900 mb-1 dark:text-gray-300">
                         {formatCurrency(invoice.totalAmount)}
                       </p>
                       <Badge

@@ -20,6 +20,9 @@ import authRoutes from './routes/auth';
 import emailRoutes from './routes/email.routes';
 import { emailInboxRoutes } from './modules/email-inbox';
 import invoiceRoutes from './modules/payments/invoice.routes';
+import { couponRoutes } from './modules/coupons';
+import { sponsoredProfilesRoutes } from './modules/sponsored-profiles';
+import { contentRoutes } from './modules/content';
 
 import userRoutes from './modules/user/user.routes';
 import adminEmailRoutes from './routes/admin/emails';
@@ -114,6 +117,9 @@ app.use('/api/auth', authRateLimit, authRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/email-inbox', emailInboxRoutes);
 app.use('/api/invoices', invoiceRoutes);
+app.use('/api/coupons', couponRoutes);
+app.use('/api/sponsored-profiles', publicApiRateLimit, sponsoredProfilesRoutes);
+app.use('/api/content', contentRoutes);
 
 app.use('/api/user', userRoutes);
 app.use('/api/admin/emails', adminEmailRoutes);

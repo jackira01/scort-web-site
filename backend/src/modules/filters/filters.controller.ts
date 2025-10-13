@@ -10,8 +10,6 @@ import type { FilterQuery } from './filters.types';
  */
 export const getFilteredProfilesPost = async (req: Request, res: Response) => {
   try {
-    // DEBUG Controller - Request body received
-    
     // Procesar el body de la misma manera que GET procesa query params
     const {
       category,
@@ -21,6 +19,8 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
       availability,
       isActive,
       isVerified,
+      profileVerified,
+      documentVerified,
       hasDestacadoUpgrade,
       hasVideos,
       page,
@@ -37,6 +37,8 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
     if (category) filters.category = category;
     if (isActive !== undefined) filters.isActive = isActive;
     if (isVerified !== undefined) filters.isVerified = isVerified;
+    if (profileVerified !== undefined) filters.profileVerified = profileVerified;
+    if (documentVerified !== undefined) filters.documentVerified = documentVerified;
     if (hasDestacadoUpgrade !== undefined) filters.hasDestacadoUpgrade = hasDestacadoUpgrade;
     if (hasVideos !== undefined) filters.hasVideos = hasVideos;
 
@@ -50,6 +52,7 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
 
     // Filtros de características - ya vienen como objeto
     if (features) {
+      console.log('🔍 DEBUG Controller - Features received:', JSON.stringify(features, null, 2));
       filters.features = features;
     }
 
@@ -87,7 +90,7 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
     if (sortBy) filters.sortBy = sortBy;
     if (sortOrder) filters.sortOrder = sortOrder;
     if (fields) filters.fields = fields;
-    
+
 
 
     // Validaciones adicionales
@@ -122,6 +125,8 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
       });
     }
 
+    console.log('🔍 DEBUG Controller - Final filters object:', JSON.stringify(filters, null, 2));
+
     // Obtener perfiles filtrados
     const result = await service.getFilteredProfiles(filters);
 
@@ -130,15 +135,15 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
       data: result,
       message: 'Perfiles obtenidos exitosamente'
     };
-    
 
-    
+
+
     res.status(200).json(response);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     const errorStack = error instanceof Error ? error.stack : undefined;
     const errorName = error instanceof Error ? error.name : 'UnknownError';
-    
+
     // Error in getFilteredProfilesPost controller
     res.status(500).json({
       success: false,

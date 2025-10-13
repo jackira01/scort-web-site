@@ -24,6 +24,8 @@ export const getFilteredProfiles = async (
       availability,
       isActive,
       isVerified,
+      profileVerified,
+      documentVerified,
       hasDestacadoUpgrade,
       hasVideos,
       page = 1,
@@ -92,6 +94,92 @@ export const getFilteredProfiles = async (
       query['user.isVerified'] = isVerified;
     }
 
+    // Filtro por verificación de perfil (basado en videoVerification)
+    if (profileVerified !== undefined) {
+      // Buscar perfiles que tengan verificación de video completada
+      const profileVerificationQuery = await Profile.aggregate([
+        {
+          $lookup: {
+            from: 'profileverifications',
+            localField: 'verification',
+            foreignField: '_id',
+            as: 'verificationData'
+          }
+        },
+        {
+          $match: {
+            'verificationData.steps.videoVerification.isVerified': profileVerified
+          }
+        },
+        {
+          $project: {
+            _id: 1
+          }
+        }
+      ]);
+
+      const verifiedProfileIds = profileVerificationQuery.map(p => p._id);
+
+      if (profileVerified) {
+        // Solo incluir perfiles con video verificado
+        query._id = { $in: verifiedProfileIds };
+      } else {
+        // Excluir perfiles con video verificado
+        query._id = { $nin: verifiedProfileIds };
+      }
+    }
+
+    // Filtro por verificación de documentos (basado en documentPhotos)
+    if (documentVerified !== undefined) {
+      // Buscar perfiles que tengan verificación de documentos completada
+      const documentVerificationQuery = await Profile.aggregate([
+        {
+          $lookup: {
+            from: 'profileverifications',
+            localField: 'verification',
+            foreignField: '_id',
+            as: 'verificationData'
+          }
+        },
+        {
+          $match: {
+            'verificationData.steps.documentPhotos.isVerified': documentVerified
+          }
+        },
+        {
+          $project: {
+            _id: 1
+          }
+        }
+      ]);
+
+      const documentVerifiedProfileIds = documentVerificationQuery.map(p => p._id);
+
+      if (documentVerified) {
+        // Solo incluir perfiles con documentos verificados
+        if (query._id && query._id.$in) {
+          // Si ya hay filtro de profileVerified, hacer intersección
+          query._id = { $in: query._id.$in.filter((id: any) => documentVerifiedProfileIds.some(docId => docId.equals(id))) };
+        } else if (query._id && query._id.$nin) {
+          // Si hay exclusión previa, combinar con inclusión de documentos
+          query._id = { $in: documentVerifiedProfileIds, $nin: query._id.$nin };
+        } else {
+          query._id = { $in: documentVerifiedProfileIds };
+        }
+      } else {
+        // Excluir perfiles con documentos verificados
+        if (query._id && query._id.$in) {
+          // Si ya hay inclusión, filtrar excluyendo documentos verificados
+          query._id = { $in: query._id.$in.filter((id: any) => !documentVerifiedProfileIds.some(docId => docId.equals(id))) };
+        } else if (query._id && query._id.$nin) {
+          // Si ya hay exclusión, agregar más IDs a excluir
+          query._id = { $nin: [...query._id.$nin, ...documentVerifiedProfileIds] };
+        } else {
+          query._id = { $nin: documentVerifiedProfileIds };
+        }
+      }
+    }
+
     // Filtro por destacado (upgrade activo)
     if (hasDestacadoUpgrade !== undefined && hasDestacadoUpgrade) {
       const now = new Date();
@@ -119,61 +207,99 @@ export const getFilteredProfiles = async (
     }
 
     // Filtro por características (features)
-    // DEBUG - Features object
     if (features && Object.keys(features).length > 0) {
-      // DEBUG - Processing features with keys
       const featureConditions: any[] = [];
 
-      // Primero necesitamos obtener los IDs de los grupos por sus keys
-      const groupKeys = Object.keys(features);
-      // DEBUG - Features keys
-      const attributeGroups = await AttributeGroup.find({
-        key: { $in: groupKeys },
-      });
-      // DEBUG - Found attribute groups
-      const groupKeyToId = new Map();
-      attributeGroups.forEach((group) => {
-        groupKeyToId.set(group.key, group._id);
-      });
-      // DEBUG - Group key to ID map
+      // Manejo especial para ageRange
+      // Reemplaza esta sección en tu código:
 
-      for (const [groupKey, value] of Object.entries(features)) {
-        const groupId = groupKeyToId.get(groupKey);
-        // DEBUG - Processing feature
-        if (!groupId) {
-          // WARNING - No groupId found for feature key
-          continue;
-        }
+      // Manejo especial para ageRange
+      if (features.ageRange && typeof features.ageRange === 'object') {
+        const { min, max } = features.ageRange as { min?: number; max?: number };
 
-        if (Array.isArray(value)) {
-          // Si es un array, buscar cualquiera de los valores (normalizados)
-          const normalizedValues = value.map((v) => v.toLowerCase().trim());
-          const condition = {
-            features: {
-              $elemMatch: {
-                group_id: groupId,
-                value: { $in: normalizedValues },
-              },
-            },
-          };
-          featureConditions.push(condition);
-        } else {
-          // Si es un valor único (normalizado) - buscar en el array de valores del perfil
-          const normalizedValue = (value as string).toLowerCase().trim();
-          const condition = {
-            features: {
-              $elemMatch: {
-                group_id: groupId,
-                value: { $in: [normalizedValue] },
-              },
-            },
-          };
-          featureConditions.push(condition);
+        if (min !== undefined || max !== undefined) {
+          // SOLUCIÓN: Usar $expr para convertir string a number en la comparación
+          const ageConditions: any[] = [];
+
+          if (min !== undefined) {
+            ageConditions.push({
+              $expr: {
+                $gte: [{ $toInt: "$age" }, min]
+              }
+            });
+          }
+
+          if (max !== undefined) {
+            ageConditions.push({
+              $expr: {
+                $lte: [{ $toInt: "$age" }, max]
+              }
+            });
+          }
+
+          // Si ya existe $and, agregar las condiciones, si no, crearla
+          if (query.$and) {
+            query.$and.push(...ageConditions);
+          } else {
+            query.$and = ageConditions;
+          }
+
         }
       }
 
-      if (featureConditions.length > 0) {
-        query.$and = featureConditions;
+      // Procesar otras características (excluyendo ageRange)
+      const otherFeatures = Object.fromEntries(
+        Object.entries(features).filter(([key]) => key !== 'ageRange')
+      );
+
+      if (Object.keys(otherFeatures).length > 0) {
+        // Primero necesitamos obtener los IDs de los grupos por sus keys
+        const groupKeys = Object.keys(otherFeatures);
+        const attributeGroups = await AttributeGroup.find({
+          key: { $in: groupKeys },
+        });
+        const groupKeyToId = new Map();
+        attributeGroups.forEach((group) => {
+          groupKeyToId.set(group.key, group._id);
+        });
+
+        for (const [groupKey, value] of Object.entries(otherFeatures)) {
+          const groupId = groupKeyToId.get(groupKey);
+          if (!groupId) {
+            console.warn('⚠️ WARNING - No groupId found for feature key:', groupKey);
+            continue;
+          }
+
+          if (Array.isArray(value)) {
+            // Si es un array, buscar cualquiera de los valores (normalizados)
+            const normalizedValues = value.map((v) => v.toLowerCase().trim());
+            const condition = {
+              features: {
+                $elemMatch: {
+                  group_id: groupId,
+                  value: { $in: normalizedValues },
+                },
+              },
+            };
+            featureConditions.push(condition);
+          } else {
+            // Si es un valor único (normalizado) - buscar en el array de valores del perfil
+            const normalizedValue = (value as string).toLowerCase().trim();
+            const condition = {
+              features: {
+                $elemMatch: {
+                  group_id: groupId,
+                  value: { $in: [normalizedValue] },
+                },
+              },
+            };
+            featureConditions.push(condition);
+          }
+        }
+
+        if (featureConditions.length > 0) {
+          query.$and = featureConditions;
+        }
       }
     }
 
@@ -244,9 +370,24 @@ export const getFilteredProfiles = async (
 
     // Determinar campos a seleccionar: asegurar campos requeridos por el motor de visibilidad
     const requiredFields = ['planAssignment', 'upgrades', 'lastShownAt', 'createdAt'];
+
+    // Campos mínimos necesarios para ProfileCard
+    const profileCardFields = [
+      '_id',
+      'name',
+      'age',
+      'location',
+      'description',
+      'verification',
+      'media.gallery',
+      'online',
+      'hasVideo'
+    ];
+
     const finalFields = Array.isArray(fields) && fields.length > 0
       ? Array.from(new Set([...fields, ...requiredFields]))
-      : ['_id', 'name', 'age', 'location', 'description', 'verification', 'media', 'isActive', ...requiredFields];
+      : Array.from(new Set([...profileCardFields, ...requiredFields]));
+
     const selectFields = finalFields.join(' ');
 
     const startTime = Date.now();
@@ -254,7 +395,7 @@ export const getFilteredProfiles = async (
     // Debug: Log para verificar la query
     // DEBUG getFilteredProfiles - Query inicial
 
-    // Usar agregación para filtrar perfiles con usuarios verificados (alineado con homeFeed)
+    // Usar agregación para obtener todos los perfiles con información de usuario
     const aggregationPipeline: any[] = [
       {
         $match: query
@@ -267,11 +408,6 @@ export const getFilteredProfiles = async (
           as: 'userInfo'
         }
       },
-      {
-      $match: {
-        'userInfo.isVerified': true
-      }
-    },
       {
         $addFields: {
           user: { $arrayElemAt: ['$userInfo', 0] }
@@ -303,6 +439,26 @@ export const getFilteredProfiles = async (
       });
     }
 
+    // Agregar lookup para planAssignment.plan
+    aggregationPipeline.push({
+      $lookup: {
+        from: 'plandefinitions',
+        localField: 'planAssignment.plan',
+        foreignField: '_id',
+        as: 'planAssignmentPlan'
+      }
+    });
+    aggregationPipeline.push({
+      $addFields: {
+        'planAssignment.plan': { $arrayElemAt: ['$planAssignmentPlan', 0] }
+      }
+    });
+    aggregationPipeline.push({
+      $project: {
+        planAssignmentPlan: 0
+      }
+    });
+
     // Agregar lookup para features si es necesario
     if (fields && fields.includes('features')) {
       aggregationPipeline.push({
@@ -314,6 +470,19 @@ export const getFilteredProfiles = async (
         }
       });
     }
+
+    // Agregar proyección final para limitar campos devueltos
+    const projectionFields: any = {};
+    finalFields.forEach(field => {
+      projectionFields[field] = 1;
+    });
+
+    // Asegurar que siempre incluimos el campo user para verificaciones
+    projectionFields['user'] = 1;
+
+    aggregationPipeline.push({
+      $project: projectionFields
+    });
 
     // Ejecutar agregación para obtener perfiles
     const [allProfiles, totalCountResult] = await Promise.all([
@@ -328,11 +497,6 @@ export const getFilteredProfiles = async (
             localField: 'user',
             foreignField: '_id',
             as: 'userInfo'
-          }
-        },
-        {
-          $match: {
-            'userInfo.isVerified': true
           }
         },
         { $count: 'total' }
@@ -371,16 +535,16 @@ export const getFilteredProfiles = async (
       limit,
     };
 
-    // Agregar información de verificación a los perfiles
+    // Agregar información de verificación y hasDestacadoUpgrade a los perfiles
     const profilesWithVerification = paginatedProfiles.map(profile => {
       // Calcular estado de verificación basado en verificationStatus
       let isVerified = false;
       let verificationLevel = 'pending';
-      
+
       if (profile.verification) {
         const verifiedCount = Object.values(profile.verification).filter(status => status === 'verified').length;
         const totalFields = Object.keys(profile.verification).length;
-        
+
         if (verifiedCount === totalFields && totalFields > 0) {
           isVerified = true;
           verificationLevel = 'verified';
@@ -388,9 +552,26 @@ export const getFilteredProfiles = async (
           verificationLevel = 'partial';
         }
       }
-      
+
+      // Calcular hasDestacadoUpgrade
+      const now = new Date();
+      let hasDestacadoUpgrade = false;
+
+      // Verificar si tiene plan DIAMANTE
+      if (profile.planAssignment?.planCode === 'DIAMANTE') {
+        hasDestacadoUpgrade = true;
+      } else if (profile.upgrades && Array.isArray(profile.upgrades)) {
+        // Verificar si tiene upgrade DESTACADO/HIGHLIGHT activo
+        hasDestacadoUpgrade = profile.upgrades.some((upgrade: any) =>
+          ['DESTACADO', 'HIGHLIGHT'].includes(upgrade.code) &&
+          new Date(upgrade.startAt) <= now &&
+          new Date(upgrade.endAt) > now
+        );
+      }
+
       return {
         ...profile,
+        hasDestacadoUpgrade,
         verification: {
           isVerified,
           verificationLevel

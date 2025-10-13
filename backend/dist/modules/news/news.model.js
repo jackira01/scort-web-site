@@ -19,6 +19,18 @@ const newsSchema = new mongoose_1.Schema({
             message: 'Debe incluir al menos un elemento en el contenido'
         }
     },
+    imageUrl: {
+        type: String,
+        trim: true,
+        validate: {
+            validator: function (v) {
+                if (!v)
+                    return true;
+                return /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(v);
+            },
+            message: 'La URL de la imagen debe ser una URL válida de imagen'
+        }
+    },
     published: {
         type: Boolean,
         default: true

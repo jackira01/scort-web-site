@@ -38,7 +38,7 @@ export function ImageCropModal({
   fileName = 'imagen'
 }: ImageCropModalProps) {
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(0.5);
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CroppedAreaPixels | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -84,7 +84,42 @@ export function ImageCropModal({
       onCropComplete(blob, processedResult.url);
       onClose();
     } catch (error) {
-      // Error handling
+      console.error('Error processing image:', error);
+      // Fallback: crear un canvas simple para el crop
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const image = new Image();
+
+        image.onload = () => {
+          canvas.width = croppedAreaPixels.width;
+          canvas.height = croppedAreaPixels.height;
+
+          ctx?.drawImage(
+            image,
+            croppedAreaPixels.x,
+            croppedAreaPixels.y,
+            croppedAreaPixels.width,
+            croppedAreaPixels.height,
+            0,
+            0,
+            croppedAreaPixels.width,
+            croppedAreaPixels.height
+          );
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob);
+              onCropComplete(blob, url);
+              onClose();
+            }
+          }, 'image/jpeg', 0.9);
+        };
+
+        image.src = imageSrc;
+      } catch (fallbackError) {
+        console.error('Fallback crop failed:', fallbackError);
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -92,7 +127,7 @@ export function ImageCropModal({
 
   const resetCrop = () => {
     setCrop({ x: 0, y: 0 });
-    setZoom(1);
+    setZoom(0.5);
     setRotation(0);
   };
 
@@ -139,17 +174,25 @@ export function ImageCropModal({
               crop={crop}
               zoom={zoom}
               rotation={rotation}
-              aspect={4 / 5}
+              aspect={aspectRatio}
               onCropChange={setCrop}
               onCropComplete={onCropCompleteCallback}
               onZoomChange={setZoom}
               onMediaLoaded={onMediaLoaded}
               showGrid={true}
+              restrictPosition={false}
               style={{
                 containerStyle: {
                   width: '100%',
                   height: '100%',
                   backgroundColor: 'transparent'
+                },
+                cropAreaStyle: {
+                  border: '2px solid #3b82f6',
+                  borderRadius: '4px'
+                },
+                mediaStyle: {
+                  transform: 'none'
                 }
               }}
             />
@@ -166,7 +209,7 @@ export function ImageCropModal({
               <Slider
                 value={[zoom]}
                 onValueChange={(value) => setZoom(value[0])}
-                min={1}
+                min={0.1}
                 max={3}
                 step={0.1}
                 className="w-full"

@@ -8,8 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CheckCircle, XCircle, Clock, Eye, FileText, Building } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { DateTime } from 'luxon';
 
 interface AgencyConversionRequest {
   _id: string;
@@ -117,7 +116,7 @@ const AgencyConversionManager: React.FC<AgencyConversionManagerProps> = ({
           <div>
             <p className="text-sm font-medium text-gray-700">Fecha de solicitud:</p>
             <p className="text-sm text-gray-600">
-              {format(new Date(request.conversionRequestedAt), 'dd/MM/yyyy HH:mm', { locale: es })}
+              {DateTime.fromJSDate(new Date(request.conversionRequestedAt)).setLocale('es').toFormat('dd/MM/yyyy HH:mm')}
             </p>
           </div>
 
@@ -125,7 +124,7 @@ const AgencyConversionManager: React.FC<AgencyConversionManagerProps> = ({
             <div>
               <p className="text-sm font-medium text-gray-700">Fecha de procesamiento:</p>
               <p className="text-sm text-gray-600">
-                {format(new Date(request.conversionApprovedAt), 'dd/MM/yyyy HH:mm', { locale: es })}
+                {DateTime.fromJSDate(new Date(request.conversionApprovedAt)).setLocale('es').toFormat('dd/MM/yyyy HH:mm')}
               </p>
             </div>
           )}

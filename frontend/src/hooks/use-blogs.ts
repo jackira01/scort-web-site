@@ -1,7 +1,9 @@
+"use client";
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { blogService } from '../services/blog.service';
 import toast from 'react-hot-toast';
-import { OutputData } from '@editorjs/editorjs';
+import type { OutputData } from '@editorjs/editorjs';
 
 export interface Blog {
   _id: string;

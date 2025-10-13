@@ -25,7 +25,11 @@ const createNewsValidation = [
     (0, express_validator_1.body)('published')
         .optional()
         .isBoolean()
-        .withMessage('El campo published debe ser un booleano')
+        .withMessage('El campo published debe ser un booleano'),
+    (0, express_validator_1.body)('imageUrl')
+        .optional()
+        .isURL()
+        .withMessage('La URL de la imagen debe ser válida')
 ];
 const updateNewsValidation = [
     (0, express_validator_1.param)('id')
@@ -50,7 +54,11 @@ const updateNewsValidation = [
     (0, express_validator_1.body)('published')
         .optional()
         .isBoolean()
-        .withMessage('El campo published debe ser un booleano')
+        .withMessage('El campo published debe ser un booleano'),
+    (0, express_validator_1.body)('imageUrl')
+        .optional()
+        .isURL()
+        .withMessage('La URL de la imagen debe ser válida')
 ];
 const idValidation = [
     (0, express_validator_1.param)('id')

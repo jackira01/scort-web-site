@@ -62,15 +62,27 @@ const profileSchema = new mongoose_1.Schema({
     ],
     age: { type: String, required: true, },
     contact: {
-        number: { type: String, required: true, },
+        number: { type: String, required: false },
         whatsapp: { type: String, required: false },
         telegram: { type: String, required: false },
         changedAt: Date,
     },
     height: { type: String, required: true },
+    basicServices: [{ type: String }],
+    additionalServices: [{ type: String }],
+    socialMedia: {
+        instagram: { type: String, required: false },
+        facebook: { type: String, required: false },
+        tiktok: { type: String, required: false },
+        twitter: { type: String, required: false },
+        onlyFans: { type: String, required: false },
+    },
     media: {
         gallery: [String],
-        videos: [String],
+        videos: [{
+                link: String,
+                preview: String,
+            }],
         audios: [String],
         stories: [{
                 link: String,

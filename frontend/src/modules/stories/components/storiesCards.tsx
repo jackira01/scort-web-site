@@ -3,8 +3,8 @@
 import { Play } from 'lucide-react';
 import { useState } from 'react';
 import StoriesModal from '@/components/modals/StoriesModal';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useProfilesWithStories } from '@/hooks/use-profiles-with-stories';
+import Image from 'next/image';
 
 const StoriesCards = () => {
   const { data, isLoading: loading, error } = useProfilesWithStories(1, 20);
@@ -49,7 +49,7 @@ const StoriesCards = () => {
   if (error || profilesWithStories.length === 0) {
     return (
       <div className="animate-in fade-in-50 slide-in-from-bottom-4 duration-500">
-        <h2 className="text-2xl lg:text-3xl font-bold title-gradient bg-clip-text text-transparent m-0 mb-4">
+        <h2 className="text-2xl lg:text-3xl font-bold text-gray-700 dark:text-gray-200 m-0 mb-4">
           Últimas historias
         </h2>
         <p className="text-muted-foreground">
@@ -81,7 +81,9 @@ const StoriesCards = () => {
                   }`}
               >
                 <div className="w-24 h-24 lg:w-28 lg:h-28 rounded-full overflow-hidden border-2 border-background">
-                  <img
+                  <Image
+                    width={128}
+                    height={128}
                     src={profile.media?.gallery?.[0] || '/placeholder.svg'}
                     alt={profile.name}
                     className="w-full h-full object-cover"

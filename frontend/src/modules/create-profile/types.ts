@@ -20,6 +20,8 @@ export interface FormData {
   // Step 2 - Descripción
   description: string;
   selectedServices: string[];
+  basicServices: string[];
+  additionalServices: string[];
 
   // Step 3 - Detalles
   contact: {
@@ -29,12 +31,19 @@ export interface FormData {
   };
   age: string;
   skinColor: string;
-  sexuality: string;
+  // sexuality: string; // REMOVIDO
   eyeColor: string;
   hairColor: string;
   bodyType: string;
   height: string;
   // bustSize: string;
+  socialMedia?: {
+    instagram?: string;
+    facebook?: string;
+    tiktok?: string;
+    twitter?: string;
+    onlyFans?: string;
+  };
   rates: Rate[];
   availability: Array<{
     dayOfWeek: string;

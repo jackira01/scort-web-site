@@ -3,7 +3,19 @@
  * para evitar múltiples transformaciones que degradan la calidad y causan desplazamientos
  */
 
-import imageCompression from 'browser-image-compression';
+import { v4 as uuidv4 } from 'uuid';
+import { applyWatermarkToImage } from './watermark';
+
+/**
+ * Carga dinámica de browser-image-compression solo en el cliente
+ */
+const loadImageCompression = async () => {
+  if (typeof window === 'undefined') {
+    throw new Error('browser-image-compression solo puede usarse en el cliente');
+  }
+  const { default: imageCompression } = await import('browser-image-compression');
+  return imageCompression;
+};
 
 export interface CroppedAreaPixels {
   width: number;
@@ -218,6 +230,7 @@ export const processCroppedImageCentralized = async (
 
     // Solo comprimir si el archivo es mayor al límite
     if (finalFile.size > maxSizeMB * 1024 * 1024) {
+      const imageCompression = await loadImageCompression();
       finalFile = await imageCompression(finalFile, {
         maxSizeMB,
         maxWidthOrHeight,
@@ -260,7 +273,8 @@ export const processCroppedImageCentralized = async (
       originalFileName
     };
   } catch (error) {
-    throw new Error('Error al procesar la imagen de forma centralizada');
+    console.error('Error detallado en processCroppedImageCentralized:', error);
+    throw new Error(`Error al procesar la imagen de forma centralizada: ${error instanceof Error ? error.message : 'Error desconocido'}`);
   }
 };
 
@@ -268,8 +282,7 @@ export const processCroppedImageCentralized = async (
  * Calcula opciones óptimas de procesamiento basadas en las dimensiones del crop
  */
 export const calculateOptimalProcessingOptions = (
-  cropDimensions: { width: number; height: number },
-  targetSizeKB = 600
+  cropDimensions: { width: number; height: number }
 ): CentralizedProcessingOptions => {
   const { width, height } = cropDimensions;
   const totalPixels = width * height;

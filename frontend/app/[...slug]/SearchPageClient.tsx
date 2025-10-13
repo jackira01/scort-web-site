@@ -1,17 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Filter, Grid, List, X } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import {
   Sheet,
@@ -20,15 +13,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge';
 import SearchProfilesSSG from '@/modules/catalogs/components/SearchProfilesSSG';
 import FeaturedProfilesSection from '@/components/featured/FeaturedProfilesSection';
 import AgeFilter from '@/modules/filters/components/AgeFilter';
-import FilterToglles from '@/modules/filters/components/FilterToglles';
 import GenderFilter from '@/modules/filters/components/GenderFilter';
 import CategoryFilter from '@/modules/filters/components/CategoryFilter';
-import SexFilter from '@/modules/filters/components/SexFilter';
 import LocationFilter from '@/modules/filters/components/LocationFIlter';
+import HorizontalFilterBar from '@/modules/filters/components/HorizontalFilterBar';
 import { useSearchFilters } from '@/hooks/use-search-filters';
 import { useFilteredProfiles } from '@/hooks/use-filtered-profiles';
 import type { ProfilesResponse } from '@/types/profile.types';
@@ -66,15 +57,25 @@ export default function SearchPageClient({
     filters,
     updateFilter,
     clearFilters,
+    updateVerification,
   } = useSearchFilters(initialFilters);
 
   // Construir filtros solo con valores definidos
   const queryFilters = {
     ...(filters.category && { category: filters.category }),
     ...(filters.location?.department && { location: filters.location }),
-    ...(filters.features?.age && { age: filters.features.age }),
-    ...(filters.features?.gender && { gender: filters.features.gender }),
-    ...(filters.features?.sex && { sex: filters.features.sex }),
+    // Construir features correctamente
+    ...((filters.features?.ageRange || filters.features?.gender || filters.features?.sex) && {
+      features: {
+        ...(filters.features?.ageRange && { ageRange: filters.features.ageRange }),
+        ...(filters.features?.gender && { gender: filters.features.gender }),
+        ...(filters.features?.sex && { sex: filters.features.sex }),
+      }
+    }),
+    // Incluir filtros de verificación del HorizontalFilterBar
+    ...(filters.verification?.identityVerified && { profileVerified: filters.verification.identityVerified }),
+    ...(filters.verification?.hasVideo && { hasVideos: filters.verification.hasVideo }),
+    ...(filters.verification?.documentVerified && { documentVerified: filters.verification.documentVerified }),
     isActive: true,
     sortBy: 'createdAt',
     sortOrder: 'desc' as const,
@@ -84,12 +85,16 @@ export default function SearchPageClient({
 
   // Determinar si los filtros han cambiado desde los iniciales
   const hasFiltersChanged = Boolean(
-    filters.features?.age ||
+    filters.features?.ageRange ||
     filters.features?.gender ||
     filters.features?.sex ||
     (filters.location?.department !== departamento) ||
     (filters.location?.city !== ciudad) ||
-    (filters.category !== categoria)
+    (filters.category !== categoria) ||
+    // Incluir filtros de verificación en la detección de cambios
+    filters.verification?.identityVerified ||
+    filters.verification?.hasVideo ||
+    filters.verification?.documentVerified
   );
 
   // Usar useQuery para manejar los datos filtrados
@@ -107,14 +112,6 @@ export default function SearchPageClient({
       refetchOnMount: hasFiltersChanged // Solo refetch si los filtros cambiaron
     }
   );
-
-
-
-
-
-
-
-
 
   // Función wrapper para limpiar filtros y refrescar datos
   const handleClearFilters = async () => {
@@ -168,7 +165,7 @@ export default function SearchPageClient({
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50">
       {/* Header con información de ubicación */}
-      <div className="backdrop-blur-sm border-b border-purple-100 sticky top-0 z-40">
+      <div className="backdrop-blur-sm border-b border-purple-100 dark:border-purple-900 sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col gap-4">
             {/* Breadcrumb */}
@@ -188,10 +185,11 @@ export default function SearchPageClient({
                   <span className="font-medium text-purple-600">{locationInfo.city}</span>
                 </>
               )}
+
             </div>
 
             {/* Título principal */}
-            <div className="flex flex-col gap-2">
+            {/* <div className="flex flex-col gap-2">
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
                 <span className="capitalize font-medium text-gray-800 dark:text-gray-200">{categoria}</span>
                 {locationInfo?.city && locationInfo?.department && (
@@ -207,7 +205,7 @@ export default function SearchPageClient({
                   {currentProfilesData.pagination.totalProfiles} perfiles encontrados
                 </p>
               )}
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -216,13 +214,15 @@ export default function SearchPageClient({
         {/* Sección de perfiles destacados */}
         <FeaturedProfilesSection className="mb-8" />
 
+
+
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar de filtros - Desktop */}
-          <div className="hidden lg:block w-80 flex-shrink-0">
+          <div className="hidden lg:block w-64 flex-shrink-0">
             <Card className="sticky top-32">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-200">Filtros</h2>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -243,6 +243,13 @@ export default function SearchPageClient({
 
                   <Separator />
 
+                  <AgeFilter
+                    ageRange={filters.features?.ageRange}
+                    onAgeRangeChange={(range) => handleUpdateFilter('ageRange', range)}
+                  />
+
+                  <Separator />
+
                   <CategoryFilter
                     selectedCategory={filters.category}
                     onCategoryChange={(category) => handleUpdateFilter('category', category)}
@@ -256,31 +263,24 @@ export default function SearchPageClient({
                     category={categoria}
                   />
 
-                  <Separator />
+                  {/* <Separator />
 
                   <SexFilter
                     selectedSex={filters.features?.sex}
                     onSexChange={(sex) => handleUpdateFilter('sex', sex)}
                     category={categoria}
-                  />
+                  /> */}
 
-                  <Separator />
 
-                  <AgeFilter
-                    ageRange={filters.features?.ageRange}
-                    onAgeRangeChange={(range) => handleUpdateFilter('ageRange', range)}
-                  />
 
-                  <Separator />
-
-                  <FilterToglles
+                  {/* <FilterToglles
                     filters={{
-                      verified: filters.isVerified,
+                      verified: filters.profileVerified,
                       video: filters.hasVideos,
                       destacado: filters.hasDestacadoUpgrade,
                     }}
                     onFilterChange={handleUpdateFilter}
-                  />
+                  /> */}
                 </div>
               </CardContent>
             </Card>
@@ -288,6 +288,13 @@ export default function SearchPageClient({
 
           {/* Contenido principal */}
           <div className="flex-1 min-w-0">
+            {/* Barra de filtros horizontal */}
+            <HorizontalFilterBar
+              filters={filters.verification}
+              onFiltersChange={updateVerification}
+              onClearFilters={handleClearFilters}
+              className="mb-4"
+            />
             {/* Controles superiores */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               {/* Filtros móviles */}
@@ -301,20 +308,24 @@ export default function SearchPageClient({
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="left" className="w-80 overflow-y-auto max-h-screen">
-                    <SheetHeader className="sticky top-0 bg-white z-10 pb-4">
-                      <SheetTitle className="flex items-center justify-between">
+                    <SheetHeader className="sticky top-0 bg-white dark:bg-gray-900 z-10 pb-2">
+                      <SheetTitle>
                         Filtros
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleClearFilters}
-                          disabled={isLoadingProfiles}
-                          className="text-purple-600 hover:text-purple-700"
-                        >
-                          {isLoadingProfiles ? 'Cargando...' : 'Restaurar filtros'}
-                        </Button>
                       </SheetTitle>
                     </SheetHeader>
+
+                    {/* Botón restaurar filtros separado del header */}
+                    <div className="sticky top-16 bg-white dark:bg-gray-900 z-10 pb-4 pt-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleClearFilters}
+                        disabled={isLoadingProfiles}
+                        className="text-purple-600 hover:text-purple-700 w-full"
+                      >
+                        {isLoadingProfiles ? 'Cargando...' : 'Restaurar filtros'}
+                      </Button>
+                    </div>
 
                     <div className="mt-6 space-y-6 pb-20 px-1">
                       <LocationFilter
@@ -340,13 +351,13 @@ export default function SearchPageClient({
 
                       <Separator />
 
-                      <SexFilter
+                      {/* <SexFilter
                         selectedSex={filters.features?.sex}
                         onSexChange={(sex) => updateFilter('sex', sex)}
                         category={categoria}
                       />
 
-                      <Separator />
+                      <Separator /> */}
 
                       <AgeFilter
                         ageRange={filters.features?.ageRange}
@@ -355,21 +366,21 @@ export default function SearchPageClient({
 
                       <Separator />
 
-                      <FilterToglles
+                      {/* <FilterToglles
                         filters={{
-                          verified: filters.isVerified,
+                          verified: filters.profileVerified,
                           video: filters.hasVideos,
                           destacado: filters.hasDestacadoUpgrade,
                         }}
                         onFilterChange={handleUpdateFilter}
-                      />
+                      /> */}
                     </div>
                   </SheetContent>
                 </Sheet>
               </div>
 
               {/* Controles de vista */}
-              <div className="flex items-center gap-2">
+              {/*  <div className="flex items-center gap-2">
                 <Select value={viewMode} onValueChange={(value: 'grid' | 'list') => setViewMode(value)}>
                   <SelectTrigger className="w-32">
                     <SelectValue />
@@ -389,7 +400,7 @@ export default function SearchPageClient({
                     </SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
             </div>
 
 

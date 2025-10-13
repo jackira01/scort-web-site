@@ -4,8 +4,17 @@ import {
   Phone,
   Users,
   Video,
+  VideoIcon,
 } from 'lucide-react';
 import type { VerificationStep } from '../types/verification.types';
+
+interface ProfileVerificationSteps {
+  steps: {
+    [key: string]: {
+      isVerified: boolean;
+    };
+  };
+}
 
 export const verificationSteps: VerificationStep[] = [
   {
@@ -15,10 +24,16 @@ export const verificationSteps: VerificationStep[] = [
     description: 'Verificación de documentos de identidad',
   },
   {
-    key: 'video',
-    label: 'Video de Verificación',
+    key: 'mediaVerification',
+    label: 'Video/foto de Verificación',
     icon: <Video className="h-5 w-5" />,
-    description: 'Video de verificación',
+    description: 'Video/foto de verificación de identidad',
+  },
+  {
+    key: 'videoCallRequested',
+    label: 'Verificación por Videollamada',
+    icon: <VideoIcon className="h-5 w-5" />,
+    description: 'Verificación mediante videollamada en tiempo real',
   },
   {
     key: 'socialMedia',
@@ -28,14 +43,17 @@ export const verificationSteps: VerificationStep[] = [
   },
 ];
 
-export const getVerifiedCount = (verification: any): number => {
-  if (!verification?.steps) return 0;
+export const getVerifiedCount = (verification: ProfileVerificationSteps | unknown): number => {
+  if (!verification || typeof verification !== 'object') return 0;
+  
+  const verificationData = verification as ProfileVerificationSteps;
+  if (!verificationData?.steps) return 0;
 
   let count = 0;
 
-  // Contar solo los pasos simplificados verificados
+  // Contar solo los pasos verificados
   verificationSteps.forEach(step => {
-    if (verification.steps[step.key]?.isVerified) {
+    if (verificationData.steps[step.key]?.isVerified) {
       count++;
     }
   });
@@ -43,7 +61,7 @@ export const getVerifiedCount = (verification: any): number => {
   return count;
 };
 
-// Función para obtener el total de pasos simplificados
+// Función para obtener el total de pasos
 export const getTotalSteps = (): number => {
-  return verificationSteps.length; // Siempre 3 pasos: documentos, video, redes sociales
+  return verificationSteps.length; // Ahora 4 pasos: documentos, video, videollamada, redes sociales
 };

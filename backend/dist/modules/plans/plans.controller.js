@@ -369,24 +369,6 @@ class PlansController {
             });
         }
     }
-    async validatePlanUpgrades(req, res) {
-        try {
-            const { code } = req.params;
-            const result = await plans_service_1.plansService.validatePlanUpgrades(code);
-            res.status(200).json({
-                success: true,
-                message: 'Validación completada',
-                data: result
-            });
-        }
-        catch (error) {
-            res.status(400).json({
-                success: false,
-                message: error.message || 'Error al validar upgrades del plan',
-                error: error.message
-            });
-        }
-    }
     async getUpgradeDependencyTree(req, res) {
         try {
             const { code } = req.params;
@@ -453,8 +435,19 @@ class PlansController {
                 });
                 return;
             }
-            const { profileId, planCode, variantDays } = req.body;
-            const result = await plans_service_1.plansService.renewPlan(profileId, planCode, variantDays);
+            const { profileId, extensionDays } = req.body;
+            const ProfileModel = require('../profile/profile.model').ProfileModel;
+            const profile = await ProfileModel.findById(profileId);
+            if (!profile || !profile.planAssignment) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Plan no encontrado o inactivo',
+                    error: 'Plan no encontrado o inactivo'
+                });
+                return;
+            }
+            const planCode = profile.planAssignment.planCode;
+            const result = await plans_service_1.plansService.renewPlan(profileId, planCode, extensionDays);
             res.status(200).json({
                 success: true,
                 message: 'Plan renovado exitosamente',

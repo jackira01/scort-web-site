@@ -44,12 +44,39 @@ export const useFilterOptions = (): UseFilterOptionsReturn => {
   
         
         if (response.success && response.data) {
-          setData(response.data);
+          // Validar que categories sea un array
+          const validatedData = {
+            ...response.data,
+            categories: Array.isArray(response.data.categories) ? response.data.categories : []
+          };
+          setData(validatedData);
         } else {
           throw new Error('Invalid response format');
         }
       } catch (err) {
-  
+        console.error('Error fetching filter options:', err);
+        // Fallback con datos por defecto cuando el backend no está disponible
+        const fallbackData: FilterOptions = {
+          categories: [
+            { label: 'ESCORT', value: 'escort' },
+            { label: 'MASAJISTA', value: 'masajista' },
+            { label: 'MODELO', value: 'modelo' },
+            { label: 'ACOMPAÑANTE', value: 'acompañante' },
+            { label: 'TRANS', value: 'trans' },
+            { label: 'GIGOLO', value: 'gigolo' }
+          ],
+          locations: {
+            countries: [],
+            departments: [],
+            cities: []
+          },
+          features: {},
+          priceRange: {
+            min: 0,
+            max: 1000000
+          }
+        };
+        setData(fallbackData);
         setError(err instanceof Error ? err.message : 'Error fetching filter options');
       } finally {
         setLoading(false);

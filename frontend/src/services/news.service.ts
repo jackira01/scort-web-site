@@ -1,308 +1,110 @@
-import {
-  News,
-  NewsFilters,
-  CreateNewsRequest,
-  UpdateNewsRequest,
-  NewsListResponse,
-  NewsResponse,
-  NewsPaginationParams
-} from '../types/news.types';
+import axios from '@/lib/axios';
+import { News, CreateNewsRequest, NewsFormData } from '../types/news.types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
-interface ApiResponse<T> {
+export interface NewsResponse {
   success: boolean;
-  message: string;
-  data: T;
+  data: News[];
   pagination?: {
-    total: number;
     page: number;
-    totalPages: number;
     limit: number;
+    total: number;
+    totalPages: number;
   };
 }
 
+export interface SingleNewsResponse {
+  success: boolean;
+  data: News;
+}
+
+export interface NewsFilters {
+  page?: number;
+  limit?: number;
+  published?: boolean;
+  search?: string;
+  sortBy?: 'createdAt' | 'updatedAt' | 'title';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface NewsViewResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+}
+
 class NewsService {
-  private baseUrl = `${API_BASE_URL}/api/news`;
+  private baseUrl = '/api/news';
 
   /**
-   * Construir query string desde filtros
+   * Obtener todas las noticias con filtros opcionales
    */
-  private buildQueryString(filters: NewsFilters & NewsPaginationParams): string {
+  async getNews(filters: NewsFilters = {}): Promise<NewsResponse> {
     const params = new URLSearchParams();
 
     Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null) {
         params.append(key, value.toString());
       }
     });
 
-    return params.toString();
+    const response = await axios.get(`${this.baseUrl}?${params.toString()}`);
+    return response.data;
   }
 
   /**
-   * Manejar respuesta de la API
+   * Obtener una noticia por ID
    */
-  private async handleResponse<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({
-        message: `Error ${response.status}: ${response.statusText}`
-      }));
-      throw new Error(errorData.message || 'Error en la solicitud');
-    }
-
-    const data: ApiResponse<T> = await response.json();
-
-    if (!data.success) {
-      throw new Error(data.message || 'Error en la respuesta del servidor');
-    }
-
-    return data.data;
+  async getNewsById(id: string): Promise<SingleNewsResponse> {
+    const response = await axios.get(`${this.baseUrl}/${id}`);
+    return response.data;
   }
 
   /**
-   * Obtener headers de autenticación
+   * Obtener las últimas noticias
    */
-  private getAuthHeaders(): HeadersInit {
-    return {
-      'Content-Type': 'application/json',
-      // Agregar token de autenticación cuando esté disponible
-      // 'Authorization': `Bearer ${token}`
-    };
-  }
-
-  // ===== MÉTODOS PÚBLICOS =====
-
-  /**
-   * Obtener noticias con filtros y paginación
-   */
-  async getNews(filters: NewsFilters & NewsPaginationParams = {}): Promise<{
-    news: News[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
-    try {
-      const queryString = this.buildQueryString(filters);
-      const url = queryString ? `${this.baseUrl}?${queryString}` : this.baseUrl;
-
-      const response = await fetch(url);
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.message || 'Error al obtener noticias');
-      }
-
-      return {
-        news: result.data,
-        total: result.pagination?.total || 0,
-        page: result.pagination?.page || 1,
-        totalPages: result.pagination?.totalPages || 1
-      };
-    } catch (error: any) {
-      throw error;
-    }
+  async getLatestNews(limit: number = 5): Promise<NewsResponse> {
+    const response = await axios.get(`${this.baseUrl}/latest?limit=${limit}`);
+    return response.data;
   }
 
   /**
-   * Obtener noticia por ID
+   * Buscar noticias por término
    */
-  async getNewsById(id: string): Promise<News> {
-    try {
-      const response = await fetch(`${this.baseUrl}/${id}`);
-      return await this.handleResponse<News>(response);
-    } catch (error: any) {
-      throw error;
-    }
+  async searchNews(query: string): Promise<NewsResponse> {
+    const response = await axios.get(`${this.baseUrl}/search?q=${encodeURIComponent(query)}`);
+    return response.data;
   }
 
   /**
-   * Obtener últimas noticias publicadas
+   * Crear una nueva noticia (Admin)
    */
-  async getLatestNews(limit: number = 5): Promise<News[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/latest?limit=${limit}`);
-      return await this.handleResponse<News[]>(response);
-    } catch (error: any) {
-      throw error;
-    }
+  async createNews(newsData: CreateNewsRequest): Promise<SingleNewsResponse> {
+    const response = await axios.post(this.baseUrl, newsData);
+    return response.data;
   }
 
   /**
-   * Buscar noticias
+   * Actualizar una noticia (Admin)
    */
-  async searchNews(searchTerm: string, limit: number = 10): Promise<News[]> {
-    try {
-      const params = new URLSearchParams({
-        q: searchTerm,
-        limit: limit.toString()
-      });
-
-      const response = await fetch(`${this.baseUrl}/search?${params}`);
-      return await this.handleResponse<News[]>(response);
-    } catch (error: any) {
-      throw error;
-    }
-  }
-
-  // ===== MÉTODOS ADMINISTRATIVOS =====
-
-  /**
-   * Crear nueva noticia (solo admin)
-   */
-  async createNews(data: CreateNewsRequest): Promise<News> {
-    try {
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify(data)
-      });
-
-      return await this.handleResponse<News>(response);
-    } catch (error: any) {
-      throw error;
-    }
+  async updateNews(id: string, newsData: Partial<NewsFormData>): Promise<SingleNewsResponse> {
+    const response = await axios.put(`${this.baseUrl}/${id}`, newsData);
+    return response.data;
   }
 
   /**
-   * Actualizar noticia (solo admin)
+   * Alternar el estado de publicación de una noticia (Admin)
    */
-  async updateNews(id: string, data: UpdateNewsRequest): Promise<News> {
-    try {
-      const response = await fetch(`${this.baseUrl}/${id}`, {
-        method: 'PUT',
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify(data)
-      });
-
-      return await this.handleResponse<News>(response);
-    } catch (error: any) {
-      throw error;
-    }
+  async toggleNewsStatus(id: string): Promise<SingleNewsResponse> {
+    const response = await axios.patch(`${this.baseUrl}/${id}/toggle-status`);
+    return response.data;
   }
 
   /**
-   * Alternar estado de publicación (solo admin)
+   * Eliminar una noticia (Admin)
    */
-  async toggleNewsStatus(id: string): Promise<News> {
-    try {
-      const response = await fetch(`${this.baseUrl}/${id}/toggle-status`, {
-        method: 'PATCH',
-        headers: this.getAuthHeaders()
-      });
-
-      return await this.handleResponse<News>(response);
-    } catch (error: any) {
-      throw error;
-    }
-  }
-
-  /**
-   * Eliminar noticia (solo admin)
-   */
-  async deleteNews(id: string): Promise<void> {
-    try {
-      const response = await fetch(`${this.baseUrl}/${id}`, {
-        method: 'DELETE',
-        headers: this.getAuthHeaders()
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({
-          message: `Error ${response.status}: ${response.statusText}`
-        }));
-        throw new Error(errorData.message || 'Error al eliminar noticia');
-      }
-    } catch (error: any) {
-      throw error;
-    }
-  }
-
-  /**
-   * Obtener todas las noticias para admin (incluye no publicadas)
-   */
-  async getAllNewsForAdmin(filters: NewsFilters & NewsPaginationParams = {}): Promise<{
-    news: News[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
-    try {
-      const queryString = this.buildQueryString(filters);
-      const url = queryString ? `${this.baseUrl}/admin/all?${queryString}` : `${this.baseUrl}/admin/all`;
-
-      const response = await fetch(url, {
-        headers: this.getAuthHeaders()
-      });
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.message || 'Error al obtener noticias para admin');
-      }
-
-      return {
-        news: result.data,
-        total: result.pagination?.total || 0,
-        page: result.pagination?.page || 1,
-        totalPages: result.pagination?.totalPages || 1
-      };
-    } catch (error: any) {
-      throw error;
-    }
-  }
-
-  /**
-   * Obtener noticia específica para admin
-   */
-  async getNewsForAdmin(id: string): Promise<News> {
-    try {
-      const response = await fetch(`${this.baseUrl}/admin/${id}`, {
-        headers: this.getAuthHeaders()
-      });
-
-      return await this.handleResponse<News>(response);
-    } catch (error: any) {
-      throw error;
-    }
-  }
-
-  // ===== MÉTODOS UTILITARIOS =====
-
-  /**
-   * Formatear fecha
-   */
-  formatDate(dateString: string): string {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (error) {
-      return dateString;
-    }
-  }
-
-  /**
-   * Validar contenido de noticia
-   */
-  validateNewsContent(content: string[]): boolean {
-    return Array.isArray(content) &&
-      content.length > 0 &&
-      content.every(item => typeof item === 'string' && item.trim().length > 0);
-  }
-
-  /**
-   * Limpiar contenido de noticia
-   */
-  sanitizeNewsContent(content: string[]): string[] {
-    return content
-      .filter(item => typeof item === 'string' && item.trim().length > 0)
-      .map(item => item.trim());
+  async deleteNews(id: string): Promise<{ success: boolean; message: string }> {
+    const response = await axios.delete(`${this.baseUrl}/${id}`);
+    return response.data;
   }
 }
 

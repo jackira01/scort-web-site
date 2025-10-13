@@ -21,6 +21,7 @@ export interface IProfileUpgrade {
 }
 
 export interface IProfile extends Document {
+    _id: Types.ObjectId;
     user: Types.ObjectId;
     name: string;
     description: string;
@@ -52,6 +53,16 @@ export interface IProfile extends Document {
         changedAt: Date;
     };
     height: string;
+    // Nuevos campos para clasificación de servicios
+    basicServices?: string[];
+    additionalServices?: string[];
+    socialMedia?: {
+        instagram?: string;
+        facebook?: string;
+        tiktok?: string;
+        twitter?: string;
+        onlyFans?: string;
+    };
     media: {
         gallery: string[];
         videos: string[];
@@ -74,14 +85,14 @@ export interface IProfile extends Document {
     paymentHistory: Types.ObjectId[];
     plan: Types.ObjectId;
     lastLogin: Date;
-    
+
     // Nuevos campos para motor de visibilidad
     planAssignment: IPlanAssignment | null;
     upgrades: IProfileUpgrade[];
     lastShownAt?: Date;           // para rotación
     visible: boolean;             // default true mientras no expire plan
     isDeleted: boolean;           // borrado lógico - true significa eliminado
-    
+
     // Campos de timestamps de Mongoose
     createdAt: Date;
     updatedAt: Date;
@@ -91,6 +102,9 @@ export interface CreateProfileDTO {
     user: Types.ObjectId | string;
     name: string;
     description?: string;
+    // Nuevos campos para clasificación de servicios
+    basicServices?: string[];
+    additionalServices?: string[];
     location: {
         country: {
             value: string;
@@ -116,6 +130,13 @@ export interface CreateProfileDTO {
         telegram?: string;
     };
     height: string;
+    socialMedia?: {
+        instagram?: string;
+        facebook?: string;
+        tiktok?: string;
+        twitter?: string;
+        onlyFans?: string;
+    };
     media?: {
         gallery?: string[];
         videos?: string[];
@@ -126,7 +147,7 @@ export interface CreateProfileDTO {
     rates?: string[];
     paymentHistory?: string[];
     verification?: string;
-    
+
     // Nuevos campos opcionales para motor de visibilidad
     planAssignment?: {
         planId?: Types.ObjectId;
@@ -176,6 +197,13 @@ export interface IProfileInput {
         telegram?: string;
     };
     height: string;
+    socialMedia?: {
+        instagram?: string;
+        facebook?: string;
+        tiktok?: string;
+        twitter?: string;
+        onlyFans?: string;
+    };
     media?: {
         gallery?: string[];
         videos?: string[];
@@ -187,7 +215,7 @@ export interface IProfileInput {
     rates?: Types.ObjectId[];
     paymentHistory?: Types.ObjectId[];
     plan?: Types.ObjectId;
-    
+
     // Nuevos campos opcionales para motor de visibilidad
     planAssignment?: IPlanAssignment;
     upgrades?: IProfileUpgrade[];
@@ -197,6 +225,7 @@ export interface IProfileInput {
 }
 
 export interface IProfileVerification extends Document {
+    _id: Types.ObjectId;
     profile: Types.ObjectId;
     verificationStatus: 'pending' | 'verified' | 'rejected';
     verificationProgress: number;
@@ -204,33 +233,22 @@ export interface IProfileVerification extends Document {
     requiresIndependentVerification: boolean;
     steps: {
         documentPhotos: {
-            documents: string[]
+            frontPhoto: string;
+            backPhoto: string;
             isVerified: boolean;
         }; // required
-        selfieWithPoster: {
-            photo: string;
+        mediaVerification: {
+            mediaLink: string; // Puede ser video o imagen
+            mediaType: 'video' | 'image'; // Tipo de media
             isVerified: boolean;
-        }; // required
-        selfieWithDoc: {
-            photo: string;
-            isVerified: boolean;
-        }; // required
-        fullBodyPhotos: {
-            photos: string[];
-            isVerified: boolean;
-        }; // required. at least 2 full body images.at least 2 face images. Face images verification. Full body images verification.
-        video: {
-            videoLink: string;
-            isVerified: boolean;
-        }; // required. Video verification.
+        }; // Media verification (video or image)
         videoCallRequested: {
             videoLink: string;
             isVerified: boolean;
         }; // Meet with profile
         socialMedia: {
-            accounts: string[];
             isVerified: boolean;
-        }; // required. At least 1 social media account.
+        }; // Social media verification status only
         phoneChangeDetected: boolean;
         lastLogin: {
             isVerified: boolean;

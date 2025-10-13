@@ -1,8 +1,7 @@
 import type {
-  Profile,
   ProfileCardData,
-  ProfileMedia,
 } from '@/types/profile.types';
+import type { Profile } from '@/types/user.types';
 
 /**
  * Transforma un perfil de la API al formato esperado por las cards
@@ -10,22 +9,32 @@ import type {
 export const transformProfileToCard = (profile: Profile): ProfileCardData => {
   // Obtener la primera imagen disponible
 
-  // Verificar si tiene videos
-  const checkHasVideo = (media: ProfileMedia): boolean => {
+  // Verificar si tiene videos - usando la estructura actual de Profile
+  const checkHasVideo = (media: { gallery: string[]; videos: { link: string; preview: string; }[]; profilePicture: string; }): boolean => {
     return (media.videos?.length || 0) > 0;
   };
 
   return {
     _id: profile._id,
     name: profile.name,
-    age: profile.age,
+    age: parseInt(profile.age) || 0, // Convertir string a number
     location: profile.location,
-    description: profile.description,
-    media: profile.media,
-    verification: profile.verification,
+    description: profile.description || '',
+    media: {
+      gallery: profile.media.gallery || [],
+      videos: profile.media.videos?.map(v => ({ link: v.link, type: 'video' as const })) || [],
+      audios: [],
+      stories: []
+    },
+    verification: {
+      _id: '',
+      isVerified: false,
+      verificationStatus: 'pending' as const
+    },
     featured: false, // Este campo se puede agregar al backend si es necesario
     online: false, // Este campo se puede agregar al backend si es necesario
     hasVideo: checkHasVideo(profile.media),
+    hasDestacadoUpgrade: hasDestacadoUpgrade(profile), // Agregar la verificación de upgrade destacado
   };
 };
 
@@ -56,8 +65,10 @@ export const formatLocation = (location: {
 /**
  * Verifica si un perfil está verificado
  */
-export const isProfileVerified = (profile: Profile): boolean => {
-  return profile.verification?.isVerified || profile.user?.isVerified || false;
+export const isProfileVerified = (): boolean => {
+  // La interfaz Profile actual no tiene verification ni user.isVerified
+  // Por ahora retornamos false hasta que se defina la estructura correcta
+  return false;
 };
 
 /**
@@ -72,4 +83,17 @@ export const getProfileImage = (profile: Profile): string => {
  */
 export const hasProfileVideo = (profile: Profile): boolean => {
   return (profile.media?.videos?.length || 0) > 0;
+};
+
+/**
+ * Verifica si un perfil tiene el upgrade "DESTACADO" activo
+ */
+export const hasDestacadoUpgrade = (profile: Profile): boolean => {
+  // Verificar si el perfil tiene upgrades activos
+  if (!profile.activeUpgrades || !Array.isArray(profile.activeUpgrades)) {
+    return false;
+  }
+
+  // Verificar si 'DESTACADO' está en los upgrades activos
+  return profile.activeUpgrades.some((upgrade: { code: string; startAt: Date; endAt: Date }) => upgrade.code === 'DESTACADO');
 };

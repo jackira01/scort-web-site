@@ -5,8 +5,10 @@ export const step3Schema = z.object({
   contact: z.object({
     number: z
       .string()
-      .min(1, 'El número de teléfono es requerido')
-      .regex(/^[0-9]{10}$/, 'El número debe tener exactamente 10 dígitos'),
+      .optional()
+      .refine((val) => !val || /^[0-9]{10}$/.test(val), {
+        message: 'El número debe tener exactamente 10 dígitos'
+      }),
     whatsapp: z
       .string()
       .optional()
@@ -24,24 +26,25 @@ export const step3Schema = z.object({
   age: z
     .union([
       z.number(),
-      z.string().regex(/^\d+$/, 'debe ser un número válido')
+      z.string().regex(/^\d+$/, 'debe ser un número válido'),
+      z.undefined()
     ])
+    .optional()
     .transform((val) => {
+      if (val === undefined || val === '') {
+        return undefined;
+      }
       const num = typeof val === 'string' ? parseInt(val, 10) : val;
       if (isNaN(num)) {
         throw new Error('debe ser un número válido');
       }
       return num;
     })
-    .refine((val) => val >= 18 && val <= 100, 'La edad debe estar entre 18 y 100 años'),
+    .refine((val) => val === undefined || (val >= 18 && val <= 100), 'La edad debe estar entre 18 y 100 años'),
 
   skinColor: z
     .string()
     .min(1, 'Debes seleccionar el color de piel'),
-
-  sexuality: z
-    .string()
-    .min(1, 'Debes seleccionar la orientación sexual'),
 
   eyeColor: z
     .string()
@@ -53,7 +56,8 @@ export const step3Schema = z.object({
 
   bodyType: z
     .string()
-    .min(1, 'Debes seleccionar el tipo de cuerpo'),
+    .optional()
+    .refine((val) => !val || val.length > 0, 'Debes seleccionar el tipo de cuerpo'),
 
   height: z
     .union([
@@ -69,9 +73,13 @@ export const step3Schema = z.object({
     })
     .refine((val) => val >= 40 && val <= 300, 'La altura debe estar entre 40 y 300 cm'),
 
-  /* bustSize: z
-    .string()
-    .min(1, 'Debes seleccionar el tamaño del busto'), */
+  socialMedia: z.object({
+    instagram: z.string().optional(),
+    facebook: z.string().optional(),
+    tiktok: z.string().optional(),
+    twitter: z.string().optional(),
+    onlyFans: z.string().optional(),
+  }).optional(),
 
   rates: z
     .array(z.object({

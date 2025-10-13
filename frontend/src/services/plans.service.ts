@@ -42,8 +42,15 @@ export const validatePlanOperations = async (profileId: string): Promise<PlanVal
   try {
     const response = await axiosInstance.get(`/api/profile/${profileId}/plan/validate`);
     return response.data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'Error al validar operaciones de plan');
+  } catch (error: unknown) {
+    let errorMessage = 'Error al validar operaciones de plan';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null && 'response' in error) {
+      const responseError = error as { response?: { data?: { message?: string } } };
+      errorMessage = responseError.response?.data?.message || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
 };
 
@@ -54,11 +61,15 @@ export const getProfilePlanInfo = async (profileId: string): Promise<ProfilePlan
   try {
     const response = await axiosInstance.get(`api/profile/${profileId}/plan`);
     return response.data;
-  } catch (error: any) {
-    if (error.response?.status === 404) {
-      return null; // No tiene plan activo
+  } catch (error: unknown) {
+    if (error instanceof Error && 'response' in error) {
+      const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
+      if (axiosError.response?.status === 404) {
+        return null; // No tiene plan activo
+      }
+      throw new Error(axiosError.response?.data?.message || 'Error al obtener información del plan');
     }
-    throw new Error(error.response?.data?.message || 'Error al obtener información del plan');
+    throw new Error('Error al obtener información del plan');
   }
 };
 
@@ -80,41 +91,43 @@ export const purchasePlan = async (request: PlanPurchaseRequest) => {
 
     const response = await axiosInstance.post('/api/plans/purchase', request);
     return response.data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.message || error.message || 'Error al comprar el plan');
+  } catch (error: unknown) {
+    let errorMessage = 'Error al comprar plan';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null && 'response' in error) {
+      const responseError = error as { response?: { data?: { message?: string } } };
+      errorMessage = responseError.response?.data?.message || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
 };
 
 /**
- * Renueva un plan existente
+ * Renueva un plan existente (permite renovar planes expirados)
  */
 export const renewPlan = async (request: PlanRenewalRequest) => {
   try {
-    // Validar que el perfil tenga un plan activo
-    // Frontend: Validando plan antes de renovar
-
+    // Validar que el perfil tenga información de plan
     const planInfo = await getProfilePlanInfo(request.profileId);
-    // Frontend: Plan info obtenido
 
     if (!planInfo) {
-      // Frontend: Plan no encontrado
-      throw new Error('El perfil no tiene un plan activo para renovar');
+      throw new Error('El perfil no tiene información de plan para renovar');
     }
 
-    if (!planInfo.isActive) {
-      // Frontend: Plan no activo
-      throw new Error('No se puede renovar un plan expirado. Compra un nuevo plan.');
-    }
-
-    // Frontend: Plan válido, procediendo con renovación
-
+    // Permitir renovación tanto de planes activos como expirados
     const response = await axiosInstance.post('/api/plans/renew', request);
 
-    // Frontend: Plan renovado exitosamente
     return response.data;
-  } catch (error: any) {
-    // Frontend: Error completo en renewPlan
-    throw new Error(error.response?.data?.message || error.message || 'Error al renovar el plan');
+  } catch (error: unknown) {
+    let errorMessage = 'Error al renovar plan';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null && 'response' in error) {
+      const responseError = error as { response?: { data?: { message?: string } } };
+      errorMessage = responseError.response?.data?.message || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
 };
 
@@ -137,21 +150,23 @@ export const upgradePlan = async (request: PlanUpgradeRequest) => {
     }
 
     // Validar que sea un upgrade (no downgrade)
-    const planHierarchy = ['AMATISTA', 'ESMERALDA', 'ORO', 'DIAMANTE'];
-    const currentIndex = planHierarchy.indexOf(currentPlan.planCode);
-    const newIndex = planHierarchy.indexOf(request.newPlanCode);
-
-    if (newIndex <= currentIndex) {
-      throw new Error('Solo se permiten upgrades a planes superiores. No se pueden hacer downgrades.');
-    }
+    // RESTRICCIÓN ELIMINADA: Ahora se permite cambiar a cualquier plan
+    // Ya no validamos jerarquía de planes, permitiendo tanto upgrades como downgrades
 
     const response = await axiosInstance.post(`/api/profile/${request.profileId}/upgrade-plan`, {
       newPlanCode: request.newPlanCode,
       variantDays: request.variantDays
     });
     return response.data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.message || error.message || 'Error al hacer upgrade del plan');
+  } catch (error: unknown) {
+    let errorMessage = 'Error al actualizar plan';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null && 'response' in error) {
+      const responseError = error as { response?: { data?: { message?: string } } };
+      errorMessage = responseError.response?.data?.message || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
 };
 
@@ -164,7 +179,7 @@ export const getActiveProfilesCount = async (userId?: string): Promise<number> =
       params: userId ? { userId } : undefined
     });
     return response.data.count || 0;
-  } catch (error: any) {
+  } catch {
     // Error al obtener conteo de perfiles activos
     return 0;
   }
@@ -201,11 +216,48 @@ export const getAvailablePlans = async () => {
     // Planes procesados
     return response.data.data;
 
-  } catch (error: any) {
-    // Error detallado en getAvailablePlans
+  } catch (error: unknown) {
+    let errorMessage = 'Error al obtener planes';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null && 'response' in error) {
+      const responseError = error as { response?: { data?: { message?: string } } };
+      errorMessage = responseError.response?.data?.message || errorMessage;
+    }
+    throw new Error(errorMessage);
+  }
+};
 
-    // Proporcionar mensaje de error más específico
-    const errorMessage = error.response?.data?.message || error.message || 'Error al obtener planes disponibles';
+/**
+ * Obtiene la lista de upgrades disponibles
+ */
+export const getAvailableUpgrades = async () => {
+  try {
+    const response = await axiosInstance.get('/api/plans/upgrades');
+    
+    // Validar estructura de respuesta
+    if (!response.data || typeof response.data !== 'object') {
+      throw new Error('Respuesta del backend inválida: no es un objeto');
+    }
+
+    if (!response.data.success) {
+      throw new Error(`Error del backend: ${response.data.message || 'Error desconocido'}`);
+    }
+
+    if (!Array.isArray(response.data.data)) {
+      throw new Error('Respuesta del backend inválida: data no es un array');
+    }
+
+    return response.data.data;
+
+  } catch (error: unknown) {
+    let errorMessage = 'Error al obtener upgrades';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null && 'response' in error) {
+      const responseError = error as { response?: { data?: { message?: string } } };
+      errorMessage = responseError.response?.data?.message || errorMessage;
+    }
     throw new Error(errorMessage);
   }
 };
@@ -266,4 +318,16 @@ export const validatePlanBusinessRules = {
     const diffTime = expirationDate.getTime() - now.getTime();
     return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
   }
+};
+
+// Export service object for compatibility
+export const plansService = {
+  validatePlanOperations,
+  purchasePlan,
+  upgradePlan,
+  renewPlan,
+  getProfilePlanInfo,
+  getAvailablePlans,
+  getAvailableUpgrades,
+  validatePlanBusinessRules
 };

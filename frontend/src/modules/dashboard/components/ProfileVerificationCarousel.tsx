@@ -54,8 +54,6 @@ export default function ProfileVerificationCarousel({
 
   const handleUserVerificationToggle = async (checked: boolean) => {
     try {
-      console.log(`🔄 [ProfileCarousel] Intentando actualizar verificación de usuario ${userId} a:`, checked);
-      
       setIsLoading(true);
       const loadingToast = toast.loading(
         checked ? 'Verificando usuario...' : 'Removiendo verificación...'
@@ -73,8 +71,6 @@ export default function ProfileVerificationCarousel({
          },
        });
 
-      console.log('📡 [ProfileCarousel] Respuesta del servidor:', result);
-
       // Verify the update was successful - handle both old and new response formats
       const isVerifiedValue = result?.isVerified ?? result?.data?.isVerified;
       const success = result?.success !== false; // Default to true if success field is not present
@@ -83,15 +79,12 @@ export default function ProfileVerificationCarousel({
         // Update local state to match server response
         setUserVerificationStatus(isVerifiedValue);
         
-        console.log(`✅ [ProfileCarousel] Actualización exitosa. Nuevo estado: ${isVerifiedValue}`);
-        
         toast.dismiss(loadingToast);
         toast.success(
           isVerifiedValue ? 'Usuario verificado exitosamente' : 'Verificación removida exitosamente'
         );
       } else {
         // If no proper response or explicit failure, revert
-        console.warn('⚠️ [ProfileCarousel] Respuesta inválida del servidor:', result);
         setUserVerificationStatus(!checked);
         toast.dismiss(loadingToast);
         toast.error(result?.message || 'Error: Respuesta inválida del servidor');
@@ -121,8 +114,6 @@ export default function ProfileVerificationCarousel({
 
   const onVerifyProfile = async () => {
     try {
-      console.log(`🔄 [ProfileCarousel] Verificando perfil completo para usuario ${userId}`);
-      
       setIsLoading(true);
       const loadingToast = toast.loading('Verificando perfil completo...');
       
@@ -137,20 +128,16 @@ export default function ProfileVerificationCarousel({
         },
       });
       
-      console.log('📡 [ProfileCarousel] Respuesta del servidor (verificación completa):', result);
-      
       // Verify the update was successful
       const isVerifiedValue = result?.isVerified ?? result?.data?.isVerified;
       const success = result?.success !== false;
       
       if (success && typeof isVerifiedValue === 'boolean') {
         setUserVerificationStatus(isVerifiedValue);
-        console.log(`✅ [ProfileCarousel] Perfil verificado completamente. Estado: ${isVerifiedValue}`);
         
         toast.dismiss(loadingToast);
         toast.success('Perfil verificado exitosamente');
       } else {
-        console.warn('⚠️ [ProfileCarousel] Respuesta inválida en verificación completa:', result);
         setUserVerificationStatus(false);
         toast.dismiss(loadingToast);
         toast.error(result?.message || 'Error: Respuesta inválida del servidor');

@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
+    "target": "ES2022",
     "lib": [
       "dom",
       "dom.iterable",
       "esnext"
     ],
     "allowJs": true,
-    "target": "ES6",
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
@@ -17,26 +17,34 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
+    "types": [
+      "node",
+      "react",
+      "react-dom",
+      "luxon"
     ],
     "baseUrl": ".",
     "paths": {
       "@/*": [
         "src/*"
       ]
-    }
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
   "include": [
-    "**/*.js",
-    "**/*.ts",
-    "**/*.tsx",
+    "app",
     "next-env.d.ts",
+    "src",
+    "types/**/*.d.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "./node_modules"
+    "node_modules",
+    ".next",
+    "dist"
   ]
 }

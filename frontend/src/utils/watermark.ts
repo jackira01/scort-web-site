@@ -2,9 +2,10 @@
  * Utilidades para aplicar marca de agua a imágenes y videos
  */
 
+import { useConfigValue } from '@/hooks/use-config-parameters';
+
 // Configuración de la marca de agua
 const WATERMARK_CONFIG = {
-  text: '© ScortWeb',
   fontSize: 16,
   fontFamily: 'Arial',
   color: 'rgba(255, 255, 255, 0.3)',
@@ -13,11 +14,23 @@ const WATERMARK_CONFIG = {
 };
 
 /**
+ * Hook para obtener el nombre de la empresa desde configparameters
+ */
+export function useCompanyName(): string {
+  const { value: companyName } = useConfigValue<string>('company.name', {
+    enabled: true,
+    defaultValue: 'ScortWeb'
+  });
+  
+  return companyName || 'ScortWeb';
+}
+
+/**
  * Aplica marca de agua a una imagen usando canvas
  */
 export function applyWatermarkToImage(
   file: File,
-  watermarkText: string = WATERMARK_CONFIG.text
+  watermarkText: string = 'ScortWeb'
 ): Promise<File> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -149,7 +162,7 @@ export async function applyWatermarkToFiles(
       if (onProgress) {
         onProgress(i + 1, files.length);
       }
-    } catch (error) {
+    } catch {
       // Error aplicando marca de agua
       // En caso de error, usar el archivo original
       watermarkedFiles.push(file);
@@ -169,9 +182,10 @@ export function needsWatermark(file: File): boolean {
 /**
  * Obtiene el texto de marca de agua personalizado para un perfil
  */
-export function getProfileWatermarkText(profileName?: string): string {
+export function getProfileWatermarkText(profileName?: string, companyName?: string): string {
+  const company = companyName || 'ScortWeb';
   if (profileName) {
-    return `© ${profileName} - ScortWeb`;
+    return `© ${profileName} - ${company}`;
   }
-  return WATERMARK_CONFIG.text;
+  return company;
 }

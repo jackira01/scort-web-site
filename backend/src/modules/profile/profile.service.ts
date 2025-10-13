@@ -98,7 +98,9 @@ const getDefaultPlanConfig = async (): Promise<{ planId: string | null; planCode
 const generateWhatsAppMessage = async (
   userId: string,
   profileId: string,
-  invoiceId?: string
+  invoiceId?: string,
+  planCode?: string,
+  variantDays?: number
 ): Promise<WhatsAppMessage | null> => {
   try {
     // Obtener parámetros de configuración de la empresa
@@ -112,10 +114,22 @@ const generateWhatsAppMessage = async (
       return null;
     }
 
+    // Obtener información del plan si no se proporciona
+    let planInfo = '';
+    if (planCode && variantDays) {
+      planInfo = `\n• Plan: ${planCode} (${variantDays} días)`;
+    } else {
+      // Intentar obtener información del plan desde el perfil
+      const profile = await ProfileModel.findById(profileId);
+      if (profile?.planAssignment?.planCode && profile?.planAssignment?.variantDays) {
+        planInfo = `\n• Plan: ${profile.planAssignment.planCode} (${profile.planAssignment.variantDays} días)`;
+      }
+    }
+
     // Generar mensaje elegante
     const message = invoiceId
-      ? `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n📋 **Detalles de mi compra:**\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención. 😊`
-      : `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n📋 **Detalles:**\n• ID de Perfil: ${profileId}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. 😊`;
+      ? `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n📋 **Detalles de mi compra:**\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención. 😊`
+      : `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n📋 **Detalles:**\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. 😊`;
 
     return {
       userId,
@@ -209,7 +223,7 @@ export const createProfile = async (data: CreateProfileDTO): Promise<IProfile> =
 
         // Asignar el plan por defecto al perfil
         const subscriptionResult = await subscribeProfile(
-          profile._id as string,
+          profile._id.toString(),
           defaultPlan.code, // Usar el código del plan encontrado
           defaultVariant.days,
           false // No generar factura para plan por defecto
@@ -383,7 +397,9 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
   const whatsAppMessage = await generateWhatsAppMessage(
     profile.user.toString(),
     (profile._id as Types.ObjectId).toString(),
-    invoice?._id?.toString()
+    invoice?._id?.toString(),
+    planCode,
+    planDays
   );
 
   // Mensaje de WhatsApp procesado
@@ -394,7 +410,7 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
 
 export const getProfiles = async (page: number = 1, limit: number = 10, fields?: string): Promise<{ profiles: IProfile[]; pagination: { page: number; limit: number; total: number; pages: number } }> => {
   const skip = (page - 1) * limit;
-  
+
   // Filtrar solo perfiles visibles y no eliminados lógicamente
   let query = ProfileModel.find({
     visible: true,
@@ -463,7 +479,7 @@ export const getProfiles = async (page: number = 1, limit: number = 10, fields?:
       isVerified,
       featured
     };
-  });
+  }) as unknown as IProfile[];
 
   const total = await ProfileModel.countDocuments({});
 
@@ -531,6 +547,11 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
       path: 'verification',
       model: 'ProfileVerification',
       select: 'verificationProgress verificationStatus'
+    })
+    .populate({
+      path: 'planAssignment.planId',
+      model: 'PlanDefinition',
+      select: 'name code level features includedUpgrades'
     })
     .lean();
 
@@ -666,12 +687,50 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
         return -1; // a va primero
       }
 
-      // Ambos tienen upgrades, ordenar por prioridad del plan (nivel menor = mayor prioridad)
-      if (aInfo.planLevel !== bInfo.planLevel) {
-        return aInfo.planLevel - bInfo.planLevel;
+      // Ambos tienen upgrades, ordenar por nivel efectivo del plan
+      let aEffectiveLevel = aInfo.planLevel;
+      let bEffectiveLevel = bInfo.planLevel;
+
+      // Aplicar efectos de upgrades
+      if (aInfo.hasHighlightUpgrade && aInfo.planLevel > 1) {
+        aEffectiveLevel = Math.max(1, aInfo.planLevel - 1); // DESTACADO sube un nivel
+      }
+      if (bInfo.hasHighlightUpgrade && bInfo.planLevel > 1) {
+        bEffectiveLevel = Math.max(1, bInfo.planLevel - 1); // DESTACADO sube un nivel
       }
 
-      // Si hay empate en plan, ordenar por fecha de inicio del upgrade más reciente
+      // Si tienen IMPULSO, van a nivel 1 pero con menor prioridad que DESTACADO solo
+      if (aInfo.hasBoostUpgrade) {
+        aEffectiveLevel = 1;
+      }
+      if (bInfo.hasBoostUpgrade) {
+        bEffectiveLevel = 1;
+      }
+
+      // Ordenar por nivel efectivo
+      if (aEffectiveLevel !== bEffectiveLevel) {
+        return aEffectiveLevel - bEffectiveLevel;
+      }
+
+      // Mismo nivel efectivo: priorizar por duración del plan (durationRank mayor = mayor prioridad)
+      const aPlanDurationRank = a.planAssignment?.variantDays ?
+        planDefinitions.find(p => p.code === aInfo.planCode)?.variants.find(v => v.days === a.planAssignment?.variantDays)?.durationRank || 0 : 0;
+      const bPlanDurationRank = b.planAssignment?.variantDays ?
+        planDefinitions.find(p => p.code === bInfo.planCode)?.variants.find(v => v.days === b.planAssignment?.variantDays)?.durationRank || 0 : 0;
+
+      if (aPlanDurationRank !== bPlanDurationRank) {
+        return bPlanDurationRank - aPlanDurationRank; // Mayor durationRank = mayor prioridad
+      }
+
+      // Si tienen IMPULSO, van al final dentro de su grupo
+      if (aInfo.hasBoostUpgrade && !bInfo.hasBoostUpgrade) {
+        return 1; // a va después
+      }
+      if (bInfo.hasBoostUpgrade && !aInfo.hasBoostUpgrade) {
+        return -1; // b va después
+      }
+
+      // Empate final: por fecha de inicio del upgrade más reciente
       const aLatestUpgrade = Math.max(...aInfo.activeUpgrades.map(u => new Date(u.startAt).getTime()));
       const bLatestUpgrade = Math.max(...bInfo.activeUpgrades.map(u => new Date(u.startAt).getTime()));
       return bLatestUpgrade - aLatestUpgrade;
@@ -686,7 +745,17 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
       return aInfo.planLevel - bInfo.planLevel;
     }
 
-    // 3. Mismo nivel de plan, aplicar criterios específicos
+    // 3. Mismo nivel de plan: ordenar por duración (durationRank mayor = mayor prioridad)
+    const aPlanDurationRank = a.planAssignment?.variantDays ?
+      planDefinitions.find(p => p.code === aInfo.planCode)?.variants.find(v => v.days === a.planAssignment?.variantDays)?.durationRank || 0 : 0;
+    const bPlanDurationRank = b.planAssignment?.variantDays ?
+      planDefinitions.find(p => p.code === bInfo.planCode)?.variants.find(v => v.days === b.planAssignment?.variantDays)?.durationRank || 0 : 0;
+
+    if (aPlanDurationRank !== bPlanDurationRank) {
+      return bPlanDurationRank - aPlanDurationRank; // Mayor durationRank = mayor prioridad
+    }
+
+    // 4. Mismo nivel y duración: aplicar criterios específicos
     if (aInfo.planLevel <= 2) {
       // Planes Premium (DIAMANTE/ORO): ordenar por última actividad
       const aActivity = new Date(aInfo.lastActivity).getTime();
@@ -1444,10 +1513,10 @@ export const upgradePlan = async (profileId: string, newPlanCode: string, varian
     throw new Error('Perfil no encontrado');
   }
 
-  // Validar que tiene un plan activo
+  // Validar que tiene un plan asignado (puede estar expirado para admins)
   const now = new Date();
-  if (!profile.planAssignment || new Date(profile.planAssignment.expiresAt) <= now) {
-    throw new Error('El perfil debe tener un plan activo para hacer upgrade');
+  if (!profile.planAssignment) {
+    throw new Error('El perfil debe tener un plan asignado para hacer upgrade');
   }
 
   // Validar que el nuevo plan existe
@@ -1460,16 +1529,8 @@ export const upgradePlan = async (profileId: string, newPlanCode: string, varian
   const defaultPlanConfig = await getDefaultPlanConfig();
   const defaultPlanCode = defaultPlanConfig.enabled ? defaultPlanConfig.planCode : 'AMATISTA'; // Fallback
 
-  // Validar que es un upgrade (no downgrade)
-  // Construir jerarquía dinámica con el plan por defecto en la posición más baja
-  const planHierarchy = [defaultPlanCode, 'ESMERALDA', 'ORO', 'DIAMANTE'].filter((plan, index, arr) => arr.indexOf(plan) === index); // Eliminar duplicados
-  const currentPlanCode = profile.planAssignment.planCode || defaultPlanCode;
-  const currentIndex = planHierarchy.indexOf(currentPlanCode);
-  const newIndex = planHierarchy.indexOf(normalizedPlanCode);
-
-  if (newIndex <= currentIndex) {
-    throw new Error('Solo se permiten upgrades a planes superiores. No se pueden hacer downgrades.');
-  }
+  // RESTRICCIÓN ELIMINADA: Ahora se permite cambiar a cualquier plan
+  // Ya no validamos jerarquía de planes, permitiendo tanto upgrades como downgrades
 
   // Determinar la variante a usar
   let selectedVariant;
@@ -1492,10 +1553,19 @@ export const upgradePlan = async (profileId: string, newPlanCode: string, varian
   }
 
   // Calcular nueva fecha de expiración
-  // Mantener el tiempo restante del plan actual y agregar los días del nuevo plan
+  // Si el plan actual está expirado, usar la fecha actual como base
+  // Si el plan actual está activo, mantener el tiempo restante y agregar los días del nuevo plan
   const currentExpiresAt = new Date(profile.planAssignment.expiresAt);
-  const remainingTime = Math.max(0, currentExpiresAt.getTime() - now.getTime());
-  const newExpiresAt = new Date(now.getTime() + remainingTime + (selectedVariant.days * 24 * 60 * 60 * 1000));
+  let newExpiresAt: Date;
+
+  if (currentExpiresAt <= now) {
+    // Plan expirado: nueva fecha = ahora + días del nuevo plan
+    newExpiresAt = new Date(now.getTime() + (selectedVariant.days * 24 * 60 * 60 * 1000));
+  } else {
+    // Plan activo: mantener tiempo restante + días del nuevo plan
+    const remainingTime = currentExpiresAt.getTime() - now.getTime();
+    newExpiresAt = new Date(now.getTime() + remainingTime + (selectedVariant.days * 24 * 60 * 60 * 1000));
+  }
 
   // Actualizar el plan del perfil
   const updatedProfile = await ProfileModel.findByIdAndUpdate(
@@ -1767,13 +1837,13 @@ export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 1
       (upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT') &&
       new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
     ) || false;
-    
+
     return {
       ...profile,
       isVerified,
       featured
     };
-  });
+  }) as unknown as IProfile[];
 
   const total = await ProfileModel.countDocuments({}); // Contar todos los perfiles
 

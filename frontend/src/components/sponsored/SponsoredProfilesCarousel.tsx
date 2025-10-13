@@ -49,15 +49,16 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
         setIsLoading(true);
         setError(null);
 
-        // Por ahora obtenemos perfiles random - en el futuro se filtrarán por sponsored
+        // Obtener perfiles patrocinados (con showInSponsored: true)
         const response = await getProfilesForCards({
           limit: 8, // Obtener más perfiles para el carrusel
           page: 1,
           sortBy: 'createdAt',
-          sortOrder: 'desc'
+          sortOrder: 'desc',
+          showInSponsored: true // Filtrar solo perfiles con planes que tengan showInSponsored: true
         });
 
-        setSponsoredProfiles(response.profiles);
+        setSponsoredProfiles(response.profiles as any);
       } catch (err) {
         setError('Error al cargar perfiles patrocinados');
       } finally {
@@ -85,10 +86,10 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
   if (isLoading) {
     return (
       <div className={`bg-gradient-to-r from-purple-100 via-pink-100 to-rose-100 rounded-lg p-6 ${className}`}>
-        <div className="flex items-center gap-2 mb-4">
+        {/* <div className="flex items-center gap-2 mb-4">
           <Crown className="h-5 w-5 text-yellow-600" />
           <h2 className="text-lg font-semibold text-gray-900">Perfiles Destacados</h2>
-        </div>
+        </div> */}
         <div className="flex gap-4 overflow-hidden">
           {Array.from({ length: visibleCount }).map((_, index) => (
             <div key={index} className="flex-shrink-0 w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
@@ -118,13 +119,13 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
     <div className={`bg-gradient-to-r from-purple-100 via-pink-100 to-rose-100 rounded-lg p-6 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <Crown className="h-5 w-5 text-yellow-600" />
           <h2 className="text-lg font-semibold text-gray-900">Perfiles Destacados</h2>
           <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">
             Sponsored
           </Badge>
-        </div>
+        </div> */}
 
         {/* Navigation buttons */}
         {(sponsoredProfiles || []).length > visibleCount && (
@@ -193,10 +194,17 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
                           {profile.age && (
                             <span>{profile.age} años</span>
                           )}
-                          {profile.location?.city?.label && (
+                          {profile.location?.city && (
                             <>
                               <span>•</span>
-                              <span className="truncate">{profile.location.city.label}</span>
+                              <span className="truncate">
+                                {typeof profile.location.city === 'object' && profile.location.city !== null && 'label' in profile.location.city
+                                  ? (profile.location.city as any).label
+                                  : typeof profile.location.city === 'object' && profile.location.city !== null
+                                    ? JSON.stringify(profile.location.city)
+                                    : profile.location.city || 'Ciudad no especificada'
+                                }
+                              </span>
                             </>
                           )}
                         </div>
@@ -223,8 +231,8 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
               key={index}
               onClick={() => setCurrentIndex(index)}
               className={`w-2 h-2 rounded-full transition-colors ${Math.floor(currentIndex / visibleCount) === index
-                  ? 'bg-purple-600'
-                  : 'bg-purple-300'
+                ? 'bg-purple-600'
+                : 'bg-purple-300'
                 }`}
             />
           ))}

@@ -5,24 +5,32 @@ export interface ProfileVerificationData {
   profile: string;
   verificationStatus: 'pending' | 'verified' | 'rejected';
   verificationProgress: number;
-  steps: {
-    documentPhotos: {
-      documents: string[];
-      isVerified: boolean;
-    };
-    video: {
-      videoLink?: string;
-      isVerified: boolean;
-    };
-    socialMedia: {
-      accounts: string[];
-      isVerified: boolean;
+  data: {
+    steps: {
+      documentPhotos: {
+        frontPhoto?: string;
+        backPhoto?: string;
+        selfieWithDocument?: string;
+        isVerified: boolean;
+      };
+      mediaVerification: {
+        mediaLink?: string;
+        mediaType?: 'video' | 'image';
+        isVerified: boolean;
+      };
+      videoCallRequested: {
+        videoLink?: string;
+        isVerified: boolean;
+      };
+      socialMedia: {
+        isVerified: boolean;
+      };
     };
   };
 }
 
 export interface VerificationStep {
-  key: keyof ProfileVerificationData['steps'];
+  key: keyof ProfileVerificationData['data']['steps'];
   label: string;
   icon: ReactNode;
   description: string;
@@ -37,8 +45,8 @@ export interface AdminProfileVerificationCarouselProps {
 
 export interface VerificationStepRenderProps {
   step: VerificationStep;
-  stepData: any;
+  stepData: ProfileVerificationData['data']['steps'][keyof ProfileVerificationData['data']['steps']] | undefined;
   onPreviewImage: (image: string) => void;
-  getCurrentVideoLink: (stepKey: 'video') => string;
-  handleVideoLinkChange: (stepKey: 'video', videoLink: string) => void;
+  getCurrentVideoLink: (stepKey: 'mediaVerification' | 'videoCallRequested') => string;
+  handleVideoLinkChange: (stepKey: 'mediaVerification' | 'videoCallRequested', videoLink: string) => void;
 }

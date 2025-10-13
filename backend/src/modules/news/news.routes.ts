@@ -28,7 +28,11 @@ const createNewsValidation = [
   body('published')
     .optional()
     .isBoolean()
-    .withMessage('El campo published debe ser un booleano')
+    .withMessage('El campo published debe ser un booleano'),
+  body('imageUrl')
+    .optional()
+    .isURL()
+    .withMessage('La URL de la imagen debe ser válida')
 ];
 
 // Validaciones para actualizar noticia
@@ -55,7 +59,11 @@ const updateNewsValidation = [
   body('published')
     .optional()
     .isBoolean()
-    .withMessage('El campo published debe ser un booleano')
+    .withMessage('El campo published debe ser un booleano'),
+  body('imageUrl')
+    .optional()
+    .isURL()
+    .withMessage('La URL de la imagen debe ser válida')
 ];
 
 // Validaciones para ID

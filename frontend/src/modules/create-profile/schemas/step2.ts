@@ -11,6 +11,16 @@ export const step2Schema = z.object({
   selectedServices: z
     .array(z.string())
     .min(1, 'Debes seleccionar al menos un servicio'),
+
+  basicServices: z
+    .array(z.string())
+    .optional()
+    .default([]),
+
+  additionalServices: z
+    .array(z.string())
+    .optional()
+    .default([]),
 });
 
 export type Step2FormData = z.infer<typeof step2Schema>;

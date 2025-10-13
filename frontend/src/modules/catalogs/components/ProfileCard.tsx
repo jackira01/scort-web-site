@@ -11,16 +11,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { VerificationBar } from '@/components/VerificationBar/VerificationBar';
-import type { Profile, ProfileCardData } from '@/types/profile.types';
+import type { Profile } from '@/types/user.types';
+import type { ProfileCardData, LocationValue } from '@/types/profile.types';
 import {
   formatLocation,
-  isProfileVerified,
+  hasDestacadoUpgrade,
 } from '@/utils/profile.utils';
 
 interface ProfileCardProps {
-  profile: Profile & Partial<Pick<ProfileCardData, 'featured' | 'online' | 'hasVideo'>>;
-  viewMode: 'grid' | 'list';
-  variant?: 'default' | 'featured';
+  profile: ProfileCardData;
+  viewMode?: 'grid' | 'list';
+  variant?: 'default' | 'featured' | 'compact';
 }
 
 export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileCardProps) {
@@ -29,7 +30,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
     return (
       <Link href={`/perfil/${profile._id}`} className="block">
         <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer relative">
-          <div className="relative aspect-[4/3]">
+          <div className="relative h-72 w-full">
             <Image
               src={profile.media?.gallery?.[0] || '/placeholder.svg'}
               alt={profile.name}
@@ -37,11 +38,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
               className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
 
-            {/* Badge destacado */}
-            <Badge className="absolute top-2 left-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs">
-              <Star className="h-3 w-3 mr-1" />
-              DESTACADO
-            </Badge>
+
 
             {/* Overlay con información en hover */}
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end">
@@ -49,9 +46,14 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                 <h3 className="font-semibold text-sm mb-1">
                   {profile.name}
                 </h3>
-                {profile.location?.city?.label && (
+                {profile.location?.city && (
                   <p className="text-xs text-white/90">
-                    {profile.location.city.label}
+                    {typeof profile.location.city === 'object' && profile.location.city !== null && 'label' in profile.location.city
+                      ? (profile.location.city as LocationValue).label
+                      : typeof profile.location.city === 'object' && profile.location.city !== null
+                        ? JSON.stringify(profile.location.city)
+                        : profile.location.city || 'Ciudad no especificada'
+                    }
                   </p>
                 )}
               </div>
@@ -65,31 +67,27 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
   // Variante por defecto: card completa con información responsive
   return (
     <Link href={`/perfil/${profile._id}`} className="block">
-      <Card className="group hover:shadow-xl transition-all duration-300 overflow-hidden bg-card border-border relative">
+      <Card className={`group hover:shadow-xl transition-all duration-300 overflow-hidden relative h-80 ${profile.hasDestacadoUpgrade
+        ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30'
+        : 'bg-card border-border'
+        }`}>
         {/* Layout responsive: horizontal en mobile, vertical en desktop */}
         <div className="flex flex-row sm:flex-col">
           {/* Imagen */}
-          <div className="relative w-32 h-32 sm:w-full flex-shrink-0">
+          <div className="relative w-32 h-44 sm:w-full flex-shrink-0">
             <Image
               width={300}
-              height={300}
+              height={400}
               src={profile.media.gallery?.[0] || '/placeholder.svg'}
               alt={profile.name}
-              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
-                viewMode === 'grid'
-                  ? 'sm:h-48 md:h-56 lg:h-64'
-                  : 'sm:h-40 md:h-48'
+              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${viewMode === 'grid'
+                ? 'sm:h-48 md:h-56 lg:h-80'
+                : 'sm:h-40 md:h-48'
                 }`}
             />
-            {profile.featured && (
-              <Badge className="absolute top-1 left-1 sm:top-2 lg:top-3 sm:left-2 lg:left-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs">
-                <Star className="h-2 w-2 lg:h-3 lg:w-3 mr-1" />
-                <span className="hidden sm:inline">PRESENTADO</span>
-                <span className="sm:hidden">★</span>
-              </Badge>
-            )}
+
             <div className="absolute top-1 right-1 sm:top-2 lg:top-3 sm:right-2 lg:right-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-1 lg:space-x-2">
-              {isProfileVerified(profile) && (
+              {profile.verification?.isVerified && (
                 <Badge
                   variant="secondary"
                   className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 p-1"
@@ -130,23 +128,28 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                     </span>
                   </span>
                 </div>
-                
+
                 {/* Barra de verificación */}
-                {profile.verification && (
+                {profile.verification?.isVerified && (
                   <div className="mt-2">
-                    <VerificationBar 
-                      verification={profile.verification} 
-                      size="sm" 
+                    <VerificationBar
+                      verification={profile.verification}
+                      size="sm"
                       className="w-full"
                     />
                   </div>
                 )}
               </div>
             </div>
-            
+
             {/* Botón visible en mobile, oculto en desktop (aparece en hover) */}
             <div className="mt-2 sm:hidden">
-              <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs py-1">
+              <Button
+                className={`w-full text-white text-xs py-1 ${profile.hasDestacadoUpgrade
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                  : 'bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600'
+                  }`}
+              >
                 Ver perfil
               </Button>
             </div>
@@ -173,9 +176,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
               <p className="text-white/90 text-xs lg:text-sm mb-4 line-clamp-3">
                 {profile.description}
               </p>
-              <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-sm">
-                Ver perfil
-              </Button>
+
             </div>
           </div>
         </div>

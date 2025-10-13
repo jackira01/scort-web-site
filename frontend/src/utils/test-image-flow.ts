@@ -75,11 +75,13 @@ export const testImageProcessingFlow = async (file: File): Promise<void> => {
 };
 
 // Función para verificar que las funciones de subida están disponibles
-export const testUploadFunctions = () => {
+export const testUploadFunctions = async () => {
   console.log('🔍 Verificando funciones de subida...');
   
   try {
-    const { uploadProcessedImages, uploadMixedImages } = require('./tools');
+    // Importación dinámica para evitar require()
+    const toolsModule = await import('./tools');
+    const { uploadProcessedImages, uploadMixedImages } = toolsModule;
     console.log('✅ uploadProcessedImages disponible:', typeof uploadProcessedImages === 'function');
     console.log('✅ uploadMixedImages disponible:', typeof uploadMixedImages === 'function');
     return true;
@@ -89,14 +91,26 @@ export const testUploadFunctions = () => {
   }
 };
 
+// Interfaces para tipado
+interface ProcessedImage {
+  file?: File;
+  dimensions?: { width: number; height: number };
+  compressionRatio?: number;
+}
+
+interface FormData {
+  photos?: File[];
+  processedImages?: ProcessedImage[];
+}
+
 // Función para verificar el estado del formulario
-export const debugFormState = (formData: any) => {
+export const debugFormState = (formData: FormData) => {
   console.log('🔍 Estado del formulario:');
   console.log('📷 Fotos:', formData.photos?.length || 0);
   console.log('🖼️ Imágenes procesadas:', formData.processedImages?.length || 0);
   
-  if (formData.processedImages?.length > 0) {
-    formData.processedImages.forEach((img: any, index: number) => {
+  if (formData.processedImages && formData.processedImages.length > 0) {
+    formData.processedImages.forEach((img: ProcessedImage, index: number) => {
       console.log(`   Imagen ${index + 1}:`, {
         size: img.file?.size,
         dimensions: img.dimensions,

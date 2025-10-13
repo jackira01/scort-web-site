@@ -33,7 +33,7 @@ export const getHomeFeed = async (options: HomeFeedOptions = {}): Promise<HomeFe
   const { page = 1, pageSize = 20 } = options;
   const now = new Date();
 
-  // Usar agregación para filtrar perfiles con usuarios verificados de manera más confiable
+  // Usar agregación para obtener todos los perfiles con información de usuario
   const verifiedUserProfiles = await ProfileModel.aggregate([
     {
       $match: {
@@ -51,18 +51,23 @@ export const getHomeFeed = async (options: HomeFeedOptions = {}): Promise<HomeFe
       }
     },
     {
-      $match: {
-        'userInfo.isVerified': true
+      $lookup: {
+        from: 'plandefinitions',
+        localField: 'planAssignment.planId',
+        foreignField: '_id',
+        as: 'planAssignmentPlan'
       }
     },
     {
       $addFields: {
-        user: { $arrayElemAt: ['$userInfo', 0] }
+        user: { $arrayElemAt: ['$userInfo', 0] },
+        'planAssignment.plan': { $arrayElemAt: ['$planAssignmentPlan', 0] }
       }
     },
     {
       $project: {
-        userInfo: 0
+        userInfo: 0,
+        planAssignmentPlan: 0
       }
     }
   ]);

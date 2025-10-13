@@ -41,6 +41,12 @@ export interface Invoice {
   isExpired: boolean;
   id: string;
   __v: number;
+  coupon?: {
+    originalAmount?: number;
+    discountAmount?: number;
+    code?: string;
+    name?: string;
+  };
 }
 
 export interface CreateInvoiceData {
@@ -48,14 +54,17 @@ export interface CreateInvoiceData {
   userId: string;
   planCode: string;
   planDays?: number;
+  couponCode?: string; // Código de cupón a aplicar
   upgrades?: Array<{
     upgradeId: string;
     quantity: number;
   }>;
+  notes?: string;
 }
 
 export interface InvoiceFilters {
   _id?: string;
+  invoiceNumber?: string;
   status?: string;
   userId?: string;
   profileId?: string;
@@ -229,7 +238,7 @@ class InvoiceService {
     phoneNumber?: string
   ): Promise<WhatsAppData> {
     const params = phoneNumber ? `?phoneNumber=${phoneNumber}` : '';
-    const response = await axios.get(`${this.baseURL}/${invoiceId}/whatsapp${params}`);
+    const response = await axios.get(`${this.baseURL}/${invoiceId}/whatsapp-data${params}`);
     return response.data.data;
   }
 

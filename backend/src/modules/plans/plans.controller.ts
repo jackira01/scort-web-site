@@ -427,25 +427,6 @@ export class PlansController {
 
     // ==================== UTILIDADES ====================
 
-    async validatePlanUpgrades(req: Request, res: Response): Promise<void> {
-        try {
-            const { code } = req.params;
-            const result = await plansService.validatePlanUpgrades(code);
-
-            res.status(200).json({
-                success: true,
-                message: 'Validación completada',
-                data: result
-            });
-        } catch (error: any) {
-            res.status(400).json({
-                success: false,
-                message: error.message || 'Error al validar upgrades del plan',
-                error: error.message
-            });
-        }
-    }
-
     async getUpgradeDependencyTree(req: Request, res: Response): Promise<void> {
         try {
             const { code } = req.params;
@@ -488,7 +469,8 @@ export class PlansController {
             }
 
             const { profileId, planCode, variantDays } = req.body;
-            const result = await plansService.purchasePlan(profileId, planCode, variantDays);
+            const isAdmin = (req as any).user?.role === 'admin';
+            const result = await plansService.purchasePlan(profileId, planCode, variantDays, isAdmin);
 
             res.status(200).json({
                 success: true,
@@ -519,8 +501,24 @@ export class PlansController {
                 return;
             }
 
-            const { profileId, planCode, variantDays } = req.body;
-            const result = await plansService.renewPlan(profileId, planCode, variantDays);
+            const { profileId, extensionDays } = req.body;
+            
+            // Obtener el perfil para determinar el plan actual
+            const ProfileModel = require('../profile/profile.model').ProfileModel;
+            const profile = await ProfileModel.findById(profileId);
+            
+            if (!profile || !profile.planAssignment) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Plan no encontrado o inactivo',
+                    error: 'Plan no encontrado o inactivo'
+                });
+                return;
+            }
+
+            const planCode = profile.planAssignment.planCode;
+            const isAdmin = (req as any).user?.role === 'admin';
+            const result = await plansService.renewPlan(profileId, planCode, extensionDays, isAdmin);
 
             res.status(200).json({
                 success: true,

@@ -5,8 +5,8 @@ import { getAttributeGroups } from '@/services/attribute-group.service';
 import type { IAttributeGroup } from '@/types/attribute-group.types';
 
 /**
- * Hook para obtener los grupos de atributos específicos para filtros
- * Filtra solo los grupos con keys: 'gender', 'category', 'sex'
+ * Hook para obtener los grupos de atributos que se usan en los filtros
+ * Filtra solo los grupos con keys: 'gender', 'category' (removido 'sex')
  */
 export const useFilterAttributeGroups = () => {
   return useQuery({
@@ -14,7 +14,7 @@ export const useFilterAttributeGroups = () => {
     queryFn: async () => {
       const allGroups = await getAttributeGroups();
       // Filtrar solo los grupos que necesitamos para los filtros
-      const filterKeys = ['gender', 'category', 'sex'];
+      const filterKeys = ['gender', 'category']; // Removido 'sex'
       return allGroups.filter((group: IAttributeGroup) => 
         filterKeys.includes(group.key)
       );

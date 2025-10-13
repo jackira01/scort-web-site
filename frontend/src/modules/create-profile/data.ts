@@ -8,8 +8,8 @@ export const steps: Step[] = [
     title: 'Detalles',
     description: 'Características físicas y contacto',
   },
-  { id: 4, title: 'Multimedia', description: 'Fotos, videos y audios' },
-  { id: 5, title: 'Finalizar', description: 'Selección de plan y publicación' },
+  { id: 4, title: 'Plan', description: 'Selección de plan y publicación' },
+  { id: 5, title: 'Multimedia', description: 'Fotos, videos y audios' },
 ];
 
 export const services = [
@@ -78,7 +78,7 @@ export const upgradeOptions: UpgradeOption[] = [
 export const genderOptions = ['Mujer', 'Hombre', 'Trans'];
 export const workTypeOptions = ['Yo mismo (independiente)', 'Agencia'];
 export const skinColorOptions = ['Blanca', 'Trigueña', 'Morena', 'Negra'];
-export const sexualityOptions = ['Straight', 'Gay', 'Lesbian', 'Bisexual', 'Other'];
+// export const sexualityOptions = ['Straight', 'Gay', 'Lesbian', 'Bisexual', 'Other']; // REMOVIDO
 export const eyeColorOptions = ['Negros', 'Café', 'Avellana', 'Verdes', 'Azul'];
 export const hairColorOptions = [
   'Negro',

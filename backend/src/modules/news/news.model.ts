@@ -1,8 +1,10 @@
 import { Schema, model, Document } from 'mongoose';
 
-export interface INews extends Document {
+export interface INews {
+  _id: string;
   title: string;
   content: string[]; // Array de strings para los patch notes
+  imageUrl?: string; // URL de la imagen/banner de la noticia
   published: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -24,6 +26,17 @@ const newsSchema = new Schema<INews>(
           return v && v.length > 0;
         },
         message: 'Debe incluir al menos un elemento en el contenido'
+      }
+    },
+    imageUrl: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: function (v: string) {
+          if (!v) return true; // Campo opcional
+          return /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(v);
+        },
+        message: 'La URL de la imagen debe ser una URL válida de imagen'
       }
     },
     published: {

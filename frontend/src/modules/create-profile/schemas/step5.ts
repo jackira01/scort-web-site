@@ -1,37 +1,28 @@
 import { z } from 'zod';
 
-// Schema para Step 5 - Finalizar
 export const step5Schema = z.object({
-  acceptTerms: z
-    .boolean()
-    .refine((val) => val === true, 'Debes aceptar los términos y condiciones'),
-  
-  selectedUpgrades: z
-    .array(z.string())
-    .optional(),
-
-  // Selección de Plan
+  photos: z.array(z.string()).min(1, {
+    message: 'Debes subir al menos una foto para crear tu perfil',
+  }),
+  videos: z.array(z.any()).optional(),
+  audios: z.array(z.any()).optional(),
+  selectedUpgrades: z.array(z.string()).optional(),
   selectedPlan: z.object({
-    _id: z.string().min(1, 'Debe seleccionar un plan'),
+    id: z.string(),
     name: z.string(),
     code: z.string(),
-    variants: z.array(z.object({
-      price: z.number(),
-      days: z.number(),
-      durationRank: z.number()
-    })),
-    contentLimits: z.object({
-      maxPhotos: z.number(),
-      maxVideos: z.number(),
-      maxAudios: z.number(),
-      maxProfiles: z.number()
-    })
-  }).optional(),
+    level: z.number(),
+  }).optional().refine((val) => val !== undefined, {
+    message: 'Debes seleccionar un plan',
+  }),
   selectedVariant: z.object({
-    price: z.number(),
+    id: z.string(),
     days: z.number(),
-    durationRank: z.number()
-  }).optional()
+    price: z.number(),
+  }).optional(),
+  acceptTerms: z.boolean().refine((val) => val === true, {
+    message: 'Debes aceptar los términos y condiciones',
+  }),
 });
 
 export type Step5FormData = z.infer<typeof step5Schema>;

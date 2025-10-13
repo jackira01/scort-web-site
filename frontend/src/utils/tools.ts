@@ -1,4 +1,3 @@
-import imageCompression from 'browser-image-compression';
 import axios from 'axios';
 import { applyWatermarkToImage } from './watermark';
 import { ProcessedImageResult } from './imageProcessor';
@@ -7,9 +6,25 @@ const upload_preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "";
 const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_NAME || "";
 
 /**
+ * Carga dinámica de browser-image-compression solo en el cliente
+ */
+const loadImageCompression = async () => {
+  if (typeof window === 'undefined') {
+    throw new Error('browser-image-compression solo puede usarse en el cliente');
+  }
+  const { default: imageCompression } = await import('browser-image-compression');
+  return imageCompression;
+};
+
+/**
  * Normaliza el tamaño de una imagen a un máximo de 1000px manteniendo la proporción
+ * TEMPORALMENTE COMENTADO - No reducir resolución de imágenes
  */
 export const normalizeImageSize = async (file: File): Promise<File> => {
+  // COMENTADO TEMPORALMENTE - Devolver archivo original sin procesar
+  return file;
+
+  /* CÓDIGO ORIGINAL COMENTADO
   return new Promise((resolve, reject) => {
     const img = new Image();
     const reader = new FileReader();
@@ -63,36 +78,41 @@ export const normalizeImageSize = async (file: File): Promise<File> => {
         }
       };
 
-      img.onerror = () => {
-        reject(new Error('Error al cargar la imagen para normalización'));
-      };
-
-      img.src = e.target!.result as string;
+      img.onerror = () => reject(new Error('Error al cargar la imagen'));
+      img.src = e.target?.result as string;
     };
 
-    reader.onerror = () => {
-      reject(new Error('Error al leer el archivo para normalización'));
-    };
-
+    reader.onerror = () => reject(new Error('Error al leer el archivo'));
     reader.readAsDataURL(file);
   });
+  */
 };
 
 
+/**
+ * Comprime una imagen manteniendo calidad aceptable
+ * TEMPORALMENTE COMENTADO - No comprimir imágenes
+ */
 export const compressImage = async (file: File): Promise<File> => {
+  // COMENTADO TEMPORALMENTE - Devolver archivo original sin comprimir
+  return file;
+
+  /* CÓDIGO ORIGINAL COMENTADO
   const options = {
-    maxSizeMB: 0.6, // máximo 600KB
+    maxSizeMB: 1, // máximo 1MB
     maxWidthOrHeight: 1280, // permitir hasta 1280px para mantener la resolución original
     useWebWorker: true,
     preserveExif: false, // remover metadatos para reducir tamaño
     initialQuality: 0.9, // calidad inicial más alta
   };
   try {
+    const imageCompression = await loadImageCompression();
     return await imageCompression(file, options);
-  } catch (error) {
+  } catch {
     // Error al comprimir imagen
     return file; // si falla, sigue con el original
   }
+  */
 };
 
 export const uploadMultipleImages = async (
@@ -100,16 +120,24 @@ export const uploadMultipleImages = async (
   watermarkText?: string,
   onProgress?: (current: number, total: number) => void
 ): Promise<(string | null)[]> => {
+  // Validar configuración de Cloudinary
+  if (!upload_preset || !cloud_name) {
+    console.error('❌ Configuración de Cloudinary incompleta:', { upload_preset, cloud_name });
+    throw new Error('Configuración de Cloudinary no encontrada. Verifica las variables de entorno.');
+  }
+
   const uploadedUrls: (string | null)[] = [];
 
   for (let i = 0; i < (filesArray || []).length; i++) {
     const file = filesArray[i];
     try {
+      console.log(`📤 Subiendo imagen ${i + 1}/${filesArray.length}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+
       // 1. Normalización de tamaño (máximo 1000px)
       const normalizedFile = await normalizeImageSize(file);
 
-      // 2. Aplicación de marca de agua
-      const watermarkedFile = await applyWatermarkToImage(normalizedFile, watermarkText);
+      // 2. Aplicación de marca de agua (deshabilitada para banners de noticias)
+      const watermarkedFile = watermarkText ? await applyWatermarkToImage(normalizedFile, watermarkText) : normalizedFile;
 
       // 3. Compresión final (máximo 500KB)
       const compressedFile = await compressImage(watermarkedFile);
@@ -124,7 +152,13 @@ export const uploadMultipleImages = async (
         formData,
       );
 
-      uploadedUrls.push(response.data.secure_url);
+      if (response.data && response.data.secure_url) {
+        uploadedUrls.push(response.data.secure_url);
+        console.log(`✅ Imagen ${i + 1} subida exitosamente: ${response.data.secure_url}`);
+      } else {
+        console.error(`❌ Respuesta inválida de Cloudinary para imagen ${i + 1}:`, response.data);
+        uploadedUrls.push(null);
+      }
 
       // Callback de progreso
       if (onProgress) {
@@ -132,6 +166,7 @@ export const uploadMultipleImages = async (
       }
     } catch (error) {
       // Error en cualquier paso del proceso
+      console.error(`❌ Error al subir imagen ${i + 1} (${file.name}):`, error);
       uploadedUrls.push(null);
 
       // Callback de progreso incluso en error
@@ -140,6 +175,11 @@ export const uploadMultipleImages = async (
       }
     }
   }
+
+  const successCount = uploadedUrls.filter(url => url !== null).length;
+  const failCount = uploadedUrls.length - successCount;
+
+  console.log(`📊 Resultado subida imágenes: ${successCount} exitosas, ${failCount} fallidas`);
 
   return uploadedUrls;
 };
@@ -250,35 +290,111 @@ export const uploadMixedImages = async (
 
 export const uploadMultipleVideos = async (
   filesArray: File[],
-): Promise<(string | null)[]> => {
-  const uploadedUrls: (string | null)[] = [];
-  for (const file of filesArray) {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', upload_preset);
-      formData.append('resource_type', 'video');
+  videoCoverImages?: { [key: number]: File | string }
+): Promise<{ link: string; preview: string }[]> => {
+  // Validar configuración de Cloudinary
+  if (!upload_preset || !cloud_name) {
+    console.error('❌ Configuración de Cloudinary incompleta:', { upload_preset, cloud_name });
+    throw new Error('Configuración de Cloudinary no encontrada. Verifica las variables de entorno.');
+  }
 
-      const response = await axios.post(
+  const uploadedVideos: { link: string; preview: string }[] = [];
+
+  for (let i = 0; i < filesArray.length; i++) {
+    const file = filesArray[i];
+    try {
+      console.log(`📤 Subiendo video ${i + 1}/${filesArray.length}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+
+      // Subir el video
+      const videoFormData = new FormData();
+      videoFormData.append('file', file);
+      videoFormData.append('upload_preset', upload_preset);
+      videoFormData.append('resource_type', 'video');
+
+      const videoResponse = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`,
-        formData,
+        videoFormData,
       );
-      uploadedUrls.push(response.data.secure_url);
+
+      if (!videoResponse.data || !videoResponse.data.secure_url) {
+        console.error(`❌ Respuesta inválida de Cloudinary para video ${i + 1}:`, videoResponse.data);
+        continue;
+      }
+
+      let previewUrl = '';
+
+      // Si hay imagen de preview personalizada, subirla
+      if (videoCoverImages && videoCoverImages[i]) {
+        const coverImage = videoCoverImages[i];
+
+        if (coverImage instanceof File) {
+          console.log(`📤 Subiendo imagen de preview para video ${i + 1}: ${coverImage.name}`);
+
+          // Subir imagen de preview personalizada
+          const previewFormData = new FormData();
+          previewFormData.append('file', coverImage);
+          previewFormData.append('upload_preset', upload_preset);
+          previewFormData.append('resource_type', 'image');
+
+          const previewResponse = await axios.post(
+            `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
+            previewFormData,
+          );
+
+          if (previewResponse.data && previewResponse.data.secure_url) {
+            previewUrl = previewResponse.data.secure_url;
+            console.log(`✅ Imagen de preview subida exitosamente: ${previewUrl}`);
+          } else {
+            console.error(`❌ Error al subir imagen de preview para video ${i + 1}:`, previewResponse.data);
+          }
+        } else if (typeof coverImage === 'string') {
+          // Ya es una URL de imagen
+          previewUrl = coverImage;
+          console.log(`📋 Usando URL existente como preview: ${previewUrl}`);
+        }
+      } else {
+        // Generar preview automático desde el video usando Cloudinary
+        const publicId = videoResponse.data.public_id;
+        previewUrl = `https://res.cloudinary.com/${cloud_name}/video/upload/so_1.0,w_400,h_300,c_fill/${publicId}.jpg`;
+        console.log(`🎬 Generando preview automático: ${previewUrl}`);
+      }
+
+      uploadedVideos.push({
+        link: videoResponse.data.secure_url,
+        preview: previewUrl
+      });
+
+      console.log(`✅ Video ${i + 1} subido exitosamente: ${videoResponse.data.secure_url}`);
     } catch (error) {
-      // Error al subir video
-      uploadedUrls.push(null);
+      console.error(`❌ Error al subir video ${i + 1} (${file.name}):`, error);
+      // En caso de error, no agregamos el video a la lista
     }
   }
 
-  return uploadedUrls;
+  const successCount = uploadedVideos.length;
+  const failCount = filesArray.length - successCount;
+
+  console.log(`📊 Resultado subida videos: ${successCount} exitosos, ${failCount} fallidos`);
+
+  return uploadedVideos;
 };
 
 export const uploadMultipleAudios = async (
   filesArray: File[],
 ): Promise<(string | null)[]> => {
+  // Validar configuración de Cloudinary
+  if (!upload_preset || !cloud_name) {
+    console.error('❌ Configuración de Cloudinary incompleta:', { upload_preset, cloud_name });
+    throw new Error('Configuración de Cloudinary no encontrada. Verifica las variables de entorno.');
+  }
+
   const uploadedUrls: (string | null)[] = [];
-  for (const file of filesArray) {
+
+  for (let i = 0; i < filesArray.length; i++) {
+    const file = filesArray[i];
     try {
+      console.log(`📤 Subiendo audio ${i + 1}/${filesArray.length}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('upload_preset', upload_preset);
@@ -288,12 +404,25 @@ export const uploadMultipleAudios = async (
         `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`,
         formData,
       );
-      uploadedUrls.push(response.data.secure_url);
+
+      if (response.data && response.data.secure_url) {
+        uploadedUrls.push(response.data.secure_url);
+        console.log(`✅ Audio ${i + 1} subido exitosamente: ${response.data.secure_url}`);
+      } else {
+        console.error(`❌ Respuesta inválida de Cloudinary para audio ${i + 1}:`, response.data);
+        uploadedUrls.push(null);
+      }
     } catch (error) {
       // Error al subir audio
+      console.error(`❌ Error al subir audio ${i + 1} (${file.name}):`, error);
       uploadedUrls.push(null);
     }
   }
+
+  const successCount = uploadedUrls.filter(url => url !== null).length;
+  const failCount = uploadedUrls.length - successCount;
+
+  console.log(`📊 Resultado subida audios: ${successCount} exitosos, ${failCount} fallidos`);
 
   return uploadedUrls;
 };

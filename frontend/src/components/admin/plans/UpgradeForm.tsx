@@ -343,7 +343,7 @@ export const UpgradeForm: React.FC<UpgradeFormProps> = ({ isOpen, onClose, upgra
                   onValueChange={(value) => handleEffectChange('positionRule', value)}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Seleccionar regla de posición" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="BY_SCORE">Por Puntuación</SelectItem>
@@ -360,7 +360,7 @@ export const UpgradeForm: React.FC<UpgradeFormProps> = ({ isOpen, onClose, upgra
                   onValueChange={(value) => handleInputChange('stackingPolicy', value)}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Seleccionar política de apilamiento" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="extend">Extender</SelectItem>

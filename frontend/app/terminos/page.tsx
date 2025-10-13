@@ -1,5 +1,6 @@
 'use client';
 
+import PublicContentPage from '@/components/public/PublicContentPage';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -130,36 +131,11 @@ const sections = [
   },
 ];
 
-export default function TermsPage() {
+const TermsPageFallback = () => {
   const [activeSection, setActiveSection] = useState('general');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
-      {/* Header */}
-      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-b sticky top-0 z-50 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="hover:bg-muted/50 transition-colors duration-200"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Volver
-                </Button>
-              </Link>
-              <div className="flex items-center space-x-2">
-                <FileText className="h-5 w-5 text-muted-foreground" />
-                <span className="font-semibold text-foreground">
-                  Términos y Condiciones
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
@@ -281,5 +257,17 @@ export default function TermsPage() {
         </div>
       </div>
     </div>
+  );
+};
+
+export default function TermsPage() {
+  return (
+    <PublicContentPage 
+      slug="terminos"
+      fallbackContent={<TermsPageFallback />}
+      showBackButton={true}
+      backButtonText="Volver al inicio"
+      backButtonHref="/"
+    />
   );
 }

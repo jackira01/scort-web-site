@@ -139,10 +139,11 @@ export default function UploadStoryModal({
             // Subir videos
             if (videoFiles.length > 0) {
                 toast.loading('Subiendo videos...');
-                const videoUrls = await uploadMultipleVideos(videoFiles);
-                const videoStories = videoUrls
-                    .filter((url): url is string => url !== null)
-                    .map((url) => ({ link: url, type: 'video' as const }));
+                const videoResults = await uploadMultipleVideos(videoFiles);
+                const videoStories = videoResults.map((result) => ({ 
+                    link: result.link, 
+                    type: 'video' as const 
+                }));
                 uploadedStories = [...uploadedStories, ...videoStories];
                 toast.dismiss();
             }

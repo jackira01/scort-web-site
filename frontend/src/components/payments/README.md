@@ -172,7 +172,7 @@ export function CustomPaymentComponent() {
 
 - `next-auth`: Para manejo de sesiones
 - `sonner`: Para notificaciones toast
-- `date-fns`: Para formateo de fechas
+- `luxon`: Para formateo de fechas
 - `lucide-react`: Para iconos
 - Componentes UI de shadcn/ui
 

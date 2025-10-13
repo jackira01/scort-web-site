@@ -63,7 +63,17 @@ const invoiceItemSchema = new mongoose_1.Schema({
         default: 1
     }
 }, { _id: false });
+const counterSchema = new mongoose_1.Schema({
+    name: { type: String, required: true, unique: true },
+    seq: { type: Number, default: 999 },
+});
+const Counter = mongoose_1.default.model("Counter", counterSchema);
 const invoiceSchema = new mongoose_1.Schema({
+    invoiceNumber: {
+        type: Number,
+        unique: true,
+        index: true,
+    },
     profileId: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'Profile',
@@ -94,6 +104,19 @@ const invoiceSchema = new mongoose_1.Schema({
         type: Number,
         required: true,
         min: 0
+    },
+    coupon: {
+        code: { type: String },
+        name: { type: String },
+        type: {
+            type: String,
+            enum: ['percentage', 'fixed_amount', 'plan_assignment']
+        },
+        value: { type: Number },
+        originalAmount: { type: Number },
+        discountAmount: { type: Number },
+        finalAmount: { type: Number },
+        _id: false
     },
     expiresAt: {
         type: Date,
@@ -133,10 +156,20 @@ invoiceSchema.index({ userId: 1, status: 1 });
 invoiceSchema.index({ expiresAt: 1, status: 1 });
 invoiceSchema.index({ createdAt: -1 });
 invoiceSchema.pre('save', function (next) {
-    if (this.isModified('items')) {
+    if (this.isModified('items') && !this.coupon) {
         this.totalAmount = this.items.reduce((total, item) => {
             return total + (item.price * item.quantity);
         }, 0);
+    }
+    next();
+});
+invoiceSchema.pre("save", async function (next) {
+    if (this.isNew) {
+        const counter = await Counter.findOneAndUpdate({ name: "invoice" }, { $inc: { seq: 1 } }, { new: true, upsert: true });
+        if (!counter) {
+            return next(new Error("No se pudo generar el número de factura"));
+        }
+        this.invoiceNumber = counter.seq;
     }
     next();
 });
