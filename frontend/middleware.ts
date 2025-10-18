@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { checkRateLimit, createRateLimitResponse } from '@/lib/rate-limit';
+import { checkRateLimit, createRateLimitResponse } from './src/lib/rate-limit';
 import { getToken } from 'next-auth/jwt';
 
 // Lista de categorías válidas (debe coincidir con el backend)
@@ -85,8 +85,33 @@ const ALLOWED_WITHOUT_PASSWORD = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Log inicial para todas las requests a /cuenta
+  if (pathname.startsWith('/cuenta')) {
+    console.log('🔍 [MIDDLEWARE] Request to /cuenta detected:', {
+      pathname,
+      timestamp: new Date().toISOString(),
+      url: request.url,
+      headers: {
+        cookie: request.headers.get('cookie') ? 'present' : 'missing',
+        host: request.headers.get('host'),
+        userAgent: request.headers.get('user-agent')?.slice(0, 50),
+      },
+    });
+  }
+
   // ===== CONFIGURACIÓN DE HEADERS DE SEGURIDAD =====
   const response = NextResponse.next();
+
+  // Log de variables de entorno críticas (solo para /cuenta)
+  if (pathname.startsWith('/cuenta')) {
+    console.log('🔧 [MIDDLEWARE] Environment check:', {
+      NODE_ENV: process.env.NODE_ENV,
+      hasNEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
+      NEXTAUTH_SECRET_length: process.env.NEXTAUTH_SECRET?.length,
+      hasNEXTAUTH_URL: !!process.env.NEXTAUTH_URL,
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    });
+  }
 
   // Content Security Policy
   const backendUrl = process.env.NODE_ENV === 'production'
@@ -107,20 +132,79 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Obtener token JWT
-  const token = await getToken({
+  // Obtener token JWT con opciones mejoradas para producción
+  let token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET
+    secret: process.env.NEXTAUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === 'production',
   });
+
+  // Log detallado del token para /cuenta
+  if (pathname.startsWith('/cuenta')) {
+    console.log('🎫 [MIDDLEWARE] Token check for /cuenta:', {
+      hasToken: !!token,
+      tokenExists: token !== null,
+      tokenKeys: token ? Object.keys(token) : [],
+      userId: token?.id,
+      email: token?.email,
+      role: token?.role,
+      hasPassword: token?.hasPassword,
+      emailVerified: token?.emailVerified,
+      env: process.env.NODE_ENV,
+      secureCookie: process.env.NODE_ENV === 'production',
+    });
+  }
 
   // Verificar si la ruta requiere autenticación
   const requiresAuth = AUTH_REQUIRED_ROUTES.some(route => pathname.startsWith(route));
 
+  if (pathname.startsWith('/cuenta')) {
+    console.log('🔐 [MIDDLEWARE] Auth check for /cuenta:', {
+      requiresAuth,
+      matchedRoute: AUTH_REQUIRED_ROUTES.find(route => pathname.startsWith(route)),
+    });
+  }
+
   if (requiresAuth) {
     if (!token) {
-      // Redirigir a la ruta raíz para rutas protegidas sin sesión
-      const homeUrl = new URL('/', request.url);
-      return NextResponse.redirect(homeUrl);
+      // En producción puede haber un delay en la sincronización del token
+      // Reintentar una vez antes de redirigir para evitar race conditions
+      console.log('⚠️ [MIDDLEWARE] No token found on first attempt for:', pathname, '- Retrying...');
+
+      // Esperar un poco más en producción
+      if (process.env.NODE_ENV === 'production') {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      token = await getToken({
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET,
+        secureCookie: process.env.NODE_ENV === 'production',
+      });
+
+      if (pathname.startsWith('/cuenta')) {
+        console.log('🔄 [MIDDLEWARE] Retry token check for /cuenta:', {
+          hasTokenAfterRetry: !!token,
+          tokenExistsAfterRetry: token !== null,
+          userId: token?.id,
+        });
+      }
+
+      if (!token) {
+        console.log('🚫 [MIDDLEWARE] No token found after retry for protected route:', {
+          pathname,
+          timestamp: new Date().toISOString(),
+          redirectingTo: '/',
+        });
+        const homeUrl = new URL('/', request.url);
+        return NextResponse.redirect(homeUrl);
+      }
+
+      console.log('✅ [MIDDLEWARE] Token found on retry for:', pathname);
+    } else {
+      if (pathname.startsWith('/cuenta')) {
+        console.log('✅ [MIDDLEWARE] Token found on first attempt for /cuenta');
+      }
     }
   }
 
@@ -191,9 +275,9 @@ export async function middleware(request: NextRequest) {
   }
 
   // Verificación de contraseña para rutas específicas (excluyendo post-register que ya se maneja arriba)
-  if (PASSWORD_REQUIRED_ROUTES.some(route => pathname.startsWith(route)) && 
-      !ALLOWED_WITHOUT_PASSWORD.some(route => pathname.startsWith(route)) &&
-      pathname !== '/autenticacion/post-register') {
+  if (PASSWORD_REQUIRED_ROUTES.some(route => pathname.startsWith(route)) &&
+    !ALLOWED_WITHOUT_PASSWORD.some(route => pathname.startsWith(route)) &&
+    pathname !== '/autenticacion/post-register') {
     console.log('🔐 Password verification for:', {
       pathname,
       tokenHasPassword: token?.hasPassword,
@@ -205,14 +289,14 @@ export async function middleware(request: NextRequest) {
       hasPassword: token?.hasPassword,
       type: typeof token?.hasPassword,
     });
-    
+
     // Verificación más estricta: solo redirigir si hasPassword es explícitamente false
     if (token?.hasPassword === false) {
       console.log('❌ User lacks password, redirecting to post-register');
       const postRegisterUrl = new URL('/autenticacion/post-register', request.url);
       return NextResponse.redirect(postRegisterUrl);
     }
-    
+
     // Si hasPassword es undefined o null, permitir acceso (puede ser un problema de timing)
     if (token?.hasPassword === undefined || token?.hasPassword === null) {
       console.log('⚠️ hasPassword is undefined/null, allowing access but this may indicate a timing issue');
@@ -272,6 +356,16 @@ export async function middleware(request: NextRequest) {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
+
+  // Log final para /cuenta
+  if (pathname.startsWith('/cuenta')) {
+    console.log('✅ [MIDDLEWARE] Allowing access to /cuenta:', {
+      pathname,
+      timestamp: new Date().toISOString(),
+      hasToken: !!token,
+      userId: token?.id,
+    });
+  }
 
   return response;
 }
