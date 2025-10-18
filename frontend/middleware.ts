@@ -133,10 +133,6 @@ export async function middleware(request: NextRequest) {
         secureCookie: process.env.NODE_ENV === 'production',
       });
 
-    } else {
-      if (pathname.startsWith('/cuenta')) {
-        console.log('✅ [MIDDLEWARE] Token found on first attempt for /cuenta');
-      }
     }
   }
 
@@ -193,11 +189,6 @@ export async function middleware(request: NextRequest) {
     if (token?.hasPassword === false) {
       const postRegisterUrl = new URL('/autenticacion/post-register', request.url);
       return NextResponse.redirect(postRegisterUrl);
-    }
-
-    // Si hasPassword es undefined o null, permitir acceso (puede ser un problema de timing)
-    if (token?.hasPassword === undefined || token?.hasPassword === null) {
-      console.log('⚠️ hasPassword is undefined/null, allowing access but this may indicate a timing issue');
     }
   }
 

@@ -98,18 +98,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log('🔐 [NEXTAUTH SIGNIN] Callback triggered:', {
-        provider: account?.provider,
-        userEmail: user?.email,
-        hasAccount: !!account,
-        timestamp: new Date().toISOString(),
-      });
-
       // Manejar login con Google
       if (account?.provider === 'google') {
         try {
-          console.log('🔵 [NEXTAUTH SIGNIN] Processing Google login for:', user.email);
-
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/auth_google`, {
             method: 'POST',
             headers: {
@@ -125,12 +116,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           const result = await response.json();
 
-          console.log('🔵 [NEXTAUTH SIGNIN] Google auth response:', {
-            success: result.success,
-            userId: result.user?._id,
-            hasPassword: result.user?.hasPassword,
-          });
-
           if (!result.success) {
             console.error('❌ [NEXTAUTH SIGNIN] Google auth failed:', result.message);
             return false;
@@ -145,12 +130,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           user.hasPassword = result.user.hasPassword;
           user.emailVerified = result.user.emailVerified;
 
-          console.log('✅ [NEXTAUTH SIGNIN] User object updated:', {
-            id: user.id,
-            email: user.email,
-            hasPassword: user.hasPassword,
-          });
-
           return true;
         } catch (error) {
           console.error('❌ [NEXTAUTH SIGNIN] Error in Google auth:', error);
@@ -158,29 +137,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       }
 
-      console.log('✅ [NEXTAUTH SIGNIN] Non-Google signin successful');
       return true;
     },
 
     async jwt({ token, user, account, trigger }) {
-      console.log('🎫 [NEXTAUTH JWT] Callback triggered:', {
-        trigger,
-        hasUser: !!user,
-        hasAccount: !!account,
-        tokenId: token?.id,
-        userEmail: user?.email || token?.email,
-        timestamp: new Date().toISOString(),
-      });
 
       // Solo mantener logs críticos para debugging de producción
       if (user) {
-        console.log('👤 [NEXTAUTH JWT] Setting token from user object:', {
-          userId: user.id,
-          email: user.email,
-          hasPassword: user.hasPassword,
-          role: user.role,
-        });
-
         token.id = user.id || '';
         token._id = user._id || user.id || '';
         token.email = user.email || '';
@@ -188,7 +151,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.image = user.image || '';
         token.isVerified = user.isVerified ?? false;
         token.verification_in_progress = user.verification_in_progress ?? false;
-        token.role = user.role ?? 'user';
+        token.role = user.role || 'guest';
         token.hasPassword = user.hasPassword ?? false;
         token.emailVerified = user.emailVerified ?? null;
         token.profileId = user.profileId;
@@ -196,16 +159,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.profileVerificationStatus = user.profileVerificationStatus;
         token.isHighlighted = user.isHighlighted ?? false;
         token.highlightedUntil = user.highlightedUntil;
-
-        console.log('✅ [NEXTAUTH JWT] Token updated from user:', {
-          tokenId: token.id,
-          hasPassword: token.hasPassword,
-        });
       }
 
       // CRÍTICO: Solo actualizar en trigger 'update' explícito, no en cada petición
       if (trigger === 'update' && token.id) {
-        console.log('🔄 [NEXTAUTH JWT] Update trigger - fetching fresh user data for:', token.id);
 
         try {
           const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -219,21 +176,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (response.ok) {
             const userData = await response.json();
 
-            console.log('✅ [NEXTAUTH JWT] Fresh user data fetched:', {
-              hasPassword: userData.hasPassword,
-              role: userData.role,
-              emailVerified: userData.emailVerified,
-            });
-
-            token.hasPassword = userData.hasPassword ?? false;
-            token.isVerified = userData.isVerified ?? false;
-            token.verification_in_progress = userData.verification_in_progress ?? false;
+            token.hasPassword = userData.hasPassword;
+            token.isVerified = userData.isVerified;
+            token.verification_in_progress = userData.verification_in_progress;
             token.role = userData.role;
-            token.emailVerified = userData.emailVerified ?? null;
+            token.emailVerified = userData.emailVerified;
             token.profileId = userData.profileId;
             token.profileStatus = userData.profileStatus;
             token.profileVerificationStatus = userData.profileVerificationStatus;
-            token.isHighlighted = userData.isHighlighted ?? false;
+            token.isHighlighted = userData.isHighlighted;
             token.highlightedUntil = userData.highlightedUntil;
           } else {
             console.error('❌ [NEXTAUTH JWT] Failed to fetch user data:', response.status);
@@ -246,24 +197,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (account?.provider) {
         token.provider = account.provider;
       }
-
-      console.log('🎫 [NEXTAUTH JWT] Token state after processing:', {
-        id: token.id,
-        email: token.email,
-        hasPassword: token.hasPassword,
-        role: token.role,
-      });
-
       return token;
     },
 
     async session({ session, token }) {
-      console.log('👤 [NEXTAUTH SESSION] Callback triggered:', {
-        hasToken: !!token,
-        tokenId: token?.id,
-        sessionEmail: session?.user?.email,
-        timestamp: new Date().toISOString(),
-      });
 
       // Transferir datos del token a la sesión
       if (token) {
@@ -283,37 +220,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.profileVerificationStatus = token.profileVerificationStatus as string;
         session.user.isHighlighted = token.isHighlighted as boolean;
         session.user.highlightedUntil = token.highlightedUntil as string;
-
-        console.log('✅ [NEXTAUTH SESSION] Session populated:', {
-          userId: session.user.id,
-          email: session.user.email,
-          hasPassword: session.user.hasPassword,
-          role: session.user.role,
-        });
       }
 
       return session;
     },
 
     async redirect({ url, baseUrl }) {
-      console.log('🔀 [NEXTAUTH REDIRECT] Redirect callback:', {
-        url,
-        baseUrl,
-        finalRedirect: `${baseUrl}/`,
-      });
-
       // Siempre redirigir a / después del login exitoso
       return `${baseUrl}/`;
-    },
-  },
-
-  // Eventos para logging (solo errores críticos)
-  events: {
-    async signIn({ user, account, isNewUser }) {
-      // Mantener solo en desarrollo
-      if (process.env.NODE_ENV === 'development' && isNewUser) {
-        console.log('🆕 New user created:', user.email);
-      }
     },
   },
 

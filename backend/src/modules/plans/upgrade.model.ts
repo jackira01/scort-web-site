@@ -14,6 +14,7 @@ export interface IUpgradeDefinition extends Document {
     code: string;
     name: string;
     durationHours: number; // por default 24
+    price: number; // precio del upgrade en pesos colombianos
     requires: string[]; // códigos de upgrades requeridos; ej. IMPULSO requiere DESTACADO
     stackingPolicy: StackingPolicy; // recomiendo extend
     effect: UpgradeEffect;
@@ -67,6 +68,12 @@ const UpgradeDefinitionSchema = new Schema<IUpgradeDefinition>({
         required: true,
         min: 1,
         default: 24
+    },
+    price: {
+        type: Number,
+        required: true,
+        min: 0,
+        default: 0
     },
     requires: {
         type: [String],
