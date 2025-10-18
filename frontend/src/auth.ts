@@ -186,15 +186,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.email = user.email || '';
         token.name = user.name || '';
         token.image = user.image || '';
-        token.isVerified = user.isVerified;
-        token.verification_in_progress = user.verification_in_progress;
-        token.role = user.role;
-        token.hasPassword = user.hasPassword;
-        token.emailVerified = user.emailVerified;
+        token.isVerified = user.isVerified ?? false;
+        token.verification_in_progress = user.verification_in_progress ?? false;
+        token.role = user.role ?? 'user';
+        token.hasPassword = user.hasPassword ?? false;
+        token.emailVerified = user.emailVerified ?? null;
         token.profileId = user.profileId;
         token.profileStatus = user.profileStatus;
         token.profileVerificationStatus = user.profileVerificationStatus;
-        token.isHighlighted = user.isHighlighted;
+        token.isHighlighted = user.isHighlighted ?? false;
         token.highlightedUntil = user.highlightedUntil;
 
         console.log('✅ [NEXTAUTH JWT] Token updated from user:', {
@@ -225,15 +225,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               emailVerified: userData.emailVerified,
             });
 
-            token.hasPassword = userData.hasPassword;
-            token.isVerified = userData.isVerified;
-            token.verification_in_progress = userData.verification_in_progress;
+            token.hasPassword = userData.hasPassword ?? false;
+            token.isVerified = userData.isVerified ?? false;
+            token.verification_in_progress = userData.verification_in_progress ?? false;
             token.role = userData.role;
-            token.emailVerified = userData.emailVerified;
+            token.emailVerified = userData.emailVerified ?? null;
             token.profileId = userData.profileId;
             token.profileStatus = userData.profileStatus;
             token.profileVerificationStatus = userData.profileVerificationStatus;
-            token.isHighlighted = userData.isHighlighted;
+            token.isHighlighted = userData.isHighlighted ?? false;
             token.highlightedUntil = userData.highlightedUntil;
           } else {
             console.error('❌ [NEXTAUTH JWT] Failed to fetch user data:', response.status);
@@ -307,32 +307,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 
-  // Eventos para logging y debugging
+  // Eventos para logging (solo errores críticos)
   events: {
     async signIn({ user, account, isNewUser }) {
-      console.log('✅ [NEXTAUTH EVENT] SignIn event:', {
-        userId: user.id,
-        email: user.email,
-        provider: account?.provider,
-        isNewUser,
-        timestamp: new Date().toISOString(),
-      });
-
-      if (isNewUser) {
-        console.log('🆕 [NEXTAUTH EVENT] New user created:', user.email);
+      // Mantener solo en desarrollo
+      if (process.env.NODE_ENV === 'development' && isNewUser) {
+        console.log('🆕 New user created:', user.email);
       }
-    },
-    async signOut(params) {
-      console.log('👋 [NEXTAUTH EVENT] SignOut event:', {
-        timestamp: new Date().toISOString(),
-      });
-    },
-    async session({ session, token }) {
-      console.log('🔄 [NEXTAUTH EVENT] Session event:', {
-        userId: session?.user?.id,
-        email: session?.user?.email,
-        timestamp: new Date().toISOString(),
-      });
     },
   },
 
