@@ -192,6 +192,25 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // ===== REDIRECCIÓN DE RUTAS DE FILTROS A RUTAS AMIGABLES =====
+  // Este bloque captura rutas que empiezan con /filtros/ y redirige a /categoria[/departamento][/ciudad]
+  if (pathname.startsWith('/filtros/')) {
+    const url = request.nextUrl;
+    // /filtros/escort  => split -> ["", "filtros", "escort"]
+    const parts = url.pathname.split('/');
+    const categoria = parts[2]; // puede ser undefined si /filtros/ solo
+    const departamento = url.searchParams.get('departamento') ?? undefined;
+    const ciudad = url.searchParams.get('ciudad') ?? undefined;
+
+    // Only redirect if valid category (prevenir redirecciones inseguras)
+    if (categoria && VALID_CATEGORIES.includes(categoria)) {
+      // Build path: /categoria, /categoria/departamento, /categoria/departamento/ciudad
+      const segs = [categoria, departamento, ciudad].filter(Boolean);
+      const newPath = `/${segs.join('/')}`;
+      return NextResponse.redirect(new URL(newPath, request.url));
+    }
+  }
+
   // ===== LÓGICA DE RUTAS DINÁMICAS (ORIGINAL) =====
 
   // Excluir archivos estáticos y rutas especiales inmediatamente

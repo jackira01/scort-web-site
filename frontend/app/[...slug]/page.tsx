@@ -96,7 +96,36 @@ export async function generateMetadata({
   searchParams,
 }: SearchPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const [categoria, departamento, ciudad] = slug || [];
+  const queryParams = await searchParams;
+
+  let categoria: string;
+  let departamento: string | undefined;
+  let ciudad: string | undefined;
+
+  if (slug && slug.length > 0) {
+    // CASO 1: /filtros/categoria?departamento=X&ciudad=Y
+    if (slug[0] === 'filtros' && slug.length > 1) {
+      categoria = slug[1];
+      departamento = queryParams.departamento as string | undefined;
+      ciudad = queryParams.ciudad as string | undefined;
+    }
+    // CASO 2: /categoria/departamento/ciudad (URL amigable SEO)
+    else if (slug.length === 3) {
+      [categoria, departamento, ciudad] = slug;
+    }
+    // CASO 3: /categoria/departamento
+    else if (slug.length === 2) {
+      [categoria, departamento] = slug;
+    }
+    // CASO 4: /categoria (también puede tener searchParams)
+    else {
+      categoria = slug[0];
+      departamento = queryParams.departamento as string | undefined;
+      ciudad = queryParams.ciudad as string | undefined;
+    }
+  } else {
+    categoria = '';
+  }
 
   // Validar parámetros
   if (!categoria || !(await isValidCategory(categoria))) {
@@ -154,28 +183,34 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
   const { slug } = await params;
   const queryParams = await searchParams;
 
-  // Procesar correctamente la estructura de URL /filtros/categoria
-  // El slug contiene ["filtros", "categoria"], los query params contienen departamento y ciudad
   let categoria: string;
   let departamento: string | undefined;
   let ciudad: string | undefined;
 
   if (slug && slug.length > 0) {
-    // Si el primer elemento es "filtros", la categoría está en el segundo elemento
+    // CASO 1: /filtros/categoria?departamento=X&ciudad=Y
     if (slug[0] === 'filtros' && slug.length > 1) {
-      categoria = slug[1]; // La categoría es el segundo elemento
-    } else {
-      // Fallback: el primer elemento es la categoría (para compatibilidad)
-      categoria = slug[0];
+      categoria = slug[1];
+      departamento = queryParams.departamento as string | undefined;
+      ciudad = queryParams.ciudad as string | undefined;
     }
-
-    departamento = queryParams.departamento as string | undefined;
-    ciudad = queryParams.ciudad as string | undefined;
+    // CASO 2: /categoria/departamento/ciudad (URL amigable SEO)
+    else if (slug.length === 3) {
+      [categoria, departamento, ciudad] = slug;
+    }
+    // CASO 3: /categoria/departamento
+    else if (slug.length === 2) {
+      [categoria, departamento] = slug;
+    }
+    // CASO 4: /categoria (también puede tener searchParams)
+    else {
+      categoria = slug[0];
+      departamento = queryParams.departamento as string | undefined;
+      ciudad = queryParams.ciudad as string | undefined;
+    }
   } else {
     categoria = '';
   }
-
-
 
   // Verificar si es un archivo estático - renderizar contenido por defecto
   if (categoria && (
@@ -237,9 +272,7 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
   let profilesData: ProfilesResponse;
 
   try {
-    // Preparar el body para la petición POST directamente
-    // Params received: { categoria, departamento, ciudad }
-
+    // Preparar el body para la petición POST
     const requestBody: any = {
       page: 1,
       limit: PAGINATION.DEFAULT_LIMIT,
@@ -249,11 +282,9 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
     };
 
     if (categoria) {
-      // Adding category: slugToText(categoria)
       requestBody.category = slugToText(categoria);
-    } else {
-      // No category provided
     }
+
     if (departamento) {
       requestBody.location = { department: slugToText(departamento) };
       if (ciudad) {
@@ -280,8 +311,6 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
 
     const responseData = await res.json();
 
-
-
     // Transformar la estructura para que coincida con ProfilesResponse
     if (responseData.success && responseData.data) {
       const backendData = responseData.data;
@@ -296,8 +325,6 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
           hasPrevPage: backendData.hasPrevPage,
         },
       };
-
-
     } else {
       throw new Error(responseData.message || 'Error en la respuesta del servidor');
     }

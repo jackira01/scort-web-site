@@ -281,20 +281,35 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
   };
 
   // Función para procesar automáticamente múltiples imágenes nuevas
+  // Función para procesar automáticamente múltiples imágenes nuevas
   const processNewImages = async (newFiles: File[], startIndex: number) => {
+    console.log('🔄 Iniciando procesamiento de imágenes:', {
+      totalNuevas: newFiles.length,
+      indiceInicio: startIndex,
+      imagenesExistentes: processedImages.size
+    });
+
     let processedCount = 0;
-    
+    const newProcessedImages = new Map(processedImages); // Clonar el Map existente
+
     try {
       setIsProcessingImage(true);
-      
+
+      // Procesar todas las imágenes de forma secuencial
       for (let i = 0; i < newFiles.length; i++) {
         const file = newFiles[i];
         const imageIndex = startIndex + i;
-        
+
+        console.log(`📷 Procesando imagen ${i + 1}/${newFiles.length}:`, {
+          nombre: file.name,
+          tamaño: (file.size / 1024 / 1024).toFixed(2) + 'MB',
+          indice: imageIndex
+        });
+
         try {
           // Crear un blob desde el archivo original (sin crop)
           const originalBlob = new Blob([file], { type: file.type });
-          
+
           // Procesar la imagen usando el flujo completo
           const processedResult = await processImageComplete(
             file,
@@ -308,29 +323,43 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
             imageIndex
           );
 
-          // Guardar el resultado procesado
-          const newProcessedImages = new Map(processedImages);
+          // Guardar el resultado procesado en el Map clonado
           newProcessedImages.set(imageIndex, processedResult);
-          setProcessedImages(newProcessedImages);
-
-          // Actualizar las imágenes procesadas en el formulario
-          const processedImagesArray = Array.from(newProcessedImages.values());
-          setValue('processedImages', processedImagesArray);
-
           processedCount++;
 
+          console.log(`✅ Imagen ${i + 1} procesada exitosamente`, {
+            indice: imageIndex,
+            compresion: processedResult.compressionRatio.toFixed(2) + '%'
+          });
+
         } catch (error) {
-          console.error(`Error procesando imagen ${i + 1}:`, error);
+          console.error(`❌ Error procesando imagen ${i + 1}:`, error);
           toast.error(`Error procesando imagen ${file.name}`);
         }
       }
+
+      console.log('✨ Procesamiento completado:', {
+        totalProcesadas: processedCount,
+        totalEnMap: newProcessedImages.size
+      });
+
+      // Actualizar el estado con todas las imágenes procesadas de una sola vez
+      setProcessedImages(newProcessedImages);
+
+      // Actualizar las imágenes procesadas en el formulario
+      const processedImagesArray = Array.from(newProcessedImages.values());
+      console.log('💾 Guardando en formulario:', {
+        cantidadImagenes: processedImagesArray.length
+      });
+      setValue('processedImages', processedImagesArray);
+
     } catch (error) {
-      console.error('Error en processNewImages:', error);
+      console.error('❌ Error en processNewImages:', error);
       toast.error('Error procesando las imágenes');
     } finally {
       setIsProcessingImage(false);
     }
-    
+
     return processedCount;
   };
 
