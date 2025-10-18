@@ -280,12 +280,20 @@ export const createProfile = async (data: CreateProfileDTO): Promise<IProfile> =
 /**
  * Crea un perfil con generación automática de factura para planes de pago
  */
-export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCode?: string; planDays?: number }): Promise<{
+export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCode?: string; planDays?: number; generateInvoice?: boolean }): Promise<{
   profile: IProfile;
   invoice: IInvoice | null;
   whatsAppMessage?: WhatsAppMessage | null;
 }> => {
-  const { planCode, planDays, ...profileData } = data;
+  const { planCode, planDays, generateInvoice = false, ...profileData } = data;
+
+  // DEBUG: Log de datos recibidos en el servicio
+  console.log('DEBUG SERVICIO - createProfileWithInvoice llamado con:', {
+    planCode,
+    planDays,
+    generateInvoice,
+    hasProfileData: !!profileData
+  });
 
 
 
@@ -330,15 +338,23 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
       }
       // Variante encontrada
 
-      // Solo generar factura si el plan tiene costo
-      if (variant.price > 0) {
-        // Plan de pago detectado, generando factura
+      // Solo generar factura si el plan tiene costo Y se solicita generar factura
+      if (variant.price > 0 && generateInvoice) {
+        // DEBUG: Generando factura
+        console.log('DEBUG SERVICIO - Generando factura:', {
+          planCode,
+          planDays,
+          price: variant.price,
+          generateInvoice
+        });
+        
+        // Plan de pago detectado y facturación solicitada, generando factura
         invoice = await invoiceService.generateInvoice({
           profileId: (profile._id as Types.ObjectId).toString(),
           userId: profile.user.toString(),
           planCode: planCode,
           planDays: planDays,
-          notes: `Factura generada automáticamente para nuevo perfil ${profile.name || profile._id}`
+          notes: `Factura generada para nuevo perfil ${profile.name || profile._id}`
         });
 
         // Factura generada exitosamente
@@ -350,15 +366,42 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
           {
             $push: { paymentHistory: new Types.ObjectId(invoice._id as string) },
             isActive: true,        // Mantener activo con plan por defecto
-            visible: shouldBeVisible  // Visible solo si no superó límites gratuitos
+            visible: false         // Ocultar hasta que se pague la factura
           }
         );
         // Historial de pagos actualizado con factura
+      } else if (variant.price > 0 && !generateInvoice) {
+        // DEBUG: Asignando plan sin factura
+        console.log('DEBUG SERVICIO - Asignando plan sin factura:', {
+          planCode,
+          planDays,
+          price: variant.price,
+          generateInvoice
+        });
+        
+        // Plan de pago pero sin generar factura (administrador), asignar plan directamente
+        // Calcular fechas para asignación directa
+        const startAt = new Date();
+        const expiresAt = new Date(startAt.getTime() + (planDays * 24 * 60 * 60 * 1000));
 
-        // NUEVO FLUJO: Mantener perfil activo con plan por defecto hasta confirmación de pago
-        // Solo ocultar si el usuario superó límites de perfiles gratuitos
-        // Configurando visibilidad del perfil según límites
-        // Perfil configurado
+        // Asignar plan directamente sin generar factura
+        await ProfileModel.findByIdAndUpdate(
+          profile._id,
+          {
+            planAssignment: {
+              planId: plan._id,
+              planCode,
+              variantDays: planDays,
+              startAt,
+              expiresAt
+            },
+            isActive: true,
+            visible: shouldBeVisible
+          }
+        );
+        
+        // Plan asignado directamente sin factura
+        console.log('DEBUG SERVICIO - Plan asignado exitosamente sin factura');
       } else {
         // Plan gratuito, mantener el plan por defecto ya asignado
         // Plan gratuito detectado, manteniendo plan por defecto actual
@@ -512,6 +555,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
   const profiles = await ProfileModel.find({
     isActive: true,
     visible: true,
+    isDeleted: { $ne: true }, // Excluir perfiles eliminados lógicamente
     $or: [
       // Perfiles con planAssignment activo
       {
@@ -1678,7 +1722,7 @@ export const hardDeleteProfile = async (profileId: string): Promise<{ success: b
     const InvoiceModel = (await import('../payments/invoice.model')).default;
     await InvoiceModel.deleteMany({ profileId: profileId });
 
-    // Eliminar el perfil completamente
+    // Eliminar el perfil completamente (esto incluye automáticamente las historias en media.stories)
     await ProfileModel.findByIdAndDelete(profileId);
 
     return { success: true, message: 'Perfil y todos sus datos eliminados permanentemente' };

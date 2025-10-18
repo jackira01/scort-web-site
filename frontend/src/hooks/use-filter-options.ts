@@ -38,23 +38,23 @@ export const useFilterOptions = (): UseFilterOptionsReturn => {
       try {
         setLoading(true);
         setError(null);
-  
-        
         const response = await getFilterOptions();
-  
-        
+
         if (response.success && response.data) {
           // Validar que categories sea un array
           const validatedData = {
             ...response.data,
             categories: Array.isArray(response.data.categories) ? response.data.categories : []
           };
+          console.log('🔍 DEBUG useFilterOptions - Departments data:', validatedData.locations?.departments);
+
           setData(validatedData);
         } else {
+          console.error('🔍 DEBUG useFilterOptions - Invalid response format:', response);
           throw new Error('Invalid response format');
         }
       } catch (err) {
-        console.error('Error fetching filter options:', err);
+        console.error('🔍 DEBUG useFilterOptions - Error fetching filter options:', err);
         // Fallback con datos por defecto cuando el backend no está disponible
         const fallbackData: FilterOptions = {
           categories: [
@@ -76,6 +76,8 @@ export const useFilterOptions = (): UseFilterOptionsReturn => {
             max: 1000000
           }
         };
+
+
         setData(fallbackData);
         setError(err instanceof Error ? err.message : 'Error fetching filter options');
       } finally {

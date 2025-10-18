@@ -10,10 +10,11 @@ import { ImageCropModal } from '@/components/ImageCropModal';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { ProcessedImageResult } from '@/utils/imageProcessor';
+import { ProcessedImageResult, processImageComplete } from '@/utils/imageProcessor';
 import { useFormContext } from '../context/FormContext';
 import { usePlans } from '@/hooks/usePlans';
 import { useConfigValue } from '@/hooks/use-config-parameters';
+import { useCompanyName } from '@/utils/watermark';
 
 interface DefaultPlanConfig {
   enabled: boolean;
@@ -29,6 +30,9 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     setValue,
     formState: { errors },
   } = useFormContext();
+
+  // Hook para obtener el nombre de la empresa dinámicamente
+  const companyName = useCompanyName();
 
   // Optimización: observar solo los campos específicos necesarios
   const selectedPlan = watch('selectedPlan');
@@ -196,13 +200,16 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       }
     }
 
-    // Para imágenes, agregar directamente sin abrir modal de crop
+    // Para imágenes, procesar automáticamente todas las nuevas imágenes
     if (type === 'photos') {
       // Agregar archivos directamente
       const newFiles: (File | string)[] = [...currentFiles, ...fileArray];
       setValue(type, newFiles);
 
-      toast.success(`${fileArray.length} imagen(es) agregada(s).`);
+      // Procesar automáticamente todas las nuevas imágenes
+      await processNewImages(fileArray, currentFiles.length);
+
+      toast.success(`${fileArray.length} imagen(es) agregada(s) y procesada(s).`);
     } else {
       // Para videos y audios, agregar directamente
       const newFiles: (File | string)[] = [...currentFiles, ...fileArray];
@@ -253,6 +260,66 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       // Actualizar las imágenes procesadas en el formulario
       const processedImagesArray = Array.from(reindexedProcessedImages.values());
       setValue('processedImages', processedImagesArray);
+
+      // Actualizar coverImageIndex si es necesario
+      const currentCoverIndex = coverImageIndex;
+      if (currentCoverIndex !== undefined) {
+        if (currentCoverIndex === index) {
+          // Si se eliminó la imagen de portada, establecer la primera imagen como nueva portada
+          setValue('coverImageIndex', 0);
+        } else if (currentCoverIndex > index) {
+          // Si se eliminó una imagen antes de la portada, ajustar el índice
+          setValue('coverImageIndex', currentCoverIndex - 1);
+        }
+      }
+    }
+  };
+
+  // Función para procesar automáticamente múltiples imágenes nuevas
+  const processNewImages = async (newFiles: File[], startIndex: number) => {
+    try {
+      setIsProcessingImage(true);
+      
+      for (let i = 0; i < newFiles.length; i++) {
+        const file = newFiles[i];
+        const imageIndex = startIndex + i;
+        
+        try {
+          // Crear un blob desde el archivo original (sin crop)
+          const originalBlob = new Blob([file], { type: file.type });
+          
+          // Procesar la imagen usando el flujo completo
+          const processedResult = await processImageComplete(
+            file,
+            originalBlob,
+            {
+              maxWidthOrHeight: 1200,
+              initialQuality: 0.8,
+              applyWatermark: true,
+              watermarkText: companyName
+            },
+            imageIndex
+          );
+
+          // Guardar el resultado procesado
+          const newProcessedImages = new Map(processedImages);
+          newProcessedImages.set(imageIndex, processedResult);
+          setProcessedImages(newProcessedImages);
+
+          // Actualizar las imágenes procesadas en el formulario
+          const processedImagesArray = Array.from(newProcessedImages.values());
+          setValue('processedImages', processedImagesArray);
+
+        } catch (error) {
+          console.error(`Error procesando imagen ${i + 1}:`, error);
+          toast.error(`Error procesando imagen ${file.name}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error en processNewImages:', error);
+      toast.error('Error procesando las imágenes');
+    } finally {
+      setIsProcessingImage(false);
     }
   };
 

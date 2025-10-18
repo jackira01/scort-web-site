@@ -29,6 +29,22 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
 
     // Destructured data processing
 
+    // DEBUG: Log de datos recibidos
+    console.log('DEBUG RENOVACIÓN - Estado inicial:', {
+      currentPlanData: profileData?.planCode,
+      generateInvoice: false,
+      isAdmin: true
+    });
+
+    console.log('DEBUG RENOVACIÓN - Variante seleccionada:', {
+      planCode: purchasedPlan?.planCode,
+      variantDays: purchasedPlan?.variantDays,
+      startAt: purchasedPlan?.startAt,
+      expiresAt: purchasedPlan?.expiresAt,
+      profileId: profileData?._id
+    });
+
+    console.log('DEBUG RENOVACIÓN - Flujo: Admin sin factura (renovación directa)');
 
     // Validar que se proporcionen los datos del perfil
     if (!profileData) {
@@ -43,10 +59,21 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
     // Extraer información del plan comprado si existe
     let planCode = null;
     let planDays = null;
+    let generateInvoice = false; // Por defecto no generar factura
 
     if (purchasedPlan) {
       planCode = purchasedPlan.planCode;
       planDays = purchasedPlan.planDays || purchasedPlan.variantDays;
+      generateInvoice = purchasedPlan.generateInvoice || false; // Campo del frontend
+
+      // DEBUG: Log de configuración final
+      console.log('DEBUG RENOVACIÓN - Request enviado:', {
+        extensionDays: 15,
+        profileId: profileData?._id,
+        planCode: purchasedPlan?.planCode,
+        variantDays: purchasedPlan?.variantDays,
+        previousExpiresAt: purchasedPlan?.previousExpiresAt
+      });
 
       // Validar que el plan comprado tenga los datos necesarios
       if (!planCode || !planDays) {
@@ -80,7 +107,8 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
     const result = await createProfileWithInvoice({
       ...profileData,
       planCode: planCode,
-      planDays: planDays
+      planDays: planDays,
+      generateInvoice: generateInvoice // Pasar el campo generateInvoice
     });
 
     // Verificar que el perfil fue creado correctamente

@@ -407,9 +407,14 @@ export function useConfigParameterMutations(): ConfigParameterMutations {
             // Invalidar queries relacionadas
             queryClient.invalidateQueries({ queryKey: configParameterKeys.lists() });
             queryClient.invalidateQueries({ queryKey: configParameterKeys.values() });
-            toast.success('Parámetro de configuración actualizado exitosamente');
+            
+            // Solo mostrar toast si está habilitado
+            if (showToast) {
+                toast.success('Parámetro de configuración actualizado exitosamente');
+            }
         },
         onError: (error: any) => {
+            // Siempre mostrar errores
             toast.error(
                 error?.response?.data?.message || 'Error al actualizar el parámetro',
             );
@@ -566,9 +571,11 @@ export function useCreateConfigParameter() {
     });
 }
 
-export function useUpdateConfigParameter() {
+export const useUpdateConfigParameter = (options?: { showToast?: boolean }) => {
     const queryClient = useQueryClient();
-    return useMutation({
+    const showToast = options?.showToast !== false; // Por defecto true
+
+    const updateMutation = useMutation({
         mutationFn: ({
             id,
             data,
@@ -577,15 +584,67 @@ export function useUpdateConfigParameter() {
             data: UpdateConfigParameterInput;
         }) => ConfigParameterService.update(id, data),
         onSuccess: (data, variables) => {
+            // Actualizar cache específico
             queryClient.setQueryData(configParameterKeys.detail(variables.id), data);
+            // Invalidar queries relacionadas
             queryClient.invalidateQueries({ queryKey: configParameterKeys.lists() });
             queryClient.invalidateQueries({ queryKey: configParameterKeys.values() });
-            toast.success('Parámetro de configuración actualizado exitosamente');
+            
+            // Solo mostrar toast si está habilitado
+            if (showToast) {
+                toast.success('Parámetro de configuración actualizado exitosamente');
+            }
         },
         onError: (error: any) => {
+            // Siempre mostrar errores
             toast.error(
                 error?.response?.data?.message || 'Error al actualizar el parámetro',
             );
         },
     });
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => ConfigParameterService.delete(id),
+        onSuccess: (_, id) => {
+            // Remover del cache
+            queryClient.removeQueries({ queryKey: configParameterKeys.detail(id) });
+            // Invalidar listas
+            queryClient.invalidateQueries({ queryKey: configParameterKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: configParameterKeys.values() });
+            toast.success('Parámetro de configuración eliminado exitosamente');
+        },
+        onError: (error: any) => {
+            toast.error(
+                error?.response?.data?.message || 'Error al eliminar el parámetro',
+            );
+        },
+    });
+
+    const toggleActiveMutation = useMutation({
+        mutationFn: (id: string) => ConfigParameterService.toggleActive(id),
+        onSuccess: (data, id) => {
+            // Actualizar cache específico
+            queryClient.setQueryData(configParameterKeys.detail(id), data);
+            // Invalidar queries relacionadas
+            queryClient.invalidateQueries({ queryKey: configParameterKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: configParameterKeys.values() });
+            toast.success(
+                `Parámetro ${data.isActive ? 'activado' : 'desactivado'} exitosamente`,
+            );
+        },
+        onError: (error: any) => {
+            toast.error(
+                error?.response?.data?.message ||
+                'Error al cambiar el estado del parámetro',
+            );
+        },
+    });
+
+    return {
+        create: createMutation.mutateAsync,
+        update: (id: string, data: UpdateConfigParameterInput) =>
+            updateMutation.mutateAsync({ id, data }),
+        delete: deleteMutation.mutateAsync,
+        toggleActive: toggleActiveMutation.mutateAsync,
+    };
 }

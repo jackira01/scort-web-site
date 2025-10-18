@@ -78,7 +78,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
             <Image
               width={300}
               height={400}
-              src={profile.media.gallery?.[0] || '/placeholder.svg'}
+              src={profile.media.profilePicture || profile.media.gallery?.[0] || '/placeholder.svg'}
               alt={profile.name}
               className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${viewMode === 'grid'
                 ? 'sm:h-48 md:h-56 lg:h-80'

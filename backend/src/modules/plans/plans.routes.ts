@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import { plansController } from './plans.controller';
+import { authenticateToken } from '../../middlewares/auth.middleware';
 
 const router = Router();
+
+// Aplicar autenticación a todas las rutas
+router.use(authenticateToken);
 
 // ==================== VALIDACIONES COMUNES ====================
 

@@ -180,8 +180,8 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
             Agregar nueva tarifa
           </h3>
 
-          <div className="flex flex-row gap-4 items-center ">
-            <div className='flex flex-col min-w-[80px]'>
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <div className='flex flex-col min-w-[80px] w-full sm:w-auto'>
               <Label className="text-sm text-muted-foreground">Días</Label>
               <Select
                 key={`days-${newRate.days}`}
@@ -206,7 +206,7 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
               </Select>
             </div>
 
-            <div className='flex flex-col min-w-[80px]'>
+            <div className='flex flex-col min-w-[80px] w-full sm:w-auto'>
               <Label className="text-sm text-muted-foreground">Horas</Label>
               <Select
                 key={`hours-${newRate.hours}`}
@@ -231,7 +231,7 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
               </Select>
             </div>
 
-            <div className='flex flex-col min-w-[80px]'>
+            <div className='flex flex-col min-w-[80px] w-full sm:w-auto'>
               <Label className="text-sm text-muted-foreground">Minutos</Label>
               <Select
                 key={`minutes-${newRate.minutes}`}
@@ -256,10 +256,10 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
               </Select>
             </div>
 
-            <div className='flex flex-col'>
+            <div className='flex flex-col w-full'>
               <Label className="text-sm text-muted-foreground">Precio</Label>
-              <div className="flex items-center gap-4">
-                <div className="relative flex-1 max-w-[120px]">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                <div className="relative flex-1 w-full sm:max-w-[120px]">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                     $
                   </span>
@@ -277,8 +277,8 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
                   />
                 </div>
 
-                {/* Checkbox de domicilio al lado derecho */}
-                <div className="flex items-center space-x-2 whitespace-nowrap">
+                {/* Checkbox de domicilio */}
+                <div className="flex items-center space-x-2 whitespace-nowrap w-full sm:w-auto">
                   <Checkbox
                     id="delivery"
                     checked={newRate.delivery}

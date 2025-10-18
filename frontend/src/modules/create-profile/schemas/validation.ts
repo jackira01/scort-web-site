@@ -103,6 +103,9 @@ export const formSchema = z.object({
     days: z.number(),
     durationRank: z.number()
   }).optional(),
+  
+  // Campo para generar factura (solo administradores)
+  generateInvoice: z.boolean().optional(),
 });
 
 export type FormData = z.infer<typeof formSchema>;
