@@ -29,23 +29,6 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
 
     // Destructured data processing
 
-    // DEBUG: Log de datos recibidos
-    console.log('DEBUG RENOVACIÓN - Estado inicial:', {
-      currentPlanData: profileData?.planCode,
-      generateInvoice: false,
-      isAdmin: true
-    });
-
-    console.log('DEBUG RENOVACIÓN - Variante seleccionada:', {
-      planCode: purchasedPlan?.planCode,
-      variantDays: purchasedPlan?.variantDays,
-      startAt: purchasedPlan?.startAt,
-      expiresAt: purchasedPlan?.expiresAt,
-      profileId: profileData?._id
-    });
-
-    console.log('DEBUG RENOVACIÓN - Flujo: Admin sin factura (renovación directa)');
-
     // Validar que se proporcionen los datos del perfil
     if (!profileData) {
       return res.status(400).json({
@@ -65,15 +48,6 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
       planCode = purchasedPlan.planCode;
       planDays = purchasedPlan.planDays || purchasedPlan.variantDays;
       generateInvoice = purchasedPlan.generateInvoice || false; // Campo del frontend
-
-      // DEBUG: Log de configuración final
-      console.log('DEBUG RENOVACIÓN - Request enviado:', {
-        extensionDays: 15,
-        profileId: profileData?._id,
-        planCode: purchasedPlan?.planCode,
-        variantDays: purchasedPlan?.variantDays,
-        previousExpiresAt: purchasedPlan?.previousExpiresAt
-      });
 
       // Validar que el plan comprado tenga los datos necesarios
       if (!planCode || !planDays) {
