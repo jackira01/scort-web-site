@@ -194,7 +194,7 @@ export async function middleware(request: NextRequest) {
   if (PASSWORD_REQUIRED_ROUTES.some(route => pathname.startsWith(route))) {
     if (!token?.hasPassword) {
       // Redirigir a post-register si no tiene password
-      const postRegisterUrl = new URL('/auth/post-register', request.url);
+      const postRegisterUrl = new URL('/autenticacion/post-register', request.url);
       return NextResponse.redirect(postRegisterUrl);
     }
   }

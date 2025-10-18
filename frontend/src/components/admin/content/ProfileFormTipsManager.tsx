@@ -24,7 +24,7 @@ interface StepTips {
 const ProfileFormTipsManager = () => {
   const [stepTips, setStepTips] = useState<StepTips>({});
   const [saving, setSaving] = useState(false);
-  const updateParameter = useUpdateConfigParameter();
+  const updateParameter = useUpdateConfigParameter({ showToast: false }); // Deshabilitar toast automático
 
   // Definir las keys específicas para cada paso
   const stepKeys = [
@@ -151,11 +151,8 @@ const ProfileFormTipsManager = () => {
           );
 
           if (parameter) {
-            await updateParameter.mutateAsync({
-              id: parameter._id,
-              data: {
-                value: update.value
-              }
+            await updateParameter.update(parameter._id, {
+              value: update.value
             });
           }
         } catch (paramError) {
@@ -164,6 +161,7 @@ const ProfileFormTipsManager = () => {
         }
       }
 
+      // Solo mostrar un toast al final cuando todo esté completado
       toast.success("Tips actualizados correctamente");
 
       // Refrescar los datos

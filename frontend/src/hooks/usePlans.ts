@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import axiosInstance from '@/lib/axios';
 import {
   Plan,
   Upgrade,
@@ -13,9 +14,6 @@ import {
   UpgradesFilters,
   PaginationParams
 } from '@/types/plans';
-import { API_URL } from '@/lib/config';
-
-const API_BASE_URL = API_URL;
 
 // Función para transformar datos del backend al formato del frontend
 const transformBackendPlanToFrontend = (backendPlan: any): Plan => {
@@ -71,17 +69,15 @@ const transformBackendPlanToFrontend = (backendPlan: any): Plan => {
 // Funciones de API para Planes
 const plansApi = {
   getAll: async (filters: PlansFilters & PaginationParams = {}): Promise<PlansResponse> => {
-    const queryParts: string[] = [];
-    if (filters.page) queryParts.push(`page=${filters.page}`);
-    if (filters.limit) queryParts.push(`limit=${filters.limit}`);
-    if (filters.isActive !== undefined) queryParts.push(`isActive=${filters.isActive}`);
-    if (filters.level) queryParts.push(`level=${filters.level}`);
-    if (filters.search) queryParts.push(`search=${encodeURIComponent(filters.search)}`);
+    const params: Record<string, any> = {};
+    if (filters.page) params.page = filters.page;
+    if (filters.limit) params.limit = filters.limit;
+    if (filters.isActive !== undefined) params.isActive = filters.isActive;
+    if (filters.level) params.level = filters.level;
+    if (filters.search) params.search = filters.search;
 
-    const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
-    const response = await fetch(`${API_BASE_URL}/api/plans${queryString}`);
-    if (!response.ok) throw new Error('Error al obtener planes');
-    const result = await response.json();
+    const response = await axiosInstance.get('/api/plans', { params });
+    const result = response.data;
 
     // Transformar la respuesta del backend al formato esperado por el frontend
     const plans = (result.data || []).map(transformBackendPlanToFrontend);
@@ -95,26 +91,23 @@ const plansApi = {
   },
 
   getById: async (id: string): Promise<Plan> => {
-    const response = await fetch(`${API_BASE_URL}/api/plans/${id}`);
-    if (!response.ok) throw new Error('Error al obtener plan');
-    const result = await response.json();
+    const response = await axiosInstance.get(`/api/plans/${id}`);
+    const result = response.data;
     const plan = result.data || result;
     const transformedPlan = transformBackendPlanToFrontend(plan);
     return transformedPlan;
   },
 
   getByCode: async (code: string): Promise<Plan> => {
-    const response = await fetch(`${API_BASE_URL}/api/plans/code/${code}`);
-    if (!response.ok) throw new Error('Error al obtener plan por código');
-    const result = await response.json();
+    const response = await axiosInstance.get(`/api/plans/code/${code}`);
+    const result = response.data;
     const plan = result.data || result;
     return transformBackendPlanToFrontend(plan);
   },
 
   getByLevel: async (level: number): Promise<Plan[]> => {
-    const response = await fetch(`${API_BASE_URL}/api/plans/level/${level}`);
-    if (!response.ok) throw new Error('Error al obtener planes por nivel');
-    const result = await response.json();
+    const response = await axiosInstance.get(`/api/plans/level/${level}`);
+    const result = response.data;
     const plans = result.data || result;
     return plans.map(transformBackendPlanToFrontend);
   },
@@ -147,16 +140,8 @@ const plansApi = {
       includedUpgrades: data.includedUpgrades || []
     };
 
-    const response = await fetch(`${API_BASE_URL}/api/plans`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(backendData)
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al crear plan');
-    }
-    const result = await response.json();
+    const response = await axiosInstance.post('/api/plans', backendData);
+    const result = response.data;
     const plan = result.data || result;
     return transformBackendPlanToFrontend(plan);
   },
@@ -193,55 +178,33 @@ const plansApi = {
 
 
 
-    const response = await fetch(`${API_BASE_URL}/api/plans/${data._id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(backendData)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al actualizar plan');
-    }
-
-    const result = await response.json();
+    const response = await axiosInstance.put(`/api/plans/${data._id}`, backendData);
+    const result = response.data;
     const plan = result.data || result;
     const transformedPlan = transformBackendPlanToFrontend(plan);
     return transformedPlan;
   },
 
   delete: async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/plans/${id}`, {
-      method: 'DELETE'
-    });
-    if (!response.ok) throw new Error('Error al eliminar plan');
+    await axiosInstance.delete(`/api/plans/${id}`);
   }
 };
 
 // Funciones de API para Upgrades
 const upgradesApi = {
   getAll: async (filters: UpgradesFilters & PaginationParams = {}): Promise<UpgradesResponse> => {
-    const queryParts: string[] = [];
-    if (filters.page) queryParts.push(`page=${filters.page}`);
+    const params: Record<string, any> = {};
+    if (filters.page) params.page = filters.page;
     // Limitar el límite máximo a 100 según la validación del backend
     if (filters.limit) {
-      const limitValue = Math.min(filters.limit, 100);
-      queryParts.push(`limit=${limitValue}`);
+      params.limit = Math.min(filters.limit, 100);
     }
-    if (filters.active !== undefined) queryParts.push(`active=${filters.active}`);
-    if (filters.search) queryParts.push(`search=${encodeURIComponent(filters.search)}`);
-
-    const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+    if (filters.active !== undefined) params.active = filters.active;
+    if (filters.search) params.search = filters.search;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/plans/upgrades${queryString}`);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Error al obtener upgrades. ${JSON.stringify(errorData)}`);
-      }
-
-      const result = await response.json();
+      const response = await axiosInstance.get('/api/plans/upgrades', { params });
+      const result = response.data;
 
       // Transformar la respuesta del backend al formato esperado por el frontend
       return {
@@ -257,53 +220,37 @@ const upgradesApi = {
   },
 
   getById: async (id: string): Promise<Upgrade> => {
-    const response = await fetch(`${API_BASE_URL}/api/plans/upgrades/${id}`);
-    if (!response.ok) throw new Error('Error al obtener upgrade');
-    const result = await response.json();
+    const response = await axiosInstance.get(`/api/plans/upgrades/${id}`);
+    const result = response.data;
     return result.data || result;
   },
 
   getByCode: async (code: string): Promise<Upgrade> => {
-    const response = await fetch(`${API_BASE_URL}/api/plans/upgrades/code/${code}`);
-    if (!response.ok) throw new Error('Error al obtener upgrade por código');
-    const result = await response.json();
+    const response = await axiosInstance.get(`/api/plans/upgrades/code/${code}`);
+    const result = response.data;
     return result.data || result;
   },
 
   getDependencyTree: async (): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/plans/upgrades/dependency-tree`);
-    if (!response.ok) throw new Error('Error al obtener árbol de dependencias');
-    const result = await response.json();
+    const response = await axiosInstance.get('/api/plans/upgrades/dependency-tree');
+    const result = response.data;
     return result.data || result;
   },
 
   create: async (data: CreateUpgradeRequest): Promise<Upgrade> => {
-    const response = await fetch(`${API_BASE_URL}/api/plans/upgrades`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error('Error al crear upgrade');
-    const result = await response.json();
+    const response = await axiosInstance.post('/api/plans/upgrades', data);
+    const result = response.data;
     return result.data || result;
   },
 
   update: async (data: UpdateUpgradeRequest): Promise<Upgrade> => {
-    const response = await fetch(`${API_BASE_URL}/api/plans/upgrades/${data._id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error('Error al actualizar upgrade');
-    const result = await response.json();
+    const response = await axiosInstance.put(`/api/plans/upgrades/${data._id}`, data);
+    const result = response.data;
     return result.data || result;
   },
 
   delete: async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/plans/upgrades/${id}`, {
-      method: 'DELETE'
-    });
-    if (!response.ok) throw new Error('Error al eliminar upgrade');
+    await axiosInstance.delete(`/api/plans/upgrades/${id}`);
   }
 };
 

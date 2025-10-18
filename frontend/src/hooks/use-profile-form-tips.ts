@@ -1,4 +1,4 @@
-import { useConfigParametersByCategory, useConfigValues } from './use-config-parameters';
+import { useConfigValues } from './use-config-parameters';
 
 export interface ProfileFormTip {
   step: number;
@@ -20,7 +20,7 @@ export function useProfileFormTips() {
   // Definir las keys específicas para cada paso
   const stepKeys = [
     'profile.form.step.1',
-    'profile.form.step.2', 
+    'profile.form.step.2',
     'profile.form.step.3',
     'profile.form.step.4',
     'profile.form.step.5'
@@ -32,14 +32,14 @@ export function useProfileFormTips() {
   const tipsByStep = stepKeys.reduce((acc, key, index) => {
     const stepNumber = index + 1;
     const stepValue = values[key];
-    
+
     if (stepValue && Array.isArray(stepValue)) {
       try {
         acc[stepNumber] = stepValue.map(item => {
           // La estructura real es: { type: "tip" | "warning", text: string | string[] }
           const tipType = item.type === 'warning' ? 'warning' : 'info';
           const content = Array.isArray(item.text) ? item.text : [item.text];
-          
+
           return {
             step: stepNumber,
             type: tipType as 'info' | 'warning',
@@ -55,7 +55,7 @@ export function useProfileFormTips() {
     } else {
       acc[stepNumber] = [];
     }
-    
+
     return acc;
   }, {} as Record<number, ProfileFormTip[]>);
 

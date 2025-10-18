@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 import toast from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -163,6 +164,7 @@ export default function ManagePlansModal({
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeProfilesCount, setActiveProfilesCount] = useState(0);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, number>>({});
+  const [generateInvoice, setGenerateInvoice] = useState(true);
 
   // Verificar si el usuario es administrador
   const isAdmin = session?.user?.role === 'admin';
@@ -300,7 +302,14 @@ export default function ManagePlansModal({
   const getSelectedVariant = (planCode: string, plan: Plan) => {
     const selectedDays = selectedVariants[planCode];
     if (!selectedDays) {
-      // Si no hay variante seleccionada, usar la más corta por defecto
+      // Si no hay variante seleccionada, usar la variante actual del usuario si existe
+      if (currentPlan && currentPlan.variantDays && planCode === currentPlan.planCode) {
+        const currentVariant = plan.variants.find(v => v.days === currentPlan.variantDays);
+        if (currentVariant) {
+          return currentVariant;
+        }
+      }
+      // Si no hay variante actual o no coincide, usar la más corta por defecto
       return plan.variants.reduce((shortest, current) =>
         current.days < shortest.days ? current : shortest
       );
@@ -347,32 +356,103 @@ export default function ManagePlansModal({
         case 'purchase':
           const selectedPlan = processedPlans.find((p: Plan) => p.code === planCode);
           const selectedVariant = selectedPlan ? getSelectedVariant(planCode, selectedPlan) : null;
-          const purchaseRequest: PlanPurchaseRequest = {
-            profileId,
-            planCode,
-            variantDays: selectedVariant?.days || 30,
-          };
-          result = await purchasePlan(purchaseRequest);
-          message = `Plan ${processedPlans.find((p: Plan) => p.code === planCode)?.name} comprado exitosamente`;
+          
+          // Considerar el checkbox de facturación para administradores
+          if (isAdmin && !generateInvoice) {
+            // Admin con asignación directa: compra directa sin factura
+            const purchaseRequest: PlanPurchaseRequest = {
+              profileId,
+              planCode,
+              variantDays: selectedVariant?.days || 30,
+              generateInvoice: false,
+            };
+            result = await purchasePlan(purchaseRequest);
+            message = `Plan ${processedPlans.find((p: Plan) => p.code === planCode)?.name} comprado exitosamente (asignación directa)`;
+          } else {
+            // Flujo normal con facturación (tanto para usuarios normales como admins que quieren factura)
+            const purchaseRequest: PlanPurchaseRequest = {
+              profileId,
+              planCode,
+              variantDays: selectedVariant?.days || 30,
+              generateInvoice: true,
+            };
+            result = await purchasePlan(purchaseRequest);
+            message = `Plan ${processedPlans.find((p: Plan) => p.code === planCode)?.name} comprado exitosamente`;
+          }
           break;
 
         case 'renew':
           // Debug: Verificar estado del plan antes de renovar
           const planToUse = profilePlanInfo || currentPlan;
+          console.log('🔍 DEBUG RENOVACIÓN - Estado inicial:', {
+            isAdmin,
+            generateInvoice,
+            profileId,
+            currentPlanData: currentPlanData?.code,
+            planToUse
+          });
+          
           // Intentando renovar plan
 
           const renewSelectedVariant = getSelectedVariant(planCode, currentPlanData);
+          console.log('🔍 DEBUG RENOVACIÓN - Variante seleccionada:', renewSelectedVariant);
 
-          // Diferenciar entre admin y usuario normal
-          if (isAdmin) {
-            // Admin: renovación directa usando el endpoint del backend
+          // Diferenciar entre admin y usuario normal, y considerar el checkbox de facturación
+          if (isAdmin && !generateInvoice) {
+            console.log('🔍 DEBUG RENOVACIÓN - Flujo: Admin sin factura (renovación directa)');
+            // Admin con asignación directa: renovación directa sin factura
             const renewRequest: PlanRenewalRequest = {
               profileId,
               extensionDays: renewSelectedVariant.days,
             };
+            console.log('🔍 DEBUG RENOVACIÓN - Request enviado:', renewRequest);
             result = await renewPlan(renewRequest);
-            message = `Plan ${currentPlanData.name} renovado exitosamente`;
-          } else {
+            console.log('🔍 DEBUG RENOVACIÓN - Resultado:', result);
+            message = `Plan ${currentPlanData.name} renovado exitosamente (asignación directa)`;
+          } else if (isAdmin && generateInvoice) {
+            console.log('🔍 DEBUG RENOVACIÓN - Flujo: Admin con factura');
+            // Admin con facturación: generar factura como usuario normal
+            if (!session?.user?._id) {
+              throw new Error('Usuario no autenticado');
+            }
+
+            const invoiceData: CreateInvoiceData = {
+              profileId,
+              userId: session.user._id,
+              planCode: currentPlanData.code,
+              planDays: renewSelectedVariant.days,
+              notes: `Renovación de plan ${currentPlanData.name} para perfil ${profileName}`
+            };
+
+            // Crear SOLO la factura (el plan se renovará cuando se confirme el pago)
+            const invoice = await invoiceService.createInvoice(invoiceData);
+
+            // Generar mensaje de WhatsApp para el pago
+            const whatsappData = await invoiceService.getWhatsAppData(invoice._id);
+
+            // Mensaje específico para renovación con factura
+            message = `Factura de renovación generada. Completa el pago para renovar tu plan.`;
+
+            // Mostrar toast con información adicional
+            toast.success('Factura creada. El plan se renovará después del pago confirmado.', {
+              duration: 4000,
+            });
+
+            // Abrir WhatsApp inmediatamente
+            window.open(whatsappData.whatsappUrl, '_blank');
+
+            result = {
+              invoice,
+              whatsappData,
+              requiresPayment: true,
+              totalAmount: renewSelectedVariant.price
+            };
+
+            // NO mostrar el toast de éxito general para usuarios normales
+            // porque el plan no se ha renovado aún
+            return;
+            } else {
+            console.log('🔍 DEBUG RENOVACIÓN - Flujo: Usuario normal (solo factura)');
             // Usuario normal: SOLO generar factura (NO llamar al endpoint de renovación)
             if (!session?.user?._id) {
               throw new Error('Usuario no autenticado');
@@ -421,16 +501,64 @@ export default function ManagePlansModal({
           const targetUpgradePlan = processedPlans.find((p: Plan) => p.code === planCode);
           const upgradeSelectedVariant = targetUpgradePlan ? getSelectedVariant(planCode, targetUpgradePlan) : null;
 
-          // Diferenciar entre admin y usuario normal
-          if (isAdmin) {
-            // Admin: upgrade directo usando el endpoint del backend
+          // Diferenciar entre admin y usuario normal, y considerar el checkbox de facturación
+          if (isAdmin && !generateInvoice) {
+            // Admin con asignación directa: upgrade directo sin factura
             const upgradeRequest: PlanUpgradeRequest = {
               profileId,
               newPlanCode: planCode,
               variantDays: upgradeSelectedVariant?.days
             };
             result = await upgradePlan(upgradeRequest);
-            message = `Actualización directa del plan a ${targetUpgradePlan?.name} realizada exitosamente`;
+            message = `Actualización directa del plan a ${targetUpgradePlan?.name} realizada exitosamente (asignación directa)`;
+          } else if (isAdmin && generateInvoice) {
+            // Admin con facturación: generar factura como usuario normal
+            if (!session?.user?._id) {
+              throw new Error('Usuario no autenticado');
+            }
+
+            // Construir detalles del plan actual
+            const currentPlanDetails = currentPlan
+              ? `Plan actual: ${currentPlanData?.name || currentPlan.planCode} (${currentPlan.variantDays} días)`
+              : 'Sin plan activo';
+
+            // Construir detalles del nuevo plan
+            const newPlanDetails = `Nuevo plan: ${targetUpgradePlan?.name || planCode} (${upgradeSelectedVariant?.days || 30} días) - $${upgradeSelectedVariant?.price || 0}`;
+
+            const invoiceData: CreateInvoiceData = {
+              profileId,
+              userId: session.user._id,
+              planCode: planCode,
+              planDays: upgradeSelectedVariant?.days || 30,
+              notes: `Cambio de plan para perfil ${profileName}\n${currentPlanDetails}\n${newPlanDetails}`
+            };
+
+            // Crear factura para el nuevo plan
+            const invoice = await invoiceService.createInvoice(invoiceData);
+
+            // Generar mensaje de WhatsApp para el pago
+            const whatsappData = await invoiceService.getWhatsAppData(invoice._id);
+
+            // Mensaje específico para cambio de plan con factura
+            message = `Factura generada para cambio de plan. Completa el pago para activar tu nuevo plan ${targetUpgradePlan?.name}.`;
+
+            // Mostrar toast con información adicional
+            toast.success('Factura creada. El plan se actualizará después del pago confirmado.', {
+              duration: 4000,
+            });
+
+            // Abrir WhatsApp inmediatamente
+            window.open(whatsappData.whatsappUrl, '_blank');
+
+            result = {
+              invoice,
+              whatsappData,
+              requiresPayment: true,
+              totalAmount: upgradeSelectedVariant?.price || 0
+            };
+            // NO mostrar el toast de éxito general para usuarios normales
+            // porque el plan no se ha actualizado aún
+            return;
           } else {
             // Usuario normal: generar factura para compra del nuevo plan
             if (!session?.user?._id) {
@@ -486,9 +614,9 @@ export default function ManagePlansModal({
 
       toast.success(message);
 
-      // Verificar si es admin para determinar el flujo
-      if (isAdmin) {
-        // Para admins: cambio instantáneo, refrescar datos inmediatamente
+      // Verificar si es admin y si se hizo asignación directa para determinar el flujo
+      if (isAdmin && !generateInvoice) {
+        // Para admins con asignación directa: cambio instantáneo, refrescar datos inmediatamente
         await refreshPlanData();
         
         // Invalidar queries adicionales para asegurar actualización
@@ -497,6 +625,17 @@ export default function ManagePlansModal({
         
         // Llamar onPlanChange para actualizar el componente padre
         onPlanChange?.();
+      } else if (isAdmin && generateInvoice) {
+        // Para admins que generan factura: no refrescar datos hasta que se confirme el pago
+        // El flujo es igual al de usuarios normales
+        if (result?.paymentUrl) {
+          // Redirigir a WhatsApp para el pago
+          window.open(result.paymentUrl, '_blank');
+
+          toast.success('Se ha abierto WhatsApp para completar el pago. El plan se activará una vez confirmado el pago.', {
+            duration: 4000,
+          });
+        }
       } else {
         // Para usuarios regulares: verificar si hay URL de pago
         if (result?.paymentUrl) {
@@ -744,6 +883,26 @@ export default function ManagePlansModal({
               <strong>Importante:</strong> Al realizar una compra, renovacion, mejora de plan, etc. El nuevo plan reemplazará inmediatamente el plan activo actual, independientemente de los días restantes de vigencia.
             </AlertDescription>
           </Alert>
+
+          {/* Checkbox para generar factura - Solo visible para administradores */}
+          {isAdmin && (
+            <div className="flex items-center space-x-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <Checkbox
+                id="generate-invoice"
+                checked={generateInvoice}
+                onCheckedChange={(checked) => setGenerateInvoice(checked as boolean)}
+              />
+              <label
+                htmlFor="generate-invoice"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Generar factura
+              </label>
+              <span className="text-xs text-muted-foreground">
+                (Desmarcar para asignar el plan directamente sin proceso de facturación)
+              </span>
+            </div>
+          )}
 
           {/* Planes disponibles */}
           <div>

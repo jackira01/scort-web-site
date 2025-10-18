@@ -88,7 +88,7 @@ export function CreateProfileLayout() {
       category: '',
       location: {
         country: 'Colombia',
-        department: '',
+        department: 'Bogotá',
         city: '',
       },
 
@@ -106,10 +106,17 @@ export function CreateProfileLayout() {
       },
       age: '',
       skinColor: '',
-    eyeColor: '',
+      eyeColor: '',
       hairColor: '',
       bodyType: '',
       height: '',
+      socialMedia: {
+        instagram: '',
+        facebook: '',
+        tiktok: '',
+        twitter: '',
+        onlyFans: '',
+      },
       // bustSize: '',
       rates: [] as Rate[],
       availability: [],
@@ -119,6 +126,7 @@ export function CreateProfileLayout() {
       videos: [],
       audios: [],
       processedImages: [],
+      coverImageIndex: 0, // Primera imagen como preview por defecto
 
       // Step 5 - Finalizar
       selectedUpgrades: [],
@@ -201,17 +209,30 @@ export function CreateProfileLayout() {
         }
 
         case 4: {
-          // Validamos plan selection y términos en paso 4
+          // Validamos plan selection en paso 4
           const step4Data = {
             selectedUpgrades: form.getValues('selectedUpgrades') || [],
             selectedPlan: form.getValues('selectedPlan'),
             selectedVariant: form.getValues('selectedVariant'),
-            acceptTerms: form.getValues('acceptTerms') || false,
           };
+
+          console.log('🔍 DEBUG Step 4 - Datos del formulario:', step4Data);
+          console.log('🔍 DEBUG Step 4 - selectedPlan:', step4Data.selectedPlan);
+          console.log('🔍 DEBUG Step 4 - selectedVariant:', step4Data.selectedVariant);
 
           const result = step4Schema.safeParse(step4Data);
 
           if (!result.success) {
+            console.error('❌ ERROR Step 4 - Validación fallida:', result.error.issues);
+            result.error.issues.forEach((issue, index) => {
+              console.error(`❌ ERROR ${index + 1}:`, {
+                path: issue.path,
+                message: issue.message,
+                code: issue.code
+              });
+            });
+          } else {
+            console.log('✅ SUCCESS Step 4 - Validación exitosa');
           }
 
           return result;
@@ -414,7 +435,7 @@ export function CreateProfileLayout() {
           }),
         audios: formData.audios || [],
         stories: [], // Las stories se llenan en otra sección, no durante la creación del perfil
-        profilePicture: formData.photos?.[0] || '', // Usar la primera foto como profilePicture
+        profilePicture: formData.photos?.[formData.coverImageIndex || 0] || formData.photos?.[0] || '', // Usar la imagen seleccionada como preview
       },
       verification: null,
       availability: formData.availability,
@@ -559,7 +580,8 @@ export function CreateProfileLayout() {
   // Preparar purchasedPlan si se seleccionó un plan de pago
   const purchasedPlan = data.selectedPlan && data.selectedVariant ? {
     planCode: data.selectedPlan.code,
-    variantDays: data.selectedVariant.days
+    variantDays: data.selectedVariant.days,
+    generateInvoice: data.generateInvoice || false // Agregar el campo generateInvoice
   } : null;
 
 

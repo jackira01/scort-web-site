@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -50,15 +51,20 @@ interface DefaultPlanConfig {
 
 export function Step4Plan() {
   const { watch, setValue, formState: { errors } } = useFormContext();
+  const { data: session } = useSession();
   const formData = watch();
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [selectedVariantIndex, setSelectedVariantIndex] = useState<number>(0);
+  const [generateInvoice, setGenerateInvoice] = useState<boolean>(true); // Checkbox para administradores
   const [hasShownDefaultPlanToast, setHasShownDefaultPlanToast] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem('defaultPlanToastShown') === 'true';
     }
     return false;
   });
+
+  // Verificar si el usuario es administrador
+  const isAdmin = session?.user?.role === 'admin';
 
   // Obtener planes disponibles
   const { data: plansResponse, isLoading: plansLoading } = usePlans({
@@ -83,9 +89,32 @@ export function Step4Plan() {
 
 
 
-  // Cargar plan por defecto al montar el componente
+  // Inicializar estado local basado en valores del formulario al montar
   useEffect(() => {
-    if (defaultConfig?.enabled && defaultConfig.planId && plans.length > 0 && !hasShownDefaultPlanToast) {
+    const currentSelectedPlan = formData.selectedPlan;
+    const currentSelectedVariant = formData.selectedVariant;
+    
+    if (currentSelectedPlan && plans.length > 0) {
+      // Si ya hay un plan seleccionado en el formulario, usar ese
+      setSelectedPlanId(currentSelectedPlan._id);
+      
+      // Encontrar el índice de la variante seleccionada
+      const plan = plans.find(p => p._id === currentSelectedPlan._id);
+      if (plan && currentSelectedVariant) {
+        const variantIndex = plan.variants.findIndex(v => 
+          v.days === currentSelectedVariant.days && v.price === currentSelectedVariant.price
+        );
+        if (variantIndex !== -1) {
+          setSelectedVariantIndex(variantIndex);
+        }
+      }
+    }
+  }, [formData.selectedPlan, formData.selectedVariant, plans]);
+
+  // Cargar plan por defecto al montar el componente (solo si no hay plan seleccionado)
+  useEffect(() => {
+    if (defaultConfig?.enabled && defaultConfig.planId && plans.length > 0 && 
+        !hasShownDefaultPlanToast && !formData.selectedPlan) {
       const defaultPlan = plans.find(plan => plan._id === defaultConfig.planId);
       if (defaultPlan) {
         setSelectedPlanId(defaultPlan._id);
@@ -114,7 +143,7 @@ export function Step4Plan() {
         }
       }
     }
-  }, [defaultConfig, plans, setValue, hasShownDefaultPlanToast]);
+  }, [defaultConfig, plans, setValue, hasShownDefaultPlanToast, formData.selectedPlan]);
 
   // Validar límites de archivos cuando cambie el plan
   useEffect(() => {
@@ -158,6 +187,11 @@ export function Step4Plan() {
       });
 
       setValue('selectedVariant', plan.variants[0]);
+      
+      // Actualizar el estado de generar factura en el formulario para administradores
+      if (isAdmin) {
+        setValue('generateInvoice', generateInvoice);
+      }
     }
   };
 
@@ -165,6 +199,11 @@ export function Step4Plan() {
     setSelectedVariantIndex(variantIndex);
     if (selectedPlan) {
       setValue('selectedVariant', selectedPlan.variants[variantIndex]);
+      
+      // Actualizar el estado de generar factura en el formulario para administradores
+      if (isAdmin) {
+        setValue('generateInvoice', generateInvoice);
+      }
     }
   };
 
@@ -516,6 +555,37 @@ export function Step4Plan() {
           </Card>
         )}
 
+        {/* Checkbox para generar factura (solo para administradores) */}
+        {isAdmin && selectedPlan && selectedVariant && selectedVariant.price > 0 && (
+          <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <Checkbox
+                  id="generateInvoice"
+                  checked={generateInvoice}
+                  onCheckedChange={(checked) => {
+                    setGenerateInvoice(checked as boolean);
+                    setValue('generateInvoice', checked as boolean);
+                  }}
+                />
+                <div className="flex-1">
+                  <Label 
+                    htmlFor="generateInvoice" 
+                    className="text-sm font-medium text-blue-900 dark:text-blue-100 cursor-pointer"
+                  >
+                    Generar factura para este plan
+                  </Label>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                    {generateInvoice 
+                      ? 'Se generará una factura y el perfil estará inactivo hasta el pago'
+                      : 'Se asignará el plan directamente sin generar factura (solo administradores)'
+                    }
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
       </div>
     </div>

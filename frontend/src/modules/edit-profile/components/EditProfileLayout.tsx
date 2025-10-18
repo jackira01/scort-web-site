@@ -499,7 +499,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
           link: typeof url === 'string' ? url : '',
           preview: typeof url === 'string' ? url : ''
         })) || [],
-        profilePicture: formData.photos?.[0] || '',
+        profilePicture: formData.photos?.[formData.coverImageIndex || 0] || formData.photos?.[0] || '',
       },
       availability: formData.availability,
     };

@@ -96,8 +96,34 @@ export const getProfilesForCards = async (
  * Obtiene opciones de filtros disponibles
  */
 export const getFilterOptions = async () => {
-  const response = await axios.get(`${API_URL}/api/filters/options`);
-  return response.data;
+  console.log('🔍 DEBUG filters.service - Making request to:', `${API_URL}/api/filters/options`);
+
+  try {
+    const response = await axios.get(`${API_URL}/api/filters/options`);
+
+    /* console.log('🔍 DEBUG filters.service - Response status:', response.status);
+    console.log('🔍 DEBUG filters.service - Response data:', response.data);
+    console.log('🔍 DEBUG filters.service - Response data type:', typeof response.data); */
+
+    if (response.data && response.data.data && response.data.data.locations) {
+      console.log('🔍 DEBUG filters.service - Departments in response:', response.data.data.locations.departments);
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('🔍 DEBUG filters.service - Error in getFilterOptions:', error);
+
+    if (axios.isAxiosError(error)) {
+      console.error('🔍 DEBUG filters.service - Axios error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
+    }
+
+    throw error;
+  }
 };
 
 // Función getProfilesCount eliminada - ahora se usa getFilterCounts optimizado

@@ -11,76 +11,43 @@ const normalizeText = (text: string): string => {
 
 // Estructura original para compatibilidad
 export const colombiaDepartments = {
-  // Ciudades principales como departamentos independientes
   "Bogotá": [
-    "Usaquén",
-    "Chapinero",
-    "Santa Fe",
-    "San Cristóbal",
-    "Usme",
-    "Tunjuelito",
-    "Bosa",
-    "Kennedy",
-    "Fontibón",
-    "Engativá",
-    "Suba",
-    "Barrios Unidos",
-    "Teusaquillo",
-    "Los Mártires",
     "Antonio Nariño",
-    "Puente Aranda",
-    "La Candelaria",
-    "Rafael Uribe Uribe",
+    "Barrios Unidos",
+    "Bosa",
+    "Chapinero",
     "Ciudad Bolívar",
-    "Sumapaz"
-  ],
-  /* "Medellín": [
-    "Popular",
-    "Santa Cruz",
-    "Manrique",
-    "Aranjuez",
-    "Castilla",
-    "Doce de Octubre",
-    "Robledo",
-    "Villa Hermosa",
-    "Buenos Aires",
+    "Engativá",
+    "Fontibón",
+    "Kennedy",
     "La Candelaria",
-    "Laureles",
-    "La América",
-    "San Javier",
-    "El Poblado",
-    "Guayabal",
-    "Belén",
-    "San Sebastián de Palmitas",
+    "Los Mártires",
+    "Puente Aranda",
+    "Rafael Uribe Uribe",
     "San Cristóbal",
-    "Altavista",
-    "San Antonio",
-    "Santa Helena"
+    "Santa Fe",
+    "Suba",
+    "Sumapaz",
+    "Teusaquillo",
+    "Tunjuelito",
+    "Usaquén",
+    "Usme"
   ],
-  "Cali": [
-    "Cali-Aguacatal",
-    "Cauca Norte",
-    "El Pondaje",
-    "Cauca Sur",
-    "Cañaveralejo",
-    "Pance-Lili",
-    "Zona Rural"
-  ], */
   "Amazonas": [
     "Leticia",
     "Puerto Nariño"
   ],
   "Antioquia": [
-    "Bello",
-    "Itagüí",
-    "Envigado",
     "Apartadó",
-    "Turbo",
+    "Bello",
+    "Copacabana",
+    "Envigado",
+    "Itagüí",
+    "La Estrella",
+    "Medellin",
     "Rionegro",
     "Sabaneta",
-    "La Estrella",
-    "Copacabana",
-    "Medellin"
+    "Turbo"
   ],
   "Arauca": [
     "Arauca",
@@ -92,280 +59,280 @@ export const colombiaDepartments = {
     "Tame"
   ],
   "Atlántico": [
+    "Baranoa",
     "Barranquilla",
-    "Soledad",
+    "Galapa",
     "Malambo",
     "Puerto Colombia",
-    "Galapa",
     "Sabanagrande",
-    "Baranoa",
-    "Sabanalarga"
+    "Sabanalarga",
+    "Soledad"
   ],
   "Bolívar": [
-    "Cartagena",
-    "Magangué",
-    "Turbaco",
     "Arjona",
+    "Cartagena",
     "El Carmen de Bolívar",
-    "Santa Rosa del Sur",
+    "Magangué",
     "Mompox",
-    "Santa Catalina"
+    "Santa Catalina",
+    "Santa Rosa del Sur",
+    "Turbaco"
   ],
   "Boyacá": [
-    "Tunja",
-    "Duitama",
-    "Sogamoso",
     "Chiquinquirá",
+    "Duitama",
+    "Monguí",
     "Paipa",
-    "Villa de Leyva",
     "Puerto Boyacá",
-    "Monguí"
+    "Sogamoso",
+    "Tunja",
+    "Villa de Leyva"
   ],
   "Caldas": [
-    "Manizales",
-    "Villamaría",
+    "Anserma",
     "Chinchiná",
     "La Dorada",
-    "Riosucio",
-    "Anserma",
+    "Manizales",
     "Palestina",
-    "Supía"
+    "Riosucio",
+    "Supía",
+    "Villamaría"
   ],
   "Caquetá": [
-    "Florencia",
-    "San Vicente del Caguán",
-    "Puerto Rico",
-    "El Doncello",
-    "La Montañita",
-    "Belén de los Andaquíes",
     "Albania",
-    "Curillo"
+    "Belén de los Andaquíes",
+    "Curillo",
+    "El Doncello",
+    "Florencia",
+    "La Montañita",
+    "Puerto Rico",
+    "San Vicente del Caguán"
   ],
   "Casanare": [
-    "Yopal",
     "Aguazul",
-    "Villanueva",
-    "Tauramena",
+    "Hato Corozal",
     "Monterrey",
     "Paz de Ariporo",
-    "Hato Corozal",
-    "Trinity"
+    "Tauramena",
+    "Trinity",
+    "Villanueva",
+    "Yopal"
   ],
   "Cauca": [
-    "Popayán",
-    "Santander de Quilichao",
-    "Puerto Tejada",
-    "Patía",
     "Corinto",
     "Guapi",
-    "Timbío",
-    "Piendamó"
+    "Patía",
+    "Piendamó",
+    "Popayán",
+    "Puerto Tejada",
+    "Santander de Quilichao",
+    "Timbío"
   ],
   "Cesar": [
-    "Valledupar",
     "Aguachica",
     "Bosconia",
     "Codazzi",
+    "Curumaní",
+    "El Paso",
     "La Paz",
     "San Diego",
-    "Curumaní",
-    "El Paso"
+    "Valledupar"
   ],
   "Chocó": [
-    "Quibdó",
-    "Istmina",
-    "Condoto",
-    "Riosucio",
     "Acandí",
+    "Bahía Solano",
     "Capurganá",
+    "Condoto",
+    "Istmina",
     "Nuquí",
-    "Bahía Solano"
+    "Quibdó",
+    "Riosucio"
   ],
   "Córdoba": [
-    "Montería",
-    "Lorica",
-    "Cereté",
-    "Sahagún",
-    "Planeta Rica",
-    "Montelíbano",
     "Ayapel",
+    "Cereté",
+    "Lorica",
+    "Montelíbano",
+    "Montería",
+    "Planeta Rica",
+    "Sahagún",
     "Tierralta"
   ],
   "Cundinamarca": [
-    "Soacha",
-    "Girardot",
-    "Zipaquirá",
-    "Facatativá",
+    "Cajicá",
     "Chía",
+    "Facatativá",
+    "Funza",
+    "Girardot",
     "Madrid",
     "Mosquera",
-    "Funza",
-    "Cajicá"
+    "Soacha",
+    "Zipaquirá"
   ],
   "Guainía": [
-    "Inírida",
     "Barranco Minas",
-    "Mapiripana",
-    "San Felipe",
-    "Puerto Colombia",
-    "La Guadalupe",
     "Cacahual",
-    "Pana Pana"
+    "Inírida",
+    "La Guadalupe",
+    "Mapiripana",
+    "Pana Pana",
+    "Puerto Colombia",
+    "San Felipe"
   ],
   "Guaviare": [
-    "San José del Guaviare",
     "Calamar",
     "El Retorno",
-    "Miraflores"
+    "Miraflores",
+    "San José del Guaviare"
   ],
   "Huila": [
+    "Aipe",
+    "Campoalegre",
+    "Garzón",
+    "Gigante",
+    "La Plata",
     "Neiva",
     "Pitalito",
-    "Garzón",
-    "La Plata",
-    "Campoalegre",
-    "Timaná",
-    "Gigante",
-    "Aipe"
+    "Timaná"
   ],
   "La Guajira": [
-    "Riohacha",
-    "Maicao",
-    "Uribia",
-    "Manaure",
-    "San Juan del Cesar",
-    "Villanueva",
     "El Molino",
-    "Fonseca"
+    "Fonseca",
+    "Maicao",
+    "Manaure",
+    "Riohacha",
+    "San Juan del Cesar",
+    "Uribia",
+    "Villanueva"
   ],
   "Magdalena": [
-    "Santa Marta",
-    "Ciénaga",
-    "Fundación",
+    "Algarrobo",
     "Aracataca",
+    "Ciénaga",
     "El Banco",
+    "Fundación",
     "Plato",
-    "Zona Bananera",
-    "Algarrobo"
+    "Santa Marta",
+    "Zona Bananera"
   ],
   "Meta": [
-    "Villavicencio",
     "Acacías",
-    "Granada",
-    "San Martín",
-    "Puerto López",
     "Cumaral",
+    "El Dorado",
+    "Granada",
+    "Puerto López",
     "Restrepo",
-    "El Dorado"
+    "San Martín",
+    "Villavicencio"
   ],
   "Nariño": [
-    "Pasto",
-    "Tumaco",
+    "Consacá",
     "Ipiales",
-    "Túquerres",
-    "Samaniego",
     "La Unión",
+    "Pasto",
+    "Samaniego",
     "Sandona",
-    "Consacá"
+    "Tumaco",
+    "Túquerres"
   ],
   "Norte de Santander": [
     "Cúcuta",
+    "El Zulia",
+    "Los Patios",
     "Ocaña",
     "Pamplona",
-    "Villa del Rosario",
-    "Los Patios",
+    "San Cayetano",
     "Tibú",
-    "El Zulia",
-    "San Cayetano"
+    "Villa del Rosario"
   ],
   "Putumayo": [
     "Mocoa",
-    "Puerto Asís",
     "Orito",
-    "Valle del Guamuez",
+    "Puerto Asís",
     "Puerto Caicedo",
-    "Villa Garzón",
     "Puerto Guzmán",
+    "Valle del Guamuez",
+    "Villa Garzón",
     "Leguízamo"
   ],
   "Quindío": [
     "Armenia",
     "Calarcá",
+    "Circasia",
+    "Filandia",
     "La Tebaida",
     "Montenegro",
     "Quimbaya",
-    "Circasia",
-    "Filandia",
     "Salento"
   ],
   "Risaralda": [
-    "Pereira",
+    "Apía",
+    "Belén de Umbría",
     "Dosquebradas",
-    "Santa Rosa de Cabal",
     "La Virginia",
     "Marsella",
-    "Belén de Umbría",
-    "Apía",
-    "Santuario"
+    "Pereira",
+    "San Andrés",
+    "Santa Rosa de Cabal"
   ],
   "San Andrés y Providencia": [
-    "San Andrés",
     "Providencia",
+    "San Andrés",
     "Santa Catalina"
   ],
   "Santander": [
+    "Barrancabermeja",
     "Bucaramanga",
     "Floridablanca",
     "Girón",
+    "Málaga",
     "Piedecuesta",
-    "Barrancabermeja",
     "San Gil",
-    "Socorro",
-    "Málaga"
+    "Socorro"
   ],
   "Sucre": [
-    "Sincelejo",
     "Corozal",
-    "Sampués",
-    "San Marcos",
-    "Tolú",
-    "Ovejas",
+    "Los Palmitos",
     "Morroa",
-    "Los Palmitos"
+    "Ovejas",
+    "San Marcos",
+    "Sampués",
+    "Sincelejo",
+    "Tolú"
   ],
   "Tolima": [
-    "Ibagué",
-    "Espinal",
-    "Melgar",
-    "Honda",
-    "Líbano",
     "Chaparral",
-    "Purificación",
-    "Flandes"
+    "Espinal",
+    "Flandes",
+    "Honda",
+    "Ibagué",
+    "Líbano",
+    "Melgar",
+    "Purificación"
   ],
   "Valle del Cauca": [
-    "Palmira",
     "Buenaventura",
-    "Tulúa",
-    "Cartago",
     "Buga",
+    "Cali",
+    "Cartago",
     "Jamundí",
-    "Yumbo",
-    "Cali"
+    "Palmira",
+    "Tulúa",
+    "Yumbo"
   ],
   "Vaupés": [
-    "Mitú",
     "Carurú",
+    "Mitú",
     "Pacoa",
-    "Taraira",
     "Papunaua",
+    "Taraira",
     "Yavaraté"
   ],
   "Vichada": [
-    "Puerto Carreño",
+    "Cumaribo",
     "La Primavera",
-    "Santa Rosalía",
-    "Cumaribo"
+    "Puerto Carreño",
+    "Santa Rosalía"
   ]
 } as const;
 
@@ -431,10 +398,12 @@ export const getCitiesByDepartment = (departmentNormalized: string): LocationVal
   const department = colombiaLocations[departmentNormalized];
   if (!department || !department.cities) return [];
 
-  return department.cities.map(city => ({
-    value: city.normalized,
-    label: city.original
-  }));
+  return department.cities
+    .map(city => ({
+      value: city.normalized,
+      label: city.original
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'es', { sensitivity: 'base' }));
 };
 
 // Función para obtener un departamento específico en formato LocationValue

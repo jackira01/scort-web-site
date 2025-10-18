@@ -335,15 +335,21 @@ export function Step3Details({
                   <Controller
                     name="socialMedia.instagram"
                     control={control}
-                    render={({ field }) => (
-                      <Input
-                        id="instagram"
-                        placeholder="@tu_usuario"
-                        value={field.value || ''}
-                        onChange={field.onChange}
-                        className="rounded-l-none"
-                      />
-                    )}
+                    render={({ field }) => {
+                      console.log('Instagram field:', field);
+                      return (
+                        <Input
+                          id="instagram"
+                          placeholder="@tu_usuario"
+                          value={field.value || ''}
+                          onChange={(e) => {
+                            console.log('Instagram onChange:', e.target.value);
+                            field.onChange(e.target.value);
+                          }}
+                          className="rounded-l-none"
+                        />
+                      );
+                    }}
                   />
                 </div>
               </div>

@@ -257,11 +257,11 @@ export default function SearchPageClient({
 
                   <Separator />
 
-                  <GenderFilter
+                  {/* <GenderFilter
                     selectedGender={filters.features?.gender}
                     onGenderChange={(gender) => handleUpdateFilter('gender', gender)}
                     category={categoria}
-                  />
+                  /> */}
 
                   {/* <Separator />
 
@@ -343,11 +343,11 @@ export default function SearchPageClient({
 
                       <Separator />
 
-                      <GenderFilter
+                      {/* <GenderFilter
                         selectedGender={filters.features?.gender}
                         onGenderChange={(gender) => updateFilter('gender', gender)}
                         category={categoria}
-                      />
+                      /> */}
 
                       <Separator />
 

@@ -3,9 +3,6 @@
  * para evitar múltiples transformaciones que degradan la calidad y causan desplazamientos
  */
 
-import { v4 as uuidv4 } from 'uuid';
-import { applyWatermarkToImage } from './watermark';
-
 /**
  * Carga dinámica de browser-image-compression solo en el cliente
  */

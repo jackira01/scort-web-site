@@ -421,7 +421,7 @@ export class PlansService {
 
     // ==================== OPERACIONES DE PLANES ====================
 
-    async purchasePlan(profileId: string, planCode: string, variantDays: number, isAdmin: boolean = false): Promise<{
+    async purchasePlan(profileId: string, planCode: string, variantDays: number, isAdmin: boolean = false, generateInvoice: boolean = true): Promise<{
         profileId: string;
         planCode: string;
         variantDays: number;
@@ -459,9 +459,9 @@ export class PlansService {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + variantDays);
 
-        // Generar factura si el plan tiene precio y NO es admin
+        // Generar factura si el plan tiene precio y NO es admin con asignación directa
         let invoiceId: string | undefined;
-        if (variant.price > 0 && !isAdmin) {
+        if (variant.price > 0 && (!isAdmin || generateInvoice)) {
             try {
                 const invoice = await InvoiceService.generateInvoice({
                     userId: profile.user.toString(),
@@ -496,7 +496,7 @@ export class PlansService {
                 throw new Error('Error al generar factura para el plan');
             }
         } else {
-            // Plan gratuito o usuario admin - asignar inmediatamente
+            // Plan gratuito o usuario admin con asignación directa - asignar inmediatamente
             profile.planAssignment = {
                 planId: plan._id as Types.ObjectId,           // Referencia al _id del plan
                 planCode: planCode,         // Mantener para compatibilidad
@@ -505,7 +505,7 @@ export class PlansService {
                 expiresAt: expiresAt
             };
             
-            // Activar el perfil inmediatamente para admins o planes gratuitos
+            // Activar el perfil inmediatamente para admins con asignación directa o planes gratuitos
             profile.isActive = true;
             
             // Agregar automáticamente los upgrades incluidos en el plan
@@ -570,32 +570,42 @@ export class PlansService {
         invoiceId?: string;
         whatsAppMessage?: WhatsAppMessage | null;
     }> {
-        // Renovando plan para perfil
+        console.log('🔍 DEBUG BACKEND SERVICE - renewPlan iniciado con parámetros:', {
+            profileId,
+            planCode,
+            variantDays,
+            isAdmin
+        });
 
         // Verificar que el perfil existe
         const profile = await ProfileModel.findById(profileId);
         if (!profile) {
+            console.log('🔍 DEBUG BACKEND SERVICE - Error: Perfil no encontrado');
             throw new Error('Perfil no encontrado');
         }
+        console.log('🔍 DEBUG BACKEND SERVICE - Perfil encontrado:', profile._id);
 
         // Verificar que el plan existe
         const plan = await PlanDefinitionModel.findOne({ code: planCode, active: true });
         if (!plan) {
+            console.log('🔍 DEBUG BACKEND SERVICE - Error: Plan no encontrado o inactivo');
             throw new Error('Plan no encontrado o inactivo');
         }
+        console.log('🔍 DEBUG BACKEND SERVICE - Plan encontrado:', plan.code);
 
         // Verificar que la variante existe
         const variant = plan.variants.find(v => v.days === variantDays);
         if (!variant) {
+            console.log('🔍 DEBUG BACKEND SERVICE - Error: Variante no encontrada');
             throw new Error('Variante de plan no encontrada');
         }
+        console.log('🔍 DEBUG BACKEND SERVICE - Variante encontrada:', { days: variant.days, price: variant.price });
 
         // Verificar si el perfil tiene un plan del mismo tipo (activo o expirado)
         if (!profile.planAssignment || profile.planAssignment.planCode !== planCode) {
+            console.log('🔍 DEBUG BACKEND SERVICE - Error: El perfil no tiene un plan del tipo especificado');
             throw new Error('El perfil no tiene un plan del tipo especificado para renovar');
         }
-
-        // Plan actual expira
 
         // Extender la fecha de expiración desde la fecha actual de expiración o desde ahora si ya expiró
         const currentExpiresAt = profile.planAssignment.expiresAt;
@@ -604,11 +614,22 @@ export class PlansService {
         const newExpiresAt = new Date(baseDate);
         newExpiresAt.setDate(newExpiresAt.getDate() + variantDays);
 
-        // Nueva fecha de expiración
+        console.log('🔍 DEBUG BACKEND SERVICE - Fechas calculadas:', {
+            currentExpiresAt,
+            baseDate,
+            newExpiresAt
+        });
 
         // Generar factura si el plan tiene precio y NO es admin
         let invoiceId: string | undefined;
+        console.log('🔍 DEBUG BACKEND SERVICE - Evaluando si generar factura:', {
+            variantPrice: variant.price,
+            isAdmin,
+            shouldGenerateInvoice: variant.price > 0 && !isAdmin
+        });
+
         if (variant.price > 0 && !isAdmin) {
+            console.log('🔍 DEBUG BACKEND SERVICE - Generando factura (usuario normal con precio > 0)');
             try {
                 const invoice = await InvoiceService.generateInvoice({
                     userId: profile.user.toString(),
@@ -618,6 +639,7 @@ export class PlansService {
                     upgradeCodes: []
                 });
                 invoiceId = invoice.id;
+                console.log('🔍 DEBUG BACKEND SERVICE - Factura generada:', invoiceId);
 
                 // Agregar factura al historial de pagos del perfil
                 profile.paymentHistory.push(new Types.ObjectId(invoice._id as string));
@@ -627,14 +649,14 @@ export class PlansService {
 
                 // NO actualizar las fechas hasta que se pague - mantener plan actual activo
                 await profile.save();
-
-                // Factura generada para renovación de plan
+                console.log('🔍 DEBUG BACKEND SERVICE - Perfil guardado con factura pendiente');
 
             } catch (error) {
-                // Error creando factura para renovación de plan
+                console.log('🔍 DEBUG BACKEND SERVICE - Error generando factura:', error);
                 throw new Error('Error al generar factura para la renovación del plan');
             }
         } else {
+            console.log('🔍 DEBUG BACKEND SERVICE - Renovando inmediatamente (admin o plan gratuito)');
             // Plan gratuito o usuario admin - renovar inmediatamente
             profile.planAssignment.expiresAt = newExpiresAt;
             profile.planAssignment.variantDays = variantDays;
@@ -644,6 +666,7 @@ export class PlansService {
             
             // Agregar automáticamente los upgrades incluidos en el plan
             if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
+                console.log('🔍 DEBUG BACKEND SERVICE - Agregando upgrades incluidos:', plan.includedUpgrades);
                 for (const upgradeCode of plan.includedUpgrades) {
                     // Verificar si el upgrade ya existe y está activo
                     const existingUpgrade = profile.upgrades.find(
@@ -666,7 +689,7 @@ export class PlansService {
             }
             
             await profile.save();
-            // Plan renovado exitosamente para perfil
+            console.log('🔍 DEBUG BACKEND SERVICE - Perfil renovado y guardado exitosamente');
         }
 
         // Generar mensaje de WhatsApp para renovación

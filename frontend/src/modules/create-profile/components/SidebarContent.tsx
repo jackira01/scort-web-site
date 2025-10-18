@@ -24,9 +24,9 @@ export function SidebarContent({ currentStep }: SidebarContentProps) {
   }
 
   // Obtener tips dinámicos o usar los por defecto
-  const tips = hasTipsForStep(currentStep) 
-    ? getTipsForStep(currentStep) 
-    : defaultTips[currentStep] || [];
+  const tips = hasTipsForStep(currentStep)
+    ? getTipsForStep(currentStep)
+    : [];
 
   // Si no hay tips, no renderizar nada
   if (!tips || tips.length === 0) {

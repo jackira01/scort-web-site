@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { TimePicker } from '@/components/ui/time-picker';
 import { Clock, Copy, Check, Calendar } from 'lucide-react';
 
 interface AvailabilitySlot {
@@ -57,13 +58,13 @@ const formatTime12Hour = (time24: string): string => {
 const formatTime24Hour = (time12: string, period: string): string => {
     const [hours, minutes] = time12.split(':').map(Number);
     let hours24 = hours;
-    
+
     if (period === 'AM' && hours === 12) {
         hours24 = 0;
     } else if (period === 'PM' && hours !== 12) {
         hours24 = hours + 12;
     }
-    
+
     return `${hours24.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 };
 
@@ -189,7 +190,7 @@ export function AvailabilitySchedule({
 
         const sourceSchedule = dayStates[sourceDay];
         const updatedStates = { ...dayStates };
-        
+
         selectedDays.forEach(day => {
             updatedStates[day] = {
                 ...updatedStates[day],
@@ -207,8 +208,8 @@ export function AvailabilitySchedule({
 
     // Función para seleccionar/deseleccionar días para operaciones en lote
     const toggleDaySelection = (day: string) => {
-        setSelectedDays(prev => 
-            prev.includes(day) 
+        setSelectedDays(prev =>
+            prev.includes(day)
                 ? prev.filter(d => d !== day)
                 : [...prev, day]
         );
@@ -231,7 +232,7 @@ export function AvailabilitySchedule({
                     <Calendar className="h-5 w-5" />
                     ¿Cuándo podemos encontrarnos?
                 </CardTitle>
-                
+
                 {/* Controles de selección múltiple */}
                 <div className="space-y-4 pt-4 border-t border-border">
                     <div className="flex flex-wrap items-center gap-2">
@@ -245,7 +246,7 @@ export function AvailabilitySchedule({
                             <Clock className="h-4 w-4" />
                             Configurar múltiples días
                         </Button>
-                        
+
                         {selectedDays.length > 0 && (
                             <>
                                 <Badge variant="secondary" className="flex items-center gap-1">
@@ -291,11 +292,11 @@ export function AvailabilitySchedule({
                                         <div className="space-y-2">
                                             <Label className="text-sm font-medium">Hora de inicio</Label>
                                             <div className="flex items-center gap-2">
-                                                <Input
-                                                    type="time"
+                                                <TimePicker
                                                     value={bulkStartTime}
-                                                    onChange={(e) => setBulkStartTime(e.target.value)}
+                                                    onChange={(value) => setBulkStartTime(value)}
                                                     className="flex-1"
+                                                    placeholder="Seleccionar hora de inicio"
                                                 />
                                                 <span className="text-xs text-muted-foreground">
                                                     {formatTime12Hour(bulkStartTime)}
@@ -305,11 +306,11 @@ export function AvailabilitySchedule({
                                         <div className="space-y-2">
                                             <Label className="text-sm font-medium">Hora de fin</Label>
                                             <div className="flex items-center gap-2">
-                                                <Input
-                                                    type="time"
+                                                <TimePicker
                                                     value={bulkEndTime}
-                                                    onChange={(e) => setBulkEndTime(e.target.value)}
+                                                    onChange={(value) => setBulkEndTime(value)}
                                                     className="flex-1"
+                                                    placeholder="Seleccionar hora de fin"
                                                 />
                                                 <span className="text-xs text-muted-foreground">
                                                     {formatTime12Hour(bulkEndTime)}
@@ -317,7 +318,7 @@ export function AvailabilitySchedule({
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="flex flex-wrap gap-2">
                                         <Button
                                             type="button"
@@ -344,9 +345,8 @@ export function AvailabilitySchedule({
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => copyScheduleFromDay(day)}
-                                                        className={`flex items-center gap-2 ${
-                                                            copiedFromDay === day ? 'bg-green-100 border-green-300' : ''
-                                                        }`}
+                                                        className={`flex items-center gap-2 ${copiedFromDay === day ? 'bg-green-100 border-green-300' : ''
+                                                            }`}
                                                     >
                                                         <Copy className="h-3 w-3" />
                                                         {dayLabels[day as keyof typeof dayLabels]}
@@ -367,13 +367,12 @@ export function AvailabilitySchedule({
             <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {daysOfWeek.map((day) => (
-                        <div 
-                            key={day} 
-                            className={`space-y-3 p-4 border rounded-lg transition-all duration-200 ${
-                                selectedDays.includes(day) 
-                                    ? 'border-purple-300 bg-purple-50/50 dark:bg-purple-950/20' 
+                        <div
+                            key={day}
+                            className={`space-y-3 p-4 border rounded-lg transition-all duration-200 ${selectedDays.includes(day)
+                                    ? 'border-purple-300 bg-purple-50/50 dark:bg-purple-950/20'
                                     : 'border-border bg-background/50'
-                            }`}
+                                }`}
                         >
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-2">
@@ -391,7 +390,7 @@ export function AvailabilitySchedule({
                                         {dayLabels[day as keyof typeof dayLabels]}
                                     </Label>
                                 </div>
-                                
+
                                 {/* Checkbox para selección múltiple */}
                                 {showBulkSchedule && (
                                     <Checkbox
@@ -408,14 +407,14 @@ export function AvailabilitySchedule({
                                         Hora de inicio
                                     </Label>
                                     <div className="flex items-center gap-2">
-                                        <Input
-                                            type="time"
+                                        <TimePicker
                                             value={dayStates[day].startTime}
-                                            onChange={(e) =>
-                                                handleTimeChange(day, 'startTime', e.target.value)
+                                            onChange={(value) =>
+                                                handleTimeChange(day, 'startTime', value)
                                             }
                                             disabled={!dayStates[day].isAvailable}
                                             className="flex-1"
+                                            placeholder="Seleccionar hora"
                                         />
                                         <span className="text-xs text-muted-foreground min-w-[60px]">
                                             {dayStates[day].isAvailable ? formatTime12Hour(dayStates[day].startTime) : '--'}
@@ -427,14 +426,14 @@ export function AvailabilitySchedule({
                                         Hora de fin
                                     </Label>
                                     <div className="flex items-center gap-2">
-                                        <Input
-                                            type="time"
+                                        <TimePicker
                                             value={dayStates[day].endTime}
-                                            onChange={(e) =>
-                                                handleTimeChange(day, 'endTime', e.target.value)
+                                            onChange={(value) =>
+                                                handleTimeChange(day, 'endTime', value)
                                             }
                                             disabled={!dayStates[day].isAvailable}
                                             className="flex-1"
+                                            placeholder="Seleccionar hora"
                                         />
                                         <span className="text-xs text-muted-foreground min-w-[60px]">
                                             {dayStates[day].isAvailable ? formatTime12Hour(dayStates[day].endTime) : '--'}

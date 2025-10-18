@@ -75,7 +75,7 @@ export const isProfileVerified = (): boolean => {
  * Obtiene la primera imagen de un perfil
  */
 export const getProfileImage = (profile: Profile): string => {
-  return profile.media?.gallery?.[0] || '/placeholder.svg';
+  return profile.media?.profilePicture || profile.media?.gallery?.[0] || '/placeholder.svg';
 };
 
 /**
