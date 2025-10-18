@@ -190,12 +190,32 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  // Verificar si el usuario está en una ruta que requiere password
-  if (PASSWORD_REQUIRED_ROUTES.some(route => pathname.startsWith(route))) {
-    if (!token?.hasPassword) {
-      // Redirigir a post-register si no tiene password
+  // Verificación de contraseña para rutas específicas (excluyendo post-register que ya se maneja arriba)
+  if (PASSWORD_REQUIRED_ROUTES.some(route => pathname.startsWith(route)) && 
+      !ALLOWED_WITHOUT_PASSWORD.some(route => pathname.startsWith(route)) &&
+      pathname !== '/autenticacion/post-register') {
+    console.log('🔐 Password verification for:', {
+      pathname,
+      tokenHasPassword: token?.hasPassword,
+      tokenHasPasswordType: typeof token?.hasPassword
+    });
+
+    // Para rutas que requieren contraseña
+    console.log('🔍 Checking password requirement for route:', pathname, {
+      hasPassword: token?.hasPassword,
+      type: typeof token?.hasPassword,
+    });
+    
+    // Verificación más estricta: solo redirigir si hasPassword es explícitamente false
+    if (token?.hasPassword === false) {
+      console.log('❌ User lacks password, redirecting to post-register');
       const postRegisterUrl = new URL('/autenticacion/post-register', request.url);
       return NextResponse.redirect(postRegisterUrl);
+    }
+    
+    // Si hasPassword es undefined o null, permitir acceso (puede ser un problema de timing)
+    if (token?.hasPassword === undefined || token?.hasPassword === null) {
+      console.log('⚠️ hasPassword is undefined/null, allowing access but this may indicate a timing issue');
     }
   }
 

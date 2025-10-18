@@ -177,14 +177,14 @@ export const createProfile = async (data: CreateProfileDTO): Promise<IProfile> =
       throw new Error(message);
     } */
 
-  // Crear perfil con isActive=true y visible=false por defecto
-  // El perfil estará activo pero no visible hasta pasar verificaciones
+  // Crear perfil con isActive=false y visible=false por defecto
+  // El perfil estará inactivo e invisible hasta que se confirme el pago de su factura
   // Excluir planAssignment del data para evitar sobrescribir la asignación automática
   const { planAssignment, ...profileData } = data;
   let profile = await ProfileModel.create({
     ...profileData,
-    isActive: true,  // Activo por defecto con plan gratuito
-    visible: false   // No visible hasta verificaciones
+    isActive: false,  // Inactivo por defecto hasta pago de factura
+    visible: false    // No visible hasta pago de factura
   });
   // Profile created successfully
 
@@ -365,7 +365,7 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
           profile._id,
           {
             $push: { paymentHistory: new Types.ObjectId(invoice._id as string) },
-            isActive: true,        // Mantener activo con plan por defecto
+            isActive: false,       // Mantener inactivo hasta que se pague la factura
             visible: false         // Ocultar hasta que se pague la factura
           }
         );
@@ -403,8 +403,17 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
         // Plan asignado directamente sin factura
         console.log('DEBUG SERVICIO - Plan asignado exitosamente sin factura');
       } else {
-        // Plan gratuito, mantener el plan por defecto ya asignado
-        // Plan gratuito detectado, manteniendo plan por defecto actual
+        // Plan gratuito, activar el perfil inmediatamente
+        // Plan gratuito detectado, activando perfil inmediatamente
+
+        // Activar perfil para plan gratuito
+        await ProfileModel.findByIdAndUpdate(
+          profile._id,
+          {
+            isActive: true,
+            visible: shouldBeVisible
+          }
+        );
 
         // Generar mensaje de WhatsApp para plan gratuito
         const whatsAppMessage = await generateWhatsAppMessage(
