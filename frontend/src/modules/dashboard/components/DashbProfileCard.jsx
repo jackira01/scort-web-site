@@ -22,6 +22,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { hardDeleteProfile } from '@/services/user.service';
 import toast from 'react-hot-toast';
 import { hasDestacadoUpgrade } from '@/utils/profile.utils';
+import UpgradeModal from '@/components/upgrades/UpgradeModal';
 export const DashbProfileCard = ({
   profile,
   index,
@@ -32,7 +33,14 @@ export const DashbProfileCard = ({
   setUploadStoryModalOpen,
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [selectedUpgradeCode, setSelectedUpgradeCode] = useState(null);
   const queryClient = useQueryClient();
+
+  const handleUpgradeClick = (upgradeCode) => {
+    setSelectedUpgradeCode(upgradeCode);
+    setUpgradeModalOpen(true);
+  };
 
   const handleHardDelete = async () => {
     if (!confirm('¿Estás seguro de que quieres eliminar permanentemente este perfil? Esta acción no se puede deshacer.')) {
@@ -53,6 +61,7 @@ export const DashbProfileCard = ({
     }
   };
   return (
+    <>
     <Card
       className="group hover:shadow-xl transition-all duration-500 overflow-hidden bg-card border-border hover:border-purple-500/50 "
       style={{ animationDelay: `${index * 150}ms` }}
@@ -150,6 +159,7 @@ export const DashbProfileCard = ({
                         ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white'
                         : 'hover:bg-yellow-50 dark:hover:bg-yellow-950/20 hover:border-yellow-500'
                         } transition-all duration-200`}
+                      onClick={() => handleUpgradeClick('DESTACADO')}
                       disabled={hasDestacadoUpgrade(profile)}
                     >
                       <Star className="h-3 w-3" />
@@ -191,6 +201,7 @@ export const DashbProfileCard = ({
                       ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
                       : 'hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500'
                       } transition-all duration-200`}
+                    onClick={() => handleUpgradeClick('IMPULSO')}
                     disabled={profile.hasImpulsoUpgrade}
                   >
                     <Zap className="h-3 w-3" />
@@ -282,5 +293,19 @@ export const DashbProfileCard = ({
         </div>
       </CardContent>
     </Card>
+    {/* Upgrade Modal */}
+    {selectedUpgradeCode && (
+      <UpgradeModal
+        isOpen={upgradeModalOpen}
+        onClose={() => {
+          setUpgradeModalOpen(false);
+          setSelectedUpgradeCode(null);
+        }}
+        profileId={profile.id}
+        profile={profile}
+        upgradeCode={selectedUpgradeCode}
+      />
+    )}
+  </>
   );
 };

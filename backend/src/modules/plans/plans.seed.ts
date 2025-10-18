@@ -126,6 +126,7 @@ const UPGRADES_DATA = [
     {
         code: 'DESTACADO',
         name: 'Upgrade Destacado',
+        price: 15000,
         durationHours: 24,
         requires: [],
         stackingPolicy: 'extend' as const,
@@ -139,6 +140,7 @@ const UPGRADES_DATA = [
     {
         code: 'IMPULSO',
         name: 'Upgrade Impulso',
+        price: 25000,
         durationHours: 12,
         requires: ['DESTACADO'],
         stackingPolicy: 'replace' as const,
@@ -156,21 +158,14 @@ const UPGRADES_DATA = [
  */
 export async function seedPlans(): Promise<void> {
     try {
-        console.log('🌱 Iniciando seed de planes...');
-        
         for (const planData of PLANS_DATA) {
             const existingPlan = await PlanDefinitionModel.findByCode(planData.code);
-            
+
             if (!existingPlan) {
                 const plan = new PlanDefinitionModel(planData);
                 await plan.save();
-                console.log(`✅ Plan ${planData.code} creado exitosamente`);
-            } else {
-                console.log(`⚠️  Plan ${planData.code} ya existe, omitiendo...`);
             }
         }
-        
-        console.log('✅ Seed de planes completado');
     } catch (error) {
         console.error('❌ Error en seed de planes:', error);
         throw error;
@@ -182,21 +177,15 @@ export async function seedPlans(): Promise<void> {
  */
 export async function seedUpgrades(): Promise<void> {
     try {
-        console.log('🌱 Iniciando seed de upgrades...');
-        
         for (const upgradeData of UPGRADES_DATA) {
             const existingUpgrade = await UpgradeDefinitionModel.findByCode(upgradeData.code);
-            
+
             if (!existingUpgrade) {
                 const upgrade = new UpgradeDefinitionModel(upgradeData);
                 await upgrade.save();
-                console.log(`✅ Upgrade ${upgradeData.code} creado exitosamente`);
-            } else {
-                console.log(`⚠️  Upgrade ${upgradeData.code} ya existe, omitiendo...`);
             }
         }
-        
-        console.log('✅ Seed de upgrades completado');
+
     } catch (error) {
         console.error('❌ Error en seed de upgrades:', error);
         throw error;
@@ -208,32 +197,20 @@ export async function seedUpgrades(): Promise<void> {
  */
 export async function seedPlansAndUpgrades(): Promise<void> {
     try {
-        console.log('🚀 Iniciando seed completo de planes y upgrades...');
-        
+
         // Verificar que estamos conectados a la base de datos
         if (mongoose.connection.readyState !== 1) {
             throw new Error('No hay conexión activa a MongoDB');
         }
-        
-        // Verificar variable de entorno
-        if (process.env.FEATURE_VISIBILITY_ENGINE !== 'true') {
-            console.log('⚠️  FEATURE_VISIBILITY_ENGINE no está habilitado, pero continuando con el seed...');
-        }
-        
+
         // Ejecutar seeds
         await seedPlans();
         await seedUpgrades();
-        
-        console.log('🎉 Seed completo ejecutado exitosamente');
-        
+
         // Mostrar resumen
         const totalPlans = await PlanDefinitionModel.countDocuments({ active: true });
         const totalUpgrades = await UpgradeDefinitionModel.countDocuments({ active: true });
-        
-        console.log(`📊 Resumen:`);
-        console.log(`   - Planes activos: ${totalPlans}`);
-        console.log(`   - Upgrades activos: ${totalUpgrades}`);
-        
+
     } catch (error) {
         console.error('❌ Error en seed completo:', error);
         throw error;
@@ -245,12 +222,10 @@ export async function seedPlansAndUpgrades(): Promise<void> {
  */
 export async function clearPlansAndUpgrades(): Promise<void> {
     try {
-        console.log('🧹 Limpiando datos de planes y upgrades...');
-        
+
         await PlanDefinitionModel.deleteMany({});
         await UpgradeDefinitionModel.deleteMany({});
-        
-        console.log('✅ Datos limpiados exitosamente');
+
     } catch (error) {
         console.error('❌ Error al limpiar datos:', error);
         throw error;
@@ -261,11 +236,11 @@ export async function clearPlansAndUpgrades(): Promise<void> {
 if (require.main === module) {
     const mongoose = require('mongoose');
     const dotenv = require('dotenv');
-    
+
     dotenv.config();
-    
+
     const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/scort-web-site';
-    
+
     mongoose.connect(MONGO_URI)
         .then(() => {
             console.log('📦 Conectado a MongoDB');

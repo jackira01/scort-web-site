@@ -31,6 +31,31 @@ export const SocialMediaProfile = ({
     return !!(value && value !== 'false' && value.trim() !== '');
   };
 
+  // Helper function to check if any social media is configured
+  const hasSocialMedia = (): boolean => {
+    return !!(
+      socialMedia?.instagram ||
+      socialMedia?.onlyfans ||
+      socialMedia?.twitter ||
+      socialMedia?.facebook ||
+      socialMedia?.tiktok
+    );
+  };
+
+  // Helper function to check if any contact method is available
+  const hasContactMethods = (): boolean => {
+    return !!(
+      contact.number ||
+      isValidContactMethod(contact.whatsapp) ||
+      isValidContactMethod(contact.telegram)
+    );
+  };
+
+  // Don't render the component if no social media and no contact methods are available
+  if (!hasSocialMedia() && !hasContactMethods()) {
+    return null;
+  }
+
   const handleContactClick = (platform: string, number: string) => {
     if (platform === 'call') {
       window.open(`tel:${number.replace(/\s+/g, '')}`, '_self');

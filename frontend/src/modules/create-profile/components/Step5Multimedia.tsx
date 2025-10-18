@@ -207,9 +207,14 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       setValue(type, newFiles);
 
       // Procesar automáticamente todas las nuevas imágenes
-      await processNewImages(fileArray, currentFiles.length);
+      const processedCount = await processNewImages(fileArray, currentFiles.length);
 
-      toast.success(`${fileArray.length} imagen(es) agregada(s) y procesada(s).`);
+      // Mostrar toast con el número real de imágenes procesadas
+      if (processedCount > 0) {
+        toast.success(`${processedCount} imagen(es) agregada(s) y procesada(s) exitosamente.`);
+      } else if (fileArray.length > 0) {
+        toast.error('No se pudieron procesar las imágenes seleccionadas.');
+      }
     } else {
       // Para videos y audios, agregar directamente
       const newFiles: (File | string)[] = [...currentFiles, ...fileArray];
@@ -277,6 +282,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
   // Función para procesar automáticamente múltiples imágenes nuevas
   const processNewImages = async (newFiles: File[], startIndex: number) => {
+    let processedCount = 0;
+    
     try {
       setIsProcessingImage(true);
       
@@ -310,6 +317,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
           const processedImagesArray = Array.from(newProcessedImages.values());
           setValue('processedImages', processedImagesArray);
 
+          processedCount++;
+
         } catch (error) {
           console.error(`Error procesando imagen ${i + 1}:`, error);
           toast.error(`Error procesando imagen ${file.name}`);
@@ -321,6 +330,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     } finally {
       setIsProcessingImage(false);
     }
+    
+    return processedCount;
   };
 
   // Función para manejar el crop completado

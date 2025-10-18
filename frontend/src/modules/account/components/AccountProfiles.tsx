@@ -30,6 +30,7 @@ import { deleteProfile, updateProfile, getProfileById } from '@/services/user.se
 import { useUpgradePurchase, useUpgradeValidation } from '@/hooks/use-upgrade-purchase';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { hasDestacadoUpgrade } from '@/utils/profile.utils';
+import UpgradeModal from '@/components/upgrades/UpgradeModal';
 
 interface ProfileResponse {
   _id: string;
@@ -99,6 +100,9 @@ export default function AccountProfiles({
     useState<ProfileResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [managePlansProfileId, setManagePlansProfileId] = useState<string | null>(null);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [selectedUpgradeProfile, setSelectedUpgradeProfile] = useState<ProfileResponse | null>(null);
+  const [selectedUpgradeCode, setSelectedUpgradeCode] = useState<'DESTACADO' | 'IMPULSO' | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const profilesPerPage = 6;
   const queryClient = useQueryClient();
@@ -115,6 +119,12 @@ export default function AccountProfiles({
   // Hooks para manejo de upgrades
   const { mutate: purchaseUpgrade, isPending: isPurchasing } = useUpgradePurchase();
   const { validateUpgrade } = useUpgradeValidation();
+
+  const handleUpgradeClick = (profile: ProfileResponse, upgradeCode: 'DESTACADO' | 'IMPULSO') => {
+    setSelectedUpgradeProfile(profile);
+    setSelectedUpgradeCode(upgradeCode);
+    setUpgradeModalOpen(true);
+  };
 
   const handleUpgradePurchase = async (profileId: string, upgradeCode: 'DESTACADO' | 'IMPULSO') => {
     const profile = profiles.find(p => p._id === profileId);
@@ -418,8 +428,8 @@ export default function AccountProfiles({
                                     ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white'
                                     : 'hover:bg-yellow-50 dark:hover:bg-yellow-950/20 hover:border-yellow-500'
                                     } transition-all duration-200`}
-                                  onClick={() => handleUpgradePurchase(profile._id, 'DESTACADO')}
-                                  disabled={isPurchasing || hasDestacadoUpgrade(profile as any)}
+                                  onClick={() => handleUpgradeClick(profile, 'DESTACADO')}
+                                  disabled={hasDestacadoUpgrade(profile as any)}
                                 >
                                   <Star className="h-3 w-3" />
                                 </Button>
@@ -460,8 +470,8 @@ export default function AccountProfiles({
                                   ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
                                   : 'hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500'
                                   } transition-all duration-200`}
-                                onClick={() => handleUpgradePurchase(profile._id, 'IMPULSO')}
-                                disabled={isPurchasing || profile.hasImpulsoUpgrade}
+                                onClick={() => handleUpgradeClick(profile, 'IMPULSO')}
+                                disabled={profile.hasImpulsoUpgrade}
                               >
                                 <Zap className="h-3 w-3" />
                               </Button>
@@ -677,6 +687,21 @@ export default function AccountProfiles({
           queryClient.invalidateQueries({ queryKey: ['profilePlan', managePlansProfileId] });
         }}
       />
+
+      {/* Modal para upgrades */}
+      {selectedUpgradeProfile && selectedUpgradeCode && (
+        <UpgradeModal
+          isOpen={upgradeModalOpen}
+          onClose={() => {
+            setUpgradeModalOpen(false);
+            setSelectedUpgradeProfile(null);
+            setSelectedUpgradeCode(null);
+          }}
+          profileId={selectedUpgradeProfile._id}
+          profile={selectedUpgradeProfile}
+          upgradeCode={selectedUpgradeCode}
+        />
+      )}
     </div>
   );
 }

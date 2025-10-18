@@ -145,16 +145,16 @@ const helmetConfig = {
 const securityHeaders = {
   // Prevenir clickjacking
   'X-Frame-Options': 'DENY',
-  
+
   // Prevenir MIME type sniffing
   'X-Content-Type-Options': 'nosniff',
-  
+
   // Habilitar XSS protection
   'X-XSS-Protection': '1; mode=block',
-  
+
   // Referrer policy
   'Referrer-Policy': 'no-referrer',
-  
+
   // Permissions policy
   'Permissions-Policy': [
     'camera=()',
@@ -163,7 +163,7 @@ const securityHeaders = {
     'payment=()',
     'usb=()'
   ].join(', '),
-  
+
   // Feature policy (legacy)
   'Feature-Policy': [
     "camera 'none'",
@@ -172,7 +172,7 @@ const securityHeaders = {
     "payment 'none'",
     "usb 'none'"
   ].join('; '),
-  
+
   // Cache control para recursos sensibles
   'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
   'Pragma': 'no-cache',
@@ -182,13 +182,13 @@ const securityHeaders = {
 // Configuración de CORS
 const corsConfig = {
   origin: function (origin, callback) {
-    const allowedOrigins = process.env.ORIGIN_ALLOWED 
+    const allowedOrigins = process.env.ORIGIN_ALLOWED
       ? JSON.parse(process.env.ORIGIN_ALLOWED)
       : ['http://localhost:3000', 'http://localhost:5000'];
-    
+
     // Permitir requests sin origin (mobile apps, etc.)
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -235,20 +235,20 @@ const inputValidation = {
       .replace(/<[^>]*>/g, '') // Remover HTML tags
       .trim();
   },
-  
+
   // Validar email
   isValidEmail: (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   },
-  
+
   // Validar contraseña fuerte
   isStrongPassword: (password) => {
     // Al menos 8 caracteres, 1 mayúscula, 1 minúscula, 1 número, 1 símbolo
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     return passwordRegex.test(password);
   },
-  
+
   // Validar ObjectId de MongoDB
   isValidObjectId: (id) => {
     const objectIdRegex = /^[0-9a-fA-F]{24}$/;
@@ -270,7 +270,7 @@ const securityLogging = {
     UNAUTHORIZED_ACCESS: 'unauthorized_access',
     DATA_BREACH_ATTEMPT: 'data_breach_attempt'
   },
-  
+
   // Función de logging
   log: (event, userId, ip, userAgent, details = {}) => {
     const logEntry = {
@@ -282,13 +282,13 @@ const securityLogging = {
       details,
       severity: getSeverity(event)
     };
-    
+
     // En producción, enviar a servicio de logging externo
     if (process.env.NODE_ENV === 'production') {
       // TODO: Integrar con servicio de logging (ELK, Splunk, etc.)
-      console.log('[SECURITY]', JSON.stringify(logEntry));
+      /* console.log('[SECURITY]', JSON.stringify(logEntry)); */
     } else {
-      console.log('[SECURITY]', logEntry);
+      /* console.log('[SECURITY]', logEntry); */
     }
   }
 };
@@ -301,12 +301,12 @@ function getSeverity(event) {
     'suspicious_activity',
     'unauthorized_access'
   ];
-  
+
   const mediumSeverity = [
     'login_failure',
     'rate_limit_exceeded'
   ];
-  
+
   if (highSeverity.includes(event)) return 'HIGH';
   if (mediumSeverity.includes(event)) return 'MEDIUM';
   return 'LOW';
@@ -325,10 +325,10 @@ const threatDetection = {
       /onload=/i, // Event handler injection
       /onerror=/i // Event handler injection
     ];
-    
+
     const url = req.originalUrl || req.url;
     const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(url));
-    
+
     if (isSuspicious) {
       securityLogging.log(
         securityLogging.events.SUSPICIOUS_ACTIVITY,
@@ -337,34 +337,34 @@ const threatDetection = {
         req.get('User-Agent'),
         { url, type: 'suspicious_url_pattern' }
       );
-      
+
       return res.status(400).json({
         error: 'Solicitud no válida',
         code: 'INVALID_REQUEST'
       });
     }
-    
+
     next();
   },
-  
+
   // Detectar múltiples intentos fallidos
   detectBruteForce: (maxAttempts = 5, windowMs = 15 * 60 * 1000) => {
     const attempts = new Map();
-    
+
     return (req, res, next) => {
       const key = `${req.ip}_${req.path}`;
       const now = Date.now();
-      
+
       if (!attempts.has(key)) {
         attempts.set(key, []);
       }
-      
+
       const userAttempts = attempts.get(key);
-      
+
       // Limpiar intentos antiguos
       const recentAttempts = userAttempts.filter(time => now - time < windowMs);
       attempts.set(key, recentAttempts);
-      
+
       if (recentAttempts.length >= maxAttempts) {
         securityLogging.log(
           securityLogging.events.SUSPICIOUS_ACTIVITY,
@@ -373,13 +373,13 @@ const threatDetection = {
           req.get('User-Agent'),
           { type: 'brute_force_detected', attempts: recentAttempts.length }
         );
-        
+
         return res.status(429).json({
           error: 'Demasiados intentos fallidos. Intenta de nuevo más tarde.',
           code: 'BRUTE_FORCE_DETECTED'
         });
       }
-      
+
       // Registrar intento en caso de fallo
       res.on('finish', () => {
         if (res.statusCode === 401 || res.statusCode === 403) {
@@ -387,7 +387,7 @@ const threatDetection = {
           attempts.set(key, recentAttempts);
         }
       });
-      
+
       next();
     };
   }

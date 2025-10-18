@@ -179,6 +179,12 @@ const upgradeEffectValidation = body('effect')
         return true;
     });
 
+const upgradePriceValidation = body('price')
+    .optional()
+    .isNumeric()
+    .isFloat({ min: 0 })
+    .withMessage('price debe ser un número mayor o igual a 0');
+
 const upgradeActiveValidation = body('active')
     .optional()
     .isBoolean()
@@ -299,6 +305,7 @@ router.post('/upgrades', [
     upgradeRequiresValidation,
     upgradeStackingPolicyValidation,
     upgradeEffectValidation,
+    upgradePriceValidation,
     upgradeActiveValidation
 ], plansController.createUpgrade.bind(plansController));
 
@@ -311,6 +318,7 @@ router.put('/upgrades/:id', [
     upgradeRequiresValidation,
     upgradeStackingPolicyValidation.optional(),
     upgradeEffectValidation.optional(),
+    upgradePriceValidation,
     upgradeActiveValidation
 ], plansController.updateUpgrade.bind(plansController));
 
