@@ -6,8 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { VerificationBar } from '@/components/VerificationBar/VerificationBar';
 import type { ProfileCardData } from '@/types/profile.types';
-import type { Profile } from '@/types/user.types';
-import { hasDestacadoUpgrade } from '@/utils/profile.utils';
 
 interface CardComponentProps {
   profiles?: ProfileCardData[];
@@ -23,11 +21,11 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
     );
   }
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {profiles.map((profile, index) => (
         <Link href={`/perfil/${profile._id}`} key={profile._id}>
           <Card
-            className={`group hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer  ${profile.hasDestacadoUpgrade
+            className={`group hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer md:w-60 lg:w-64  ${profile.hasDestacadoUpgrade
               ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50'
               : 'bg-card border-border hover:border-purple-500/50'
               }`}
@@ -36,11 +34,11 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
             {/* Layout responsive: horizontal en mobile, vertical en desktop */}
             <div className="flex flex-row sm:flex-col">
               {/* Imagen */}
-              <div className="relative overflow-hidden w-32 h-32 sm:w-full sm:h-64 lg:sm:h-80 flex-shrink-0">
+              <div className="relative overflow-hidden w-32 h-full md:w-full flex-shrink-0">
                 <Image
                   width={400}
                   height={300}
-                  src={profile.media?.profilePicture || profile.media?.gallery?.[0] || '/placeholder.svg'}
+                  src={profile.media?.gallery?.[0] || '/placeholder.svg'}
                   alt={profile.name}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 "
                 />
@@ -87,6 +85,11 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                     </span>
                   </div>
 
+                  <p className="clamp-description text-xs sm:text-sm text-muted-foreground mt-2">
+                    {profile.description}
+                  </p>
+
+
                   {/* Barra de verificación */}
                   <div className="mt-2">
                     <VerificationBar
@@ -97,7 +100,7 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                   </div>
                 </div>
                 {/* BOTÓN MODIFICADO */}
-                <Button
+                {/* <Button
                   // Nueva variante: 'outline' para ser menos llamativo que el 'default'
                   variant="outline"
                   // Nuevo tamaño: 'sm' para reducir el padding vertical y el tamaño de fuente
@@ -110,7 +113,7 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                   onClick={(e) => e.preventDefault()} // Prevenir doble navegación
                 >
                   Ver perfil
-                </Button>
+                </Button> */}
                 {/* FIN DEL BOTÓN MODIFICADO */}
               </CardContent>
             </div>
