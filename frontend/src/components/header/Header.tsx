@@ -222,7 +222,7 @@ const HeaderComponent = () => {
                 FAQ
               </Button>
             </Link>
-            <Link href="/terms">
+            <Link href="/terminos">
               <Button
                 variant="ghost"
                 className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"

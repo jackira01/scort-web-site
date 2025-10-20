@@ -3,17 +3,13 @@
 import PublicContentPage from '@/components/public/PublicContentPage';
 import {
   AlertTriangle,
-  ArrowLeft,
   Clock,
   FileText,
   Mail,
   Scale,
   Shield,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useState } from 'react';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -262,7 +258,7 @@ const TermsPageFallback = () => {
 
 export default function TermsPage() {
   return (
-    <PublicContentPage 
+    <PublicContentPage
       slug="terminos"
       fallbackContent={<TermsPageFallback />}
       showBackButton={true}

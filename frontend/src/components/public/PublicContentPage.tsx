@@ -93,8 +93,6 @@ const PublicContentPage: React.FC<PublicContentPageProps> = ({
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-pink-900/20">
       <div className="container mx-auto px-4 py-8">
-
-
         <div className="max-w-4xl mx-auto">
           <Card className="shadow-lg">
             <CardHeader className="text-center pb-8">
