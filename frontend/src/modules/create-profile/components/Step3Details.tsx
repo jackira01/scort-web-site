@@ -2,7 +2,6 @@
 
 import { AvailabilitySchedule } from '@/components/availability/AvailabilitySchedule';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Controller } from 'react-hook-form';

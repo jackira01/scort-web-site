@@ -2,12 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import HeaderComponent from '@/components/header/Header';
 import { AttributeGroupsAdmin } from '@/modules/dashboard/components/AttributeGroupsAdmin';
 import { DashUserPanel } from '@/modules/dashboard/components/DashbUserPanel';
 import ConfigManager from '@/components/admin/ConfigManager/ConfigManager';
 import PlansManager from '@/components/admin/plans/PlansManager';
-import DefaultPlanManager from '@/components/admin/DefaultPlanManager';
 import BlogsManager from '@/components/admin/blogs/BlogsManager';
 import NewsManager from '@/components/admin/news/NewsManager';
 import CouponsManager from '@/components/admin/coupons/CouponsManager';
@@ -106,11 +104,11 @@ export default function DashboardLayout() {
             case 'contenido':
                 const editSlug = searchParams.get('edit');
                 const subSection = searchParams.get('sub');
-                
+
                 if (editSlug) {
                     return (
                         <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
-                            <ContentEditor 
+                            <ContentEditor
                                 pageSlug={editSlug}
                                 onBack={() => {
                                     window.location.href = '/adminboard?section=contenido';
@@ -119,7 +117,7 @@ export default function DashboardLayout() {
                         </div>
                     );
                 }
-                
+
                 if (subSection === 'tips-formulario') {
                     return (
                         <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
@@ -127,7 +125,7 @@ export default function DashboardLayout() {
                         </div>
                     );
                 }
-                
+
                 return (
                     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
                         <ContentPagesManager />

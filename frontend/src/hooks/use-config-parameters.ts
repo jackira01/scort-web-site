@@ -407,7 +407,7 @@ export function useConfigParameterMutations(): ConfigParameterMutations {
             // Invalidar queries relacionadas
             queryClient.invalidateQueries({ queryKey: configParameterKeys.lists() });
             queryClient.invalidateQueries({ queryKey: configParameterKeys.values() });
-            
+
             // Solo mostrar toast si está habilitado
             if (showToast) {
                 toast.success('Parámetro de configuración actualizado exitosamente');
@@ -589,7 +589,7 @@ export const useUpdateConfigParameter = (options?: { showToast?: boolean }) => {
             // Invalidar queries relacionadas
             queryClient.invalidateQueries({ queryKey: configParameterKeys.lists() });
             queryClient.invalidateQueries({ queryKey: configParameterKeys.values() });
-            
+
             // Solo mostrar toast si está habilitado
             if (showToast) {
                 toast.success('Parámetro de configuración actualizado exitosamente');
@@ -641,7 +641,6 @@ export const useUpdateConfigParameter = (options?: { showToast?: boolean }) => {
     });
 
     return {
-        create: createMutation.mutateAsync,
         update: (id: string, data: UpdateConfigParameterInput) =>
             updateMutation.mutateAsync({ id, data }),
         delete: deleteMutation.mutateAsync,
