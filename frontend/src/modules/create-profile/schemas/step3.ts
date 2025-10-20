@@ -24,23 +24,19 @@ export const step3Schema = z.object({
   }),
 
   age: z
-    .union([
-      z.number(),
-      z.string().regex(/^\d+$/, 'debe ser un número válido'),
-      z.undefined()
-    ])
-    .optional()
-    .transform((val) => {
-      if (val === undefined || val === '') {
-        return undefined;
-      }
-      const num = typeof val === 'string' ? parseInt(val, 10) : val;
-      if (isNaN(num)) {
-        throw new Error('debe ser un número válido');
-      }
-      return num;
+    .string({
+      required_error: 'La edad es requerida',
+      invalid_type_error: 'La edad debe ser un número válido'
     })
-    .refine((val) => val === undefined || (val >= 18 && val <= 100), 'La edad debe estar entre 18 y 100 años'),
+    .min(1, 'La edad es requerida')
+    .regex(/^\d+$/, 'La edad debe ser un número válido')
+    .transform((val) => parseInt(val, 10))
+    .refine((val) => val >= 18, {
+      message: 'La edad debe ser al menos 18 años'
+    })
+    .refine((val) => val <= 100, {
+      message: 'La edad no puede ser mayor a 100 años'
+    }),
 
   skinColor: z
     .string()
@@ -56,8 +52,7 @@ export const step3Schema = z.object({
 
   bodyType: z
     .string()
-    .optional()
-    .refine((val) => !val || val.length > 0, 'Debes seleccionar el tipo de cuerpo'),
+    .min(1, 'Debes seleccionar el tipo de cuerpo'),
 
   height: z
     .union([

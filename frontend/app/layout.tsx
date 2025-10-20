@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type React from 'react';
-import '@/styles/globals.css';
+import '../src/styles/globals.css';
 import { Providers } from '@/config/providers';
 import { Poppins } from "next/font/google";
 import ConditionalHeader from '@/components/layout/ConditionalHeader';

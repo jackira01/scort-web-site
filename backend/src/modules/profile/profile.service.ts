@@ -347,7 +347,7 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
           price: variant.price,
           generateInvoice
         });
-        
+
         // Plan de pago detectado y facturación solicitada, generando factura
         invoice = await invoiceService.generateInvoice({
           profileId: (profile._id as Types.ObjectId).toString(),
@@ -378,7 +378,7 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
           price: variant.price,
           generateInvoice
         });
-        
+
         // Plan de pago pero sin generar factura (administrador), asignar plan directamente
         // Calcular fechas para asignación directa
         const startAt = new Date();
@@ -399,7 +399,7 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
             visible: shouldBeVisible
           }
         );
-        
+
         // Plan asignado directamente sin factura
         console.log('DEBUG SERVICIO - Plan asignado exitosamente sin factura');
       } else {
@@ -580,6 +580,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
     .select({
       name: 1,
       age: 1,
+      description: 1,
       user: 1, // IMPORTANTE: Incluir referencia al usuario
       'location.city.label': 1,
       'location.department.label': 1,
