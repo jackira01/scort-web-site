@@ -246,7 +246,9 @@ export default function CouponsManager() {
                       <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
                         <span>Descuento: {coupon.type === 'percentage' ? `${coupon.value}%` : `$${coupon.value}`}</span>
                         <span>Usos: {coupon.currentUses}/{coupon.maxUses}</span>
-                        <span>Expira: {new Date(coupon.validUntil).toLocaleDateString()}</span>
+                        <span>
+                          Expira: {new Date(coupon.validUntil).toLocaleDateString('es-CO', { timeZone: 'UTC' })}
+                        </span>
                       </div>
                       <div className="flex items-center space-x-2 mt-2">
                         <span className="text-sm text-muted-foreground">Planes aplicables:</span>

@@ -387,9 +387,9 @@ export interface LocationValue {
 
 // Función para obtener todos los departamentos en formato LocationValue
 export const getAllDepartments = (): LocationValue[] => {
-  return Object.values(colombiaLocations).map(dept => ({
-    value: dept.normalized,
-    label: dept.original
+  return Object.keys(colombiaDepartments).map((department) => ({
+    value: normalizeText(department),
+    label: department
   }));
 };
 
@@ -398,12 +398,10 @@ export const getCitiesByDepartment = (departmentNormalized: string): LocationVal
   const department = colombiaLocations[departmentNormalized];
   if (!department || !department.cities) return [];
 
-  return department.cities
-    .map(city => ({
-      value: city.normalized,
-      label: city.original
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label, 'es', { sensitivity: 'base' }));
+  return department.cities.map(city => ({
+    value: city.normalized,
+    label: city.original
+  }));
 };
 
 // Función para obtener un departamento específico en formato LocationValue

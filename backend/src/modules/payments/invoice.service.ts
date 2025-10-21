@@ -166,8 +166,8 @@ class InvoiceService {
     let enhancedNotes = notes || '';
     if (planDetails) {
       const planDetailsNote = `Detalles del plan: ${planDetails}`;
-      enhancedNotes = enhancedNotes 
-        ? `${enhancedNotes}\n\n${planDetailsNote}` 
+      enhancedNotes = enhancedNotes
+        ? `${enhancedNotes}\n\n${planDetailsNote}`
         : planDetailsNote;
     }
 
@@ -215,7 +215,11 @@ class InvoiceService {
   /**
    * Obtiene facturas con filtros
    */
-  async getInvoices(filters: InvoiceFilters = {}, page = 1, limit = 10): Promise<{
+  async getInvoices(
+    filters: InvoiceFilters = {},
+    page = 1,
+    limit = 10
+  ): Promise<{
     invoices: IInvoice[];
     total: number;
     totalPages: number;
@@ -223,28 +227,25 @@ class InvoiceService {
   }> {
     const query: any = {};
 
+    // ----------------------------
+    // 1️⃣ Construcción del filtro
+    // ----------------------------
     if (filters._id) {
-      // Búsqueda por aproximación para ID de factura
       if (filters._id.length >= 8) {
-        // Si el ID tiene al menos 8 caracteres, buscar por coincidencia exacta
         if (!mongoose.Types.ObjectId.isValid(filters._id)) {
           throw new Error('ID de factura inválido');
         }
         query._id = new mongoose.Types.ObjectId(filters._id);
       } else {
-        // Búsqueda por aproximación usando regex en los últimos 8 caracteres del ID
         query._id = { $regex: new RegExp(filters._id, 'i') };
       }
     }
 
     if (filters.invoiceNumber) {
-      // Búsqueda por número de factura (puede ser parcial)
       const invoiceNumberValue = parseInt(filters.invoiceNumber);
       if (!isNaN(invoiceNumberValue)) {
-        // Si es un número válido, buscar por coincidencia exacta
         query.invoiceNumber = invoiceNumberValue;
       } else {
-        // Si no es un número válido, buscar por coincidencia parcial en string
         query.invoiceNumber = { $regex: new RegExp(filters.invoiceNumber, 'i') };
       }
     }
@@ -269,14 +270,33 @@ class InvoiceService {
 
     if (filters.fromDate || filters.toDate) {
       query.createdAt = {};
-      if (filters.fromDate) {
-        query.createdAt.$gte = filters.fromDate;
-      }
-      if (filters.toDate) {
-        query.createdAt.$lte = filters.toDate;
-      }
+      if (filters.fromDate) query.createdAt.$gte = filters.fromDate;
+      if (filters.toDate) query.createdAt.$lte = filters.toDate;
     }
 
+    // ----------------------------
+    // 2️⃣ Expirar facturas vencidas
+    // ----------------------------
+    const now = new Date();
+
+    await Invoice.updateMany(
+      { status: 'pending', expiresAt: { $lte: now } },
+      { $set: { status: 'expired' } }
+    );
+
+    // Si quieres limitarlo solo al usuario filtrado (mejor práctica):
+    // await Invoice.updateMany(
+    //   {
+    //     status: 'pending',
+    //     expiresAt: { $lte: now },
+    //     ...(filters.userId && { userId: new mongoose.Types.ObjectId(filters.userId) })
+    //   },
+    //   { $set: { status: 'expired' } }
+    // );
+
+    // ----------------------------
+    // 3️⃣ Traer los datos actualizados
+    // ----------------------------
     const skip = (page - 1) * limit;
     const total = await Invoice.countDocuments(query);
     const invoices = await Invoice.find(query)
@@ -293,6 +313,7 @@ class InvoiceService {
       currentPage: page
     };
   }
+
 
   /**
    * Obtiene facturas pendientes de un usuario

@@ -546,7 +546,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
           {isVideo && videoCoverImages[index] && (
             <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 shadow-lg">
               <CheckCircle className="h-3 w-3" />
-              Preview
+              Portada
             </div>
           )}
 
@@ -599,7 +599,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                 title={isPreviewImage ? "Imagen de portada actual" : "Seleccionar como imagen de portada"}
               >
                 <Star className={`h-4 w-4 mr-1 ${isPreviewImage ? 'fill-white' : ''}`} />
-                {isPreviewImage ? 'Portada' : 'Preview'}
+                {isPreviewImage && 'Portada'}
               </Button>
             )}
 
@@ -613,7 +613,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                 title={videoCoverImages[index] ? "Cambiar imagen de portada del video" : "Seleccionar imagen de portada para video"}
               >
                 <Upload className="h-4 w-4 mr-1" />
-                {videoCoverImages[index] ? 'Cambiar' : 'Preview'}
+                {videoCoverImages[index] ? 'Cambiar' : 'Portada'}
               </Button>
             )}
           </div>
@@ -752,7 +752,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                 >
                   <Upload className="h-4 w-4 mr-1" />
                   <span className="text-xs">
-                    {videoCoverImages[index] ? 'Cambiar' : 'Preview'}
+                    {videoCoverImages[index] ? 'Cambiar' : 'Portada'}
                   </span>
                 </Button>
               </>

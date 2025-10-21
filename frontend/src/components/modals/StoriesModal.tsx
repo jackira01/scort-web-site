@@ -45,13 +45,21 @@ const StoriesModal = ({
   const [currentStoryIndex, setCurrentStoryIndex] = useState(initialStoryIndex);
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [orientation, setOrientation] = useState<'horizontal' | 'vertical'>('vertical');
+  const [imageSize, setImageSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
+
+  useEffect(() => {
+    if (imageSize.w && imageSize.h) {
+      setOrientation(imageSize.w > imageSize.h ? 'horizontal' : 'vertical');
+    }
+  }, [imageSize]);
 
   const currentProfile = profiles[currentProfileIndex];
   const currentStory = currentProfile?.stories[currentStoryIndex];
   const storyDuration = 5000; // 5 segundos por historia
 
   useEffect(() => {
-    if (!isOpen || isPaused) return;
+    if (!isOpen || isPaused) return; // 🔒 No avanzar si está pausado
 
     const interval = setInterval(() => {
       setProgress((prev) => {
@@ -130,8 +138,8 @@ const StoriesModal = ({
         ))}
       </div>
 
-      {/* Header */}
-      <div className="absolute top-8 left-4 right-4 flex items-center justify-between z-10">
+      {/* HEADER */}
+      <div className="absolute top-8 left-4 right-4 flex items-center justify-between z-20 story-header-buttons">
         <div className="flex items-center space-x-3">
           <Avatar className="h-10 w-10 border-2 border-white">
             <AvatarImage
@@ -146,72 +154,115 @@ const StoriesModal = ({
             </AvatarFallback>
           </Avatar>
           <div>
-            <p className="text-white font-semibold text-sm">
-              {currentProfile.name}
-            </p>
+            <p className="text-white font-semibold text-sm">{currentProfile.name}</p>
             <p className="text-white/70 text-xs">{currentStory.timestamp}</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+
+        {/* BOTONES PAUSAR / CERRAR */}
+        <div className="flex items-center space-x-3">
           <Button
             variant="ghost"
-            size="sm"
+            size="lg"
             onClick={() => setIsPaused(!isPaused)}
-            className="text-white hover:bg-white/20"
+            className="text-white bg-black/40 hover:bg-black/60 rounded-full p-3 transition-transform hover:scale-110"
           >
             {isPaused ? (
-              <Play className="h-5 w-5" />
+              <Play className="h-6 w-6" />
             ) : (
-              <Pause className="h-5 w-5" />
+              <Pause className="h-6 w-6" />
             )}
           </Button>
           <Button
             variant="ghost"
-            size="sm"
+            size="lg"
             onClick={onClose}
-            className="text-white hover:bg-white/20"
+            className="text-white bg-black/40 hover:bg-black/60 rounded-full p-3 transition-transform hover:scale-110"
           >
-            <X className="h-5 w-5" />
+            <X className="h-6 w-6" />
           </Button>
         </div>
       </div>
 
-      {/* Navigation areas */}
-      <div className="absolute inset-0 flex">
-        {/* Left half - previous story */}
+      {/* NAVIGATION AREAS */}
+      <div className="absolute inset-0 flex z-10">
+        {/* Área izquierda - historia anterior */}
         <div
-          className="flex-1 cursor-pointer flex items-center justify-start pl-4"
-          onClick={prevStory}
-        >
-          {(currentStoryIndex > 0 || currentProfileIndex > 0) && (
-            <ChevronLeft className="h-8 w-8 text-white/50 hover:text-white transition-colors" />
-          )}
-        </div>
+          className="flex-1 cursor-pointer"
+          onClick={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('.story-header-buttons')) return;
+            prevStory();
+          }}
+        />
 
-        {/* Right half - next story */}
+        {/* Área derecha - historia siguiente */}
         <div
-          className="flex-1 cursor-pointer flex items-center justify-end pr-4"
-          onClick={nextStory}
-        >
-          <ChevronRight className="h-8 w-8 text-white/50 hover:text-white transition-colors" />
+          className="flex-1 cursor-pointer"
+          onClick={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('.story-header-buttons')) return;
+            nextStory();
+          }}
+        />
+      </div>
+
+      {/* FLECHAS DE NAVEGACIÓN (solo visuales, no bloquean clics) */}
+      <div
+        className={`absolute inset-0 flex items-center px-6 z-20 pointer-events-none ${currentStoryIndex > 0 || currentProfileIndex > 0
+            ? 'justify-between'
+            : 'justify-end'
+          }`}
+      >
+        {/* Flecha izquierda (solo si hay historia anterior) */}
+        {(currentStoryIndex > 0 || currentProfileIndex > 0) && (
+          <div className="bg-black/50 hover:bg-black/70 backdrop-blur-sm p-3 rounded-full transition-transform hover:scale-110 pointer-events-auto">
+            <ChevronLeft
+              className="h-10 w-10 text-white cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                prevStory();
+              }}
+            />
+          </div>
+        )}
+
+        {/* Flecha derecha */}
+        <div className="bg-black/50 hover:bg-black/70 backdrop-blur-sm p-3 rounded-full transition-transform hover:scale-110 pointer-events-auto">
+          <ChevronRight
+            className="h-10 w-10 text-white cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              nextStory();
+            }}
+          />
         </div>
       </div>
 
+
       {/* Story content */}
-      <div className="relative w-full max-w-md h-full max-h-[80vh] flex items-center justify-center">
+      <div className="relative w-full h-full max-h-[90vh] flex items-center justify-center overflow-hidden">
         {currentStory.type === 'image' ? (
           <Image
             src={currentStory.link}
             alt="Historia"
-            width={400}
-            height={600}
-            className="w-full h-auto max-h-full object-contain rounded-lg"
+            width={1200}
+            height={800}
             priority
+            className={`max-w-full h-auto rounded-lg transition-all duration-300 ${orientation === 'horizontal'
+              ? 'object-cover max-h-[90vh]'
+              : 'object-contain max-h-[90vh]'
+              }`}
+            onLoad={(e) => {
+              const img = e.currentTarget as HTMLImageElement;
+              // Guardamos dimensiones, no cambiamos estado directo
+              setImageSize({ w: img.naturalWidth, h: img.naturalHeight });
+            }}
           />
         ) : (
           <video
             src={currentStory.link}
-            className="w-full h-auto max-h-full rounded-lg"
+            className="max-w-full h-auto max-h-[90vh] rounded-lg object-contain"
             autoPlay
             muted
             onEnded={nextStory}

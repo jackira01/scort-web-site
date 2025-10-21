@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useCookieConsent, CookiePreferences } from '@/contexts/CookieConsentContext';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Shield, BarChart3, Target, Mail, Database, Cookie } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useCookieConsent, CookiePreferences } from "@/contexts/CookieConsentContext";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { ChevronDown, ChevronUp, Cookie } from "lucide-react";
 
-const CookieConsentModal: React.FC = () => {
+const CookieConsentBanner: React.FC = () => {
   const { showModal, preferences, acceptAll, savePreferences } = useCookieConsent();
+  const [expanded, setExpanded] = useState(false);
+  const [openDetails, setOpenDetails] = useState<string | null>(null);
   const [localPreferences, setLocalPreferences] = useState<CookiePreferences>({
     essential: true,
     analytics: false,
@@ -19,161 +19,153 @@ const CookieConsentModal: React.FC = () => {
   });
 
   useEffect(() => {
-    if (preferences) {
-      setLocalPreferences(preferences);
-    }
+    if (preferences) setLocalPreferences(preferences);
   }, [preferences]);
 
   const handleToggle = (category: keyof CookiePreferences) => {
-    // No permitir cambiar las categorías obligatorias
-    if (category === 'essential' || category === 'email') return;
-    
-    setLocalPreferences(prev => ({
+    if (category === "essential" || category === "email") return;
+    setLocalPreferences((prev) => ({
       ...prev,
-      [category]: !prev[category]
+      [category]: !prev[category],
     }));
   };
 
   const handleSavePreferences = () => {
     savePreferences(localPreferences);
+    setExpanded(false);
   };
 
   if (!showModal) return null;
 
   const categories = [
     {
-      key: 'essential' as keyof CookiePreferences,
-      title: 'Cookies Esenciales',
-      description: 'Necesarias para el funcionamiento básico del sitio, incluyendo autenticación y sesiones.',
-      icon: Shield,
+      key: "essential" as keyof CookiePreferences,
+      label: "Esenciales",
       required: true,
-      details: 'Incluye cookies de NextAuth para login, cookies de sesión y funcionalidades básicas de seguridad.'
+      description: "Necesarias para el funcionamiento básico del sitio.",
+      details:
+        "Incluye cookies de autenticación, de sesión y de seguridad que garantizan que el sitio funcione correctamente.",
     },
     {
-      key: 'email' as keyof CookiePreferences,
-      title: 'Notificaciones por Email',
-      description: 'Obligatorias para notificaciones de seguridad y noticias importantes.',
-      icon: Mail,
-      required: true,
-      details: 'Necesarias para enviarte alertas de seguridad, actualizaciones importantes y comunicaciones críticas.'
+      key: "analytics" as keyof CookiePreferences,
+      label: "Analítica",
+      description: "Nos ayudan a entender cómo usas el sitio para mejorarlo.",
+      details:
+        "Google Analytics y herramientas similares para analizar el tráfico, rendimiento y comportamiento de usuarios.",
     },
     {
-      key: 'analytics' as keyof CookiePreferences,
-      title: 'Analítica',
-      description: 'Nos ayudan a entender cómo usas el sitio para mejorarlo.',
-      icon: BarChart3,
-      required: false,
-      details: 'Google Analytics y herramientas similares para analizar el tráfico y comportamiento de usuarios.'
+      key: "marketing" as keyof CookiePreferences,
+      label: "Marketing y Seguimiento",
+      description: "Permiten personalizar anuncios y contenido relevante.",
+      details:
+        "Incluye herramientas como Facebook Pixel o Google Ads para mostrar contenido adaptado a tus intereses.",
     },
     {
-      key: 'marketing' as keyof CookiePreferences,
-      title: 'Marketing y Seguimiento',
-      description: 'Para personalizar anuncios y contenido relevante.',
-      icon: Target,
-      required: false,
-      details: 'Facebook Pixel, Google Ads y otras herramientas de marketing para mostrar contenido personalizado.'
+      key: "storage" as keyof CookiePreferences,
+      label: "Almacenamiento Local",
+      description: "Para guardar tus preferencias en tu navegador.",
+      details:
+        "Usa LocalStorage o SessionStorage para recordar tus configuraciones y mejorar tu experiencia.",
     },
-    {
-      key: 'storage' as keyof CookiePreferences,
-      title: 'Almacenamiento Local',
-      description: 'Para guardar preferencias y estado temporal en tu navegador.',
-      icon: Database,
-      required: false,
-      details: 'LocalStorage y SessionStorage para mantener tus preferencias y mejorar la experiencia de usuario.'
-    }
   ];
 
+  const toggleDetails = (key: string) => {
+    setOpenDetails((prev) => (prev === key ? null : key));
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Cookie className="h-12 w-12 text-primary" />
+    <div className="fixed bottom-0 inset-x-0 z-50 p-4 sm:p-6">
+      <div className="max-w-4xl mx-auto bg-white dark:bg-neutral-900 rounded-2xl shadow-lg border border-border p-4 sm:p-5 flex flex-col gap-3 sm:gap-4 transition-all">
+        {/* Header */}
+        <div className="flex items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Cookie className="h-6 w-6 text-primary" />
+            <div>
+              <h2 className="font-semibold text-base sm:text-lg">Usamos cookies</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Utilizamos cookies esenciales y opcionales para mejorar tu experiencia.
+              </p>
+            </div>
           </div>
-          <CardTitle className="text-2xl font-bold">
-            Configuración de Cookies
-          </CardTitle>
-          <CardDescription className="text-base">
-            Respetamos tu privacidad. Elige qué tipos de cookies quieres permitir.
-            Algunas son esenciales para el funcionamiento del sitio.
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent className="space-y-6">
-          {categories.map((category, index) => {
-            const IconComponent = category.icon;
-            const isEnabled = localPreferences[category.key];
-            
-            return (
-              <div key={category.key}>
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 mt-1">
-                    <IconComponent className="h-5 w-5 text-primary" />
-                  </div>
-                  
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold flex items-center gap-2">
-                          {category.title}
-                          {category.required && (
-                            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                              Obligatorio
-                            </span>
-                          )}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {category.description}
-                        </p>
-                      </div>
-                      
-                      <Switch
-                        checked={isEnabled}
-                        onCheckedChange={() => handleToggle(category.key)}
-                        disabled={category.required}
-                        className="ml-4"
-                      />
-                    </div>
-                    
-                    <p className="text-xs text-muted-foreground">
-                      {category.details}
-                    </p>
-                  </div>
-                </div>
-                
-                {index < categories.length - 1 && <Separator />}
-              </div>
-            );
-          })}
-          
-          <div className="pt-6 space-y-3">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button 
-                onClick={acceptAll}
-                className="flex-1"
-                size="lg"
-              >
-                Aceptar Todas
+
+          {!expanded && (
+            <div className="hidden sm:flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setExpanded(true)}>
+                Configurar
               </Button>
-              
-              <Button 
-                onClick={handleSavePreferences}
-                variant="outline"
-                className="flex-1"
-                size="lg"
-              >
-                Guardar Preferencias
+              <Button size="sm" onClick={acceptAll}>
+                Aceptar todas
               </Button>
             </div>
-            
-            <p className="text-xs text-center text-muted-foreground">
-              Puedes cambiar estas preferencias en cualquier momento desde la configuración.
-            </p>
+          )}
+        </div>
+
+        {/* Configuración expandida */}
+        {expanded && (
+          <div className="space-y-3 border-t border-border pt-3">
+            {categories.map((cat) => (
+              <div key={cat.key} className="py-1 border-b border-border/60 last:border-0">
+                <div className="flex justify-between items-center">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{cat.label}</span>
+                    <p className="text-xs text-muted-foreground">{cat.description}</p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => toggleDetails(cat.key)}
+                      className="h-6 w-6 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {openDetails === cat.key ? (
+                        <ChevronUp className="h-4 w-4 mx-auto" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 mx-auto" />
+                      )}
+                    </button>
+
+                    <Switch
+                      checked={localPreferences[cat.key]}
+                      onCheckedChange={() => handleToggle(cat.key)}
+                      disabled={cat.required}
+                    />
+                  </div>
+                </div>
+
+                {/* Detalle desplegable (sin framer-motion) */}
+                <div
+                  className={`transition-all duration-300 overflow-hidden ${openDetails === cat.key ? "max-h-24 opacity-100 mt-2" : "max-h-0 opacity-0"
+                    }`}
+                >
+                  <p className="text-xs text-muted-foreground">{cat.details}</p>
+                </div>
+              </div>
+            ))}
+
+            <div className="flex gap-2 pt-2">
+              <Button size="sm" className="flex-1" onClick={handleSavePreferences}>
+                Guardar
+              </Button>
+              <Button size="sm" variant="outline" className="flex-1" onClick={acceptAll}>
+                Aceptar todas
+              </Button>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        )}
+
+        {/* Footer botones (solo mobile) */}
+        {!expanded && (
+          <div className="flex sm:hidden gap-2 pt-2">
+            <Button size="sm" variant="outline" className="flex-1" onClick={() => setExpanded(true)}>
+              Configurar
+            </Button>
+            <Button size="sm" className="flex-1" onClick={acceptAll}>
+              Aceptar todas
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-export default CookieConsentModal;
+export default CookieConsentBanner;
