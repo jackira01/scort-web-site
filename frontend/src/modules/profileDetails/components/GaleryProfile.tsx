@@ -42,7 +42,7 @@ export const ProfileGallery = ({
                 <h3 className="text-md font-semibold text-green-800 dark:text-green-200 mb-1">
                   La identidad del usuario ha sido confirmada
                 </h3>
-        
+
               </div>
             </div>
             <button

@@ -40,7 +40,7 @@ export const useFilterOptionsQuery = (): UseFilterOptionsQueryReturn => {
     queryKey: ['filter-options'],
     queryFn: async () => {
       const response = await getFilterOptions();
-      
+
       if (response.success && response.data) {
         // Validar que categories sea un array
         const validatedData = {
@@ -96,7 +96,7 @@ export const useDepartmentsQuery = () => {
     queryFn: async () => {
       // Usar datos locales de Colombia ordenados alfabéticamente
       const departments = getAllDepartments();
-      return departments.sort((a, b) => a.label.localeCompare(b.label, 'es', { sensitivity: 'base' }));
+      return departments
     },
     staleTime: 10 * 60 * 1000, // 10 minutos para departamentos (cambian poco)
     gcTime: 30 * 60 * 1000, // 30 minutos
@@ -112,7 +112,7 @@ export const useCitiesByDepartmentQuery = (departmentId?: string) => {
       if (!departmentId) {
         return [];
       }
-      
+
       // Usar datos locales de Colombia para obtener ciudades del departamento específico
       const cities = getCitiesByDepartment(departmentId);
       // Las ciudades ya vienen ordenadas alfabéticamente desde getCitiesByDepartment

@@ -3,11 +3,9 @@
 import Loader from '@/components/Loader';
 import { useProfile } from '@/hooks/use-profile';
 import { ProfileGallery } from '@/modules/profileDetails/components/GaleryProfile';
-import { Shield, CheckCircle } from 'lucide-react';
 import { useProfileVerification } from '@/hooks/use-profile-verification';
 import { useSession } from 'next-auth/react';
 
-// Mock data for the profile
 import AudioPlayer from './AudioPlayer';
 import AvailabilityProfile from './AvailabilityProfile';
 import { DescriptionProfile } from './DescriptionProfile';
@@ -21,13 +19,11 @@ import VideoPlayer from './VideoPlayer';
 export default function ProfileDetailLayout({ id }: { id: string }) {
   const { data: session } = useSession();
   const { data: profile, isLoading, error } = useProfile(id);
-
-  // Obtener datos de verificación por separado
-  const { data: verification, isLoading: isVerificationLoading } = useProfileVerification(id);
+  const { data: verification } = useProfileVerification(id);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <Loader />
       </div>
     );
@@ -35,55 +31,45 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Perfil no encontrado
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            El perfil que buscas no existe o ha sido eliminado.
-          </p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Perfil no encontrado</h2>
+          <p className="text-gray-600 dark:text-gray-400">El perfil que buscas no existe o ha sido eliminado.</p>
         </div>
       </div>
     );
   }
 
-  // Control de acceso basado en visibilidad y ownership
   const isAdmin = session?.user?.role === 'admin';
   const isOwner = session?.user?.id === profile.user?._id;
   const isVisible = profile.visible;
 
-  // Si el perfil no es visible y el usuario no es admin ni propietario, denegar acceso
   if (!isVisible && !isAdmin && !isOwner) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Perfil no disponible
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Este perfil no está disponible públicamente.
-          </p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Perfil no disponible</h2>
+          <p className="text-gray-600 dark:text-gray-400">Este perfil no está disponible públicamente.</p>
         </div>
       </div>
     );
   }
 
-  // Adaptar los datos del perfil de la API al formato esperado por los componentes
   const adaptedProfileData = {
     id: profile._id,
     name: profile.name,
     age: parseInt(profile.age),
-    location: `${profile.location?.country?.label || profile.location?.country || ''}, ${profile.location?.department?.label || profile.location?.department || ''}, ${profile.location?.city?.label || profile.location?.city || ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ','),
+    location: `${profile.location?.country?.label || profile.location?.country || ''}, ${profile.location?.department?.label || profile.location?.department || ''}, ${profile.location?.city?.label || profile.location?.city || ''}`
+      .replace(/^,\s*|,\s*$/g, '')
+      .replace(/,\s*,/g, ','),
     category: profile.features?.find((feature: any) => feature.groupName === 'Categoría')?.value || 'ESCORT',
     verified: profile.verification?.verificationStatus === 'verified',
-    online: true,
     description: profile.description,
     images: profile.media?.gallery || ['/placeholder.svg?height=400&width=600'],
     videos: profile.media?.videos || [],
-    services: profile.services || [], // Mantenemos para compatibilidad hacia atrás
-    basicServices: profile.basicServices || [], // Nuevos campos de clasificación
-    additionalServices: profile.additionalServices || [], // Nuevos campos de clasificación
+    services: profile.services || [],
+    basicServices: profile.basicServices || [],
+    additionalServices: profile.additionalServices || [],
     physicalTraits: {
       edad: profile.age?.toString() || '',
       ...Object.fromEntries(
@@ -92,19 +78,13 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
           Array.isArray(feature.value) ? feature.value.join(', ') : feature.value
         ])
       ),
-      ubicacion: `${profile.location?.department?.label || profile.location?.department || ''}, ${profile.location?.city?.label || profile.location?.city || ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ','),
+      ubicacion: `${profile.location?.department?.label || profile.location?.department || ''}, ${profile.location?.city?.label || profile.location?.city || ''}`
+        .replace(/^,\s*|,\s*$/g, '')
+        .replace(/,\s*,/g, ','),
       altura: profile.height ? `${profile.height} cm` : '',
     },
     rates: profile.rates || [],
-    availability: profile.availability || {
-      monday: '9:00 AM - 11:00 PM',
-      tuesday: '9:00 AM - 11:00 PM',
-      wednesday: '9:00 AM - 11:00 PM',
-      thursday: '9:00 AM - 11:00 PM',
-      friday: '24 horas',
-      saturday: '24 horas',
-      sunday: '2:00 PM - 10:00 PM',
-    },
+    availability: profile.availability || {},
     contact: {
       number: profile.contact?.number || '',
       whatsapp: profile.contact?.whatsapp || false,
@@ -117,73 +97,71 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
       facebook: profile.socialMedia?.facebook || null,
       tiktok: profile.socialMedia?.tiktok || null,
     },
-    videoUrl: '/placeholder-video.mp4',
-  };
-  // Función para hacer scroll a la sección de verificaciones
-  const scrollToVerifications = () => {
-    const verificationSection = document.getElementById('verification-section');
-    if (verificationSection) {
-      verificationSection.scrollIntoView({ behavior: 'smooth' });
-    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
+        {/* Grid: principal primero en DOM (galería > header/social en mobile), sidebar después */}
         <div className="grid grid-cols-1 lg:grid-cols-7 gap-8">
-          {/* Left Section - 80% */}
+
+          {/* === Contenido principal (GALERÍA + contenido) - debe ir PRIMERO en el DOM === */}
           <div className="lg:col-span-5 space-y-8">
-            {/* Gallery Section */}
-            <ProfileGallery 
-              {...adaptedProfileData} 
+            {/* 1) GALERÍA siempre primero */}
+            <ProfileGallery
+              {...adaptedProfileData}
               isIdentityVerified={verification?.data?.steps?.documentPhotos?.isVerified || false}
             />
-            {/* Description and Services */}
+
+            {/* 2) HEADER + REDES en MOBILE: se muestran debajo de la galería en pantallas pequeñas */}
+            <div className="block lg:hidden space-y-4 px-0">
+              <ProfielHeader
+                name={adaptedProfileData.name}
+                age={adaptedProfileData.age}
+                category={adaptedProfileData.category}
+              />
+              <SocialMediaProfile
+                contact={adaptedProfileData.contact}
+                socialMedia={adaptedProfileData.socialMedia}
+              />
+            </div>
+
+            {/* 3) Resto del contenido */}
             <DescriptionProfile
               description={adaptedProfileData.description}
               services={adaptedProfileData.services}
               basicServices={adaptedProfileData.basicServices}
               additionalServices={adaptedProfileData.additionalServices}
             />
-            {/* Rates - Moved from right side */}
+
             <RatesProfile rates={adaptedProfileData.rates} />
-            {/* Verification Status */}
+
             <div id="verification-section">
               <VerificationStatus profileId={id} />
             </div>
           </div>
-          {/* Right Section - 20% */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Profile Header */}
-            <ProfielHeader
-              name={adaptedProfileData.name}
-              age={adaptedProfileData.age}
-              category={adaptedProfileData.category}
-            />
 
-            {/* Social Media Buttons */}
-            <SocialMediaProfile
-              contact={adaptedProfileData.contact}
-              socialMedia={adaptedProfileData.socialMedia}
-            />
+          {/* === Sidebar (HEADER + REDES para desktop + resto de widgets) - va SEGUNDO en DOM === */}
+          <aside className="lg:col-span-2 space-y-6">
+            {/* Header + redes en desktop */}
+            <div className="hidden lg:block space-y-4">
+              <ProfielHeader
+                name={adaptedProfileData.name}
+                age={adaptedProfileData.age}
+                category={adaptedProfileData.category}
+              />
+              <SocialMediaProfile
+                contact={adaptedProfileData.contact}
+                socialMedia={adaptedProfileData.socialMedia}
+              />
+            </div>
 
-            {/* Physical Traits */}
-            <PhysicalTraitsProfile
-              physicalTraits={adaptedProfileData.physicalTraits}
-            />
-
-            {/* Video Player */}
+            <PhysicalTraitsProfile physicalTraits={adaptedProfileData.physicalTraits} />
             <VideoPlayer videos={adaptedProfileData.videos} />
-
-            {/* Audio Player */}
             <AudioPlayer audios={profile.media?.audios || []} />
-
-            {/* Availability */}
-            <AvailabilityProfile
-              availability={adaptedProfileData.availability}
-            />
-          </div>
+            <AvailabilityProfile availability={adaptedProfileData.availability} />
+          </aside>
         </div>
       </div>
     </div>
