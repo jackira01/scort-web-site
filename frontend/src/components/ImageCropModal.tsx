@@ -135,7 +135,7 @@ export function ImageCropModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Crop className="h-5 w-5" />
@@ -234,17 +234,31 @@ export function ImageCropModal({
           </div>
         </div>
 
-        <DialogFooter className="flex justify-between">
-          <Button variant="outline" onClick={resetCrop}>
+        <DialogFooter
+          className="
+      mt-4 
+      flex flex-col-reverse items-center gap-3 
+      sm:flex-row sm:justify-between sm:items-center
+    "
+        >
+          {/* Botón de reiniciar (en móviles debajo, en desktop a la izquierda) */}
+          <Button variant="outline" onClick={resetCrop} className="w-full sm:w-auto">
             Restablecer
           </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose}>
+
+          {/* Botones principales */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto justify-center">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="w-full sm:w-auto"
+            >
               Cancelar
             </Button>
             <Button
               onClick={handleCropImage}
               disabled={!croppedAreaPixels || isProcessing}
+              className="w-full sm:w-auto"
             >
               {isProcessing ? 'Procesando...' : 'Aplicar recorte'}
             </Button>

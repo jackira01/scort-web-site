@@ -77,8 +77,9 @@ export default function UploadStoryModal({
             const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
             if (file.size > maxSize) {
                 toast.error(
-                    `El archivo es demasiado grande. Máximo ${isVideo ? '50MB' : '10MB'}`,
+                    `El archivo es demasiado grande. El máximo permitido es de ${isVideo ? '50 MB para videos' : '10 MB para imágenes'}.`
                 );
+
                 return;
             }
 
@@ -140,9 +141,9 @@ export default function UploadStoryModal({
             if (videoFiles.length > 0) {
                 toast.loading('Subiendo videos...');
                 const videoResults = await uploadMultipleVideos(videoFiles);
-                const videoStories = videoResults.map((result) => ({ 
-                    link: result.link, 
-                    type: 'video' as const 
+                const videoStories = videoResults.map((result) => ({
+                    link: result.link,
+                    type: 'video' as const
                 }));
                 uploadedStories = [...uploadedStories, ...videoStories];
                 toast.dismiss();

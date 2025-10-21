@@ -158,7 +158,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       const planName = selectedPlan?.name || 'tu plan actual';
       const typeLabel = type === 'photos' ? 'fotos' : type === 'videos' ? 'videos' : 'audios';
 
-      toast.error(
+      toast(
         `Límite alcanzado: ${planName} permite máximo ${limits[type]} ${typeLabel}. Actualmente tienes ${currentFiles.length}.`,
         { duration: 5000 }
       );
@@ -183,7 +183,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       (file) => !validTypes[type].includes(file.type),
     );
     if (invalidFiles.length > 0) {
-      toast.error(`Tipo de archivo no válido para ${type}`);
+      toast(`Tipo de archivo no válido para ${type}`);
       return;
     }
 
@@ -195,7 +195,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
         (file) => file.size > maxSize,
       );
       if (oversizedFiles.length > 0) {
-        toast.error(`Archivo muy grande. Máximo 10MB por archivo de ${type}`);
+        toast(`Archivo muy grande. Máximo 10MB por archivo de ${type}`);
         return;
       }
     }
@@ -213,7 +213,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       if (processedCount > 0) {
         toast.success(`${processedCount} imagen(es) agregada(s) y procesada(s) exitosamente.`);
       } else if (fileArray.length > 0) {
-        toast.error('No se pudieron procesar las imágenes seleccionadas.');
+        toast('No se pudieron procesar las imágenes seleccionadas.');
       }
     } else {
       // Para videos y audios, agregar directamente
@@ -457,7 +457,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     // Validar que sea una imagen
     const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!validImageTypes.includes(file.type)) {
-      toast.error('Solo se permiten archivos de imagen (JPG, PNG, WEBP)');
+      toast('Solo se permiten archivos de imagen (JPG, PNG, WEBP)');
       return;
     }
 

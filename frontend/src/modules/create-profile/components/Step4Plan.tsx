@@ -9,11 +9,15 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useFormContext } from '../context/FormContext';
 
 import { usePlans } from '@/hooks/usePlans';
 import { useConfigValue } from '@/hooks/use-config-parameters';
-import { Loader, CheckCircle, AlertCircle, Image, Video, Music, Users, Star, Crown, Gem, Shield, Zap } from 'lucide-react';
+import { useValidateCoupon } from '@/hooks/use-coupons';
+import { couponService } from '@/services/coupon.service';
+import { Loader, CheckCircle, AlertCircle, Image, Video, Music, Users, Star, Crown, Gem, Shield, Zap, Ticket } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Plan {
@@ -62,6 +66,14 @@ export function Step4Plan() {
     }
     return false;
   });
+  
+  // Estados para el manejo de cupones
+  const [showCouponInput, setShowCouponInput] = useState<boolean>(false);
+  const [couponCode, setCouponCode] = useState<string>('');
+  const [validatedCoupon, setValidatedCoupon] = useState<any>(null);
+  
+  // Hook para validar cupón
+  const validateCouponMutation = useValidateCoupon();
 
   // Verificar si el usuario es administrador
   const isAdmin = session?.user?.role === 'admin';
@@ -216,6 +228,53 @@ export function Step4Plan() {
     );
   }
 
+  // Función para validar cupón
+  const handleValidateCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error('Ingresa un código de cupón válido');
+      return;
+    }
+
+    try {
+      // Usar directamente el servicio de cupones para validar en el frontend
+      const result = await couponService.validateCouponForFrontend(couponCode);
+      
+      if (result.success && result.data) {
+        setValidatedCoupon(result.data);
+        toast.success('Cupón válido aplicado');
+        
+        // Si el cupón es de tipo asignación de plan, seleccionar automáticamente ese plan
+        if (result.data.type === 'plan_assignment' && result.data.planCode) {
+          const assignedPlan = plans.find(p => p.code === result.data.planCode);
+          if (assignedPlan) {
+            setSelectedPlanId(assignedPlan._id);
+            handlePlanChange(assignedPlan._id);
+          }
+        }
+      } else {
+        toast.error(result.message || 'Cupón inválido');
+        setValidatedCoupon(null);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Error al validar el cupón');
+    }
+  };
+
+  // Función para limpiar el cupón
+  const handleClearCoupon = () => {
+    setCouponCode('');
+    setValidatedCoupon(null);
+  };
+
+  // Filtrar planes según el cupón validado
+  const filteredPlans = validatedCoupon 
+    ? validatedCoupon.type === 'plan_assignment' 
+      ? plans.filter(plan => plan.code === validatedCoupon.planCode)
+      : validatedCoupon.applicablePlans && validatedCoupon.applicablePlans.length > 0
+        ? plans.filter(plan => validatedCoupon.applicablePlans.includes(plan._id))
+        : plans
+    : plans;
+
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <div className="flex items-center space-x-3 mb-6">
@@ -226,7 +285,84 @@ export function Step4Plan() {
       </div>
 
       <div className="space-y-6">
-
+        {/* Sección de Cupón */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-lg border border-purple-200/50 dark:border-purple-800/50">
+          <div className="flex items-center space-x-2 mb-3">
+            <Ticket className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <h3 className="text-sm font-semibold text-purple-800 dark:text-purple-200">
+              ¿Tienes un cupón?
+            </h3>
+          </div>
+          
+          {!showCouponInput && !validatedCoupon ? (
+            <div className="flex space-x-2">
+              <Button 
+                onClick={() => setShowCouponInput(true)}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 text-sm font-medium"
+              >
+                Tengo un cupón
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => setShowCouponInput(false)}
+                className="text-sm font-medium"
+              >
+                No tengo un cupón
+              </Button>
+            </div>
+          ) : validatedCoupon ? (
+            <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                    Cupón aplicado: {validatedCoupon.code}
+                  </p>
+                  <p className="text-xs text-green-700 dark:text-green-400">
+                    {validatedCoupon.type === 'percentage' && `${validatedCoupon.value}% de descuento`}
+                    {validatedCoupon.type === 'fixed_amount' && `$${validatedCoupon.value.toLocaleString()} de descuento`}
+                    {validatedCoupon.type === 'plan_assignment' && `Asigna plan ${validatedCoupon.planCode}`}
+                  </p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleClearCoupon}
+                  className="h-8 w-8 p-0"
+                >
+                  <AlertCircle className="h-4 w-4 text-red-500" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex space-x-2">
+              <Input
+                type="text"
+                placeholder="Ingresa tu código"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                className="flex-1 text-sm bg-white dark:bg-gray-800 border-purple-200 dark:border-purple-700 focus:border-purple-500 dark:focus:border-purple-400"
+                maxLength={50}
+              />
+              <Button
+                onClick={handleValidateCoupon}
+                disabled={!couponCode.trim() || validateCouponMutation.isPending}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 text-sm font-medium"
+              >
+                {validateCouponMutation.isPending ? 'Validando...' : 'Canjear cupón'}
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setShowCouponInput(false);
+                  setCouponCode('');
+                }}
+                className="text-sm font-medium"
+              >
+                Cancelar
+              </Button>
+            </div>
+          )}
+        </div>
 
         {/* Selección de Plan */}
         <div>
@@ -237,6 +373,7 @@ export function Step4Plan() {
             key={`plan-${selectedPlanId}`}
             value={selectedPlanId} 
             onValueChange={handlePlanChange}
+            disabled={validatedCoupon?.type === 'plan_assignment'}
           >
             <SelectTrigger className={`w-full ${errors.selectedPlan ? 'border-red-500' : ''}`}>
               <SelectValue 
@@ -245,7 +382,7 @@ export function Step4Plan() {
               />
             </SelectTrigger>
             <SelectContent>
-              {plans.map((plan) => (
+              {filteredPlans.map((plan) => (
                 <SelectItem key={plan._id} value={plan._id}>
                   <div className="flex items-center justify-between w-full">
                     <span>{plan.name}</span>
@@ -262,6 +399,11 @@ export function Step4Plan() {
           {errors.selectedPlan && (
             <p className="text-red-500 text-sm mt-1">
               {errors.selectedPlan.message}
+            </p>
+          )}
+          {validatedCoupon?.type === 'plan_assignment' && (
+            <p className="text-green-600 text-sm mt-1">
+              El plan ha sido seleccionado automáticamente según el cupón aplicado
             </p>
           )}
         </div>

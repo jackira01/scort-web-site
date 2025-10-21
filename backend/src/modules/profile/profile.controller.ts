@@ -377,8 +377,10 @@ export const getAllProfilesForAdmin = async (req: AuthRequest, res: Response) =>
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const fields = req.query.fields as string;
+    const userId = req.query.userId as string;
 
-    const result = await service.getAllProfilesForAdmin(page, limit, fields);
+
+    const result = await service.getAllProfilesForAdmin(page, limit, fields, userId);
 
     res.json({
       success: true,

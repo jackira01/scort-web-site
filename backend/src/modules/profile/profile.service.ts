@@ -1829,22 +1829,40 @@ export const getDeletedProfiles = async (page: number = 1, limit: number = 10): 
 /**
  * Obtener todos los perfiles para el adminboard (incluye activos e inactivos)
  */
-export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 10, fields?: string): Promise<{ docs: IProfile[]; totalDocs: number; limit: number; page: number; totalPages: number; hasNextPage: boolean; hasPrevPage: boolean; nextPage: number | null; prevPage: number | null; pagingCounter: number }> => {
+export const getAllProfilesForAdmin = async (
+  page: number = 1,
+  limit: number = 10,
+  fields?: string,
+  userId?: string // 👈 Nuevo parámetro
+): Promise<{
+  docs: IProfile[];
+  totalDocs: number;
+  limit: number;
+  page: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  nextPage: number | null;
+  prevPage: number | null;
+  pagingCounter: number;
+}> => {
   const skip = (page - 1) * limit;
-  let query = ProfileModel.find({}); // Sin filtro de isActive para incluir todos
+
+  // 👇 Si se envía userId, filtramos por él
+  const filter: any = {};
+  if (userId) filter.user = userId;
+
+  let query = ProfileModel.find(filter); // 👈 aquí aplicamos el filtro
 
   if (fields) {
-    // Normalizar "fields" para aceptar listas separadas por coma y garantizar dependencias de campos computados
     const cleaned = fields.split(',').map(f => f.trim()).filter(Boolean);
 
-    // Si se solicita 'featured', asegurar que 'upgrades' esté disponible para calcularlo
     const needsFeatured = cleaned.includes('featured');
     const hasUpgrades = cleaned.includes('upgrades') || cleaned.some(f => f.startsWith('upgrades'));
     if (needsFeatured && !hasUpgrades) {
       cleaned.push('upgrades.code', 'upgrades.startAt', 'upgrades.endAt');
     }
 
-    // Si se solicita 'isVerified' o 'verification', asegurar que 'verification' esté seleccionado para poder popular y calcular
     const needsIsVerified = cleaned.includes('isVerified') || cleaned.includes('verification');
     if (needsIsVerified && !cleaned.includes('verification')) {
       cleaned.push('verification');
@@ -1868,38 +1886,40 @@ export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 1
       path: 'features.group_id',
       select: 'name label',
     })
-    .sort({ updatedAt: -1 }) // Ordenar por fecha de actualización
+    .sort({ updatedAt: -1 })
     .skip(skip)
     .limit(limit)
     .lean();
 
   const now = new Date();
   const profiles = rawProfiles.map(profile => {
-    // Calcular estado de verificación basado en campos individuales
     let isVerified = false;
     if (profile.verification) {
       const verification = profile.verification as any;
       const verifiedCount = Object.values(verification).filter(status => status === 'verified').length;
       const totalFields = Object.keys(verification).length;
-
       if (verifiedCount === totalFields && totalFields > 0) {
         isVerified = true;
       }
     }
 
-    const featured = profile.upgrades?.some(upgrade =>
-      (upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT') &&
-      new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
-    ) || false;
+    const featured =
+      profile.upgrades?.some(
+        (upgrade: any) =>
+          (upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT') &&
+          new Date(upgrade.startAt) <= now &&
+          new Date(upgrade.endAt) > now
+      ) || false;
 
     return {
       ...profile,
       isVerified,
-      featured
+      featured,
     };
   }) as unknown as IProfile[];
 
-  const total = await ProfileModel.countDocuments({}); // Contar todos los perfiles
+  // 👇 Contar solo los que cumplan el filtro
+  const total = await ProfileModel.countDocuments(filter);
 
   const totalPages = Math.ceil(total / limit);
   const hasNextPage = page < totalPages;
@@ -1921,3 +1941,4 @@ export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 1
     pagingCounter,
   };
 };
+

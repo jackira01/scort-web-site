@@ -28,7 +28,7 @@ export const getProfilesWithStories = async (page: number = 1, limit: number = 1
   return response.data;
 };
 
-export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 10, fields?: string) => {
+export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 10, fields?: string, userId?: string) => {
   const params: Record<string, string | number> = {
     page,
     limit
@@ -36,6 +36,10 @@ export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 1
   
   if (fields) {
     params.fields = fields;
+  }
+  
+  if (userId) {
+    params.userId = userId;
   }
   
   const response = await axios.get(`${API_URL}/api/profile/admin/all`, {

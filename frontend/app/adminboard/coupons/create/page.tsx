@@ -152,7 +152,7 @@ export default function CreateCouponPage() {
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" onClick={() => router.back()}>
+        <Button variant="outline" onClick={() => router.push('/adminboard/coupons')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Volver
         </Button>
