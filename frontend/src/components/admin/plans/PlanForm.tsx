@@ -28,7 +28,6 @@ interface PlanFormProps {
 interface FormData {
   code: string;
   name: string;
-  description: string;
   level: number;
   isActive: boolean;
   features: PlanFeatures;
@@ -46,7 +45,6 @@ const defaultVariant: PlanVariant = {
 const defaultFormData: FormData = {
   code: '',
   name: '',
-  description: '',
   level: 1,
   isActive: true,
   features: {
@@ -72,28 +70,27 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
 
   const createPlanMutation = useCreatePlan();
   const updatePlanMutation = useUpdatePlan();
-  
+
   // Cargar todos los upgrades disponibles
-  const { data: upgradesData, isLoading: upgradesLoading, error: upgradesError } = useUpgrades({ 
-    active: true, 
+  const { data: upgradesData, isLoading: upgradesLoading, error: upgradesError } = useUpgrades({
+    active: true,
     limit: 100 // Usar el límite máximo permitido por el backend
   });
 
   useEffect(() => {
     if (plan && mode === 'edit') {
       // Asegurar que cada variante tenga la estructura correcta
-      const normalizedVariants = plan.variants.length > 0 
+      const normalizedVariants = plan.variants.length > 0
         ? plan.variants.map((variant, index) => ({
-            price: variant.price || 0,
-            days: variant.days || 30,
-            durationRank: variant.durationRank || index + 1,
-          }))
+          price: variant.price || 0,
+          days: variant.days || 30,
+          durationRank: variant.durationRank || index + 1,
+        }))
         : [{ ...defaultVariant }];
 
       const initialData = {
         code: plan.code,
         name: plan.name,
-        description: '',
         level: plan.level,
         isActive: plan.isActive,
         features: plan.features || {
@@ -110,7 +107,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
         includedUpgrades: plan.includedUpgrades || [],
         variants: normalizedVariants,
       };
-      
+
       setFormData(initialData);
       setOriginalFormData(JSON.parse(JSON.stringify(initialData))); // Deep copy
     } else {
@@ -127,7 +124,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
   const handleVariantChange = (index: number, field: keyof PlanVariant, value: any) => {
     setFormData(prev => ({
       ...prev,
-      variants: prev.variants.map((variant, i) => 
+      variants: prev.variants.map((variant, i) =>
         i === index ? { ...variant, [field]: value } : variant
       ),
     }));
@@ -174,12 +171,12 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
       toast.error('Debe haber al menos una variante');
       return;
     }
-    
+
     setFormData(prev => ({
       ...prev,
       variants: prev.variants.filter((_, i) => i !== index),
     }));
-    
+
     if (activeVariantIndex >= formData.variants.length - 1) {
       setActiveVariantIndex(Math.max(0, formData.variants.length - 2));
     }
@@ -189,24 +186,24 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
 
   const addUpgrade = () => {
     if (!newUpgrade.trim()) return;
-    
+
     // Validar que el upgrade existe en la lista de upgrades disponibles
     const availableUpgrades = upgradesData?.upgrades || [];
-    const upgradeExists = availableUpgrades.some(upgrade => 
+    const upgradeExists = availableUpgrades.some(upgrade =>
       upgrade.code === newUpgrade.trim() || upgrade._id === newUpgrade.trim()
     );
-    
+
     if (!upgradeExists) {
       toast.error('El código de upgrade no existe');
       return;
     }
-    
+
     // Validar que no esté ya incluido
     if (formData.includedUpgrades.includes(newUpgrade.trim())) {
       toast.error('Este upgrade ya está incluido');
       return;
     }
-    
+
     setFormData(prev => ({
       ...prev,
       includedUpgrades: [...prev.includedUpgrades, newUpgrade.trim()]
@@ -227,15 +224,15 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
     // Función auxiliar para comparación profunda
     const deepEqual = (obj1: any, obj2: any): boolean => {
       if (obj1 === obj2) return true;
-      
+
       if (obj1 == null || obj2 == null) return obj1 === obj2;
-      
+
       if (typeof obj1 !== typeof obj2) return false;
-      
+
       if (typeof obj1 !== 'object') return obj1 === obj2;
-      
+
       if (Array.isArray(obj1) !== Array.isArray(obj2)) return false;
-      
+
       if (Array.isArray(obj1)) {
         if (obj1.length !== obj2.length) return false;
         for (let i = 0; i < obj1.length; i++) {
@@ -243,20 +240,20 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
         }
         return true;
       }
-      
+
       const keys1 = Object.keys(obj1);
       const keys2 = Object.keys(obj2);
-      
+
       if (keys1.length !== keys2.length) return false;
-      
+
       for (const key of keys1) {
         if (!keys2.includes(key)) return false;
         if (!deepEqual(obj1[key], obj2[key])) return false;
       }
-      
+
       return true;
     };
-    
+
     return !deepEqual(formData, originalFormData);
   };
 
@@ -274,7 +271,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
       toast.error('Debe haber al menos una variante');
       return false;
     }
-    
+
     for (let i = 0; i < formData.variants.length; i++) {
       const variant = formData.variants[i];
       if (variant.price < 0) {
@@ -286,26 +283,26 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
         return false;
       }
     }
-    
+
     // Validar upgrades incluidos
     if (formData.includedUpgrades.length > 0) {
       const availableUpgrades = upgradesData?.upgrades || [];
-      const invalidUpgrades = formData.includedUpgrades.filter(upgradeCode => 
+      const invalidUpgrades = formData.includedUpgrades.filter(upgradeCode =>
         !availableUpgrades.some(upgrade => upgrade.code === upgradeCode)
       );
-      
+
       if (invalidUpgrades.length > 0) {
         toast.error(`Los siguientes upgrades no existen: ${invalidUpgrades.join(', ')}`);
         return false;
       }
     }
-    
+
     // Validación específica para modo edición: verificar si hay cambios
     if (mode === 'edit' && !hasFormChanges()) {
       toast.error('No se han realizado cambios en el plan');
       return false;
     }
-    
+
     return true;
   };
 
@@ -313,11 +310,11 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
     if (!validateForm()) {
       return;
     }
-    
+
     const loadingToastId = toast.loading(
       mode === 'create' ? 'Creando plan...' : 'Actualizando plan...'
     );
-    
+
     try {
       if (mode === 'create') {
         const createData: CreatePlanRequest = {
@@ -344,17 +341,17 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
         };
         await updatePlanMutation.mutateAsync(updateData);
       }
-      
+
       toast.dismiss(loadingToastId);
       toast.success(
         mode === 'create' ? 'Plan creado correctamente' : 'Plan actualizado correctamente'
       );
-      
+
       setTimeout(() => onClose(), 1000);
-      
+
     } catch (error) {
       toast.dismiss(loadingToastId);
-      
+
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       toast.error(`Error al guardar: ${errorMessage}`);
     }
@@ -400,18 +397,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
                   />
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="description">Descripción *</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Descripción del plan..."
-                  rows={3}
-                />
-              </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="level">Nivel de Visibilidad</Label>
@@ -431,7 +417,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
                     </SelectContent>
                   </Select>
                   <p className="text-sm text-muted-foreground">
-                    El nivel determina la prioridad de visibilidad en los resultados de búsqueda. 
+                    El nivel determina la prioridad de visibilidad en los resultados de búsqueda.
                     Nivel 1 (DIAMANTE) = máxima visibilidad, Nivel 5 (AMATISTA) = mínima visibilidad.
                     Los upgrades como IMPULSO pueden mejorar temporalmente la posición.
                   </p>
@@ -468,7 +454,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
                     onCheckedChange={(checked) => handleFeatureChange('showInHome', checked)}
                   />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label htmlFor="showInFilters">Mostrar en Filtros</Label>
@@ -482,7 +468,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
                     onCheckedChange={(checked) => handleFeatureChange('showInFilters', checked)}
                   />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label htmlFor="showInSponsored">Mostrar en Patrocinados</Label>
@@ -543,85 +529,85 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
             </CardContent>
           </Card>
 
-           {/* Upgrades Incluidos */}
-           <Card>
-             <CardHeader>
-               <CardTitle className="text-lg">Upgrades Incluidos</CardTitle>
-             </CardHeader>
-             <CardContent>
-               <div className="space-y-4">
-                 {/* Selector de upgrades disponibles */}
-                 <div className="space-y-2">
-                   <Label>Agregar Upgrade</Label>
-                   <div className="flex gap-2">
-                     <Select value={newUpgrade} onValueChange={setNewUpgrade}>
-                       <SelectTrigger className="flex-1">
-                         <SelectValue placeholder={
-                           upgradesLoading 
-                             ? "Cargando upgrades..." 
-                             : upgradesError 
-                               ? "Error cargando upgrades" 
-                               : upgradesData?.upgrades?.length === 0 
-                                 ? "No hay upgrades disponibles"
-                                 : "Selecciona un upgrade..."
-                         } />
-                       </SelectTrigger>
-                       <SelectContent>
-                         {upgradesData?.upgrades
-                           ?.filter(upgrade => !formData.includedUpgrades.includes(upgrade.code))
-                           .map((upgrade) => (
-                             <SelectItem key={upgrade._id || upgrade.code} value={upgrade.code}>
-                               <div className="flex flex-col">
-                                 <span className="font-mono text-sm">{upgrade.code}</span>
-                                 <span className="text-xs text-muted-foreground">{upgrade.name}</span>
-                               </div>
-                             </SelectItem>
-                           ))}
-                       </SelectContent>
-                     </Select>
-                     <Button 
-                       onClick={() => addUpgrade()} 
-                       size="sm" 
-                       disabled={!newUpgrade || upgradesLoading}
-                     >
-                       <Plus className="h-4 w-4" />
-                     </Button>
-                   </div>
-                 </div>
-                 
-                 {/* Lista de upgrades incluidos */}
-                 <div className="space-y-2">
-                   <Label>Upgrades Seleccionados ({formData.includedUpgrades.length})</Label>
-                   <div className="flex flex-wrap gap-2">
-                     {formData.includedUpgrades.map((upgradeCode, index) => {
-                       const upgrade = upgradesData?.upgrades?.find(u => u.code === upgradeCode);
-                       return (
-                         <Badge key={index} variant="outline" className="flex items-center gap-2 p-2">
-                           <div className="flex flex-col items-start">
-                             <span className="font-mono text-xs">{upgradeCode}</span>
-                             {upgrade && (
-                               <span className="text-xs text-muted-foreground">{upgrade.name}</span>
-                             )}
-                           </div>
-                           <span
-                             className="h-4 w-4 p-0 inline-flex items-center justify-center rounded hover:bg-destructive/10 cursor-pointer"
-                             onClick={() => removeUpgrade(index)}
-                           >
-                             <X className="h-3 w-3" />
-                           </span>
-                         </Badge>
-                       );
-                     })}
-                   </div>
-                   {formData.includedUpgrades.length === 0 && (
-                     <p className="text-sm text-muted-foreground">No hay upgrades incluidos en este plan</p>
-                   )}
-                 </div>
-               </div>
-             </CardContent>
-           </Card>
- 
-           {/* Variantes */}
+          {/* Upgrades Incluidos */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Upgrades Incluidos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Selector de upgrades disponibles */}
+                <div className="space-y-2">
+                  <Label>Agregar Upgrade</Label>
+                  <div className="flex gap-2">
+                    <Select value={newUpgrade} onValueChange={setNewUpgrade}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder={
+                          upgradesLoading
+                            ? "Cargando upgrades..."
+                            : upgradesError
+                              ? "Error cargando upgrades"
+                              : upgradesData?.upgrades?.length === 0
+                                ? "No hay upgrades disponibles"
+                                : "Selecciona un upgrade..."
+                        } />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {upgradesData?.upgrades
+                          ?.filter(upgrade => !formData.includedUpgrades.includes(upgrade.code))
+                          .map((upgrade) => (
+                            <SelectItem key={upgrade._id || upgrade.code} value={upgrade.code}>
+                              <div className="flex flex-col">
+                                <span className="font-mono text-sm">{upgrade.code}</span>
+                                <span className="text-xs text-muted-foreground">{upgrade.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={() => addUpgrade()}
+                      size="sm"
+                      disabled={!newUpgrade || upgradesLoading}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Lista de upgrades incluidos */}
+                <div className="space-y-2">
+                  <Label>Upgrades Seleccionados ({formData.includedUpgrades.length})</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.includedUpgrades.map((upgradeCode, index) => {
+                      const upgrade = upgradesData?.upgrades?.find(u => u.code === upgradeCode);
+                      return (
+                        <Badge key={index} variant="outline" className="flex items-center gap-2 p-2">
+                          <div className="flex flex-col items-start">
+                            <span className="font-mono text-xs">{upgradeCode}</span>
+                            {upgrade && (
+                              <span className="text-xs text-muted-foreground">{upgrade.name}</span>
+                            )}
+                          </div>
+                          <span
+                            className="h-4 w-4 p-0 inline-flex items-center justify-center rounded hover:bg-destructive/10 cursor-pointer"
+                            onClick={() => removeUpgrade(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </span>
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                  {formData.includedUpgrades.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No hay upgrades incluidos en este plan</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Variantes */}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">

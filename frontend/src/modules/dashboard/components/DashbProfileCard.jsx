@@ -274,6 +274,24 @@ export const DashbProfileCard = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
+                  <Link href={`/cuenta/editar-perfil/${profile._id}`}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="p-2 hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500 transition-all duration-200"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Editar perfil</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <Button
                     size="sm"
                     variant="destructive"

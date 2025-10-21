@@ -19,11 +19,11 @@ class CouponService {
    */
   async createCoupon(data: CreateCouponInput): Promise<ICoupon> {
     const response = await axios.post<CouponResponse>(this.baseUrl, data);
-    
+
     if (!response.data.success) {
       throw new Error(response.data.message || 'Error al crear cupón');
     }
-    
+
     return response.data.data as ICoupon;
   }
 
@@ -32,11 +32,11 @@ class CouponService {
    */
   async getCouponById(id: string): Promise<ICoupon> {
     const response = await axios.get<CouponResponse>(`${this.baseUrl}/${id}`);
-    
+
     if (!response.data.success) {
       throw new Error(response.data.message || 'Error al obtener cupón');
     }
-    
+
     return response.data.data as ICoupon;
   }
 
@@ -53,7 +53,7 @@ class CouponService {
     };
   }> {
     const params = new URLSearchParams();
-    
+
     Object.entries(query).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
         params.append(key, value.toString());
@@ -63,11 +63,11 @@ class CouponService {
     const response = await axios.get<CouponResponse>(
       `${this.baseUrl}?${params.toString()}`
     );
-    
+
     if (!response.data.success) {
       throw new Error(response.data.message || 'Error al obtener cupones');
     }
-    
+
     return {
       data: response.data.data as ICoupon[],
       pagination: response.data.pagination!
@@ -79,11 +79,11 @@ class CouponService {
    */
   async updateCoupon(id: string, data: UpdateCouponInput): Promise<ICoupon> {
     const response = await axios.put<CouponResponse>(`${this.baseUrl}/${id}`, data);
-    
+
     if (!response.data.success) {
       throw new Error(response.data.message || 'Error al actualizar cupón');
     }
-    
+
     return response.data.data as ICoupon;
   }
 
@@ -92,7 +92,7 @@ class CouponService {
    */
   async deleteCoupon(id: string): Promise<void> {
     const response = await axios.delete<CouponResponse>(`${this.baseUrl}/${id}`);
-    
+
     if (!response.data.success) {
       throw new Error(response.data.message || 'Error al eliminar cupón');
     }
@@ -106,14 +106,14 @@ class CouponService {
       const response = await axios.get<CouponResponse>(`${this.baseUrl}/validate/${code}`, {
         params: planCode ? { planCode } : {}
       });
-      
+
       if (!response.data.success) {
         return {
           isValid: false,
           error: response.data.message || 'Cupón no válido'
         };
       }
-      
+
       // Transformar la respuesta del backend al formato esperado
       const couponData = response.data.data as ICoupon;
       return {
@@ -153,7 +153,7 @@ class CouponService {
       const response = await axios.post(`${this.baseUrl}/validate-frontend`, {
         code: code.trim().toUpperCase()
       });
-      
+
       if (!response.data.success) {
         return {
           success: false,
@@ -185,7 +185,7 @@ class CouponService {
         createdAt: '',
         updatedAt: ''
       };
-      
+
       return {
         success: true,
         message: response.data.message || 'Cupón válido',
@@ -204,8 +204,8 @@ class CouponService {
    * Aplicar cupón y calcular descuento (Público)
    */
   async applyCoupon(
-    code: string, 
-    originalPrice: number, 
+    code: string,
+    originalPrice: number,
     planCode?: string,
     variantDays?: number
   ): Promise<CouponApplicationResult> {
@@ -239,7 +239,7 @@ class CouponService {
         `${this.baseUrl}/apply`,
         requestBody
       );
-      
+
       console.log('📥 [FRONTEND COUPON SERVICE] Respuesta recibida:', {
         status: response.status,
         statusText: response.statusText,
@@ -247,7 +247,7 @@ class CouponService {
         data: response.data.data,
         message: response.data.message
       });
-      
+
       if (!response.data.success) {
         console.log('⚠️ [FRONTEND COUPON SERVICE] Aplicación falló:', response.data.message);
         return {
@@ -259,7 +259,7 @@ class CouponService {
           error: response.data.message || 'Error al aplicar cupón'
         };
       }
-      
+
       const data = response.data.data as {
         originalPrice: number;
         finalPrice: number;
@@ -288,7 +288,7 @@ class CouponService {
       if (error instanceof Error) {
         errorMessage = error.message;
       }
-      
+
       console.log('💥 [FRONTEND COUPON SERVICE] Error en aplicación:', {
         error: errorMessage,
         code,
@@ -312,11 +312,11 @@ class CouponService {
    */
   async getCouponStats(): Promise<CouponStats> {
     const response = await axios.get<CouponResponse>(`${this.baseUrl}/stats`);
-    
+
     if (!response.data.success) {
       throw new Error(response.data.message || 'Error al obtener estadísticas');
     }
-    
+
     return response.data.data as CouponStats;
   }
 

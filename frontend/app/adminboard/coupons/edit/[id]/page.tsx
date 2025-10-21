@@ -27,7 +27,7 @@ export default function EditCouponPage() {
   const router = useRouter();
   const params = useParams();
   const couponId = params.id as string;
-  
+
   const { data: coupon, isLoading: couponLoading, error: couponError } = useCoupon(couponId);
   const updateCouponMutation = useUpdateCoupon();
 
@@ -123,7 +123,7 @@ export default function EditCouponPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error('Por favor corrige los errores en el formulario');
       return;
@@ -136,7 +136,7 @@ export default function EditCouponPage() {
         id: couponId,
         data: state.formData
       });
-      
+
       toast.success('Cupón actualizado exitosamente');
       router.push('/adminboard/coupons');
     } catch (error: any) {
@@ -184,7 +184,7 @@ export default function EditCouponPage() {
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" onClick={() => router.back()}>
+        <Button variant="outline" onClick={() => router.push('/adminboard/coupons')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Volver
         </Button>
@@ -252,9 +252,9 @@ export default function EditCouponPage() {
                   id="type"
                   value={
                     coupon.type === 'percentage' ? 'Porcentaje' :
-                    coupon.type === 'fixed_amount' ? 'Monto Fijo' :
-                    coupon.type === 'plan_assignment' ? 'Asignación de Plan' :
-                    'Específico de Plan/Upgrade'
+                      coupon.type === 'fixed_amount' ? 'Monto Fijo' :
+                        coupon.type === 'plan_assignment' ? 'Asignación de Plan' :
+                          'Específico de Plan/Upgrade'
                   }
                   disabled
                   className="bg-muted"
@@ -277,6 +277,7 @@ export default function EditCouponPage() {
                   max={coupon.type === 'percentage' ? '100' : undefined}
                   step={coupon.type === 'percentage' ? '0.01' : '1'}
                   className={state.errors.value ? 'border-red-500' : ''}
+                  disabled={coupon.type === 'plan_assignment'}
                 />
                 {state.errors.value && (
                   <p className="text-sm text-red-500">{state.errors.value}</p>
@@ -287,8 +288,8 @@ export default function EditCouponPage() {
               <>
                 <div className="space-y-2">
                   <Label htmlFor="planCode">Plan a Asignar *</Label>
-                  <Select 
-                    value={state.formData.planCode || ''} 
+                  <Select
+                    value={state.formData.planCode || ''}
                     onValueChange={(value) => {
                       updateFormData('planCode', value);
                       // Reset variant days when plan changes
@@ -374,7 +375,7 @@ export default function EditCouponPage() {
                 <div className="space-y-2">
                   <Label>Upgrades Válidos</Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
-                    {state.plans.flatMap(plan => 
+                    {state.plans.flatMap(plan =>
                       plan.variants.map(variant => ({
                         id: `${plan._id}-${variant.days}`,
                         displayId: `${plan.code}-${variant.days}`,

@@ -509,6 +509,8 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
     const validation = validateStep(currentStep);
     if (validation.success) {
       setCurrentStep((prev) => Math.min(prev + 1, editSteps.length));
+      // Scroll al inicio del contenido
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {      // Validation errors
       toast.error('Por favor completa todos los campos requeridos');
     }

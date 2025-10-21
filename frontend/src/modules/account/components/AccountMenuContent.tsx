@@ -85,8 +85,8 @@ const AccountMenuContent = ({
       animate={isMobile ? "visible" : undefined}
       exit={isMobile ? "exit" : undefined}
       className={`${isMobile
-          ? 'fixed left-0 top-0 h-full w-80 z-40 bg-white dark:bg-gray-900 shadow-2xl overflow-y-auto md:hidden'
-          : 'w-80 space-y-2 animate-in slide-in-from-left-4 duration-500'
+        ? 'fixed left-0 top-0 h-full w-80 z-40 bg-white dark:bg-gray-900 shadow-2xl overflow-y-auto md:hidden'
+        : 'w-80 space-y-2 animate-in slide-in-from-left-4 duration-500'
         }`}
     >
       {isMobile && (
@@ -153,11 +153,10 @@ const AccountMenuContent = ({
           {/* Botón de Verificación/Administración de Datos */}
           <div className="mb-6">
             <Button
-              className={`w-full font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] ${
-                user?.isVerified 
-                  ? 'bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white'
-                  : 'bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white'
-              }`}
+              className={`w-full font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] ${user?.isVerified
+                ? 'bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white'
+                : 'bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white'
+                }`}
               onClick={() => setIsVerificationModalOpen(true)}
             >
               <ShieldCheck className="h-5 w-5 mr-2" />

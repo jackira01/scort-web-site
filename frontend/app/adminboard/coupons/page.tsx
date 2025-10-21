@@ -273,7 +273,7 @@ export default function CouponsPage() {
                           <div className="flex items-center gap-4 text-sm">
                             <span>Valor: <strong>{formatValue(coupon)}</strong></span>
                             <span>Usos: <strong>{coupon.currentUses}/{coupon.maxUses === -1 ? '∞' : coupon.maxUses}</strong></span>
-                            <span>Válido hasta: <strong>{new Date(coupon.validUntil).toLocaleDateString()}</strong></span>
+                            <span>Válido hasta: <strong>{new Date(new Date(coupon.validUntil).setDate(new Date(coupon.validUntil).getDate() - 1)).toLocaleDateString()}</strong></span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">

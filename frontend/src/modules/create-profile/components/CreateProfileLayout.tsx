@@ -196,7 +196,7 @@ export function CreateProfileLayout() {
             },
             age: ageValue && ageValue !== '' ? ageValue : undefined,
             skinColor: form.getValues('skinColor') || '',
-        eyeColor: form.getValues('eyeColor') || '',
+            eyeColor: form.getValues('eyeColor') || '',
             hairColor: form.getValues('hairColor') || '',
             bodyType: form.getValues('bodyType') || '',
             height: form.getValues('height') || '',
@@ -287,10 +287,10 @@ export function CreateProfileLayout() {
 
   const handleNext = async () => {
     try {
-
       const result = validateStep(currentStep);
 
       if (!result.success) {
+        console.error('❌ ERROR Step', currentStep, '- Validación fallida:', result.error.issues);
         setValidationErrors(result);
         toast.error('Por favor completa todos los campos requeridos');
         return;
@@ -298,7 +298,8 @@ export function CreateProfileLayout() {
 
       if (currentStep < 5) {
         setCurrentStep(currentStep + 1);
-      } else {
+        // Scroll al inicio del contenido
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } catch (error) {
       toast.error('Error inesperado en la validación');
@@ -308,6 +309,8 @@ export function CreateProfileLayout() {
   const handlePrevious = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+      // Scroll al inicio del contenido
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -446,8 +449,8 @@ export function CreateProfileLayout() {
 
   const handleCreateProfileClick = () => {
     const formData = form.getValues();
-    const hasPaidPlan = formData.selectedPlan && 
-      formData.selectedPlan.code !== 'FREE' && 
+    const hasPaidPlan = formData.selectedPlan &&
+      formData.selectedPlan.code !== 'FREE' &&
       formData.selectedPlan.price > 0;
 
     if (hasPaidPlan) {
@@ -544,7 +547,7 @@ export function CreateProfileLayout() {
           toast.loading('Subiendo audios...');
           const uploadedAudios = await uploadMultipleAudios(audioFiles);
           toast.dismiss();
-          
+
           const successfulAudios = uploadedAudios.filter(url => url !== null);
           toast.success(`${successfulAudios.length} audios subidos exitosamente`);
           audioUrls = [...audioUrls, ...uploadedAudios];
@@ -577,253 +580,253 @@ export function CreateProfileLayout() {
         fullMediaObject: backendData.media
       });
 
-  // Preparar purchasedPlan si se seleccionó un plan de pago
-  const purchasedPlan = data.selectedPlan && data.selectedVariant ? {
-    planCode: data.selectedPlan.code,
-    variantDays: data.selectedVariant.days,
-    generateInvoice: data.generateInvoice || false // Agregar el campo generateInvoice
-  } : null;
+      // Preparar purchasedPlan si se seleccionó un plan de pago
+      const purchasedPlan = data.selectedPlan && data.selectedVariant ? {
+        planCode: data.selectedPlan.code,
+        variantDays: data.selectedVariant.days,
+        generateInvoice: data.generateInvoice || false // Agregar el campo generateInvoice
+      } : null;
 
 
-  // Crear el perfil usando el servicio
-  const loadingToast = toast.loading('Creando perfil...');
-  try {
-    const response = await createProfile(backendData, purchasedPlan);
+      // Crear el perfil usando el servicio
+      const loadingToast = toast.loading('Creando perfil...');
+      try {
+        const response = await createProfile(backendData, purchasedPlan);
 
-    toast.dismiss(loadingToast);
+        toast.dismiss(loadingToast);
 
-    // Invalidar la query de userProfiles para refrescar los datos
-    if (session?.user?._id) {
-      await queryClient.invalidateQueries({
-        queryKey: ['userProfiles', session.user._id],
-      });
+        // Invalidar la query de userProfiles para refrescar los datos
+        if (session?.user?._id) {
+          await queryClient.invalidateQueries({
+            queryKey: ['userProfiles', session.user._id],
+          });
+        }
+
+        // Debug: Verificar si se creó el profileverification
+        try {
+          const { getProfileVerification } = await import('../../../services/user.service');
+          const verification = await getProfileVerification(response.profile._id);
+        } catch (verificationError) {
+          console.error('❌ Error al obtener ProfileVerification:', verificationError);
+        }
+
+        toast.success('Perfil creado exitosamente');
+
+        // Debug: Verificar la respuesta del backend
+
+        // Redirigir a la página de cuenta
+        router.push('/cuenta');
+
+        // Verificar si se requiere pago y hay mensaje de WhatsApp
+        if (response.paymentRequired && response.whatsAppMessage) {
+          const { companyNumber, message } = response.whatsAppMessage;
+          const whatsappUrl = `https://wa.me/${companyNumber}?text=${encodeURIComponent(message)}`;
+          // Abrir WhatsApp después de un pequeño delay para permitir la navegación
+          setTimeout(() => {
+            window.open(whatsappUrl, '_blank');
+          }, 1000);
+        } else {
+        }
+      } catch (profileError: unknown) {
+        toast.dismiss(loadingToast);
+
+        // Manejo específico de errores
+        const error = profileError as ApiError;
+        if (error?.response?.status === 409) {
+          const errorMessage = error?.response?.data?.message || 'Límite de perfiles excedido';
+          toast.error(errorMessage, {
+            duration: 6000
+          });
+        } else if (profileError?.response?.status === 400) {
+          toast.error('Datos del perfil inválidos. Revisa la información ingresada.');
+        } else if (profileError?.response?.status === 401) {
+          toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+          router.push('/login');
+        } else if (profileError?.response?.status >= 500) {
+          toast.error('Error del servidor. Inténtalo más tarde.');
+        } else {
+          toast.error('Error al crear perfil. Contacta con servicio al cliente.');
+        }
+      }
+    } catch (error) {
+      // Error uploading files
+      toast.error('Error al subir archivos. Inténtalo de nuevo.');
+    } finally {
+      setUploading(false);
     }
-
-    // Debug: Verificar si se creó el profileverification
-    try {
-      const { getProfileVerification } = await import('../../../services/user.service');
-      const verification = await getProfileVerification(response.profile._id);
-    } catch (verificationError) {
-      console.error('❌ Error al obtener ProfileVerification:', verificationError);
-    }
-
-    toast.success('Perfil creado exitosamente');
-
-    // Debug: Verificar la respuesta del backend
-
-    // Redirigir a la página de cuenta
-    router.push('/cuenta');
-
-    // Verificar si se requiere pago y hay mensaje de WhatsApp
-    if (response.paymentRequired && response.whatsAppMessage) {
-      const { companyNumber, message } = response.whatsAppMessage;
-      const whatsappUrl = `https://wa.me/${companyNumber}?text=${encodeURIComponent(message)}`;
-      // Abrir WhatsApp después de un pequeño delay para permitir la navegación
-      setTimeout(() => {
-        window.open(whatsappUrl, '_blank');
-      }, 1000);
-    } else {
-    }
-  } catch (profileError: unknown) {
-    toast.dismiss(loadingToast);
-
-    // Manejo específico de errores
-    const error = profileError as ApiError;
-    if (error?.response?.status === 409) {
-      const errorMessage = error?.response?.data?.message || 'Límite de perfiles excedido';
-      toast.error(errorMessage, {
-        duration: 6000
-      });
-    } else if (profileError?.response?.status === 400) {
-      toast.error('Datos del perfil inválidos. Revisa la información ingresada.');
-    } else if (profileError?.response?.status === 401) {
-      toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-      router.push('/login');
-    } else if (profileError?.response?.status >= 500) {
-      toast.error('Error del servidor. Inténtalo más tarde.');
-    } else {
-      toast.error('Error al crear perfil. Contacta con servicio al cliente.');
-    }
-  }
-} catch (error) {
-  // Error uploading files
-  toast.error('Error al subir archivos. Inténtalo de nuevo.');
-} finally {
-  setUploading(false);
-}
   };
 
-const renderStepContent = () => {
-  switch (currentStep) {
-    case 1:
-      return (
-        <Step1EssentialInfo
-          /* formData={formData} */
-          /* onChange={handleFormDataChange} */
-          genderGroup={groupMap.gender}
-          categoryGroup={groupMap.category}
-        />
-      );
-    case 2:
-      return <Step2Description serviceGroup={groupMap.services} />;
-    case 3:
-      return (
-        <Step3Details
-          skinGroup={groupMap.skin}
-          eyeGroup={groupMap.eyes}
-          hairGroup={groupMap.hair}
-          bodyGroup={groupMap.body}
-        />
-      );
-    case 4:
-      return <Step4Plan />; // Plan selection es paso 4
-    case 5:
-      return <Step5Multimedia />; // Multimedia es paso 5
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <Step1EssentialInfo
+            /* formData={formData} */
+            /* onChange={handleFormDataChange} */
+            genderGroup={groupMap.gender}
+            categoryGroup={groupMap.category}
+          />
+        );
+      case 2:
+        return <Step2Description serviceGroup={groupMap.services} />;
+      case 3:
+        return (
+          <Step3Details
+            skinGroup={groupMap.skin}
+            eyeGroup={groupMap.eyes}
+            hairGroup={groupMap.hair}
+            bodyGroup={groupMap.body}
+          />
+        );
+      case 4:
+        return <Step4Plan />; // Plan selection es paso 4
+      case 5:
+        return <Step5Multimedia />; // Multimedia es paso 5
 
-    default:
-      return null;
-  }
-};
+      default:
+        return null;
+    }
+  };
 
-if (isLoading) return <Loader />;
+  if (isLoading) return <Loader />;
 
-if (error) return <p>Error al cargar atributos</p>;
+  if (error) return <p>Error al cargar atributos</p>;
 
-return (
-  <FormProvider form={form} currentStep={currentStep}>
-    <div className="min-h-screen mb-20 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar - Guidelines */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-4">
-              <SidebarContent currentStep={currentStep} />
+  return (
+    <FormProvider form={form} currentStep={currentStep}>
+      <div className="min-h-screen mb-20 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Sidebar - Guidelines */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-24 space-y-4">
+                <SidebarContent currentStep={currentStep} />
+              </div>
             </div>
-          </div>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            <div className="bg-background rounded-xl shadow-sm border border-border p-8">
-              {renderStepContent()}
+            {/* Main Content */}
+            <div className="lg:col-span-3">
+              <div className="bg-background rounded-xl shadow-sm border border-border p-8">
+                {renderStepContent()}
 
-              {/* Navigation Buttons */}
-              <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
-                {currentStep === 1 ? (
-                  <Link href="/cuenta">
+                {/* Navigation Buttons */}
+                <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
+                  {currentStep === 1 ? (
+                    <Link href="/cuenta">
+                      <Button
+                        variant="outline"
+                        onClick={handlePrevious}
+                        className="hover:bg-muted/50 transition-colors duration-200"
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Volver
+                      </Button>
+                    </Link>
+                  ) : (
                     <Button
                       variant="outline"
                       onClick={handlePrevious}
+                      disabled={currentStep === 1}
                       className="hover:bg-muted/50 transition-colors duration-200"
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" />
-                      Volver
+                      Atrás
                     </Button>
-                  </Link>
-                ) : (
-                  <Button
-                    variant="outline"
-                    onClick={handlePrevious}
-                    disabled={currentStep === 1}
-                    className="hover:bg-muted/50 transition-colors duration-200"
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Atrás
-                  </Button>
-                )}
+                  )}
 
-                {currentStep === 5 ? (
-                  <Button
-                    className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold px-8"
-                    disabled={!acceptTerms || uploading}
-                    onClick={handleCreateProfileClick}
-                  >
-                    {uploading ? (
-                      <>
-                        <Loader className="h-4 w-4 mr-2 animate-spin" />
-                        Subiendo archivos...
-                      </>
-                    ) : (
-                      'Crear perfil'
-                    )}
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleNext}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                  >
-                    próximo
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                )}
+                  {currentStep === 5 ? (
+                    <Button
+                      className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold px-8"
+                      disabled={!acceptTerms || uploading}
+                      onClick={handleCreateProfileClick}
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader className="h-4 w-4 mr-2 animate-spin" />
+                          Subiendo archivos...
+                        </>
+                      ) : (
+                        'Crear perfil'
+                      )}
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleNext}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                    >
+                      próximo
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Progress Steps */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-center space-x-4">
-            {steps.map((step) => (
-              <div
-                key={step.id}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 ${currentStep === step.id
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                  : currentStep > step.id
-                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
-                    : 'bg-muted text-muted-foreground'
-                  }`}
-              >
-                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
-                  {currentStep > step.id ? (
-                    <CheckCircle className="h-3 w-3" />
-                  ) : (
-                    step.id
-                  )}
+        {/* Progress Steps */}
+        <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex justify-center space-x-4">
+              {steps.map((step) => (
+                <div
+                  key={step.id}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 ${currentStep === step.id
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                    : currentStep > step.id
+                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
+                      : 'bg-muted text-muted-foreground'
+                    }`}
+                >
+                  <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+                    {currentStep > step.id ? (
+                      <CheckCircle className="h-3 w-3" />
+                    ) : (
+                      step.id
+                    )}
+                  </div>
+                  <span className="hidden sm:block font-medium">
+                    {step.title}
+                  </span>
                 </div>
-                <span className="hidden sm:block font-medium">
-                  {step.title}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Modal de Confirmación */}
-      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>💎 Crear Perfil Premium</DialogTitle>
-            <DialogDescription>
-              Tienes 24 horas para completar el pago. Tu perfil estará visible si no superas el límite gratuito, de lo contrario permanecerá oculto hasta el pago.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowConfirmModal(false);
-                router.push('/cuenta');
-              }}
-              className="w-full sm:w-auto"
-            >
-              ⏰ Crear más tarde
-            </Button>
-            <Button
-              onClick={() => {
-                setShowConfirmModal(false);
-                form.handleSubmit(handleFinalSave)();
-              }}
-              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-            >
-              🚀 Crear y pagar ahora
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  </FormProvider>
-);
+        {/* Modal de Confirmación */}
+        <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>💎 Crear Perfil Premium</DialogTitle>
+              <DialogDescription>
+                Tienes 24 horas para completar el pago. Tu perfil estará visible si no superas el límite gratuito, de lo contrario permanecerá oculto hasta el pago.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  router.push('/cuenta');
+                }}
+                className="w-full sm:w-auto"
+              >
+                ⏰ Crear más tarde
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  form.handleSubmit(handleFinalSave)();
+                }}
+                className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                🚀 Crear y pagar ahora
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </FormProvider>
+  );
 }

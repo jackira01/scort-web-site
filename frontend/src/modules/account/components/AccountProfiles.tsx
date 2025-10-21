@@ -260,7 +260,8 @@ export default function AccountProfiles({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center place-items-center">
+
             {paginatedProfiles.map((profile, index) => (
               <Card
                 key={profile._id}
