@@ -122,7 +122,7 @@ const AccountMenuContent = ({
           </div>
 
           {/* Sección de Canjear Cupón */}
-          <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-lg border border-purple-200/50 dark:border-purple-800/50">
+          {/*           <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-lg border border-purple-200/50 dark:border-purple-800/50">
             <div className="flex items-center space-x-2 mb-3">
               <Ticket className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               <h3 className="text-sm font-semibold text-purple-800 dark:text-purple-200">
@@ -148,7 +148,7 @@ const AccountMenuContent = ({
                 {isRedeemingCoupon ? 'Validando...' : 'Canjear'}
               </Button>
             </div>
-          </div>
+          </div> */}
 
           {/* Botón de Verificación/Administración de Datos */}
           <div className="mb-6">
