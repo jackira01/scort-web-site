@@ -283,18 +283,6 @@ export function Step4Plan() {
           : plans
     : plans;
 
-  // DEBUG: Logging para verificar el filtrado de planes
-  console.group('🔍 DEBUG - Filtrado de Planes');
-  console.log('validatedCoupon:', validatedCoupon);
-  console.log('validatedCoupon.type:', validatedCoupon?.type);
-  console.log('validatedCoupon.validPlanIds:', validatedCoupon?.validPlanIds);
-  console.log('validatedCoupon.applicablePlans:', validatedCoupon?.applicablePlans);
-  console.log('Todos los planes disponibles:', plans.map(p => ({ _id: p._id, code: p.code, name: p.name })));
-  console.log('Planes filtrados:', filteredPlans.map(p => ({ _id: p._id, code: p.code, name: p.name })));
-  console.log('Total planes disponibles:', plans.length);
-  console.log('Total planes filtrados:', filteredPlans.length);
-  console.groupEnd();
-
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <div className="flex items-center space-x-3 mb-6">
