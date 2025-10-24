@@ -27,11 +27,18 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
 
   // Función para obtener la URL del preview
   const getPreviewUrl = (video: { link: string; preview: string } | string): string => {
-    return typeof video === 'string' ? '/placeholder.svg' : video.preview;
+    if (typeof video === 'string') {
+      return '/placeholder.svg';
+    }
+    // Si preview está vacío o undefined, usar placeholder
+    return video.preview && video.preview.trim() !== '' ? video.preview : '/placeholder.svg';
   };
 
   const currentVideoUrl = videos.length > 0 ? getVideoUrl(videos[currentVideoIndex]) : '';
   const currentPreviewUrl = videos.length > 0 ? getPreviewUrl(videos[currentVideoIndex]) : '/placeholder.svg';
+
+  // Debug: Log para verificar preview
+  // console.log('🎬 Video preview URL:', currentPreviewUrl);
 
   const handlePlayPause = () => {
     if (videoRef.current) {
@@ -105,22 +112,25 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
                 <p className="text-sm">Error al cargar el video</p>
               </div>
             ) : (
-              <video
-                ref={videoRef}
-                className="w-full h-full object-cover"
-                muted={isVideoMuted}
-                onEnded={handleVideoEnded}
-                onError={handleVideoError}
-                onLoadStart={handleVideoLoad}
-                poster={currentPreviewUrl}
-                preload="metadata"
-                crossOrigin="anonymous"
-              >
-                <source src={currentVideoUrl} type="video/mp4" />
-                <source src={currentVideoUrl} type="video/webm" />
-                <source src={currentVideoUrl} type="video/ogg" />
-                Tu navegador no soporta el elemento video.
-              </video>
+              <>
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-cover"
+                  muted={isVideoMuted}
+                  onEnded={handleVideoEnded}
+                  onError={handleVideoError}
+                  onLoadedData={handleVideoLoad}
+                  poster={currentPreviewUrl}
+                  preload="metadata"
+                  playsInline
+                  crossOrigin="anonymous"
+                >
+                  <source src={currentVideoUrl} type="video/mp4" />
+                  <source src={currentVideoUrl} type="video/webm" />
+                  <source src={currentVideoUrl} type="video/ogg" />
+                  Tu navegador no soporta el elemento video.
+                </video>
+              </>
             )}
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
               <div className="flex space-x-3">
@@ -191,11 +201,11 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
 
       {/* Modal para ver video en pantalla completa */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl w-full h-[80vh] p-0 bg-black border-0">
+        <DialogContent className="sm:max-w-[90vw] max-w-[95vw] w-full sm:max-h-[90vh] max-h-[85vh] p-0 bg-black border-0 flex items-center justify-center">
           <VisuallyHidden>
             <DialogTitle>Video Player Modal</DialogTitle>
           </VisuallyHidden>
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full max-h-[85vh] flex items-center justify-center">
             {videoError ? (
               <div className="w-full h-full flex flex-col items-center justify-center text-white bg-gray-800">
                 <div className="text-6xl mb-4">📹</div>
@@ -204,37 +214,38 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
               </div>
             ) : (
               <video
-                  ref={modalVideoRef}
-                  className="w-full h-full object-contain"
-                  muted={isVideoMuted}
-                  onEnded={handleModalVideoEnded}
-                  onError={handleVideoError}
-                  onLoadStart={handleVideoLoad}
-                  autoPlay
-                  controls
-                  preload="metadata"
-                  crossOrigin="anonymous"
-                >
-                  <source src={currentVideoUrl} type="video/mp4" />
-                  <source src={currentVideoUrl} type="video/webm" />
-                  <source src={currentVideoUrl} type="video/ogg" />
-                  Tu navegador no soporta el elemento video.
-                </video>
-             )}
-             {videos.length > 1 && (
-               <div className="absolute bottom-4 right-4 flex space-x-2">
-                 {videos.map((_, index) => (
-                   <button
-                     type="button"
-                     key={index}
-                     className={`w-3 h-3 rounded-full transition-colors duration-200 ${
-                       index === currentVideoIndex ? 'bg-white' : 'bg-white/50'
-                     }`}
-                     onClick={() => handleVideoChange(index)}
-                   />
-                 ))}
-               </div>
-             )}
+                ref={modalVideoRef}
+                className="max-w-full max-h-full object-contain"
+                muted={isVideoMuted}
+                onEnded={handleModalVideoEnded}
+                onError={handleVideoError}
+                onLoadedData={handleVideoLoad}
+                poster={currentPreviewUrl}
+                autoPlay
+                controls
+                preload="metadata"
+                playsInline
+                crossOrigin="anonymous"
+              >
+                <source src={currentVideoUrl} type="video/mp4" />
+                <source src={currentVideoUrl} type="video/webm" />
+                <source src={currentVideoUrl} type="video/ogg" />
+                Tu navegador no soporta el elemento video.
+              </video>
+            )}
+            {videos.length > 1 && (
+              <div className="absolute bottom-4 right-4 flex space-x-2">
+                {videos.map((_, index) => (
+                  <button
+                    type="button"
+                    key={index}
+                    className={`w-3 h-3 rounded-full transition-colors duration-200 ${index === currentVideoIndex ? 'bg-white' : 'bg-white/50'
+                      }`}
+                    onClick={() => handleVideoChange(index)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

@@ -66,12 +66,12 @@ export function Step4Plan() {
     }
     return false;
   });
-  
+
   // Estados para el manejo de cupones
   const [showCouponInput, setShowCouponInput] = useState<boolean>(false);
   const [couponCode, setCouponCode] = useState<string>('');
   const [validatedCoupon, setValidatedCoupon] = useState<any>(null);
-  
+
   // Hook para validar cupón
   const validateCouponMutation = useValidateCoupon();
 
@@ -105,15 +105,15 @@ export function Step4Plan() {
   useEffect(() => {
     const currentSelectedPlan = formData.selectedPlan;
     const currentSelectedVariant = formData.selectedVariant;
-    
+
     if (currentSelectedPlan && plans.length > 0) {
       // Si ya hay un plan seleccionado en el formulario, usar ese
       setSelectedPlanId(currentSelectedPlan._id);
-      
+
       // Encontrar el índice de la variante seleccionada
       const plan = plans.find(p => p._id === currentSelectedPlan._id);
       if (plan && currentSelectedVariant) {
-        const variantIndex = plan.variants.findIndex(v => 
+        const variantIndex = plan.variants.findIndex(v =>
           v.days === currentSelectedVariant.days && v.price === currentSelectedVariant.price
         );
         if (variantIndex !== -1) {
@@ -125,8 +125,8 @@ export function Step4Plan() {
 
   // Cargar plan por defecto al montar el componente (solo si no hay plan seleccionado)
   useEffect(() => {
-    if (defaultConfig?.enabled && defaultConfig.planId && plans.length > 0 && 
-        !hasShownDefaultPlanToast && !formData.selectedPlan) {
+    if (defaultConfig?.enabled && defaultConfig.planId && plans.length > 0 &&
+      !hasShownDefaultPlanToast && !formData.selectedPlan) {
       const defaultPlan = plans.find(plan => plan._id === defaultConfig.planId);
       if (defaultPlan) {
         setSelectedPlanId(defaultPlan._id);
@@ -199,7 +199,7 @@ export function Step4Plan() {
       });
 
       setValue('selectedVariant', plan.variants[0]);
-      
+
       // Actualizar el estado de generar factura en el formulario para administradores
       if (isAdmin) {
         setValue('generateInvoice', generateInvoice);
@@ -211,7 +211,7 @@ export function Step4Plan() {
     setSelectedVariantIndex(variantIndex);
     if (selectedPlan) {
       setValue('selectedVariant', selectedPlan.variants[variantIndex]);
-      
+
       // Actualizar el estado de generar factura en el formulario para administradores
       if (isAdmin) {
         setValue('generateInvoice', generateInvoice);
@@ -238,14 +238,19 @@ export function Step4Plan() {
     try {
       // Usar directamente el servicio de cupones para validar en el frontend
       const result = await couponService.validateCouponForFrontend(couponCode);
-      
+
       if (result.success && result.data) {
-        setValidatedCoupon(result.data);
+        const data = result.data;
+        setValidatedCoupon(data);
+
+        // Guardar el código del cupón en el formulario
+        setValue('couponCode', couponCode);
+
         toast.success('Cupón válido aplicado');
-        
+
         // Si el cupón es de tipo asignación de plan, seleccionar automáticamente ese plan
-        if (result.data.type === 'plan_assignment' && result.data.planCode) {
-          const assignedPlan = plans.find(p => p.code === result.data.planCode);
+        if (data.type === 'plan_assignment' && data.planCode) {
+          const assignedPlan = plans.find(p => p.code === data.planCode);
           if (assignedPlan) {
             setSelectedPlanId(assignedPlan._id);
             handlePlanChange(assignedPlan._id);
@@ -264,24 +269,27 @@ export function Step4Plan() {
   const handleClearCoupon = () => {
     setCouponCode('');
     setValidatedCoupon(null);
+    setValue('couponCode', ''); // Limpiar también del formulario
   };
 
   // Filtrar planes según el cupón validado
-  const filteredPlans = validatedCoupon 
-    ? validatedCoupon.type === 'plan_assignment' 
+  const filteredPlans = validatedCoupon
+    ? validatedCoupon.type === 'plan_assignment'
       ? plans.filter(plan => plan.code === validatedCoupon.planCode)
-      : validatedCoupon.applicablePlans && validatedCoupon.applicablePlans.length > 0
-        ? plans.filter(plan => validatedCoupon.applicablePlans.includes(plan._id))
-        : plans
+      : (validatedCoupon.validPlanIds && validatedCoupon.validPlanIds.length > 0)
+        ? plans.filter(plan => validatedCoupon.validPlanIds.includes(plan._id))
+        : (validatedCoupon.applicablePlans && validatedCoupon.applicablePlans.length > 0)
+          ? plans.filter(plan => validatedCoupon.applicablePlans.includes(plan._id))
+          : plans
     : plans;
 
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <div className="flex items-center space-x-3 mb-6">
         <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-          05
+          04
         </div>
-        <h2 className="text-2xl font-bold text-foreground">Finalizar</h2>
+        <h2 className="text-2xl font-bold text-foreground">Plan</h2>
       </div>
 
       <div className="space-y-6">
@@ -293,26 +301,26 @@ export function Step4Plan() {
               ¿Tienes un cupón?
             </h3>
           </div>
-          
+
           {!showCouponInput && !validatedCoupon ? (
-            <div className="flex space-x-2">
-              <Button 
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
                 onClick={() => setShowCouponInput(true)}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 text-sm font-medium"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 text-sm font-medium w-full sm:w-auto"
               >
                 Tengo un cupón
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => setShowCouponInput(false)}
-                className="text-sm font-medium"
+                className="text-sm font-medium w-full sm:w-auto"
               >
                 No tengo un cupón
               </Button>
             </div>
           ) : validatedCoupon ? (
             <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
                   <p className="text-sm font-medium text-green-800 dark:text-green-300">
                     Cupón aplicado: {validatedCoupon.code}
@@ -323,40 +331,40 @@ export function Step4Plan() {
                     {validatedCoupon.type === 'plan_assignment' && `Asigna plan ${validatedCoupon.planCode}`}
                   </p>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={handleClearCoupon}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 self-end sm:self-center"
                 >
                   <AlertCircle className="h-4 w-4 text-red-500" />
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="flex space-x-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 type="text"
                 placeholder="Ingresa tu código"
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                className="flex-1 text-sm bg-white dark:bg-gray-800 border-purple-200 dark:border-purple-700 focus:border-purple-500 dark:focus:border-purple-400"
+                className="flex-1 text-sm bg-white dark:bg-gray-800 border-purple-200 dark:border-purple-700 focus:border-purple-500 dark:focus:border-purple-400 w-full"
                 maxLength={50}
               />
               <Button
                 onClick={handleValidateCoupon}
                 disabled={!couponCode.trim() || validateCouponMutation.isPending}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 text-sm font-medium"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 text-sm font-medium w-full sm:w-auto"
               >
                 {validateCouponMutation.isPending ? 'Validando...' : 'Canjear cupón'}
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => {
                   setShowCouponInput(false);
                   setCouponCode('');
                 }}
-                className="text-sm font-medium"
+                className="text-sm font-medium w-full sm:w-auto"
               >
                 Cancelar
               </Button>
@@ -364,19 +372,20 @@ export function Step4Plan() {
           )}
         </div>
 
+
         {/* Selección de Plan */}
         <div>
           <Label className="text-foreground text-lg font-semibold mb-4 block">
             Plan de Membresía <span className="text-red-500">*</span>
           </Label>
-          <Select 
+          <Select
             key={`plan-${selectedPlanId}`}
-            value={selectedPlanId} 
+            value={selectedPlanId}
             onValueChange={handlePlanChange}
             disabled={validatedCoupon?.type === 'plan_assignment'}
           >
             <SelectTrigger className={`w-full ${errors.selectedPlan ? 'border-red-500' : ''}`}>
-              <SelectValue 
+              <SelectValue
                 placeholder="Selecciona un plan"
                 className={selectedPlanId ? 'text-foreground' : 'text-muted-foreground'}
               />
@@ -711,14 +720,14 @@ export function Step4Plan() {
                   }}
                 />
                 <div className="flex-1">
-                  <Label 
-                    htmlFor="generateInvoice" 
+                  <Label
+                    htmlFor="generateInvoice"
                     className="text-sm font-medium text-blue-900 dark:text-blue-100 cursor-pointer"
                   >
                     Generar factura para este plan
                   </Label>
                   <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                    {generateInvoice 
+                    {generateInvoice
                       ? 'Se generará una factura y el perfil estará inactivo hasta el pago'
                       : 'Se asignará el plan directamente sin generar factura (solo administradores)'
                     }

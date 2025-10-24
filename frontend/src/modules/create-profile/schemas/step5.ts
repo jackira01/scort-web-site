@@ -1,25 +1,12 @@
 import { z } from 'zod';
 
 export const step5Schema = z.object({
-  photos: z.array(z.string()).min(1, {
+  // photos puede ser array de strings (URLs) o Files
+  photos: z.array(z.union([z.string(), z.instanceof(File)])).min(1, {
     message: 'Debes subir al menos una foto para crear tu perfil',
   }),
   videos: z.array(z.any()).optional(),
   audios: z.array(z.any()).optional(),
-  selectedUpgrades: z.array(z.string()).optional(),
-  selectedPlan: z.object({
-    id: z.string(),
-    name: z.string(),
-    code: z.string(),
-    level: z.number(),
-  }).optional().refine((val) => val !== undefined, {
-    message: 'Debes seleccionar un plan',
-  }),
-  selectedVariant: z.object({
-    id: z.string(),
-    days: z.number(),
-    price: z.number(),
-  }).optional(),
   acceptTerms: z.boolean().refine((val) => val === true, {
     message: 'Debes aceptar los términos y condiciones',
   }),

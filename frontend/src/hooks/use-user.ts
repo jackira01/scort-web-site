@@ -66,3 +66,39 @@ export const usePaginatedUsers = (
     staleTime: 2 * 60 * 1000, // 2 minutos
   });
 };
+
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { deleteUser } = await import('@/services/user.service');
+      return deleteUser(userId);
+    },
+    onSuccess: () => {
+      // Invalidar todas las queries de usuarios para refrescar la lista
+      queryClient.invalidateQueries({
+        queryKey: ['dashboard-pagination-users'],
+        exact: false
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['allUsers'], // ✅ Query key correcto usado en DashUserPanel
+        exact: false
+      });
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
+
+      // También refetch activo para actualización inmediata
+      queryClient.refetchQueries({
+        queryKey: ['allUsers'],
+        type: 'active'
+      });
+      queryClient.refetchQueries({
+        queryKey: ['dashboard-pagination-users'],
+        type: 'active'
+      });
+    },
+    onError: (error) => {
+      console.error('❌ Error al eliminar usuario:', error);
+    }
+  });
+};

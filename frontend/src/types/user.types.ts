@@ -42,6 +42,8 @@ export interface User extends BaseUser {
   };
 }
 
+// Tipo para atributos que soporta tanto string como objeto {key, label}
+export type AttributeValue = string | { key: string; label: string };
 
 export interface Profile {
   _id: string;
@@ -64,7 +66,7 @@ export interface Profile {
   };
   features: Array<{
     group_id: string;
-    value: string[];
+    value: AttributeValue[];
   }>;
   age: string;
   contact: {
@@ -74,8 +76,8 @@ export interface Profile {
     changedAt?: Date;
   };
   height: string;
-  basicServices: string[];
-  additionalServices: string[];
+  basicServices: AttributeValue[];
+  additionalServices: AttributeValue[];
   socialMedia: {
     instagram?: string;
     facebook?: string;
@@ -91,7 +93,7 @@ export interface Profile {
     }>;
     profilePicture: string;
   };
-  services: string[];
+  services: AttributeValue[];
   planAssignment?: {
     planId?: string;
     planCode?: string;

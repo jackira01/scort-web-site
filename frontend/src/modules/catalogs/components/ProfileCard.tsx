@@ -67,23 +67,20 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
   // Variante por defecto: card completa con información responsive
   return (
     <Link href={`/perfil/${profile._id}`} className="block">
-      <Card className={`group hover:shadow-xl transition-all duration-300 overflow-hidden relative h-80 ${profile.hasDestacadoUpgrade
+      <Card className={`group hover:shadow-xl transition-all duration-300 overflow-hidden relative ${profile.hasDestacadoUpgrade
         ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30'
         : 'bg-card border-border'
         }`}>
         {/* Layout responsive: horizontal en mobile, vertical en desktop */}
-        <div className="flex flex-row sm:flex-col">
+        <div className="flex flex-row sm:flex-col h-full">
           {/* Imagen */}
-          <div className="relative w-32 h-44 sm:w-full flex-shrink-0">
+          <div className="relative w-32 h-44 sm:w-full sm:h-48 md:h-56 lg:h-64 flex-shrink-0">
             <Image
               width={300}
               height={400}
-              src={profile.media.profilePicture || profile.media.gallery?.[0] || '/placeholder.svg'}
+              src={profile.media.gallery?.[0] || '/placeholder.svg'}
               alt={profile.name}
-              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${viewMode === 'grid'
-                ? 'sm:h-48 md:h-56 lg:h-80'
-                : 'sm:h-40 md:h-48'
-                }`}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
 
             <div className="absolute top-1 right-1 sm:top-2 lg:top-3 sm:right-2 lg:right-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-1 lg:space-x-2">

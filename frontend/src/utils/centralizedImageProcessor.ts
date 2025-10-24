@@ -130,7 +130,18 @@ export const processCroppedImageCentralized = async (
   try {
     // Cargar la imagen original
     const image = await createImage(imageSrc);
-    const originalSize = await fetch(imageSrc).then(res => res.blob()).then(blob => blob.size);
+
+    // Obtener el tamaño original del blob
+    let originalSize = 0;
+    try {
+      const response = await fetch(imageSrc);
+      const blob = await response.blob();
+      originalSize = blob.size;
+    } catch (fetchError) {
+      console.warn('No se pudo obtener el tamaño original, usando 0:', fetchError);
+      // Si es un blob URL y falla el fetch, no es crítico para el procesamiento
+      originalSize = 0;
+    }
 
     // Crear canvas para el procesamiento
     const canvas = document.createElement('canvas');

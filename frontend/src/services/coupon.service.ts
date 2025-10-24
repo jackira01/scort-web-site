@@ -170,6 +170,9 @@ class CouponService {
         type: couponData.type,
         value: couponData.value,
         planCode: couponData.planCode,
+        validPlanIds: couponData.validPlanIds || [],
+        validUpgradeIds: couponData.validUpgradeIds || [],
+        variantDays: couponData.variantDays || 0,
         applicablePlans: couponData.applicablePlans || [],
         maxUses: -1, // No se devuelve en la respuesta
         currentUses: 0, // No se devuelve en la respuesta

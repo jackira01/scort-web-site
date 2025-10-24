@@ -5,6 +5,9 @@ export interface IStories {
     type: 'image' | 'video';
 }
 
+// Tipo para atributos que soporta tanto string como objeto {key, label}
+export type AttributeValue = string | { key: string; label: string };
+
 export interface IPlanAssignment {
     planId?: Types.ObjectId;    // ref directo a PlanDefinition._id (PREFERRED)
     planCode?: string;          // DEPRECATED: ref lógico a PlanDefinition.code (mantener para compatibilidad)
@@ -42,9 +45,9 @@ export interface IProfile extends Document {
     };
     features: {
         group_id: Types.ObjectId;
-        value: string | string[];
+        value: AttributeValue[];
     }[];
-    services?: string[]; // Servicios separados de features
+    services?: AttributeValue[]; // Servicios separados de features
     age: string;
     contact: {
         number: string;
@@ -53,9 +56,9 @@ export interface IProfile extends Document {
         changedAt: Date;
     };
     height: string;
-    // Nuevos campos para clasificación de servicios
-    basicServices?: string[];
-    additionalServices?: string[];
+    // Nuevos campos para clasificación de servicios - Soporta tanto string como {key, label}
+    basicServices?: AttributeValue[];
+    additionalServices?: AttributeValue[];
     socialMedia?: {
         instagram?: string;
         facebook?: string;
@@ -102,9 +105,9 @@ export interface CreateProfileDTO {
     user: Types.ObjectId | string;
     name: string;
     description?: string;
-    // Nuevos campos para clasificación de servicios
-    basicServices?: string[];
-    additionalServices?: string[];
+    // Nuevos campos para clasificación de servicios - Soporta tanto string como {key, label}
+    basicServices?: AttributeValue[];
+    additionalServices?: AttributeValue[];
     location: {
         country: {
             value: string;
@@ -121,7 +124,7 @@ export interface CreateProfileDTO {
     };
     features: {
         group_id: string;
-        value: string[];
+        value: AttributeValue[];
     }[];
     age: string;
     contact: {

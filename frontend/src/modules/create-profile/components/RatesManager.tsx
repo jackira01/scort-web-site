@@ -72,7 +72,7 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
   };
 
   const addRate = () => {
-    const hasValidTime = 
+    const hasValidTime =
       (newRate.days && parseInt(newRate.days) > 0) ||
       (newRate.hours && parseInt(newRate.hours) > 0) ||
       (newRate.minutes && parseInt(newRate.minutes) > 0);
@@ -146,31 +146,35 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
             {rates.map((rate) => (
               <div
                 key={rate.id}
-                className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/50"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 border border-border rounded-lg bg-muted/50"
               >
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
                     <span className="font-medium text-foreground">
                       {getDisplayTime(rate.time)}
                     </span>
-                    <span className="text-2xl font-bold text-green-600">
+
+                    <span className="text-xl sm:text-2xl font-bold text-green-600">
                       {formatPrice(rate.price)}
                     </span>
-                    <span className=" font-bold text-yellow-600">
+
+                    <span className="font-semibold text-yellow-600">
                       {rate.delivery ? 'Domicilio incluido' : 'Domicilio no incluido'}
                     </span>
                   </div>
                 </div>
+
                 <Button
                   variant="destructive"
                   size="sm"
                   onClick={() => removeRate(rate.id)}
-                  className="h-8 w-8 p-0"
+                  className="self-end sm:self-center h-8 w-8 p-0"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             ))}
+
           </div>
         )}
 
@@ -185,16 +189,13 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
               <Label className="text-sm text-muted-foreground">Días</Label>
               <Select
                 key={`days-${newRate.days}`}
-                value={newRate.days}
+                value={newRate.days || undefined}
                 onValueChange={(value) =>
                   setNewRate((prev) => ({ ...prev, days: value }))
                 }
               >
                 <SelectTrigger>
-                  <SelectValue 
-                    placeholder="0"
-                    className={newRate.days ? 'text-foreground' : 'text-muted-foreground'}
-                  />
+                  <SelectValue placeholder="Seleccionar" />
                 </SelectTrigger>
                 <SelectContent>
                   {Array.from({ length: 31 }, (_, i) => (
@@ -210,16 +211,13 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
               <Label className="text-sm text-muted-foreground">Horas</Label>
               <Select
                 key={`hours-${newRate.hours}`}
-                value={newRate.hours}
+                value={newRate.hours || undefined}
                 onValueChange={(value) =>
                   setNewRate((prev) => ({ ...prev, hours: value }))
                 }
               >
                 <SelectTrigger>
-                  <SelectValue 
-                    placeholder="0"
-                    className={newRate.hours ? 'text-foreground' : 'text-muted-foreground'}
-                  />
+                  <SelectValue placeholder="Seleccionar" />
                 </SelectTrigger>
                 <SelectContent>
                   {Array.from({ length: 24 }, (_, i) => (
@@ -235,16 +233,13 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
               <Label className="text-sm text-muted-foreground">Minutos</Label>
               <Select
                 key={`minutes-${newRate.minutes}`}
-                value={newRate.minutes}
+                value={newRate.minutes || undefined}
                 onValueChange={(value) =>
                   setNewRate((prev) => ({ ...prev, minutes: value }))
                 }
               >
                 <SelectTrigger>
-                  <SelectValue 
-                    placeholder="0"
-                    className={newRate.minutes ? 'text-foreground' : 'text-muted-foreground'}
-                  />
+                  <SelectValue placeholder="Seleccionar" />
                 </SelectTrigger>
                 <SelectContent>
                   {Array.from({ length: 60 }, (_, i) => (
@@ -291,27 +286,27 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
                   </Label>
                 </div>
               </div>
-              
+
             </div>
           </div>
 
           {/* Mensaje de error para tiempo */}
           {showValidationError && !newRate.price && (
-                <p className="text-red-500 text-sm mt-1">
-                  El precio es obligatorio para crear una tarifa
-                </p>
-              )}
+            <p className="text-red-500 text-sm mt-1">
+              El precio es obligatorio para crear una tarifa
+            </p>
+          )}
           {showValidationError && !((newRate.days && parseInt(newRate.days) > 0) ||
             (newRate.hours && parseInt(newRate.hours) > 0) ||
             (newRate.minutes && parseInt(newRate.minutes) > 0)) && (
-            <p className="text-red-500 text-sm">
-              Debes especificar al menos días, horas o minutos mayores a 0 para la tarifa
-            </p>
-          )}
+              <p className="text-red-500 text-sm">
+                Debes especificar al menos días, horas o minutos mayores a 0 para la tarifa
+              </p>
+            )}
 
           <Button
             onClick={addRate}
-            
+
             className="w-full bg-green-600 hover:bg-green-700 text-white"
           >
             <Plus className="h-4 w-4 mr-2" />

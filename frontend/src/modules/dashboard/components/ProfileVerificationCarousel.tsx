@@ -228,7 +228,7 @@ export default function ProfileVerificationCarousel({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="sm:max-w-4xl max-w-[95vw] w-full max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-center bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             Verificación de Perfil - {profileName}
@@ -278,8 +278,8 @@ export default function ProfileVerificationCarousel({
 
           {/* Main carousel container */}
           <Card className="relative overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-            <CardContent className="p-0">
-              <div className="relative h-96 flex items-center justify-center">
+            <CardContent className="p-4">
+              <div className="relative h-[60vh] min-h-[300px] max-h-[600px] flex items-center justify-center bg-muted/30 rounded-lg">
                 {/* Navigation buttons */}
                 {images.length > 1 && (
                   <>
@@ -303,7 +303,7 @@ export default function ProfileVerificationCarousel({
                 )}
 
                 {/* Current image */}
-                <div className="relative w-full h-full">
+                <div className="relative w-full h-full p-4">
                   <Image
                     src={images[currentImageIndex]?.url || '/placeholder.svg'}
                     alt={
@@ -392,7 +392,7 @@ export default function ProfileVerificationCarousel({
                     src={image.url}
                     alt={image.alt}
                     fill
-                    className="object-cover"
+                    className="object-contain bg-muted"
                     sizes="64px"
                   />
                   {verifiedImages.has(image.id) && (

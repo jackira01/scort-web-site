@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   Edit,
   Shield,
+  Trash2,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import EditUserModal from '@/components/EditUserModal';
+import DeleteUserModal from '@/components/DeleteUserModal';
 import UserDocumentVerificationModal from './UserDocumentVerificationModal';
 import type { User } from '@/types/user.types';
 
@@ -25,6 +27,7 @@ export const DashboardUserCard = ({
 }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDocumentVerificationModalOpen, setIsDocumentVerificationModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   return (
     <>
       <Card
@@ -110,6 +113,16 @@ export const DashboardUserCard = ({
                 Verificar Perfil
               </Button>
 
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsDeleteModalOpen(true)}
+                className="hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-500 transition-all duration-200 text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Eliminar
+              </Button>
+
             </div>
           </div>
         </CardContent>
@@ -119,6 +132,12 @@ export const DashboardUserCard = ({
         user={user}
         isOpen={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
+      />
+
+      <DeleteUserModal
+        user={user}
+        isOpen={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
       />
 
       <UserDocumentVerificationModal

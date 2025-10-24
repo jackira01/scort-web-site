@@ -24,7 +24,7 @@ const profileSchema = new Schema<IProfile>(
     features: [
       {
         group_id: { type: mongoose.Schema.Types.ObjectId, ref: 'AttributeGroup', required: true }, // nombre del grupo (ej: 'gender', 'hairColor', etc.)
-        value: [{ type: String, required: true }], // string o string[] // valor seleccionado (ej: 'Hombre', 'Rubio', etc.)
+        value: [{ type: Schema.Types.Mixed, required: true }], // Soporta string o { key: string, label: string }
       },
     ],
     age: { type: String, required: true, },
@@ -35,9 +35,9 @@ const profileSchema = new Schema<IProfile>(
       changedAt: Date,
     },
     height: { type: String, required: true },
-    // Nuevos campos para clasificación de servicios
-    basicServices: [{ type: String }],
-    additionalServices: [{ type: String }],
+    // Nuevos campos para clasificación de servicios - Soporta string o { key: string, label: string }
+    basicServices: [{ type: Schema.Types.Mixed }],
+    additionalServices: [{ type: Schema.Types.Mixed }],
     socialMedia: {
       instagram: { type: String, required: false },
       facebook: { type: String, required: false },
@@ -134,11 +134,11 @@ profileSchema.index({ 'upgrades.code': 1, 'upgrades.startAt': 1, 'upgrades.endAt
 profileSchema.index({ 'planAssignment.planCode': 1 }); // Para filtros por plan
 
 // Índice compuesto para consultas frecuentes de filtros
-profileSchema.index({ 
-  visible: 1, 
-  isDeleted: 1, 
+profileSchema.index({
+  visible: 1,
+  isDeleted: 1,
   'planAssignment.expiresAt': 1,
-  'location.country.value': 1 
+  'location.country.value': 1
 });
 
 // Índice para ordenamiento por createdAt

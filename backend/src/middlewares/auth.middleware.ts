@@ -10,14 +10,14 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
 
     // Intentar obtener userId desde Authorization Bearer token
     const authHeader = req.header('Authorization');
-    
+
     if (authHeader && authHeader.startsWith('Bearer ')) {
       try {
         const token = jwtService.extractTokenFromHeader(authHeader);
-        
+
         if (token) {
           const payload = jwtService.verifyToken(token);
-          
+
           if (payload) {
             userId = payload.userId;
           }
@@ -32,13 +32,13 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
       const xUserId = req.header('X-User-ID');
       userId = xUserId || null;
     }
-    
+
     if (!userId) {
       return res.status(401).json({ message: 'Usuario no autenticado' });
     }
 
     const user = await UserModel.findById(userId);
-    
+
     if (!user) {
       return res.status(401).json({ message: 'Usuario no encontrado' });
     }
@@ -49,7 +49,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
       _id: (user._id as string).toString(),
       id: (user._id as string).toString()
     };
-    
+
     next();
   } catch (error) {
     res.status(401).json({ message: 'Error de autenticación' });

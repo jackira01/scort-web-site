@@ -103,9 +103,12 @@ export const formSchema = z.object({
     days: z.number(),
     durationRank: z.number()
   }).optional(),
-  
+
   // Campo para generar factura (solo administradores)
   generateInvoice: z.boolean().optional(),
+
+  // Campo para cupón de descuento
+  couponCode: z.string().optional(),
 });
 
 export type FormData = z.infer<typeof formSchema>;

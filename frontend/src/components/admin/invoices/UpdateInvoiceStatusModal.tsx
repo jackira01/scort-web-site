@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useUpdateInvoiceStatus } from '@/hooks/useUpdateInvoiceStatus';
@@ -98,10 +97,10 @@ const UpdateInvoiceStatusModal: React.FC<UpdateInvoiceStatusModalProps> = ({
 
         <div className="space-y-4">
           {/* Información de la factura */}
-          <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+          <div className="bg-gray-50 p-3 dark:bg-gray-800 rounded-lg space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">ID:</span>
-              <span className="text-sm text-gray-600">{invoice._id}</span>
+              <span className="text-sm text-gray-50 dark:text-gray-400">{invoice._id}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Monto:</span>
@@ -115,9 +114,21 @@ const UpdateInvoiceStatusModal: React.FC<UpdateInvoiceStatusModalProps> = ({
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Usuario:</span>
-              <span className="text-sm text-gray-600">{invoice.userId.name}</span>
+              <span className="text-sm text-gray-600 dark:text-gray-50">{invoice.userId.name}</span>
             </div>
           </div>
+
+          {/* Notas/Descripción de la factura (solo lectura) */}
+          {invoice.notes && (
+            <div className="space-y-2">
+              <Label>Descripción</Label>
+              <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                  {invoice.notes}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Selector de nuevo estado */}
           <div className="space-y-2">
@@ -136,7 +147,7 @@ const UpdateInvoiceStatusModal: React.FC<UpdateInvoiceStatusModalProps> = ({
           </div>
 
           {/* Razón del cambio */}
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="reason">Razón del cambio (opcional)</Label>
             <Textarea
               id="reason"
@@ -145,7 +156,7 @@ const UpdateInvoiceStatusModal: React.FC<UpdateInvoiceStatusModalProps> = ({
               onChange={(e) => setReason(e.target.value)}
               rows={3}
             />
-          </div>
+          </div> */}
         </div>
 
         <DialogFooter>

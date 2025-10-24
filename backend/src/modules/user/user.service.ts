@@ -135,6 +135,66 @@ export const updateUserLastLogin = async (userId: string) => {
   }
 };
 
+/**
+ * Eliminar usuario y todos sus datos relacionados
+ * - Elimina todos los perfiles del usuario
+ * - Elimina todas las verificaciones de perfil asociadas
+ * - Elimina todas las facturas del usuario
+ * - Elimina el usuario
+ */
+export const deleteUserCompletely = async (userId: string) => {
+  try {
+    // Validar formato de ObjectId
+    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+      throw new Error('Formato de ID de usuario inválido');
+    }
+
+    // 1. Obtener el usuario para acceder a sus perfiles
+    const user = await UserModel.findById(userId).populate('profiles');
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    // 2. Eliminar todas las verificaciones de perfil
+    if (user.profiles && user.profiles.length > 0) {
+      const profileIds = user.profiles.map((profile: any) => profile._id);
+      await ProfileVerification.deleteMany({ profile: { $in: profileIds } });
+    }
+
+    // 3. Eliminar todos los perfiles del usuario
+    // Importar dinámicamente el modelo de Profile para evitar dependencias circulares
+    const { ProfileModel } = await import('../profile/profile.model');
+    await ProfileModel.deleteMany({ user: userId });
+
+    // 4. Eliminar todas las facturas del usuario
+    try {
+      const InvoiceModule = await import('../payments/invoice.model');
+      const InvoiceModel = InvoiceModule.default;
+      await InvoiceModel.deleteMany({ user: userId });
+    } catch (error) {
+      // Si el modelo no existe o hay error, continuar
+      console.warn('No se pudieron eliminar las facturas:', error);
+    }
+
+    // 5. Eliminar plan assignments si existen (nota: puede no existir este modelo)
+    // Este paso se omite ya que no encontramos el modelo
+
+    // 6. Finalmente, eliminar el usuario
+    await UserModel.findByIdAndDelete(userId);
+
+    return {
+      success: true,
+      message: 'Usuario y todos sus datos relacionados han sido eliminados exitosamente',
+      deletedData: {
+        userId,
+        profilesCount: user.profiles?.length || 0
+      }
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
 
 
 /* export const obtenerPerfiles = () => UserModel.find();

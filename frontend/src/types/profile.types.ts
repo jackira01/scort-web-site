@@ -17,6 +17,9 @@ export interface LocationValue {
   label: string; // Valor para mostrar (con tildes, formato original)
 }
 
+// Tipo para atributos que soporta tanto string como objeto {key, label}
+export type AttributeValue = string | { key: string; label: string };
+
 export interface ProfileLocation {
   country: LocationValue;
   department: LocationValue;
@@ -46,9 +49,11 @@ export interface IProfile {
   location: ProfileLocation;
   features: {
     group_id: string;
-    value: string | string[];
+    value: AttributeValue[];
   }[];
-  services?: string[];
+  services?: AttributeValue[];
+  basicServices?: AttributeValue[];
+  additionalServices?: AttributeValue[];
   age: string;
   contact: {
     number: string;

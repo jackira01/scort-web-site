@@ -1,9 +1,10 @@
 import type { Types } from 'mongoose';
 import { AttributeGroupModel } from './attribute-group.model';
+import type { AttributeValue } from '../profile/profile.types';
 
 type FeatureInput = {
   group_id: Types.ObjectId | string;
-  value: string[]; // ← ahora acepta múltiples valores
+  value: AttributeValue[]; // Ahora acepta string o { key: string; label: string }
 };
 
 /**
@@ -23,13 +24,18 @@ export const validateProfileFeatures = async (features: FeatureInput[]) => {
     }
 
     for (const val of feature.value) {
+      // Extraer el key si es un objeto, o usar el string directamente
+      const valueToValidate: string = typeof val === 'object' && val !== null && 'key' in val
+        ? val.key
+        : val as string;
+
       const isValidVariant = group.variants.some(
-        (variant) => variant.value === val.toLowerCase().trim() && variant.active,
+        (variant) => variant.value === valueToValidate.toLowerCase().trim() && variant.active,
       );
 
       if (!isValidVariant) {
         throw new Error(
-          `El valor "${val}" no es válido o está inactivo para el grupo "${group.name}".`,
+          `El valor "${valueToValidate}" no es válido o está inactivo para el grupo "${group.name}".`,
         );
       }
     }

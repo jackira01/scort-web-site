@@ -62,21 +62,49 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
     location: `${profile.location?.country?.label || profile.location?.country || ''}, ${profile.location?.department?.label || profile.location?.department || ''}, ${profile.location?.city?.label || profile.location?.city || ''}`
       .replace(/^,\s*|,\s*$/g, '')
       .replace(/,\s*,/g, ','),
-    category: profile.features?.find((feature: any) => feature.groupName === 'Categoría')?.value || 'ESCORT',
+    // Categoría: aceptar string o {key,label}
+    category: (() => {
+      const cat = profile.features?.find((feature: any) => feature.groupName === 'Categoría');
+      if (!cat) return 'ESCORT';
+      const v = Array.isArray(cat.value) ? cat.value[0] : cat.value;
+      if (v && typeof v === 'object' && 'label' in v) return (v as any).label;
+      return v || 'ESCORT';
+    })(),
     verified: profile.verification?.verificationStatus === 'verified',
     description: profile.description,
     images: profile.media?.gallery || ['/placeholder.svg?height=400&width=600'],
-    videos: profile.media?.videos || [],
+    // Normalizar videos a {link, preview}
+    videos: (() => {
+      const vids = profile.media?.videos || [];
+      const cover = (profile as any).coverImageIndex;
+      const previewFallback = (profile.media?.gallery && profile.media.gallery.length > 0)
+        ? (typeof cover === 'number' && profile.media.gallery[cover]) || profile.media.gallery[0]
+        : '/placeholder.svg';
+      return vids.map((v: any) => {
+        // Si es string, crear objeto con fallback
+        if (typeof v === 'string') return { link: v, preview: previewFallback };
+        // Si es objeto, respetar el preview existente, solo usar fallback si está vacío
+        return {
+          link: v.link || '',
+          preview: (v.preview && v.preview.trim() !== '') ? v.preview : previewFallback
+        };
+      });
+    })(),
     services: profile.services || [],
     basicServices: profile.basicServices || [],
     additionalServices: profile.additionalServices || [],
     physicalTraits: {
       edad: profile.age?.toString() || '',
+      // Convertir AttributeValue[] a string mostrando label si existe
       ...Object.fromEntries(
-        (profile.features || []).map((feature: any) => [
-          feature.labelName?.toLowerCase() || feature.groupName,
-          Array.isArray(feature.value) ? feature.value.join(', ') : feature.value
-        ])
+        (profile.features || []).map((feature: any) => {
+          const values: any[] = Array.isArray(feature.value) ? feature.value : [feature.value];
+          const display = values
+            .filter((v: any) => v != null)
+            .map((v: any) => (typeof v === 'object' && 'label' in v ? (v as any).label : v))
+            .join(', ');
+          return [feature.labelName?.toLowerCase() || feature.groupName, display];
+        })
       ),
       ubicacion: `${profile.location?.department?.label || profile.location?.department || ''}, ${profile.location?.city?.label || profile.location?.city || ''}`
         .replace(/^,\s*|,\s*$/g, '')

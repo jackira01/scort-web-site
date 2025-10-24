@@ -740,6 +740,52 @@ export const getUserProfiles = async (req: Request, res: Response) => {
   res.json(profiles);
 }
 
+/**
+ * Eliminar usuario y todos sus datos relacionados
+ * Solo accesible para administradores
+ */
+export const deleteUserController = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id;
+
+    // Validar que el ID esté presente
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de usuario requerido'
+      });
+    }
+
+    // Verificar que el usuario autenticado sea administrador
+    const currentUser = (req as any).user;
+    if (!currentUser || currentUser.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permisos para realizar esta acción'
+      });
+    }
+
+    // Evitar que un admin se elimine a sí mismo
+    if (currentUser.id === userId || currentUser._id === userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'No puedes eliminar tu propia cuenta de administrador'
+      });
+    }
+
+    // Eliminar usuario y todos sus datos relacionados
+    const result = await userService.deleteUserCompletely(userId);
+
+    res.json(result);
+  } catch (error: any) {
+    console.error('❌ Error al eliminar usuario:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error al eliminar el usuario'
+    });
+  }
+};
+
 /* 
 export const obtenerPerfiles = async (_: Request, res: Response) => {
   const perfiles = await userService.obtenerPerfiles();

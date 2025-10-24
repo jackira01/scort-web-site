@@ -99,6 +99,7 @@ const generateWhatsAppMessage = async (
   userId: string,
   profileId: string,
   invoiceId?: string,
+  invoiceNumber?: string,
   planCode?: string,
   variantDays?: number
 ): Promise<WhatsAppMessage | null> => {
@@ -128,7 +129,7 @@ const generateWhatsAppMessage = async (
 
     // Generar mensaje elegante
     const message = invoiceId
-      ? `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n📋 **Detalles de mi compra:**\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención. 😊`
+      ? `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n📋 **Detalles de mi compra:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención. 😊`
       : `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n📋 **Detalles:**\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. 😊`;
 
     return {
@@ -280,15 +281,16 @@ export const createProfile = async (data: CreateProfileDTO): Promise<IProfile> =
 /**
  * Crea un perfil con generación automática de factura para planes de pago
  */
-export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCode?: string; planDays?: number; generateInvoice?: boolean }): Promise<{
+export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId?: string; planCode?: string; planDays?: number; generateInvoice?: boolean; couponCode?: string }): Promise<{
   profile: IProfile;
   invoice: IInvoice | null;
   whatsAppMessage?: WhatsAppMessage | null;
 }> => {
-  const { planCode, planDays, generateInvoice = false, ...profileData } = data;
+  const { planId, planCode, planDays, generateInvoice = false, couponCode, ...profileData } = data;
 
   // DEBUG: Log de datos recibidos en el servicio
   console.log('DEBUG SERVICIO - createProfileWithInvoice llamado con:', {
+    planId,
     planCode,
     planDays,
     generateInvoice,
@@ -319,22 +321,50 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
   let invoice = null;
 
   // Si se especifica un plan de pago, generar factura pero mantener el perfil con plan por defecto
-  if (planCode && planDays && planCode !== defaultPlanCode) {
+  if ((planId || planCode) && planDays) {
     // Procesando plan de pago
     try {
       // Validar que el plan existe y obtener el precio
-      // Buscando definición del plan
-      const plan = await PlanDefinitionModel.findOne({ code: planCode });
+      // Buscando definición del plan por ID (prioritario) o por código
+      console.log('🔍 DEBUG Profile Service - Buscando plan:', { planId, planCode });
+
+      let plan;
+      if (planId) {
+        plan = await PlanDefinitionModel.findById(planId);
+        console.log('🔍 DEBUG Profile Service - Plan encontrado por ID:', !!plan);
+      }
+
+      // Fallback a búsqueda por código si no se encontró por ID
+      if (!plan && planCode) {
+        plan = await PlanDefinitionModel.findOne({ code: planCode });
+        console.log('🔍 DEBUG Profile Service - Plan encontrado por código:', !!plan);
+      }
+
       if (!plan) {
         // Plan no encontrado
-        throw new Error(`Plan con código ${planCode} no encontrado`);
+        throw new Error(`Plan con ${planId ? `ID ${planId}` : `código ${planCode}`} no encontrado`);
       }
+
+      // Verificar si es el plan por defecto (no cobrar)
+      const isPlanGratuito = planCode === defaultPlanCode || plan.code === defaultPlanCode;
+      console.log('🔍 DEBUG Profile Service - Es plan gratuito:', isPlanGratuito);
+
+      if (isPlanGratuito) {
+        console.log('🔍 DEBUG Profile Service - Plan gratuito detectado, no generar factura');
+        // No generar factura para plan gratuito
+        return {
+          profile,
+          invoice: null,
+          whatsAppMessage: null
+        };
+      }
+
       // Plan encontrado
 
       const variant = plan.variants.find(v => v.days === planDays);
       if (!variant) {
         // Variante no encontrada
-        throw new Error(`Variante de ${planDays} días no encontrada para el plan ${planCode}`);
+        throw new Error(`Variante de ${planDays} días no encontrada para el plan ${plan.code}`);
       }
       // Variante encontrada
 
@@ -349,12 +379,27 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
         });
 
         // Plan de pago detectado y facturación solicitada, generando factura
+        console.log('🔍 DEBUG Cupón Service - Generando factura con:', {
+          profileId: (profile._id as Types.ObjectId).toString(),
+          userId: profile.user.toString(),
+          planId: plan._id.toString(),
+          planCode: plan.code,
+          planDays,
+          couponCode
+        });
         invoice = await invoiceService.generateInvoice({
           profileId: (profile._id as Types.ObjectId).toString(),
           userId: profile.user.toString(),
-          planCode: planCode,
+          planId: plan._id.toString(), // Usar el ID del plan
+          planCode: plan.code, // También pasar el código para compatibilidad
           planDays: planDays,
+          couponCode: couponCode, // Pasar el código del cupón
           notes: `Factura generada para nuevo perfil ${profile.name || profile._id}`
+        });
+        console.log('🔍 DEBUG Cupón Service - Factura generada:', {
+          invoiceId: invoice._id,
+          totalAmount: invoice.totalAmount,
+          coupon: invoice.coupon
         });
 
         // Factura generada exitosamente
@@ -450,6 +495,7 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planCo
     profile.user.toString(),
     (profile._id as Types.ObjectId).toString(),
     invoice?._id?.toString(),
+    invoice?.invoiceNumber,
     planCode,
     planDays
   );
