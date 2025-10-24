@@ -24,8 +24,8 @@ export const DashProfilePanel = () => {
   const [selectedProfileForStory, setSelectedProfileForStory] = useState<any | null>(null);
   const [uploadStoryModalOpen, setUploadStoryModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit] = useState(6);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [limit] = useState(8);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
   const [userIdInput, setUserIdInput] = useState('');
 
   // Obtener usuarios para el selector
@@ -47,12 +47,12 @@ export const DashProfilePanel = () => {
 
   // Manejar la búsqueda por ID de usuario
   const handleUserIdSearch = () => {
-    setUserId(userIdInput || null);
+    setUserId(userIdInput || undefined);
   };
 
   // Limpiar filtros
   const handleClearFilters = () => {
-    setUserId(null);
+    setUserId(undefined);
     setUserIdInput('');
   };
 
@@ -101,7 +101,7 @@ export const DashProfilePanel = () => {
             value={userId || 'all'}
             onValueChange={(value) => {
               if (value === 'all') {
-                setUserId(null);
+                setUserId(undefined);
                 setUserIdInput('');
               } else {
                 setUserId(value);

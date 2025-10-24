@@ -253,15 +253,15 @@ export default function ManagePlansModal({
   const isPlanActive = () => {
     const planToUse = profilePlanInfo || currentPlan;
     if (!planToUse) return false;
-    
+
     const expiresAt = new Date(planToUse.expiresAt);
     const tempDate = new Date('1970-01-01');
-    
+
     // Si la fecha de expiración es la fecha temporal, considerar como pendiente de pago
     if (expiresAt.getTime() === tempDate.getTime()) {
       return false; // Plan pendiente de pago
     }
-    
+
     return expiresAt > new Date();
   };
 
@@ -269,11 +269,16 @@ export default function ManagePlansModal({
   const isPlanPending = () => {
     const planToUse = profilePlanInfo || currentPlan;
     if (!planToUse) return false;
-    
+
     const expiresAt = new Date(planToUse.expiresAt);
     const tempDate = new Date('1970-01-01');
-    
+
     return expiresAt.getTime() === tempDate.getTime();
+  };
+
+  // Verificar si no tiene plan asignado
+  const hasNoPlanAssigned = () => {
+    return !profilePlanInfo && !currentPlan;
   };
 
   // Calcular días restantes
@@ -356,7 +361,7 @@ export default function ManagePlansModal({
         case 'purchase':
           const selectedPlan = processedPlans.find((p: Plan) => p.code === planCode);
           const selectedVariant = selectedPlan ? getSelectedVariant(planCode, selectedPlan) : null;
-          
+
           // Considerar el checkbox de facturación para administradores
           if (isAdmin && !generateInvoice) {
             // Admin con asignación directa: compra directa sin factura
@@ -391,7 +396,7 @@ export default function ManagePlansModal({
             currentPlanData: currentPlanData?.code,
             planToUse
           });
-          
+
           // Intentando renovar plan
 
           const renewSelectedVariant = getSelectedVariant(planCode, currentPlanData);
@@ -451,7 +456,7 @@ export default function ManagePlansModal({
             // NO mostrar el toast de éxito general para usuarios normales
             // porque el plan no se ha renovado aún
             return;
-            } else {
+          } else {
             console.log('🔍 DEBUG RENOVACIÓN - Flujo: Usuario normal (solo factura)');
             // Usuario normal: SOLO generar factura (NO llamar al endpoint de renovación)
             if (!session?.user?._id) {
@@ -618,11 +623,11 @@ export default function ManagePlansModal({
       if (isAdmin && !generateInvoice) {
         // Para admins con asignación directa: cambio instantáneo, refrescar datos inmediatamente
         await refreshPlanData();
-        
+
         // Invalidar queries adicionales para asegurar actualización
         queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
         queryClient.invalidateQueries({ queryKey: ['profilePlan', profileId] });
-        
+
         // Llamar onPlanChange para actualizar el componente padre
         onPlanChange?.();
       } else if (isAdmin && generateInvoice) {
@@ -648,11 +653,11 @@ export default function ManagePlansModal({
         } else {
           // Si no hay URL de pago pero el resultado es exitoso, refrescar datos
           await refreshPlanData();
-          
+
           // Invalidar queries adicionales para asegurar actualización
           queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
           queryClient.invalidateQueries({ queryKey: ['profilePlan', profileId] });
-          
+
           // Llamar onPlanChange para actualizar el componente padre
           onPlanChange?.();
         }
@@ -709,7 +714,12 @@ export default function ManagePlansModal({
                       <Badge variant="secondary">Gratuito</Badge>
                     )}
                   </div>
-                  {isPlanActive() ? (
+                  {hasNoPlanAssigned() ? (
+                    <Badge className="bg-orange-100 text-orange-800">
+                      <AlertTriangle className="h-3 w-3 mr-1" />
+                      Sin Plan Asignado
+                    </Badge>
+                  ) : isPlanActive() ? (
                     <Badge className="bg-green-100 text-green-800">
                       <CheckCircle className="h-3 w-3 mr-1" />
                       Activo
@@ -728,7 +738,18 @@ export default function ManagePlansModal({
                 </div>
               </CardHeader>
               <CardContent>
-                {currentPlan && (
+                {hasNoPlanAssigned() ? (
+                  <div className="space-y-4">
+                    <Alert className="border-orange-200 bg-orange-50">
+                      <AlertTriangle className="h-4 w-4 text-orange-600" />
+                      <AlertDescription className="text-sm text-orange-800">
+                        <strong>Aún no tienes un plan asignado.</strong>
+                        <br />
+                        Paga las facturas que tengas pendientes o compra un nuevo plan para activar tu perfil.
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                ) : currentPlan && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Fecha de inicio</p>
@@ -740,13 +761,12 @@ export default function ManagePlansModal({
                     </div>
                     <div>
                       <p className="text-muted-foreground">Días restantes</p>
-                      <p className={`font-medium ${
-                        isPlanPending() 
-                          ? 'text-yellow-600' 
-                          : getDaysRemaining() <= 7 
-                            ? 'text-red-600' 
+                      <p className={`font-medium ${isPlanPending()
+                          ? 'text-yellow-600'
+                          : getDaysRemaining() <= 7
+                            ? 'text-red-600'
                             : 'text-green-600'
-                      }`}>
+                        }`}>
                         {isPlanPending() ? 'Pendiente de pago' : `${getDaysRemaining()} días`}
                       </p>
                     </div>

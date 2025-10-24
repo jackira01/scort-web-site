@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as userController from './user.controller';
+import { authMiddleware, adminMiddleware } from '../../middlewares';
 
 const router = Router();
 
@@ -31,6 +32,7 @@ router.post('/', userController.getUsers);
 router.get('/:id', userController.getUserById);
 router.put('/:id', userController.updateUser);
 router.put('/:id/last-login', userController.updateUserLastLogin);
+router.delete('/:id', authMiddleware, adminMiddleware, userController.deleteUserController);
 
 
 

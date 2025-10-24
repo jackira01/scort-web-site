@@ -74,6 +74,7 @@ const generateWhatsAppMessage = async (
     planCode?: string,
     variantDays?: number,
     invoiceId?: string,
+    invoiceNumber?: string,
     isRenewal?: boolean,
     price?: number,
     expiresAt?: Date
@@ -106,7 +107,7 @@ const generateWhatsAppMessage = async (
                     minute: '2-digit'
                 }) : 'No disponible';
 
-                message = `¡Hola! 👋\n\n🔄 **Quiero renovar mi plan** 🔄\n\nTu solicitud de renovación ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n• Total a pagar: $${(price || 0).toLocaleString()} x${variantDays || 0}\n\n💰 **"Total a pagar: $${totalPrice.toLocaleString()}"**\n\n📅 **"Vence el:"** ${expirationDate} 📅\n\nPor favor, confirma el pago para activar tu perfil. ¡Gracias! 💎`;
+                message = `¡Hola! 👋\n\n🔄 **Quiero renovar mi plan** 🔄\n\nTu solicitud de renovación ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n• Total a pagar: $${(price || 0).toLocaleString()} x${variantDays || 0}\n\n💰 **"Total a pagar: $${totalPrice.toLocaleString()}"**\n\n📅 **"Vence el:"** ${expirationDate} 📅\n\nPor favor, confirma el pago para activar tu perfil. ¡Gracias! 💎`;
             } else {
                 const planInfo = planCode && variantDays
                     ? `\n• Plan: ${planCode} (${variantDays} días)`
@@ -121,7 +122,7 @@ const generateWhatsAppMessage = async (
                     ? `\n• Plan: ${planCode} (${variantDays} días)`
                     : '';
 
-                message = `¡Hola! 👋\n\nTu compra ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n\n¡Gracias por confiar en ${companyName}! 🙏\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+                message = `¡Hola! 👋\n\nTu compra ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n\n¡Gracias por confiar en ${companyName}! 🙏\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
             } else {
                 const planInfo = planCode && variantDays
                     ? `\n• Plan: ${planCode} (${variantDays} días)`
@@ -463,6 +464,7 @@ export class PlansService {
 
         // Generar factura si el plan tiene precio y NO es admin con asignación directa
         let invoiceId: string | undefined;
+        let invoiceNumber: string | undefined;
         if (variant.price > 0 && (!isAdmin || generateInvoice)) {
             try {
                 const invoice = await InvoiceService.generateInvoice({
@@ -473,6 +475,7 @@ export class PlansService {
                     upgradeCodes: []
                 });
                 invoiceId = invoice.id;
+                invoiceNumber = String(invoice.invoiceNumber);
 
                 // Agregar factura al historial de pagos del perfil
                 profile.paymentHistory.push(new Types.ObjectId(invoice._id as string));
@@ -543,6 +546,7 @@ export class PlansService {
             planCode,
             variantDays,
             invoiceId,
+            invoiceNumber,
             true, // isRenewal = true
             variant.price,
             expiresAt
@@ -604,6 +608,7 @@ export class PlansService {
 
         // Generar factura si el plan tiene precio y NO es admin
         let invoiceId: string | undefined;
+        let invoiceNumber: string | undefined;
 
         if (variant.price > 0 && !isAdmin) {
             try {
@@ -615,6 +620,7 @@ export class PlansService {
                     upgradeCodes: []
                 });
                 invoiceId = invoice.id;
+                invoiceNumber = String(invoice.invoiceNumber);
 
                 // Agregar factura al historial de pagos del perfil
                 profile.paymentHistory.push(new Types.ObjectId(invoice._id as string));
@@ -626,7 +632,6 @@ export class PlansService {
                 await profile.save();
 
             } catch (error) {
-                console.log('🔍 DEBUG BACKEND SERVICE - Error generando factura:', error);
                 throw new Error('Error al generar factura para la renovación del plan');
             }
         } else {
@@ -669,6 +674,7 @@ export class PlansService {
             planCode,
             variantDays,
             invoiceId,
+            invoiceNumber,
             true, // isRenewal = true
             variant.price,
             newExpiresAt

@@ -123,7 +123,6 @@ const HeaderComponent = () => {
                 Contactanos
               </Button>
             </Link>
-            <ThemeToggle />
             {(status === 'authenticated' || isAdmin) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -132,7 +131,7 @@ const HeaderComponent = () => {
                     className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
                   >
                     <Menu className="h-4 w-4 mr-2" />
-                    Explorar
+                    Cuenta
                     <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -165,6 +164,7 @@ const HeaderComponent = () => {
               </DropdownMenu>
             )}
             {status !== 'authenticated' && <SignIn />}
+            <ThemeToggle />
           </div>
 
           {/* Mobile Menu Button */}
@@ -195,51 +195,44 @@ const HeaderComponent = () => {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="lg:hidden border-t bg-background/95 backdrop-blur py-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
-            <Link href="/blog">
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Blog
-              </Button>
-            </Link>
-            <Link href="/planes">
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Planes
-              </Button>
-            </Link>
-            <Link href="/faq">
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                FAQ
-              </Button>
-            </Link>
-            <Link href="/terminos">
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Términos
-              </Button>
-            </Link>
-            <Link href="/contactanos">
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Contactanos
-              </Button>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+                >
+                  Explorar
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link href="/blog" className="flex items-center w-full" onClick={() => setMobileMenuOpen(false)}>
+                    Blog
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/planes" className="flex items-center w-full" onClick={() => setMobileMenuOpen(false)}>
+                    Planes
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/faq" className="flex items-center w-full" onClick={() => setMobileMenuOpen(false)}>
+                    FAQ
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/terms" className="flex items-center w-full" onClick={() => setMobileMenuOpen(false)}>
+                    Términos
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/contactanos" className="flex items-center w-full" onClick={() => setMobileMenuOpen(false)}>
+                    Contactanos
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {(status === 'authenticated' || isAdmin) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -248,7 +241,7 @@ const HeaderComponent = () => {
                     className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
                   >
                     <Menu className="h-4 w-4 mr-2" />
-                    Explorar
+                    Cuenta
                     <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>

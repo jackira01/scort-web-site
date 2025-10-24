@@ -175,9 +175,14 @@ export function Step3Details({
                 <Input
                   id="age"
                   type="number"
+                  step="1"
                   placeholder="23"
                   value={field.value}
                   onChange={field.onChange}
+                  onInput={(e) => {
+                    const input = e.target as HTMLInputElement;
+                    input.value = input.value.replace(/[^0-9]/g, '');
+                  }}
                   className={`mt-2 ${errors.age ? 'border-red-500 focus:border-red-500' : ''
                     }`}
                 />
@@ -302,9 +307,15 @@ export function Step3Details({
               </Label>
               <Input
                 id="height"
-                placeholder="173 cm"
+                type="number"
+                step="1"
+                placeholder="173"
                 value={formData.height}
                 onChange={(e) => setValue('height', e.target.value)}
+                onInput={(e) => {
+                  const input = e.target as HTMLInputElement;
+                  input.value = input.value.replace(/[^0-9]/g, '');
+                }}
                 className={`mt-2 ${errors.height ? 'border-red-500 focus:border-red-500' : ''
                   }`}
               />

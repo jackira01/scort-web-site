@@ -7,7 +7,8 @@ import { couponService } from '../coupons/coupon.service';
 export interface CreateInvoiceData {
   profileId: string;
   userId: string;
-  planCode?: string;
+  planId?: string; // ID del plan (nuevo, prioritario)
+  planCode?: string; // Código del plan (mantener para compatibilidad)
   planDays?: number;
   upgradeCodes?: string[];
   couponCode?: string; // Código de cupón a aplicar
@@ -29,7 +30,16 @@ class InvoiceService {
    * Genera una nueva factura basada en el plan y upgrades seleccionados
    */
   async generateInvoice(data: CreateInvoiceData): Promise<IInvoice> {
-    const { profileId, userId, planCode, planDays, upgradeCodes = [], couponCode, notes } = data;
+    const { profileId, userId, planId, planCode, planDays, upgradeCodes = [], couponCode, notes } = data;
+
+    console.log('🔍 DEBUG Invoice Service - generateInvoice llamado con:', {
+      profileId,
+      userId,
+      planId,
+      planCode,
+      planDays,
+      couponCode
+    });
 
     // Iniciando generación de factura
 
@@ -44,13 +54,29 @@ class InvoiceService {
     const items: InvoiceItem[] = [];
     let totalAmount = 0;
     let planDetails = '';
+    let resolvedPlanId: string | undefined; // Guardar el ID del plan para validación de cupones
 
-    // Agregar plan si se especifica
-    if (planCode && planDays) {
-      const plan = await PlanDefinitionModel.findByCode(planCode);
-      if (!plan) {
-        throw new Error(`Plan con código ${planCode} no encontrado`);
+    // Agregar plan si se especifica (por ID o código)
+    if ((planId || planCode) && planDays) {
+      console.log('🔍 DEBUG Invoice Service - Buscando plan:', { planId, planCode });
+
+      let plan;
+      if (planId) {
+        plan = await PlanDefinitionModel.findById(planId);
+        console.log('🔍 DEBUG Invoice Service - Plan encontrado por ID:', !!plan);
       }
+
+      if (!plan && planCode) {
+        plan = await PlanDefinitionModel.findByCode(planCode);
+        console.log('🔍 DEBUG Invoice Service - Plan encontrado por código:', !!plan);
+      }
+      if (!plan) {
+        throw new Error(`Plan con ${planId ? `ID ${planId}` : `código ${planCode}`} no encontrado`);
+      }
+
+      // Guardar el ID del plan encontrado
+      resolvedPlanId = plan._id.toString();
+      console.log('🔍 DEBUG Invoice Service - Plan ID resuelto:', resolvedPlanId);
 
       const variant = plan.variants.find((v: any) => v.days === planDays);
       if (!variant) {
@@ -110,9 +136,22 @@ class InvoiceService {
 
     // Aplicar cupón si se proporciona
     if (couponCode) {
-      const couponResult = await couponService.applyCoupon(couponCode, totalAmount, planCode);
+      console.log('🔍 DEBUG Cupón Invoice Service - Aplicando cupón:', {
+        couponCode,
+        totalAmount,
+        resolvedPlanId,
+        planCode
+      });
+      // Usar planId en lugar de planCode para la validación
+      const couponResult = await couponService.applyCoupon(couponCode, totalAmount, resolvedPlanId);
+      console.log('🔍 DEBUG Cupón Invoice Service - Resultado de applyCoupon:', couponResult);
 
       if (couponResult.success) {
+        console.log('🔍 DEBUG Cupón Invoice Service - Cupón aplicado exitosamente:', {
+          originalAmount: totalAmount,
+          discount: couponResult.discount,
+          finalPrice: couponResult.finalPrice
+        });
         finalAmount = couponResult.finalPrice;
         // Si es un cupón de asignación de plan, actualizar el plan
         if (couponResult.planCode && couponResult.planCode !== planCode) {
@@ -181,10 +220,22 @@ class InvoiceService {
       expiresAt,
       notes: enhancedNotes
     };
+    console.log('🔍 DEBUG Cupón Invoice Service - Datos de factura a guardar:', {
+      totalAmount: invoiceData.totalAmount,
+      coupon: invoiceData.coupon,
+      originalAmount: couponInfo?.originalAmount,
+      discountAmount: couponInfo?.discountAmount,
+      finalAmount: couponInfo?.finalAmount
+    });
     // Creando factura con datos
 
     const invoice = new Invoice(invoiceData);
     const savedInvoice = await invoice.save();
+    console.log('🔍 DEBUG Cupón Invoice Service - Factura guardada:', {
+      id: savedInvoice._id,
+      totalAmount: savedInvoice.totalAmount,
+      coupon: savedInvoice.coupon
+    });
 
 
 

@@ -303,7 +303,7 @@ export class CouponService {
   }
 
   /**
-   * Eliminar cupón (soft delete)
+   * Eliminar cupón (hard delete)
    */
   async deleteCoupon(id: string): Promise<boolean> {
     try {
@@ -316,11 +316,10 @@ export class CouponService {
         throw new AppError('Cupón no encontrado', 404);
       }
 
-      // Soft delete: marcar como inactivo
-      coupon.isActive = false;
-      await coupon.save();
+      // Hard delete: eliminar completamente de la base de datos
+      await CouponModel.findByIdAndDelete(id);
 
-      logger.info(`Cupón eliminado (soft delete): ${coupon.code}`);
+      logger.info(`Cupón eliminado permanentemente: ${coupon.code}`);
       return true;
     } catch (error) {
       if (error instanceof AppError) throw error;
@@ -385,7 +384,7 @@ export class CouponService {
 
         // Construir el identificador plan-variante
         const planVariantId = `${plan._id}-${variantDays}`;
-        
+
         if (!coupon.applicablePlans.includes(planVariantId)) {
           return {
             isValid: false,

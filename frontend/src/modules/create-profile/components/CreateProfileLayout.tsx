@@ -68,12 +68,17 @@ import { Step2Description } from './Step2Description';
 import { Step3Details } from './Step3Details';
 import { Step4Plan } from './Step4Plan';
 import { Step5Multimedia } from './Step5Multimedia';
+import { ProfileVerificationPrompt } from './ProfileVerificationPrompt';
 
 
 export function CreateProfileLayout() {
   const [currentStep, setCurrentStep] = useState(1);
   const [uploading, setUploading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showVerificationPrompt, setShowVerificationPrompt] = useState(false);
+  const [createdProfileId, setCreatedProfileId] = useState<string | null>(null);
+  const [createdProfileName, setCreatedProfileName] = useState<string>('');
+  const [whatsAppData, setWhatsAppData] = useState<{ companyNumber: string; message: string } | null>(null);
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: session } = useSession();
@@ -216,10 +221,6 @@ export function CreateProfileLayout() {
             selectedVariant: form.getValues('selectedVariant'),
           };
 
-          console.log('🔍 DEBUG Step 4 - Datos del formulario:', step4Data);
-          console.log('🔍 DEBUG Step 4 - selectedPlan:', step4Data.selectedPlan);
-          console.log('🔍 DEBUG Step 4 - selectedVariant:', step4Data.selectedVariant);
-
           const result = step4Schema.safeParse(step4Data);
 
           if (!result.success) {
@@ -231,8 +232,6 @@ export function CreateProfileLayout() {
                 code: issue.code
               });
             });
-          } else {
-            console.log('✅ SUCCESS Step 4 - Validación exitosa');
           }
 
           return result;
@@ -248,9 +247,6 @@ export function CreateProfileLayout() {
           };
 
           const result = step5Schema.safeParse(step5Data);
-
-          if (!result.success) {
-          }
 
           return result;
         }
@@ -290,7 +286,6 @@ export function CreateProfileLayout() {
       const result = validateStep(currentStep);
 
       if (!result.success) {
-        console.error('❌ ERROR Step', currentStep, '- Validación fallida:', result.error.issues);
         setValidationErrors(result);
         toast.error('Por favor completa todos los campos requeridos');
         return;
@@ -316,6 +311,23 @@ export function CreateProfileLayout() {
 
   // handleFormDataChange ya no es necesario con react-hook-form
 
+  // Helper para convertir un key de variante a objeto {key, label}
+  const getVariantObject = (groupKey: string, valueKey: string) => {
+    const group = groupMap[groupKey];
+    if (!group || !group.variants) return valueKey; // Fallback a string por retrocompatibilidad
+
+    const variant = group.variants.find((v: any) => v.value === valueKey);
+    if (variant) {
+      return { key: variant.value, label: variant.label };
+    }
+    return valueKey; // Fallback si no se encuentra
+  };
+
+  // Helper para convertir un array de keys a array de objetos {key, label}
+  const getVariantObjects = (groupKey: string, valueKeys: string[]) => {
+    return valueKeys.map(key => getVariantObject(groupKey, key));
+  };
+
   const transformDataToBackendFormat = (
     formData: FormData & {
       photos?: string[];
@@ -325,59 +337,59 @@ export function CreateProfileLayout() {
   ) => {
     const features = [];
 
-    // Gender feature
+    // Gender feature - Convertir a {key, label}
     if (formData.gender && groupMap.gender?._id) {
       features.push({
         group_id: groupMap.gender._id,
-        value: [formData.gender],
+        value: [getVariantObject('gender', formData.gender)],
       });
     }
 
-    // Hair color feature
+    // Hair color feature - Convertir a {key, label}
     if (formData.hairColor && groupMap.hair?._id) {
       features.push({
         group_id: groupMap.hair._id,
-        value: [formData.hairColor],
+        value: [getVariantObject('hair', formData.hairColor)],
       });
     }
 
-    // Eye color feature
+    // Eye color feature - Convertir a {key, label}
     if (formData.eyeColor && groupMap.eyes?._id) {
       features.push({
         group_id: groupMap.eyes._id,
-        value: [formData.eyeColor],
+        value: [getVariantObject('eyes', formData.eyeColor)],
       });
     }
 
-    // Skin color
+    // Skin color - Convertir a {key, label}
     if (formData.skinColor && groupMap.skin?._id) {
       features.push({
         group_id: groupMap.skin._id,
-        value: [formData.skinColor],
+        value: [getVariantObject('skin', formData.skinColor)],
       });
     }
 
-    // Body type feature
+    // Body type feature - Convertir a {key, label}
     if (formData.bodyType && groupMap.body?._id) {
       features.push({
         group_id: groupMap.body._id,
-        value: [formData.bodyType],
+        value: [getVariantObject('body', formData.bodyType)],
       });
     }
 
-    // Category feature
+    // Category feature - Convertir a {key, label}
     if (formData.category && groupMap.category?._id) {
       features.push({
         group_id: groupMap.category._id,
-        value: [formData.category],
+        value: [getVariantObject('category', formData.category)],
       });
     }
 
-    // Services → bodyType
+    // Services - Convertir a {key, label}
     if (formData.selectedServices && groupMap.services?._id) {
       features.push({
         group_id: groupMap.services._id,
-        value: formData.selectedServices,
+        value: getVariantObjects('services', formData.selectedServices),
       });
     }
 
@@ -422,9 +434,9 @@ export function CreateProfileLayout() {
       contact: formData.contact,
       height: formData.height,
       socialMedia: formData.socialMedia,
-      // Nuevos campos de servicios clasificados
-      basicServices: formData.basicServices || [],
-      additionalServices: formData.additionalServices || [],
+      // Nuevos campos de servicios clasificados - Convertir a {key, label}
+      basicServices: formData.basicServices ? getVariantObjects('services', formData.basicServices) : [],
+      additionalServices: formData.additionalServices ? getVariantObjects('services', formData.additionalServices) : [],
       media: {
         gallery: formData.photos || [],
         videos: (formData.videos || [])
@@ -448,6 +460,15 @@ export function CreateProfileLayout() {
   };
 
   const handleCreateProfileClick = () => {
+    // ✅ VALIDAR PASO 5 ANTES DE PROCEDER
+    const step5Result = validateStep(5);
+
+    if (!step5Result.success) {
+      setValidationErrors(step5Result);
+      toast.error('Por favor completa todos los campos requeridos');
+      return;
+    }
+
     const formData = form.getValues();
     const hasPaidPlan = formData.selectedPlan &&
       formData.selectedPlan.code !== 'FREE' &&
@@ -463,6 +484,36 @@ export function CreateProfileLayout() {
   const handleFinalSave = async (data: FormData) => {
     try {
       setUploading(true);
+
+      // ✅ VALIDACIÓN ADICIONAL: Verificar que haya al menos 1 foto
+      if (!data.photos || data.photos.length === 0) {
+        toast.error('Debes subir al menos una foto para crear tu perfil');
+        setUploading(false);
+        return;
+      }
+
+      // ✅ VALIDACIONES CRÍTICAS PRE-SUBMIT (antes de subir archivos)
+      // Verificar límite de perfiles
+      const loadingValidation = toast.loading('Verificando límites de perfiles...');
+      try {
+        const { getUserProfiles } = await import('@/services/user.service');
+        const userProfiles = await getUserProfiles(session?.user?._id || '');
+
+        // Si hay límites excedidos, detener aquí
+        if (userProfiles.length >= 10) { // Ajusta el límite según tu lógica
+          toast.dismiss(loadingValidation);
+          toast.error('Has alcanzado el límite máximo de perfiles permitidos.', { duration: 6000 });
+          setUploading(false);
+          return;
+        }
+        toast.dismiss(loadingValidation);
+      } catch (validationError) {
+        toast.dismiss(loadingValidation);
+        console.error('Error verificando límites:', validationError);
+        toast.error('Error al verificar límites. Contacta soporte.');
+        setUploading(false);
+        return;
+      }
 
       // Subir archivos multimedia a Cloudinary
       let photoUrls: (string | null)[] = [];
@@ -537,12 +588,8 @@ export function CreateProfileLayout() {
       }
 
       if (data.audios && data.audios.length > 0) {
-        console.log('🎵 Procesando audios...');
-
         // Filtrar solo archivos File, no strings (URLs existentes)
         const audioFiles = data.audios.filter((audio): audio is File => audio instanceof File);
-        console.log(`📤 Subiendo ${audioFiles.length} audios nuevos`);
-
         if (audioFiles.length > 0) {
           toast.loading('Subiendo audios...');
           const uploadedAudios = await uploadMultipleAudios(audioFiles);
@@ -556,7 +603,6 @@ export function CreateProfileLayout() {
         // Mantener URLs existentes (strings)
         const existingAudioUrls = data.audios.filter((audio): audio is string => typeof audio === 'string');
         audioUrls = [...audioUrls, ...existingAudioUrls];
-        console.log(`📊 Total audios: ${audioUrls.length} (${existingAudioUrls.length} existentes)`);
       }
 
       // Crear datos con URLs de Cloudinary (filtrar valores null)
@@ -567,24 +613,13 @@ export function CreateProfileLayout() {
         audios: audioUrls.filter(url => url !== null) as string[],
       });
 
-      console.log('📤 Enviando datos al backend:', {
-        photos: backendData.media?.gallery?.length || 0,
-        videos: backendData.media?.videos?.length || 0,
-        audios: backendData.media?.audios?.length || 0
-      });
-
-      console.log('Datos del backend:', {
-        mediaGallery: backendData.media?.gallery?.length || 0,
-        mediaVideos: backendData.media?.videos?.length || 0,
-        mediaAudios: backendData.media?.audios?.length || 0,
-        fullMediaObject: backendData.media
-      });
-
       // Preparar purchasedPlan si se seleccionó un plan de pago
       const purchasedPlan = data.selectedPlan && data.selectedVariant ? {
-        planCode: data.selectedPlan.code,
+        planId: data.selectedPlan.id, // Usar ID del plan en lugar de código
+        planCode: data.selectedPlan.code, // Mantener también el código para compatibilidad
         variantDays: data.selectedVariant.days,
-        generateInvoice: data.generateInvoice || false // Agregar el campo generateInvoice
+        generateInvoice: data.generateInvoice || false, // Agregar el campo generateInvoice
+        couponCode: data.couponCode || undefined // Agregar el código del cupón si existe
       } : null;
 
 
@@ -614,19 +649,18 @@ export function CreateProfileLayout() {
 
         // Debug: Verificar la respuesta del backend
 
-        // Redirigir a la página de cuenta
-        router.push('/cuenta');
+        // Guardar información del perfil creado para el modal de verificación
+        setCreatedProfileId(response.profile._id);
+        setCreatedProfileName(response.profile.name || data.profileName);
 
-        // Verificar si se requiere pago y hay mensaje de WhatsApp
+        // Si hay mensaje de WhatsApp, guardarlo para usarlo después
         if (response.paymentRequired && response.whatsAppMessage) {
           const { companyNumber, message } = response.whatsAppMessage;
-          const whatsappUrl = `https://wa.me/${companyNumber}?text=${encodeURIComponent(message)}`;
-          // Abrir WhatsApp después de un pequeño delay para permitir la navegación
-          setTimeout(() => {
-            window.open(whatsappUrl, '_blank');
-          }, 1000);
-        } else {
+          setWhatsAppData({ companyNumber, message });
         }
+
+        // Mostrar modal de verificación (el modal manejará WhatsApp si es necesario)
+        setShowVerificationPrompt(true);
       } catch (profileError: unknown) {
         toast.dismiss(loadingToast);
 
@@ -826,6 +860,17 @@ export function CreateProfileLayout() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Modal de Prompt de Verificación */}
+        {createdProfileId && (
+          <ProfileVerificationPrompt
+            isOpen={showVerificationPrompt}
+            onOpenChange={setShowVerificationPrompt}
+            profileId={createdProfileId}
+            profileName={createdProfileName}
+            whatsAppData={whatsAppData}
+          />
+        )}
       </div>
     </FormProvider>
   );

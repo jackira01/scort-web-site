@@ -123,7 +123,12 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
           return matches;
         });
 
-        const value = feature?.value?.[0] || '';
+        const rawValue = feature?.value?.[0] || '';
+
+        // Si el valor es un objeto {key, label}, extraer el key
+        const value = typeof rawValue === 'object' && rawValue !== null && 'key' in rawValue
+          ? rawValue.key
+          : rawValue;
 
         // Para bodyType, si no se encuentra la característica, devolver cadena vacía
         // Esto permite que perfiles sin esta característica puedan editarla
@@ -142,7 +147,13 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
           f.groupName?.toLowerCase().includes('genero') ||
           ['hombre', 'mujer', 'trans'].includes(f.value?.[0]?.toLowerCase())
         );
-        const value = genderFeature?.value?.[0] || '';
+        const rawValue = genderFeature?.value?.[0] || '';
+
+        // Si el valor es un objeto {key, label}, extraer el key
+        const value = typeof rawValue === 'object' && rawValue !== null && 'key' in rawValue
+          ? rawValue.key
+          : rawValue;
+
         return value;
       };
 
@@ -155,7 +166,13 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
           f.groupName?.toLowerCase().includes('escort') ||
           f.groupName?.toLowerCase().includes('agencia')
         );
-        const value = categoryFeature?.value?.[0] || categoryFeature?.groupName || profileDetails.category || '';
+        const rawValue = categoryFeature?.value?.[0] || categoryFeature?.groupName || profileDetails.category || '';
+
+        // Si el valor es un objeto {key, label}, extraer el key
+        const value = typeof rawValue === 'object' && rawValue !== null && 'key' in rawValue
+          ? rawValue.key
+          : rawValue;
+
         return value;
       };
 
@@ -168,12 +185,20 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         return value;
       };
 
-      // Obtener servicios seleccionados
+      // Obtener servicios seleccionados - extraer keys si son objetos
       const getSelectedServices = () => {
         const servicesFeature = profileDetails.features?.find((f: any) =>
           f.group?.key === 'services'
         );
-        return servicesFeature?.value || [];
+        const services = servicesFeature?.value || [];
+
+        // Mapear servicios extrayendo el key si son objetos
+        return services.map((service: any) => {
+          if (typeof service === 'object' && service !== null && 'key' in service) {
+            return service.key;
+          }
+          return service;
+        });
       };
 
       // Convertir rates del backend al formato del formulario
@@ -249,16 +274,28 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       // Step 2 - Descripción y servicios
       form.setValue('description', formData.description);
 
+      // Helper para extraer keys de servicios (si son objetos)
+      const extractServiceKeys = (services: any[]) => {
+        return services.map((service: any) => {
+          if (typeof service === 'object' && service !== null && 'key' in service) {
+            return service.key;
+          }
+          return service;
+        });
+      };
+
       // Calcular selectedServices como la unión de basicServices y additionalServices
+      const basicServicesKeys = extractServiceKeys(profileDetails.basicServices || []);
+      const additionalServicesKeys = extractServiceKeys(profileDetails.additionalServices || []);
       const allServices = [
-        ...(profileDetails.basicServices || []),
-        ...(profileDetails.additionalServices || [])
+        ...basicServicesKeys,
+        ...additionalServicesKeys
       ];
       const uniqueServices = [...new Set(allServices)]; // Eliminar duplicados
 
       form.setValue('selectedServices', uniqueServices);
-      form.setValue('basicServices', profileDetails.basicServices || []);
-      form.setValue('additionalServices', profileDetails.additionalServices || []);
+      form.setValue('basicServices', basicServicesKeys);
+      form.setValue('additionalServices', additionalServicesKeys);
 
       // Step 3 - Detalles y contacto
       form.setValue('contact.number', formData.contact.number);
@@ -388,52 +425,69 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
     }
   };
 
+  // Helper para convertir un key de variante a objeto {key, label}
+  const getVariantObject = (groupKey: string, valueKey: string) => {
+    const group = groupMap[groupKey];
+    if (!group || !group.variants) return valueKey; // Fallback a string por retrocompatibilidad
+
+    const variant = group.variants.find((v: any) => v.value === valueKey);
+    if (variant) {
+      return { key: variant.value, label: variant.label };
+    }
+    return valueKey; // Fallback si no se encuentra
+  };
+
+  // Helper para convertir un array de keys a array de objetos {key, label}
+  const getVariantObjects = (groupKey: string, valueKeys: string[]) => {
+    return valueKeys.map(key => getVariantObject(groupKey, key));
+  };
+
   const transformDataToBackendFormat = (
     formData: FormData & {
       photos?: string[];
-      videos?: string[];
+      videos?: Array<string | { link: string; preview: string }>;
       audios?: string[];
     },
   ) => {
     const features = [];
 
-    // Gender feature
+    // Gender feature - Convertir a {key, label}
     if (formData.gender && groupMap.gender?._id) {
       features.push({
         group_id: groupMap.gender._id,
-        value: [formData.gender],
+        value: [getVariantObject('gender', formData.gender)],
       });
     }
 
-    // Hair color feature
+    // Hair color feature - Convertir a {key, label}
     if (formData.hairColor && groupMap.hair?._id) {
       features.push({
         group_id: groupMap.hair._id,
-        value: [formData.hairColor],
+        value: [getVariantObject('hair', formData.hairColor)],
       });
     }
 
-    // Eye color feature
+    // Eye color feature - Convertir a {key, label}
     if (formData.eyeColor && groupMap.eyes?._id) {
       features.push({
         group_id: groupMap.eyes._id,
-        value: [formData.eyeColor],
+        value: [getVariantObject('eyes', formData.eyeColor)],
       });
     }
 
-    // Skin color
+    // Skin color - Convertir a {key, label}
     if (formData.skinColor && groupMap.skin?._id) {
       features.push({
         group_id: groupMap.skin._id,
-        value: [formData.skinColor],
+        value: [getVariantObject('skin', formData.skinColor)],
       });
     }
 
-    // Body type feature
+    // Body type feature - Convertir a {key, label}
     if (formData.bodyType && groupMap.body?._id) {
       features.push({
         group_id: groupMap.body._id,
-        value: [formData.bodyType],
+        value: [getVariantObject('body', formData.bodyType)],
       });
     }
 
@@ -445,19 +499,19 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
     //   });
     // }
 
-    // Category feature
+    // Category feature - Convertir a {key, label}
     if (formData.category && groupMap.category?._id) {
       features.push({
         group_id: groupMap.category._id,
-        value: [formData.category],
+        value: [getVariantObject('category', formData.category)],
       });
     }
 
-    // Services
+    // Services - Convertir a {key, label}
     if (formData.selectedServices && groupMap.services?._id) {
       features.push({
         group_id: groupMap.services._id,
-        value: formData.selectedServices,
+        value: getVariantObjects('services', formData.selectedServices),
       });
     }
 
@@ -489,16 +543,22 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       age: formData.age,
       contact: formData.contact,
       height: formData.height,
-      // Nuevos campos de servicios clasificados
-      basicServices: formData.basicServices || [],
-      additionalServices: formData.additionalServices || [],
+      // Nuevos campos de servicios clasificados - Convertir a {key, label}
+      basicServices: formData.basicServices ? getVariantObjects('services', formData.basicServices) : [],
+      additionalServices: formData.additionalServices ? getVariantObjects('services', formData.additionalServices) : [],
       rates,
       media: {
         gallery: formData.photos || [],
-        videos: formData.videos?.map(url => ({
-          link: typeof url === 'string' ? url : '',
-          preview: typeof url === 'string' ? url : ''
-        })) || [],
+        videos: formData.videos?.map(video => {
+          if (typeof video === 'object' && video !== null && 'link' in video) {
+            // Ya es un objeto {link, preview}
+            return video;
+          } else if (typeof video === 'string') {
+            // Convertir string a objeto
+            return { link: video, preview: '' };
+          }
+          return { link: '', preview: '' };
+        }) || [],
         profilePicture: formData.photos?.[formData.coverImageIndex || 0] || formData.photos?.[0] || '',
       },
       availability: formData.availability,
@@ -527,6 +587,9 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
     setUploading(true);
 
     try {
+      console.log('🔍 DEBUG Edición - Iniciando proceso de actualización de perfil');
+      console.log('🔍 DEBUG Edición - Datos del formulario:', data);
+
       // Subir archivos multimedia solo si son nuevos (File objects)
       let photoUrls: string[] = [];
       let videoUrls: string[] = [];
@@ -536,31 +599,78 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       const newPhotos = data.photos?.filter(photo => photo instanceof File) || [];
       const existingPhotoUrls = data.photos?.filter(photo => typeof photo === 'string') || [];
 
+      console.log('🔍 DEBUG Edición - Fotos nuevas:', newPhotos.length);
+      console.log('🔍 DEBUG Edición - Fotos existentes:', existingPhotoUrls.length);
+
+      // Filtrar videos: pueden ser File (nuevos) o objetos {link, preview} (existentes) o strings
       const newVideos = data.videos?.filter(video => video instanceof File) || [];
-      const existingVideoUrls = data.videos?.filter(video => typeof video === 'string') || [];
+      const existingVideos = data.videos?.filter(video =>
+        typeof video === 'object' && video !== null && 'link' in video
+      ) || [];
+      const existingVideoStrings = data.videos?.filter(video => typeof video === 'string') || [];
+
+      console.log('🔍 DEBUG Edición - Videos nuevos:', newVideos.length);
+      console.log('🔍 DEBUG Edición - Videos existentes (objetos):', existingVideos.length);
+      console.log('🔍 DEBUG Edición - Videos existentes (strings):', existingVideoStrings.length);
 
       const newAudios = data.audios?.filter(audio => audio instanceof File) || [];
       const existingAudioUrls = data.audios?.filter(audio => typeof audio === 'string') || [];
 
+      console.log('🔍 DEBUG Edición - Audios nuevos:', newAudios.length);
+      console.log('🔍 DEBUG Edición - Audios existentes:', existingAudioUrls.length);
+
       if (newPhotos.length > 0) {
-        toast.loading('Subiendo fotos nuevas...');
-        const newPhotoUrls = await uploadMultipleImages(newPhotos);
-        photoUrls = [...existingPhotoUrls, ...newPhotoUrls.filter((url): url is string => url !== null)];
-        toast.dismiss();
-        toast.success(`${newPhotoUrls.filter(url => url !== null).length} fotos nuevas subidas exitosamente`);
+        // Si hay imágenes procesadas con marca de agua, usarlas
+        if (data.processedImages && data.processedImages.length > 0) {
+          toast.loading('Subiendo fotos procesadas...', { id: 'upload-photos' });
+          const { uploadProcessedImages } = await import('@/utils/tools');
+          const processedUrls = await uploadProcessedImages(
+            data.processedImages as any[],
+            (current, total) => {
+              toast.loading(`Subiendo foto procesada ${current}/${total}...`, { id: 'upload-photos' });
+            }
+          );
+          photoUrls = [...existingPhotoUrls, ...processedUrls.filter((url): url is string => url !== null)];
+          toast.dismiss('upload-photos');
+          toast.success(`${processedUrls.filter(url => url !== null).length} fotos procesadas subidas exitosamente`);
+        } else {
+          // Si no hay imágenes procesadas, procesarlas ahora con marca de agua
+          toast.loading('Procesando y subiendo fotos...', { id: 'upload-photos' });
+          const newPhotoUrls = await uploadMultipleImages(
+            newPhotos,
+            undefined, // Usar marca de agua por defecto
+            (current, total) => {
+              toast.loading(`Procesando foto ${current}/${total}...`, { id: 'upload-photos' });
+            }
+          );
+          photoUrls = [...existingPhotoUrls, ...newPhotoUrls.filter((url): url is string => url !== null)];
+          toast.dismiss('upload-photos');
+          toast.success(`${newPhotoUrls.filter(url => url !== null).length} fotos nuevas subidas exitosamente`);
+        }
       } else {
         photoUrls = existingPhotoUrls;
       }
 
       if (newVideos.length > 0) {
         toast.loading('Subiendo videos nuevos...');
-        const newVideoResults = await uploadMultipleVideos(newVideos);
-        const newVideoUrls = newVideoResults.map(result => result.link);
-        videoUrls = [...existingVideoUrls, ...newVideoUrls];
+        const videoCoverImages = data.videoCoverImages || {};
+        const newVideoResults = await uploadMultipleVideos(newVideos, videoCoverImages);
+
+        // Combinar videos existentes (objetos) con videos nuevos subidos
+        videoUrls = [
+          ...existingVideos,  // Mantener objetos {link, preview} existentes
+          ...existingVideoStrings.map(url => ({ link: url, preview: '' })), // Convertir strings a objetos
+          ...newVideoResults  // Videos nuevos ya vienen como objetos {link, preview}
+        ];
+
         toast.dismiss();
         toast.success(`${newVideoResults.length} videos nuevos subidos exitosamente`);
       } else {
-        videoUrls = existingVideoUrls;
+        // Si no hay videos nuevos, mantener solo los existentes
+        videoUrls = [
+          ...existingVideos,
+          ...existingVideoStrings.map(url => ({ link: url, preview: '' }))
+        ];
       }
 
       if (newAudios.length > 0) {
@@ -581,12 +691,20 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         audios: audioUrls,
       };
 
+      console.log('🔍 DEBUG Edición - URLs finales:', {
+        photos: photoUrls.length,
+        videos: videoUrls.length,
+        audios: audioUrls.length
+      });
+
+      console.log('🔍 DEBUG Edición - Transformando datos para backend');
       const backendData = transformDataToBackendFormat(dataWithUrls);
-      // Profile data ready for backend
+      console.log('🔍 DEBUG Edición - Datos transformados:', backendData);
 
       // Actualizar el perfil usando el servicio
       const loadingToast = toast.loading('Actualizando perfil...');
       try {
+        console.log('🔍 DEBUG Edición - Llamando a updateProfile con profileId:', profileId);
         await updateProfile(profileId, backendData);
         toast.dismiss(loadingToast);
 
@@ -611,6 +729,12 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       }
     } catch (error) {
       // Error uploading files
+      console.error('❌ Error al subir archivos en edición de perfil:', error);
+      console.error('❌ Detalle del error:', {
+        message: error instanceof Error ? error.message : 'Error desconocido',
+        stack: error instanceof Error ? error.stack : undefined,
+        errorObject: error
+      });
       toast.error('Error al subir archivos. Inténtalo de nuevo.');
     } finally {
       setUploading(false);

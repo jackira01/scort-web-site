@@ -5,12 +5,13 @@
 import { useConfigValue } from '@/hooks/use-config-parameters';
 
 // Configuración de la marca de agua
+// Alinear con el procesador centralizado para consistencia visual
 const WATERMARK_CONFIG = {
-  fontSize: 16,
+  fontSize: 17,
   fontFamily: 'Arial',
-  color: 'rgba(255, 255, 255, 0.3)',
-  position: 'bottom-right', // 'bottom-right', 'bottom-left', 'top-right', 'top-left', 'center'
-  padding: 20,
+  color: 'rgba(255, 255, 255, 0.2)',
+  position: 'bottom-right',
+  padding: 15,
 };
 
 /**
@@ -21,7 +22,7 @@ export function useCompanyName(): string {
     enabled: true,
     defaultValue: 'ScortWeb'
   });
-  
+
   return companyName || 'ScortWeb';
 }
 
@@ -66,9 +67,9 @@ export function applyWatermarkToImage(
           // Rotar el canvas para inclinar el texto en diagonal (-45 grados)
           ctx.rotate(-Math.PI / 4);
 
-          // Calcular el espaciado entre marcas de agua para evitar superposición
-          const spacingX = WATERMARK_CONFIG.fontSize * 8; // Espaciado horizontal más amplio
-          const spacingY = WATERMARK_CONFIG.fontSize * 4; // Espaciado vertical más amplio
+          // Calcular el espaciado entre marcas de agua (patrón diagonal repetido)
+          const spacingX = WATERMARK_CONFIG.fontSize * 8;
+          const spacingY = WATERMARK_CONFIG.fontSize * 4;
 
           // Calcular los límites extendidos para cubrir toda el área rotada
           const diagonal = Math.sqrt(canvas.width * canvas.width + canvas.height * canvas.height);
@@ -77,7 +78,7 @@ export function applyWatermarkToImage(
           const startY = -diagonal;
           const endY = diagonal;
 
-          // Aplicar patrón diagonal repetido con mejor distribución
+          // Aplicar patrón diagonal repetido con offset en filas (patrón ladrillo)
           let rowOffset = 0;
           for (let y = startY; y < endY; y += spacingY) {
             // Alternar el offset en cada fila para crear un patrón de ladrillo

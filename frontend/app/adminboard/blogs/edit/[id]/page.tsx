@@ -370,9 +370,9 @@ export default function EditBlogPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-scree">
       {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-10">
+      <div className="border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">

@@ -40,20 +40,24 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
     // Datos recibidos para crear perfil
 
     // Extraer información del plan comprado si existe
+    let planId = null;
     let planCode = null;
     let planDays = null;
     let generateInvoice = false; // Por defecto no generar factura
+    let couponCode = null; // Código de cupón si existe
 
     if (purchasedPlan) {
-      planCode = purchasedPlan.planCode;
+      planId = purchasedPlan.planId; // ID del plan (nuevo campo prioritario)
+      planCode = purchasedPlan.planCode; // Código del plan (mantener para compatibilidad)
       planDays = purchasedPlan.planDays || purchasedPlan.variantDays;
       generateInvoice = purchasedPlan.generateInvoice || false; // Campo del frontend
+      couponCode = purchasedPlan.couponCode || null; // Extraer código de cupón
 
-      // Validar que el plan comprado tenga los datos necesarios
-      if (!planCode || !planDays) {
+      // Validar que el plan comprado tenga los datos necesarios (ID o Código)
+      if ((!planId && !planCode) || !planDays) {
         return res.status(400).json({
           success: false,
-          message: 'El plan comprado debe incluir planCode y planDays/variantDays'
+          message: 'El plan comprado debe incluir planId (o planCode) y planDays/variantDays'
         });
       }
 
@@ -77,12 +81,13 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
     }
 
     // Usar la nueva función que maneja facturación automática
-    // Iniciando creación de perfil con facturación automática
     const result = await createProfileWithInvoice({
       ...profileData,
+      planId: planId,
       planCode: planCode,
       planDays: planDays,
-      generateInvoice: generateInvoice // Pasar el campo generateInvoice
+      generateInvoice: generateInvoice, // Pasar el campo generateInvoice
+      couponCode: couponCode // Pasar el código del cupón
     });
 
     // Verificar que el perfil fue creado correctamente

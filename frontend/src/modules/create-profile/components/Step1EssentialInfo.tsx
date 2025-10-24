@@ -150,7 +150,7 @@ export function Step1EssentialInfo({
                           .filter((variant) => variant.active)
                           .map((variant) => (
                             <SelectItem key={variant._id} value={variant.value}>
-                              {variant.value}
+                              {variant.label || variant.value}
                             </SelectItem>
                           ))
                       ) : (

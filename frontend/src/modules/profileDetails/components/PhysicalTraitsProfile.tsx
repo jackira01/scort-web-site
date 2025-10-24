@@ -1,24 +1,36 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAttributeGroups } from '@/hooks/use-attribute-groups';
+import type { AttributeValue } from '@/types/profile.types';
 
 export default function PhysicalTraitsProfile({
   physicalTraits,
 }: {
-  physicalTraits: Record<string, string>;
+  physicalTraits: Record<string, AttributeValue>;
 }) {
   const { data: attributeGroups } = useAttributeGroups();
 
-  // Crear un mapa de key -> name para los labels
-  const labelMap = useMemo(() => {
+  // Crear un mapa de key -> name para los labels de grupos
+  const groupLabelMap = useMemo(() => {
     if (!attributeGroups) return {};
-    
+
     const map: Record<string, string> = {};
     attributeGroups.forEach((group: any) => {
       map[group.key] = group.name;
     });
     return map;
   }, [attributeGroups]);
+
+  // Helper para obtener el valor a mostrar
+  const getDisplayValue = (value: AttributeValue): string => {
+    if (typeof value === 'object' && value !== null && 'label' in value) {
+      return value.label;
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+    return 'No especificado';
+  };
 
   return (
     <Card className="bg-card border-border animate-in fade-in-50 slide-in-from-right-8 duration-900">
@@ -30,15 +42,10 @@ export default function PhysicalTraitsProfile({
           {Object.entries(physicalTraits).map(([key, value]) => (
             <div key={key} className="flex justify-between items-center">
               <span className="text-muted-foreground text-sm capitalize">
-                {labelMap[key] || key}
+                {groupLabelMap[key] || key}
               </span>
               <span className="text-foreground text-sm font-medium">
-                {typeof value === 'object' && value !== null && 'label' in value 
-                  ? (value as any).label 
-                  : typeof value === 'object' && value !== null 
-                    ? JSON.stringify(value)
-                    : value || 'No especificado'
-                }
+                {getDisplayValue(value)}
               </span>
             </div>
           ))}

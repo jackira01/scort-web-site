@@ -143,7 +143,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
   ) => {
     if (!files) return;
 
-    const fileArray = Array.from(files);
+    let fileArray = Array.from(files);
     const currentFiles: (File | string)[] =
       type === 'photos' ? photos : type === 'videos' ? videos.filter(v => v !== null) : audios;
 
@@ -179,11 +179,9 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       ],
     };
 
-    const invalidFiles = fileArray.filter(
-      (file) => !validTypes[type].includes(file.type),
-    );
+    const invalidFiles = fileArray.filter((file) => !validTypes[type].includes(file.type));
     if (invalidFiles.length > 0) {
-      toast(`Tipo de archivo no válido para ${type}`);
+      toast.error(`Tipo de archivo no válido para ${type}. Solo se permiten: ${validTypes[type].join(', ')}`);
       return;
     }
 
@@ -345,41 +343,38 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     try {
       setIsProcessingImage(true);
 
-      // Crear el resultado procesado desde el blob ya optimizado
-      // El procesamiento centralizado ya aplicó crop, marca de agua y compresión
-      const processedFile = new File([croppedBlob], currentImageToCrop.file.name, {
-        type: croppedBlob.type,
-        lastModified: Date.now(),
-      });
-
-      // Obtener dimensiones de la imagen procesada
-      const img = new Image();
-      const dimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
-        img.onload = () => {
-          // Revocar la URL temporal después de obtener las dimensiones
-          URL.revokeObjectURL(croppedUrl);
-          resolve({ width: img.width, height: img.height });
-        };
-        img.onerror = () => {
-          URL.revokeObjectURL(croppedUrl);
-          reject(new Error('Error al cargar imagen'));
-        };
-        img.src = croppedUrl;
-      });
-
-      // Crear una nueva URL para la imagen procesada que persista
-      const persistentUrl = URL.createObjectURL(processedFile);
-
-      const processedResult: ProcessedImageResult = {
-        file: processedFile,
-        url: persistentUrl, // Usar la URL persistente
-        originalSize: currentImageToCrop.file.size,
-        compressedSize: processedFile.size,
-        compressionRatio: ((currentImageToCrop.file.size - processedFile.size) / currentImageToCrop.file.size) * 100,
-        dimensions,
-        originalIndex: currentImageToCrop.index,
-        originalFileName: currentImageToCrop.file.name
-      };
+      // Asegurar marca de agua después del recorte, incluso en fallbacks
+      const processedResult: ProcessedImageResult = await (async () => {
+        try {
+          const { processImageAfterCrop } = await import('@/utils/imageProcessor');
+          return await processImageAfterCrop(
+            croppedBlob,
+            currentImageToCrop.file.name,
+            {
+              applyWatermark: true,
+              watermarkText: companyName,
+            },
+            currentImageToCrop.index
+          );
+        } catch (e) {
+          // Fallback de emergencia
+          const fallbackFile = new File([croppedBlob], currentImageToCrop.file.name, {
+            type: croppedBlob.type,
+            lastModified: Date.now(),
+          });
+          const url = URL.createObjectURL(fallbackFile);
+          return {
+            file: fallbackFile,
+            url,
+            originalSize: currentImageToCrop.file.size,
+            compressedSize: fallbackFile.size,
+            compressionRatio: ((currentImageToCrop.file.size - fallbackFile.size) / currentImageToCrop.file.size) * 100,
+            dimensions: { width: 0, height: 0 },
+            originalIndex: currentImageToCrop.index,
+            originalFileName: currentImageToCrop.file.name,
+          } as ProcessedImageResult;
+        }
+      })();
 
       // Revocar la URL anterior si existe para evitar memory leaks
       const previousProcessedImage = processedImages.get(currentImageToCrop.index || 0);
@@ -395,7 +390,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       // Actualizar el archivo en el array de fotos con la imagen procesada
       const currentPhotos = [...photos];
       if (currentImageToCrop.index !== undefined && currentImageToCrop.index < currentPhotos.length) {
-        currentPhotos[currentImageToCrop.index] = processedFile;
+        currentPhotos[currentImageToCrop.index] = processedResult.file;
         setValue('photos', currentPhotos);
       }
 
@@ -433,23 +428,15 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     const currentPhotos = [...photos];
 
     if (index >= 0 && index < currentPhotos.length) {
-      // Reordenar el array: mover la imagen seleccionada al índice 0
-      const selectedImage = currentPhotos[index];
-      currentPhotos.splice(index, 1); // Remover de la posición actual
-      currentPhotos.unshift(selectedImage); // Agregar al inicio
-
-      // Actualizar el array de fotos
-      setValue('photos', currentPhotos);
-
-      // Resetear el índice de portada ya que ahora la primera imagen es la portada
-      setValue('coverImageIndex', 0);
-
-      toast.success('Imagen de portada seleccionada y movida al inicio de la galería');
+      // No reordenar el array para evitar inconsistencias con previews procesadas
+      // Solo establecer el índice de portada
+      setValue('coverImageIndex', index);
+      toast.success('Imagen de portada seleccionada');
     }
   };
 
   // Función para manejar la subida de imagen de portada para video
-  const handleVideoCoverImageSelect = (videoIndex: number, files: FileList | null) => {
+  const handleVideoCoverImageSelect = async (videoIndex: number, files: FileList | null) => {
     if (!files || files.length === 0) return;
 
     const file = files[0];
@@ -461,14 +448,39 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       return;
     }
 
-    // Actualizar el objeto de imágenes de portada de videos
-    const updatedVideoCoverImages = {
-      ...videoCoverImages,
-      [videoIndex]: file
-    };
+    // Procesar imagen con marca de agua usando el flujo correcto
+    try {
+      setIsProcessingImage(true);
+      toast.loading('Procesando imagen de portada...', { id: 'process-video-cover' });
 
-    setValue('videoCoverImages', updatedVideoCoverImages);
-    toast.success('Imagen de portada para video agregada');
+      // Usar processImageAfterCrop directamente con el archivo como blob
+      const { processImageAfterCrop } = await import('@/utils/imageProcessor');
+      const processedImage = await processImageAfterCrop(file, file.name, {
+        applyWatermark: true,
+        watermarkText: companyName,
+        maxSizeMB: 0.6,
+        maxWidthOrHeight: 1024,
+        initialQuality: 0.9,
+        useWebWorker: true
+      });
+
+      toast.dismiss('process-video-cover');
+      toast.success('Imagen de portada procesada con marca de agua');
+
+      // Actualizar el objeto de imágenes de portada de videos con la imagen procesada
+      const updatedVideoCoverImages = {
+        ...videoCoverImages,
+        [videoIndex]: processedImage.file
+      };
+
+      setValue('videoCoverImages', updatedVideoCoverImages);
+    } catch (error) {
+      console.error('Error procesando imagen de portada:', error);
+      toast.dismiss('process-video-cover');
+      toast.error('Error al procesar la imagen de portada');
+    } finally {
+      setIsProcessingImage(false);
+    }
   };
 
   // Función para renderizar las cards de imágenes con diseño mejorado
@@ -511,10 +523,18 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
             />
           ) : isVideo && videoCoverImages[index] ? (
             <img
-              src={videoCoverImages[index] instanceof File
-                ? URL.createObjectURL(videoCoverImages[index] as File)
-                : videoCoverImages[index] as string
-              }
+              src={(() => {
+                const coverImage = videoCoverImages[index];
+                if (coverImage instanceof File || coverImage instanceof Blob) {
+                  try {
+                    return URL.createObjectURL(coverImage);
+                  } catch (error) {
+                    console.error('Error creating object URL:', error);
+                    return '';
+                  }
+                }
+                return typeof coverImage === 'string' ? coverImage : '';
+              })()}
               alt={`Portada de ${fileName}`}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
@@ -679,21 +699,30 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
             />
           )}
           {isVideo && (
-            videoCoverImages[index] ? (
+            // Si es un video nuevo (File) y tiene cover image, mostrar el cover
+            (isValidFile && videoCoverImages[index]) ? (
               <img
-                src={
-                  videoCoverImages[index] instanceof File
-                    ? URL.createObjectURL(videoCoverImages[index] as File)
-                    : (videoCoverImages[index] as string)
-                }
+                src={(() => {
+                  const coverImage = videoCoverImages[index];
+                  if (coverImage instanceof File || coverImage instanceof Blob) {
+                    try {
+                      return URL.createObjectURL(coverImage);
+                    } catch (error) {
+                      console.error('Error creating object URL:', error);
+                      return '';
+                    }
+                  }
+                  return typeof coverImage === 'string' ? coverImage : '';
+                })()}
                 alt={`Portada de ${fileName}`}
                 className="w-full h-full object-cover"
               />
             ) : previewUrl ? (
+              // Mostrar el video (tanto nuevos como existentes)
               <video
                 src={previewUrl}
                 className="w-full h-full object-cover"
-                muted
+                controls
               />
             ) : (
               <Video className="h-10 w-10 text-gray-400" />
@@ -702,7 +731,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
           {isAudio && <Mic className="h-10 w-10 text-gray-600" />}
 
           {/* Badge de portada */}
-          {index === 0 && isImage && (
+          {isImage && coverImageIndex === index && (
             <div className="absolute top-2 right-2 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
               <Star className="h-4 w-4 text-white fill-white" />
             </div>
@@ -720,17 +749,17 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
           <div className="flex gap-1 mt-1">
             {isImage && (
               <Button
-                variant={index === 0 ? "default" : "ghost"}
+                variant={coverImageIndex === index ? "default" : "ghost"}
                 size="sm"
                 onClick={() => handleSetCoverImage(index)}
-                className={`flex-1 h-8 px-2 ${index === 0
+                className={`flex-1 h-8 px-2 ${coverImageIndex === index
                   ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
                   : 'hover:bg-yellow-100 hover:text-yellow-600'
                   }`}
               >
-                <Star className={`h-4 w-4 mr-1 ${index === 0 ? 'fill-white' : ''}`} />
+                <Star className={`h-4 w-4 mr-1 ${coverImageIndex === index ? 'fill-white' : ''}`} />
                 <span className="text-xs">
-                  {index === 0 ? 'Portada' : 'Seleccionar'}
+                  {coverImageIndex === index ? 'Portada' : 'Seleccionar'}
                 </span>
               </Button>
             )}
@@ -777,7 +806,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <div className="flex items-center space-x-3 mb-6">
         <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-          04
+          05
         </div>
         <h2 className="text-2xl font-bold text-foreground">Multimedia</h2>
       </div>
@@ -786,11 +815,12 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
         {/* Photos Section */}
         <Card className="bg-card border-border">
           <CardHeader>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
               <CardTitle className="text-foreground">
                 Mis fotos <span className="text-red-500">*</span>
               </CardTitle>
-              <div className="flex items-center gap-2">
+
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge
                   variant={photos.length >= contentLimits.maxPhotos ? "destructive" : "outline"}
                   className={photos.length >= contentLimits.maxPhotos ? "animate-pulse" : ""}
@@ -804,6 +834,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                 )}
               </div>
             </div>
+
             <div className="space-y-3 mt-3">
               {photos.length >= contentLimits.maxPhotos && (
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
@@ -913,10 +944,46 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                 </div>
               )}
 
+              {/* Mensaje de error prominente si no hay fotos */}
               {errors.photos && (
-                <p className="text-red-500 text-sm mt-2">
-                  {errors.photos.message}
-                </p>
+                <div className="bg-red-50 dark:bg-red-950/20 border-2 border-red-500 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-red-800 dark:text-red-200">
+                        Fotos requeridas
+                      </h3>
+                      <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                        {errors.photos.message || 'Debes subir al menos una foto para crear tu perfil'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Mensaje informativo si no hay fotos pero no hay error aún */}
+              {photos.length === 0 && !errors.photos && (
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-300 dark:border-blue-700 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <svg className="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200">
+                        ¡Agrega tus fotos!
+                      </h3>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                        Necesitas al menos 1 foto para crear tu perfil. Las fotos son la forma principal en que los usuarios verán tu perfil.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </CardContent>
@@ -925,9 +992,10 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
         {/* Videos Section */}
         <Card className="bg-card border-border">
           <CardHeader>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
               <CardTitle className="text-foreground">Mis videos</CardTitle>
-              <div className="flex items-center gap-2">
+
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge
                   variant={videos.length >= contentLimits.maxVideos ? "destructive" : "outline"}
                   className={videos.length >= contentLimits.maxVideos ? "animate-pulse" : ""}
@@ -941,6 +1009,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                 )}
               </div>
             </div>
+
             <div className="space-y-3 mt-3">
               {videos.length >= contentLimits.maxVideos && (
                 <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-3">
@@ -1038,11 +1107,12 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
         {/* Audio Section */}
         <Card className="bg-card border-border">
           <CardHeader>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
               <CardTitle className="text-foreground">
                 Mis archivos de audio
               </CardTitle>
-              <div className="flex items-center gap-2">
+
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge
                   variant={audios.length >= contentLimits.maxAudios ? "destructive" : "outline"}
                   className={audios.length >= contentLimits.maxAudios ? "animate-pulse" : ""}
@@ -1056,6 +1126,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                 )}
               </div>
             </div>
+
             {audios.length >= contentLimits.maxAudios && (
               <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-3 mt-3">
                 <div className="flex items-start space-x-2">
@@ -1151,20 +1222,14 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                 htmlFor="terms"
                 className="text-sm text-muted-foreground cursor-pointer"
               >
-                I accept the website{' '}
+                Yo acepto los{' '}
                 <Link
-                  href="/terms"
+                  href="/terminos"
                   className="text-blue-600 hover:underline"
                 >
-                  terms & conditions
+                  términos y condiciones
                 </Link>{' '}
-                and{' '}
-                <Link
-                  href="/privacy"
-                  className="text-blue-600 hover:underline"
-                >
-                  privacy policy
-                </Link>
+
               </Label>
             </div>
             {errors.acceptTerms && (

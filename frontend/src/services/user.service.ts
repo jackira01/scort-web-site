@@ -116,7 +116,7 @@ export const getProfileVerification = async (profileId: string) => {
             });
 
             console.log('✅ Created new verification record:', createResponse.data);
-            
+
             // Devolver directamente los datos creados
             return createResponse.data;
         }
@@ -178,5 +178,11 @@ export const restoreProfile = async (profileId: string) => {
 // Obtener perfiles eliminados lógicamente (para administradores)
 export const getDeletedProfiles = async (page: number = 1, limit: number = 10) => {
     const response = await axios.get(`${API_URL}/api/profile/deleted?page=${page}&limit=${limit}`);
+    return response.data;
+}
+
+// Eliminar usuario (para administradores)
+export const deleteUser = async (userId: string) => {
+    const response = await axios.delete(`${API_URL}/api/user/${userId}`);
     return response.data;
 }

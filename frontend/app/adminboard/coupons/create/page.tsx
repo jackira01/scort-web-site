@@ -130,7 +130,10 @@ export default function CreateCouponPage() {
       router.push('/adminboard/coupons');
     } catch (error: any) {
       console.error('Error creating coupon:', error);
-      toast.error(error.message || 'Error al crear cupón');
+
+      // Capturar el mensaje específico del backend
+      const errorMessage = error.response?.data?.message || error.message || 'Error al crear cupón';
+      toast.error(errorMessage);
     } finally {
       setState(prev => ({ ...prev, loading: false }));
     }
@@ -152,7 +155,7 @@ export default function CreateCouponPage() {
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" onClick={() => router.push('/adminboard/coupons')}>
+        <Button variant="outline" onClick={() => router.push('/adminboard')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Volver
         </Button>
@@ -318,7 +321,7 @@ export default function CreateCouponPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
                     {state.plans.flatMap(plan =>
                       plan.variants.map(variant => ({
-                        id: `${plan._id}-${variant.days}`,
+                        id: plan._id, // ✅ Solo el ID del plan, sin concatenar días
                         displayId: `${plan.code}-${variant.days}`,
                         name: `${plan.name} - ${variant.days} días - $${variant.price.toLocaleString()}`,
                         planId: plan._id,
@@ -330,18 +333,21 @@ export default function CreateCouponPage() {
                         <input
                           type="checkbox"
                           id={`plan-${planVariant.displayId}`}
-                          checked={state.formData.validPlanIds?.includes(planVariant.id) || false}
+                          checked={state.formData.validPlanIds?.includes(planVariant.planId) || false}
                           onChange={(e) => {
                             const currentPlans = state.formData.validPlanIds || [];
                             if (e.target.checked) {
-                              updateFormData('validPlanIds', [...currentPlans, planVariant.id]);
+                              // Evitar duplicados al agregar solo planId sin días
+                              if (!currentPlans.includes(planVariant.planId)) {
+                                updateFormData('validPlanIds', [...currentPlans, planVariant.planId]);
+                              }
                             } else {
-                              updateFormData('validPlanIds', currentPlans.filter(id => id !== planVariant.id));
+                              updateFormData('validPlanIds', currentPlans.filter(id => id !== planVariant.planId));
                             }
                           }}
                           className="rounded"
                         />
-                        <label htmlFor={`plan-${planVariant.id}`} className="text-sm font-medium">
+                        <label htmlFor={`plan-${planVariant.displayId}`} className="text-sm font-medium">
                           {planVariant.name}
                         </label>
                       </div>
