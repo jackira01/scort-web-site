@@ -248,7 +248,7 @@ const HeaderComponent = () => {
                 <DropdownMenuContent align="start" className="w-48">
                   {isAdmin && (
                     <DropdownMenuItem asChild>
-                      <Link href="/adminboard" className="flex items-center">
+                      <Link href="/adminboard" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
                         <Shield className="h-4 w-4 mr-2" />
                         Panel de administrador
                       </Link>
@@ -257,13 +257,13 @@ const HeaderComponent = () => {
                   {status === 'authenticated' && (
                     <>
                       <DropdownMenuItem asChild>
-                        <Link href="/cuenta" className="flex items-center">
+                        <Link href="/cuenta" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
                           <UserRound className="h-4 w-4 mr-2" />
                           Mi cuenta
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <div className="flex items-center w-full">
+                        <div className="flex items-center w-full" onClick={() => setMobileMenuOpen(false)}>
                           <LogOut className="h-4 w-4 mr-2" />
                           <SignOut />
                         </div>

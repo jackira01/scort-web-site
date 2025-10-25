@@ -346,7 +346,6 @@ export function Step3Details({
                     name="socialMedia.instagram"
                     control={control}
                     render={({ field }) => {
-                      console.log('Instagram field:', field);
                       return (
                         <Input
                           id="instagram"

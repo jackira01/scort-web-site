@@ -141,7 +141,16 @@ export default function CreateBlogPage() {
   // El contenido se obtiene directamente del editor cuando se necesita
 
   const handleCoverImageChange = (coverImage: string) => {
-    setFormData(prev => ({ ...prev, coverImage }));
+    // Limpiar fileId previo si se ingresa una URL
+    if (formData.coverImageFileId) {
+      removePendingFile(formData.coverImageFileId);
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      coverImage,
+      coverImageFileId: undefined // Limpiar referencia a archivo
+    }));
     if (errors.coverImage) {
       setErrors(prev => ({ ...prev, coverImage: undefined }));
     }

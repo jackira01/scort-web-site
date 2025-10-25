@@ -131,6 +131,7 @@ export function CreateProfileLayout() {
       videos: [],
       audios: [],
       processedImages: [],
+      videoCoverImages: {},
       coverImageIndex: 0, // Primera imagen como preview por defecto
 
       // Step 5 - Finalizar
@@ -450,7 +451,7 @@ export function CreateProfileLayout() {
           }),
         audios: formData.audios || [],
         stories: [], // Las stories se llenan en otra sección, no durante la creación del perfil
-        profilePicture: formData.photos?.[formData.coverImageIndex || 0] || formData.photos?.[0] || '', // Usar la imagen seleccionada como preview
+        profilePicture: formData.processedImages?.[formData.coverImageIndex || 0]?.url || formData.processedImages?.[0]?.url || formData.photos?.[0] || '', // Usar la imagen procesada seleccionada como preview
       },
       verification: null,
       availability: formData.availability,

@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Camera, Mic, Video, X, Edit3, CheckCircle, Star, Upload } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
@@ -15,6 +16,7 @@ import { useFormContext } from '../context/FormContext';
 import { usePlans } from '@/hooks/usePlans';
 import { useConfigValue } from '@/hooks/use-config-parameters';
 import { useCompanyName } from '@/utils/watermark';
+import Image from 'next/image';
 
 interface DefaultPlanConfig {
   enabled: boolean;
@@ -54,11 +56,21 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
   // Estado para almacenar imágenes procesadas
   const [processedImages, setProcessedImages] = useState<Map<number, ProcessedImageResult>>(new Map());
 
+  // Estado para almacenar las imágenes originales (antes de cualquier recorte)
+  const [originalImages, setOriginalImages] = useState<Map<number, File>>(new Map());
+
   // Estados para el modal de crop
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [currentImageToCrop, setCurrentImageToCrop] = useState<{
     file: File;
     index: number;
+  } | null>(null);
+
+  // Estado para el modal de crop de portada de video
+  const [videoCoverCropModalOpen, setVideoCoverCropModalOpen] = useState(false);
+  const [currentVideoCoverToCrop, setCurrentVideoCoverToCrop] = useState<{
+    file: File;
+    videoIndex: number;
   } | null>(null);
 
   // Cleanup effect para revocar URLs cuando el componente se desmonte
@@ -140,14 +152,112 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
   const handleFileSelect = async (
     type: 'photos' | 'videos' | 'audios',
     files: FileList | null,
+    event?: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    if (!files) return;
+    console.log('🔵 handleFileSelect iniciado:', {
+      type,
+      filesLength: files?.length,
+      event: !!event
+    });
 
-    let fileArray = Array.from(files);
-    const currentFiles: (File | string)[] =
-      type === 'photos' ? photos : type === 'videos' ? videos.filter(v => v !== null) : audios;
+    if (!files) {
+      console.log('❌ No hay archivos (null)');
+      return;
+    }
 
-    // Validar límites dinámicos
+    // SOLUCIÓN: Usar DataTransfer para crear un FileList limpio
+    let fileArray: File[] = [];
+
+    try {
+      // Intentar método estándar primero
+      const standardArray = Array.from(files);
+      if (standardArray.length > 0 && standardArray.every(f => f instanceof File)) {
+        fileArray = standardArray;
+        console.log('✅ Método estándar funcionó:', fileArray.length);
+      }
+    } catch (e) {
+      console.log('⚠️ Método estándar falló');
+    }
+
+    // Si el método estándar no funcionó, usar DataTransfer
+    if (fileArray.length === 0 && event?.target) {
+      console.log('⚠️ Intentando método DataTransfer');
+      try {
+        const input = event.target as HTMLInputElement;
+        const dt = new DataTransfer();
+
+        // Intentar acceder a los archivos de diferentes formas
+        if (input.files) {
+          for (let i = 0; i < input.files.length; i++) {
+            const file = input.files.item(i);
+            if (file) {
+              dt.items.add(file);
+              fileArray.push(file);
+            }
+          }
+        }
+
+        if (fileArray.length > 0) {
+          console.log('✅ Método DataTransfer funcionó:', fileArray.length);
+        }
+      } catch (e) {
+        console.error('❌ Método DataTransfer falló:', e);
+      }
+    }
+
+    // Último intento: iterar manualmente sobre el FileList original
+    if (fileArray.length === 0 && files) {
+      console.log('⚠️ Último intento: iteración manual');
+      try {
+        for (let i = 0; i < files.length; i++) {
+          const file = files.item(i);
+          console.log(`  files.item(${i}):`, file);
+          if (file && file instanceof File) {
+            fileArray.push(file);
+          }
+        }
+        if (fileArray.length > 0) {
+          console.log('✅ Iteración manual funcionó:', fileArray.length);
+        }
+      } catch (e) {
+        console.error('❌ Iteración manual falló:', e);
+      }
+    }
+
+    console.log('📁 Resultado final:', {
+      fileArrayLength: fileArray.length,
+      files: fileArray.map(f => ({
+        name: f.name,
+        size: f.size,
+        type: f.type
+      }))
+    });
+
+    // Limpiar el input después de extraer archivos
+    if (event?.target) {
+      event.target.value = '';
+    }
+
+    if (fileArray.length === 0) {
+      console.error('❌ No se pudieron extraer archivos');
+      toast.error('Error al leer los archivos. Por favor intenta de nuevo.');
+      return;
+    }
+
+    const currentFiles =
+      type === 'photos'
+        ? (photos || [])
+        : type === 'videos'
+          ? ((videos || []).filter(v => v !== null))
+          : (audios || []);
+
+    console.log('📊 Estado actual:', {
+      type,
+      currentFilesLength: currentFiles.length,
+      newFilesLength: fileArray.length
+    });
+
+    // Validar límites
     const limits = {
       photos: contentLimits.maxPhotos,
       videos: contentLimits.maxVideos,
@@ -157,7 +267,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     if (currentFiles.length + fileArray.length > limits[type]) {
       const planName = selectedPlan?.name || 'tu plan actual';
       const typeLabel = type === 'photos' ? 'fotos' : type === 'videos' ? 'videos' : 'audios';
-
       toast(
         `Límite alcanzado: ${planName} permite máximo ${limits[type]} ${typeLabel}. Actualmente tienes ${currentFiles.length}.`,
         { duration: 5000 }
@@ -165,120 +274,204 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       return;
     }
 
-    // Validar tipos de archivo
+    // Validar tipos
     const validTypes = {
       photos: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
       videos: ['video/mp4', 'video/avi', 'video/mov', 'video/wmv'],
-      audios: [
-        'audio/mpeg',
-        'audio/mp3',
-        'audio/wav',
-        'audio/ogg',
-        'audio/m4a',
-        'audio/x-m4a',
-      ],
+      audios: ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/x-m4a'],
     };
 
-    const invalidFiles = fileArray.filter((file) => !validTypes[type].includes(file.type));
+    const invalidFiles = fileArray.filter(file => !validTypes[type].includes(file.type));
     if (invalidFiles.length > 0) {
-      toast.error(`Tipo de archivo no válido para ${type}. Solo se permiten: ${validTypes[type].join(', ')}`);
+      toast.error(`Tipo de archivo no válido. Solo: ${validTypes[type].join(', ')}`);
       return;
     }
 
-    // Para imágenes, no hay restricciones de tamaño inicial - se procesarán después
-    // Para videos y audios, mantener límite de 10MB
+    // Validar tamaño (solo videos y audios)
     if (type !== 'photos') {
-      const maxSize = 10 * 1024 * 1024; // 10MB para videos y audios
-      const oversizedFiles = fileArray.filter(
-        (file) => file.size > maxSize,
-      );
+      const maxSize = 10 * 1024 * 1024;
+      const oversizedFiles = fileArray.filter(file => file.size > maxSize);
       if (oversizedFiles.length > 0) {
-        toast(`Archivo muy grande. Máximo 10MB por archivo de ${type}`);
+        toast.error('Archivo muy grande. Máximo 10MB');
         return;
       }
     }
 
-    // Para imágenes, procesar automáticamente todas las nuevas imágenes
+    console.log('✅ Validaciones pasadas');
+
+    // Procesar según tipo
     if (type === 'photos') {
-      // Agregar archivos directamente
-      const newFiles: (File | string)[] = [...currentFiles, ...fileArray];
-      setValue(type, newFiles);
+      const newFiles = [...currentFiles, ...fileArray];
+      setValue('photos', newFiles, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
 
-      // Procesar automáticamente todas las nuevas imágenes
+      const newOriginalImages = new Map(originalImages);
+      fileArray.forEach((file, i) => {
+        newOriginalImages.set(currentFiles.length + i, file);
+      });
+      setOriginalImages(newOriginalImages);
+
+      toast.loading(`Procesando ${fileArray.length} imagen(es)...`, { id: 'processing-images' });
       const processedCount = await processNewImages(fileArray, currentFiles.length);
+      toast.dismiss('processing-images');
 
-      // Mostrar toast con el número real de imágenes procesadas
       if (processedCount > 0) {
-        toast.success(`${processedCount} imagen(es) agregada(s) y procesada(s) exitosamente.`);
-      } else if (fileArray.length > 0) {
-        toast('No se pudieron procesar las imágenes seleccionadas.');
+        toast.success(`${processedCount} imagen(es) procesada(s)`);
+      } else {
+        toast.error('No se pudieron procesar las imágenes');
       }
     } else {
-      // Para videos y audios, agregar directamente
-      const newFiles: (File | string)[] = [...currentFiles, ...fileArray];
-      setValue(type, newFiles);
-      toast.success(`${fileArray.length} archivo(s) agregado(s) a ${type}`);
+      const newFiles = [...currentFiles, ...fileArray];
+      setValue(type, newFiles, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+      toast.success(`${fileArray.length} archivo(s) agregado(s)`);
     }
   };
 
-  // Función para eliminar archivos
+  // FUNCIÓN PARA ELIMINAR ARCHIVOS 
   const handleFileRemove = (
     type: 'photos' | 'videos' | 'audios',
     index: number,
   ) => {
-    const currentFiles: (File | string)[] =
-      type === 'photos' ? photos : type === 'videos' ? videos.filter(v => v !== null) : audios;
-    const newFiles = currentFiles.filter((_, i) => i !== index);
-
-    // Liberar URL de objeto si es un archivo File
-    const fileToRemove = currentFiles[index];
-    if (fileToRemove instanceof File) {
-      URL.revokeObjectURL(URL.createObjectURL(fileToRemove));
-    }
-
-    setValue(type, newFiles);
-    toast.success('Archivo eliminado');
-
-    // Para fotos, también eliminar de processedImages y actualizar el formulario
     if (type === 'photos') {
-      const newProcessedImages = new Map(processedImages);
+      const currentFiles = photos || [];
 
-      // Revocar la URL del blob antes de eliminar para evitar memory leaks
-      const processedImage = newProcessedImages.get(index);
-      if (processedImage && processedImage.url.startsWith('blob:')) {
-        URL.revokeObjectURL(processedImage.url);
-      }
-
-      newProcessedImages.delete(index);
-
-      // Reindexar las imágenes procesadas restantes
-      const reindexedProcessedImages = new Map<number, ProcessedImageResult>();
-      Array.from(newProcessedImages.entries()).forEach(([key, value]) => {
-        const newIndex = key > index ? key - 1 : key;
-        reindexedProcessedImages.set(newIndex, value);
+      console.log('🗑️ ELIMINANDO:', {
+        index,
+        fileName: currentFiles[index]?.name || 'unknown',
+        totalFiles: currentFiles.length,
+        coverImageIndex,
+        processedKeys: Array.from(processedImages.keys())
       });
 
-      setProcessedImages(reindexedProcessedImages);
-
-      // Actualizar las imágenes procesadas en el formulario
-      const processedImagesArray = Array.from(reindexedProcessedImages.values());
-      setValue('processedImages', processedImagesArray);
-
-      // Actualizar coverImageIndex si es necesario
-      const currentCoverIndex = coverImageIndex;
-      if (currentCoverIndex !== undefined) {
-        if (currentCoverIndex === index) {
-          // Si se eliminó la imagen de portada, establecer la primera imagen como nueva portada
-          setValue('coverImageIndex', 0);
-        } else if (currentCoverIndex > index) {
-          // Si se eliminó una imagen antes de la portada, ajustar el índice
-          setValue('coverImageIndex', currentCoverIndex - 1);
-        }
+      // 1. Revocar URL del blob de la imagen eliminada
+      const processedImage = processedImages.get(index);
+      if (processedImage?.url.startsWith('blob:')) {
+        URL.revokeObjectURL(processedImage.url);
+        console.log('  🗑️ URL revocada:', processedImage.url);
       }
+
+      // 2. Crear nuevo array sin el elemento eliminado
+      const newFiles = currentFiles.filter((_, i) => i !== index);
+
+      // 3. CRÍTICO: Reindexar Maps manteniendo los datos correctos
+      const reindexedProcessedImages = new Map<number, ProcessedImageResult>();
+      const reindexedOriginalImages = new Map<number, File>();
+
+      // Iterar sobre todos los índices del array ORIGINAL
+      let newIndex = 0;
+      for (let oldIndex = 0; oldIndex < currentFiles.length; oldIndex++) {
+        // Saltar el índice eliminado
+        if (oldIndex === index) {
+          continue;
+        }
+
+        // Copiar datos preservando la asociación correcta
+        const processed = processedImages.get(oldIndex);
+        const original = originalImages.get(oldIndex);
+
+        if (processed) {
+          reindexedProcessedImages.set(newIndex, {
+            ...processed,
+            originalIndex: newIndex // Actualizar índice interno
+          });
+          console.log(`  ✅ ${oldIndex} → ${newIndex}: ${processed.originalFileName}`);
+        }
+
+        if (original) {
+          reindexedOriginalImages.set(newIndex, original);
+        }
+
+        newIndex++;
+      }
+
+      // 4. Calcular nuevo coverImageIndex
+      const currentCoverIndex = coverImageIndex ?? 0;
+      let newCoverIndex: number | undefined;
+
+      if (newFiles.length === 0) {
+        newCoverIndex = undefined;
+        console.log('  📸 Sin archivos');
+      } else if (currentCoverIndex === index) {
+        // Eliminamos la portada → nueva portada es 0
+        newCoverIndex = 0;
+        console.log('  📸 Portada eliminada, nueva: 0');
+      } else if (currentCoverIndex > index) {
+        // Portada después del eliminado → decrementar
+        newCoverIndex = currentCoverIndex - 1;
+        console.log(`  📸 Decrementar: ${currentCoverIndex} → ${newCoverIndex}`);
+      } else {
+        // Portada antes del eliminado → mantener
+        newCoverIndex = currentCoverIndex;
+        console.log(`  📸 Mantener: ${newCoverIndex}`);
+      }
+
+      console.log('🗑️ RESULTADO:', {
+        newFilesLength: newFiles.length,
+        newCoverIndex,
+        processedKeys: Array.from(reindexedProcessedImages.keys()),
+        mapping: Array.from(reindexedProcessedImages.entries()).map(([k, v]) => ({
+          idx: k,
+          file: v.originalFileName
+        }))
+      });
+
+      // 5. Actualizar todos los estados en orden
+      setProcessedImages(reindexedProcessedImages);
+      setOriginalImages(reindexedOriginalImages);
+
+      setValue('photos', newFiles, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true
+      });
+
+      setValue('processedImages', Array.from(reindexedProcessedImages.values()), {
+        shouldValidate: true,
+        shouldDirty: true
+      });
+
+      setValue('coverImageIndex', newCoverIndex, {
+        shouldValidate: true,
+        shouldDirty: true
+      });
+
+      toast.success('Foto eliminada');
+
+    } else if (type === 'videos') {
+      const currentFiles = videos || [];
+      const newFiles = currentFiles.filter((_, i) => i !== index);
+
+      const newVideoCoverImages: Record<number, File | string> = {};
+      Object.entries(videoCoverImages || {}).forEach(([oldIndexStr, coverImage]) => {
+        const oldIndex = parseInt(oldIndexStr);
+        if (oldIndex < index) {
+          newVideoCoverImages[oldIndex] = coverImage;
+        } else if (oldIndex > index) {
+          newVideoCoverImages[oldIndex - 1] = coverImage;
+        }
+      });
+
+      setValue('videos', newFiles, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true
+      });
+      setValue('videoCoverImages', newVideoCoverImages, {
+        shouldValidate: true
+      });
+      toast.success('Video eliminado');
+    } else {
+      const currentFiles = audios || [];
+      const newFiles = currentFiles.filter((_, i) => i !== index);
+      setValue('audios', newFiles, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true
+      });
+      toast.success('Audio eliminado');
     }
   };
 
-  // Función para procesar automáticamente múltiples imágenes nuevas
+
   // Función para procesar automáticamente múltiples imágenes nuevas
   const processNewImages = async (newFiles: File[], startIndex: number) => {
     let processedCount = 0;
@@ -319,12 +512,15 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
         }
       }
 
-      // Actualizar el estado con todas las imágenes procesadas de una sola vez
+      // CORRECCIÓN: Actualizar el estado ANTES de retornar
       setProcessedImages(newProcessedImages);
 
       // Actualizar las imágenes procesadas en el formulario
       const processedImagesArray = Array.from(newProcessedImages.values());
-      setValue('processedImages', processedImagesArray);
+      setValue('processedImages', processedImagesArray, {
+        shouldValidate: true,
+        shouldDirty: true
+      });
 
     } catch (error) {
       console.error('❌ Error en processNewImages:', error);
@@ -391,12 +587,18 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       const currentPhotos = [...photos];
       if (currentImageToCrop.index !== undefined && currentImageToCrop.index < currentPhotos.length) {
         currentPhotos[currentImageToCrop.index] = processedResult.file;
-        setValue('photos', currentPhotos);
+        setValue('photos', currentPhotos, {
+          shouldValidate: true,
+          shouldDirty: true
+        });
       }
 
       // Guardar las imágenes procesadas en el formulario
       const processedImagesArray = Array.from(newProcessedImages.values());
-      setValue('processedImages', processedImagesArray);
+      setValue('processedImages', processedImagesArray, {
+        shouldValidate: true,
+        shouldDirty: true
+      });
 
       toast.success(
         `Imagen procesada: ${Math.round(processedResult.compressionRatio)}% de compresión aplicada`
@@ -417,8 +619,12 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
   // Función para abrir crop modal para una imagen existente
   const handleEditImage = (file: File | string, index: number) => {
-    if (file instanceof File) {
-      setCurrentImageToCrop({ file, index });
+    // Usar la imagen original si existe, de lo contrario usar el archivo actual
+    const originalImage = originalImages.get(index);
+    const imageToEdit = originalImage || (file instanceof File ? file : null);
+
+    if (imageToEdit) {
+      setCurrentImageToCrop({ file: imageToEdit, index });
       setCropModalOpen(true);
     }
   };
@@ -448,14 +654,22 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       return;
     }
 
-    // Procesar imagen con marca de agua usando el flujo correcto
+    // Abrir modal de recorte para la imagen de portada del video
+    setCurrentVideoCoverToCrop({ file, videoIndex });
+    setVideoCoverCropModalOpen(true);
+  };
+
+  // Función para manejar el crop completado de la portada de video
+  const handleVideoCoverCropComplete = async (croppedBlob: Blob, croppedUrl: string) => {
+    if (!currentVideoCoverToCrop) return;
+
     try {
       setIsProcessingImage(true);
       toast.loading('Procesando imagen de portada...', { id: 'process-video-cover' });
 
-      // Usar processImageAfterCrop directamente con el archivo como blob
+      // Usar processImageAfterCrop con el blob recortado
       const { processImageAfterCrop } = await import('@/utils/imageProcessor');
-      const processedImage = await processImageAfterCrop(file, file.name, {
+      const processedImage = await processImageAfterCrop(croppedBlob, currentVideoCoverToCrop.file.name, {
         applyWatermark: true,
         watermarkText: companyName,
         maxSizeMB: 0.6,
@@ -470,16 +684,30 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       // Actualizar el objeto de imágenes de portada de videos con la imagen procesada
       const updatedVideoCoverImages = {
         ...videoCoverImages,
-        [videoIndex]: processedImage.file
+        [currentVideoCoverToCrop.videoIndex]: processedImage.file
       };
 
-      setValue('videoCoverImages', updatedVideoCoverImages);
+      setValue('videoCoverImages', updatedVideoCoverImages, {
+        shouldValidate: true,
+        shouldDirty: true
+      });
+
+      // Revocar la URL del crop
+      if (croppedUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(croppedUrl);
+      }
     } catch (error) {
       console.error('Error procesando imagen de portada:', error);
       toast.dismiss('process-video-cover');
       toast.error('Error al procesar la imagen de portada');
+      // Revocar la URL en caso de error
+      if (croppedUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(croppedUrl);
+      }
     } finally {
       setIsProcessingImage(false);
+      setVideoCoverCropModalOpen(false);
+      setCurrentVideoCoverToCrop(null);
     }
   };
 
@@ -493,171 +721,176 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     const isVideo = type === 'videos';
     const isAudio = type === 'audios';
 
-    // Validar que el file sea un objeto File válido
     const isValidFile = file instanceof File && file.size > 0;
     const isStringUrl = typeof file === 'string';
-    const previewUrl = isValidFile ? URL.createObjectURL(file) : isStringUrl ? file : null;
     const fileName = isValidFile ? file.name : isStringUrl ? file.split('/').pop() || 'Archivo' : 'Archivo';
     const fileSize = isValidFile ? file.size : 0;
 
-    // Verificar si existe una imagen procesada (recortada) para este índice
+    // CRÍTICO: Buscar imagen procesada con el índice exacto
     const processedImage = isImage ? processedImages.get(index) : null;
-    const displayUrl = processedImage ? processedImage.url : previewUrl;
-    const isPreviewImage = coverImageIndex === index || (coverImageIndex === undefined && index === 0);
+    const isThisImageProcessing = isImage && isValidFile && !processedImage && isProcessingImage;
+
+    // Usar imagen procesada si existe, sino crear preview del archivo original
+    const displayUrl = processedImage
+      ? processedImage.url
+      : isValidFile
+        ? URL.createObjectURL(file)
+        : isStringUrl
+          ? file
+          : null;
+
+    const currentCoverIndex = coverImageIndex ?? 0;
+    const isPreviewImage = isImage && currentCoverIndex === index;
+
+    console.log('🖼️ Renderizando:', {
+      index,
+      fileName,
+      hasProcesada: !!processedImage,
+      isPreviewImage,
+      currentCoverIndex,
+      displayUrl: displayUrl?.substring(0, 30)
+    });
 
     return (
       <div
-        key={index}
-        className={`relative group border-2 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg ${isImage && isPreviewImage
+        className={`relative group border-2 rounded-xl overflow-hidden transition-all duration-500 hover:shadow-lg w-full sm:w-60 md:w-60 lg:w-64 ${isImage && isPreviewImage
           ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-400 dark:border-yellow-600 ring-2 ring-yellow-400 dark:ring-yellow-600 shadow-lg'
           : 'bg-card border-border hover:border-primary/50'
           }`}
       >
-        {/* Imagen principal */}
-        <div className="aspect-square relative overflow-hidden bg-muted">
-          {isImage && displayUrl ? (
-            <img
-              src={displayUrl}
-              alt={fileName}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          ) : isVideo && videoCoverImages[index] ? (
-            <img
-              src={(() => {
-                const coverImage = videoCoverImages[index];
-                if (coverImage instanceof File || coverImage instanceof Blob) {
+        <div className="flex flex-row sm:flex-col h-full">
+          {/* Imagen principal */}
+          <div className="relative overflow-hidden w-2/5 sm:w-full aspect-[4/5] bg-muted flex-shrink-0">
+            {isImage && displayUrl ? (
+              <div className="relative w-full h-full">
+                <img
+                  src={displayUrl}
+                  alt={fileName}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                {isThisImageProcessing && (
+                  <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-10">
+                    <div className="text-white text-center">
+                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white mx-auto mb-2"></div>
+                      <span className="text-sm font-medium">Procesando...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : isVideo && videoCoverImages?.[index] ? (
+              <img
+                src={(() => {
+                  const coverImage = videoCoverImages[index];
                   try {
-                    return URL.createObjectURL(coverImage);
+                    if (typeof coverImage === 'object' && coverImage !== null) {
+                      return URL.createObjectURL(coverImage as Blob);
+                    }
+                    return typeof coverImage === 'string' ? coverImage : '';
                   } catch (error) {
                     console.error('Error creating object URL:', error);
                     return '';
                   }
-                }
-                return typeof coverImage === 'string' ? coverImage : '';
-              })()}
-              alt={`Portada de ${fileName}`}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          ) : isVideo && previewUrl ? (
-            <video
-              src={previewUrl}
-              className="w-full h-full object-cover"
-              muted
-            />
-          ) : isAudio ? (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30">
-              <Mic className="h-16 w-16 text-purple-500" />
-            </div>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-muted">
-              <Camera className="h-16 w-16 text-muted-foreground" />
-            </div>
-          )}
-
-          {/* Indicador de imagen de portada */}
-          {isImage && isPreviewImage && (
-            <div className="absolute top-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 shadow-lg">
-              <Star className="h-3 w-3 fill-white" />
-              Portada
-            </div>
-          )}
-
-          {/* Indicador de imagen de portada personalizada para video */}
-          {isVideo && videoCoverImages[index] && (
-            <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 shadow-lg">
-              <CheckCircle className="h-3 w-3" />
-              Portada
-            </div>
-          )}
-
-          {/* Botón eliminar en esquina superior derecha */}
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => handleFileRemove(type, index)}
-            className="absolute top-2 right-2 h-8 w-8 p-0 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-            title="Eliminar archivo"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-
-          {/* Input oculto para subir imagen de portada para video */}
-          {isVideo && (
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleVideoCoverImageSelect(index, e.target.files)}
-              className="hidden"
-              id={`video-cover-${index}`}
-            />
-          )}
-        </div>
-
-        {/* Información del archivo */}
-        <div className="p-3 bg-card">
-          <p className="text-sm font-medium text-foreground truncate mb-1">
-            {fileName}
-          </p>
-          {isValidFile && (
-            <p className="text-xs text-muted-foreground mb-3">
-              {(fileSize / 1024 / 1024).toFixed(2)} MB
-            </p>
-          )}
-
-          {/* Botones de acción (misma fila) */}
-          <div className="flex gap-2 mt-2">
-            {/* Botón para seleccionar como preview */}
-            {isImage && (
-              <Button
-                variant={isPreviewImage ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleSetCoverImage(index)}
-                className={`flex-1 ${isPreviewImage
-                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500'
-                  : 'hover:bg-yellow-50 hover:border-yellow-300 dark:hover:bg-yellow-950/20'
-                  }`}
-                title={isPreviewImage ? "Imagen de portada actual" : "Seleccionar como imagen de portada"}
-              >
-                <Star className={`h-4 w-4 mr-1 ${isPreviewImage ? 'fill-white' : ''}`} />
-                {isPreviewImage && 'Portada'}
-              </Button>
+                })()}
+                alt={`Portada de ${fileName}`}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            ) : isVideo && displayUrl ? (
+              <video src={displayUrl} className="w-full h-full object-cover" muted />
+            ) : isAudio ? (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30">
+                <Mic className="h-16 w-16 text-purple-500" />
+              </div>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-muted">
+                <Camera className="h-16 w-16 text-muted-foreground" />
+              </div>
             )}
 
-            {/* Botón para subir imagen de portada para video */}
+            {/* Botón eliminar */}
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleFileRemove(type, index)}
+              className="absolute top-2 right-2 h-6 w-6 p-0 shadow-lg transition-opacity duration-300"
+              title="Eliminar archivo"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+
             {isVideo && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => document.getElementById(`video-cover-${index}`)?.click()}
-                className="flex-1 hover:bg-green-50 hover:border-green-300 dark:hover:bg-green-950/20"
-                title={videoCoverImages[index] ? "Cambiar imagen de portada del video" : "Seleccionar imagen de portada para video"}
-              >
-                <Upload className="h-4 w-4 mr-1" />
-                {videoCoverImages[index] ? 'Cambiar' : 'Portada'}
-              </Button>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleVideoCoverImageSelect(index, e.target.files)}
+                className="hidden"
+                id={`video-cover-${index}`}
+              />
             )}
           </div>
 
-          {/* Botón Ajustar debajo - solo para imagen de preview */}
-          {isImage && isValidFile && isPreviewImage && (
-            <div className="mt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleEditImage(file, index)}
-                className="w-full hover:bg-blue-50 hover:border-blue-300 dark:hover:bg-blue-950/20"
-                title="Ajustar y recortar imagen"
-              >
-                <Edit3 className="h-4 w-4 mr-1" />
-                Ajustar
-              </Button>
+          {/* Contenido */}
+          <div className="p-3 sm:p-4 bg-card flex-1 flex flex-col justify-between min-w-[140px]">
+            <div className="space-y-1 sm:space-y-2">
+              <p className="text-sm sm:text-base font-medium text-foreground truncate">
+                {fileName}
+              </p>
+              {isValidFile && (
+                <p className="text-xs text-muted-foreground">
+                  {(fileSize / 1024 / 1024).toFixed(2)} MB
+                </p>
+              )}
             </div>
-          )}
+
+            <div className="space-y-2 mt-2 sm:mt-3">
+              <div className="flex gap-2">
+                {isImage && (
+                  <Button
+                    variant={isPreviewImage ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setValue('coverImageIndex', index)}
+                    className={`flex-1 text-xs sm:text-sm ${isPreviewImage
+                      ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500'
+                      : 'hover:bg-yellow-50 hover:border-yellow-300 dark:hover:bg-yellow-950/20'
+                      }`}
+                    title={isPreviewImage ? 'Portada actual' : 'Seleccionar como portada'}
+                  >
+                    <Star className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 ${isPreviewImage ? 'fill-white' : ''}`} />
+                    <span className="hidden sm:inline">Portada</span>
+                    <span className="sm:hidden">★</span>
+                  </Button>
+                )}
+
+                {isVideo && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById(`video-cover-${index}`)?.click()}
+                    className="flex-1 text-xs sm:text-sm"
+                  >
+                    <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                    {videoCoverImages?.[index] ? 'Cambiar' : 'Portada'}
+                  </Button>
+                )}
+              </div>
+
+              {isImage && isValidFile && isPreviewImage && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEditImage(file, index)}
+                  className="w-full text-xs sm:text-sm"
+                  title="Ajustar y recortar imagen"
+                >
+                  <Edit3 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                  Ajustar imagen
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
   };
-
 
   // Función para renderizar la vista previa de archivos
   const renderFilePreview = (
@@ -684,7 +917,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     return (
       <div
         key={index}
-        className={`relative group border rounded-lg overflow-hidden transition-all w-48 h-64 flex flex-col ${isImage && coverImageIndex === index
+        className={`relative group border rounded-lg overflow-hidden transition-all w-48 h-72 flex flex-col ${isImage && coverImageIndex === index
           ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-300 dark:border-yellow-700 ring-2 ring-yellow-400 dark:ring-yellow-600'
           : 'bg-muted/50'
           }`}
@@ -704,15 +937,15 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
               <img
                 src={(() => {
                   const coverImage = videoCoverImages[index];
-                  if (coverImage instanceof File || coverImage instanceof Blob) {
-                    try {
-                      return URL.createObjectURL(coverImage);
-                    } catch (error) {
-                      console.error('Error creating object URL:', error);
-                      return '';
+                  try {
+                    if (typeof coverImage === 'object' && coverImage !== null) {
+                      return URL.createObjectURL(coverImage as Blob);
                     }
+                    return typeof coverImage === 'string' ? coverImage : '';
+                  } catch (error) {
+                    console.error('Error creating object URL:', error);
+                    return '';
                   }
-                  return typeof coverImage === 'string' ? coverImage : '';
                 })()}
                 alt={`Portada de ${fileName}`}
                 className="w-full h-full object-cover"
@@ -908,7 +1141,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(e) => handleFileSelect('photos', e.target.files)}
+                  onChange={(e) => handleFileSelect('photos', e.target.files, e)}
                   className="hidden"
                   id="photos-upload"
                   disabled={photos.length >= contentLimits.maxPhotos}
@@ -922,7 +1155,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                     {photos.length >= contentLimits.maxPhotos ? 'Límite alcanzado' : 'Añadir fotos'}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    JPG, PNG, WEBP - Sin límite de tamaño
+                    JPG, PNG, WEBP
                   </p>
                   <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
                     📏 Recomendado: mínimo 500×600px para mejor calidad
@@ -931,18 +1164,26 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
               </div>
 
               {/* Vista previa de fotos */}
-              {photos.length > 0 && (
+              {photos && photos.length > 0 && (
                 <div className="space-y-4">
                   <h4 className="text-sm font-medium text-foreground">
                     Fotos seleccionadas:
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
-                    {photos.map((file, index) =>
-                      renderImageCard(file, 'photos', index),
-                    )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-1 max-h-[32rem] overflow-y-auto auto-rows-max">
+                    {photos.map((file, index) => {
+                      if (!file) return null;
+
+                      return (
+                        <React.Fragment key={`photo-${index}-${file instanceof File ? file.name : file}`}>
+                          {renderImageCard(file, 'photos', index)}
+                        </React.Fragment>
+                      );
+                    })}
                   </div>
                 </div>
               )}
+
 
               {/* Mensaje de error prominente si no hay fotos */}
               {errors.photos && (
@@ -1062,7 +1303,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                   type="file"
                   accept="video/*"
                   multiple
-                  onChange={(e) => handleFileSelect('videos', e.target.files)}
+                  onChange={(e) => handleFileSelect('videos', e.target.files, e)}
                   className="hidden"
                   id="videos-upload"
                   disabled={videos.length >= contentLimits.maxVideos}
@@ -1087,13 +1328,15 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                   <h4 className="text-sm font-medium text-foreground">
                     Videos seleccionados:
                   </h4>
-                  <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto">
-                    {videos.filter(file => file !== null).map((file, index) =>
-                      renderFilePreview(file, 'videos', index),
-                    )}
+                  <div
+                    className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 min-h-80 overflow-y-auto p-2">
+                    {videos
+                      .filter((file) => file !== null)
+                      .map((file, index) => renderFilePreview(file, 'videos', index))}
                   </div>
                 </div>
               )}
+
 
               {errors.videos && (
                 <p className="text-red-500 text-sm mt-2">
@@ -1161,7 +1404,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                   type="file"
                   accept="audio/*"
                   multiple
-                  onChange={(e) => handleFileSelect('audios', e.target.files)}
+                  onChange={(e) => handleFileSelect('audios', e.target.files, e)}
                   className="hidden"
                   id="audios-upload"
                   disabled={audios.length >= contentLimits.maxAudios}
@@ -1242,7 +1485,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
       </div>
 
-      {/* Modal de recorte de imagen */}
+      {/* Modal de recorte de imagen para fotos */}
       {currentImageToCrop && (
         <ImageCropModal
           isOpen={cropModalOpen}
@@ -1253,7 +1496,22 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
           imageSrc={URL.createObjectURL(currentImageToCrop.file)}
           onCropComplete={handleCropComplete}
           fileName={currentImageToCrop.file.name}
-          aspectRatio={4 / 6}
+          aspectRatio={3 / 4}
+        />
+      )}
+
+      {/* Modal de recorte de imagen para portadas de video */}
+      {currentVideoCoverToCrop && (
+        <ImageCropModal
+          isOpen={videoCoverCropModalOpen}
+          onClose={() => {
+            setVideoCoverCropModalOpen(false);
+            setCurrentVideoCoverToCrop(null);
+          }}
+          imageSrc={URL.createObjectURL(currentVideoCoverToCrop.file)}
+          onCropComplete={handleVideoCoverCropComplete}
+          fileName={currentVideoCoverToCrop.file.name}
+          aspectRatio={1 / 1}  // Aspect ratio 16:9 para portadas de video (horizontal)
         />
       )}
     </div>
