@@ -21,9 +21,6 @@ export const useImageProcessing = (companyName: string) => {
     const processNewImages = async (newFiles: File[], startIndex: number): Promise<number> => {
         let processedCount = 0;
 
-        // CORRECCIÓN: Clonar el Map ACTUALIZADO
-        const newProcessedImages = new Map(processedImages);
-
         console.log('📸 processNewImages iniciado:', {
             nuevosArchivos: newFiles.length,
             startIndex,
@@ -31,12 +28,22 @@ export const useImageProcessing = (companyName: string) => {
             keysActuales: Array.from(processedImages.keys())
         });
 
+        // NO clonar aquí, trabajar directamente con el estado
+        const updates: Array<{ index: number; result: ProcessedImageResult }> = [];
+
         try {
             setIsProcessingImage(true);
 
             for (let i = 0; i < newFiles.length; i++) {
                 const file = newFiles[i];
                 const imageIndex = startIndex + i;
+
+                // ✅ IMPORTANTE: Verificar si ya existe una imagen procesada para este índice
+                const existingProcessed = processedImages.get(imageIndex);
+                if (existingProcessed && existingProcessed.originalFileName === file.name) {
+                    console.log(`  ⏭️ Saltando ${imageIndex}: ya procesada (${file.name})`);
+                    continue;
+                }
 
                 console.log(`  📸 Procesando imagen ${i + 1}/${newFiles.length}:`, {
                     fileName: file.name,
@@ -58,7 +65,7 @@ export const useImageProcessing = (companyName: string) => {
                         imageIndex
                     );
 
-                    newProcessedImages.set(imageIndex, processedResult);
+                    updates.push({ index: imageIndex, result: processedResult });
                     processedCount++;
 
                     console.log(`  ✅ Imagen procesada en índice ${imageIndex}:`, file.name);
@@ -68,13 +75,23 @@ export const useImageProcessing = (companyName: string) => {
                 }
             }
 
-            console.log('📸 Resultado processNewImages:', {
-                procesadas: processedCount,
-                totalEnMap: newProcessedImages.size,
-                keysFinales: Array.from(newProcessedImages.keys())
-            });
+            // ✅ Actualizar el Map una sola vez con todas las nuevas imágenes
+            if (updates.length > 0) {
+                setProcessedImages(prev => {
+                    const newMap = new Map(prev);
+                    updates.forEach(({ index, result }) => {
+                        newMap.set(index, result);
+                    });
 
-            setProcessedImages(newProcessedImages);
+                    console.log('📸 Map actualizado:', {
+                        procesadas: updates.length,
+                        totalEnMap: newMap.size,
+                        keysFinales: Array.from(newMap.keys())
+                    });
+
+                    return newMap;
+                });
+            }
         } catch (error) {
             console.error('❌ Error en processNewImages:', error);
             toast.error('Error procesando las imágenes');

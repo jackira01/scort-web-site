@@ -395,9 +395,14 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                     {photos.map((file, index) => {
                       if (!file) return null;
 
+                      // ✅ SOLUCIÓN: Key estable basada en el contenido del archivo, no el índice
+                      const fileKey = file instanceof File
+                        ? `${file.name}-${file.size}-${file.lastModified}`
+                        : file;
+
                       return (
                         <ImagePreviewCard
-                          key={`photo-${index}-${file instanceof File ? file.name : file}`}
+                          key={fileKey} // ✅ Ahora la key es única y estable
                           file={file}
                           type="photos"
                           index={index}
@@ -561,9 +566,15 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-1 max-h-[32rem] overflow-y-auto auto-rows-max">
                     {videos
                       .filter((file) => file !== null)
-                      .map((file, index) => (
-                        <React.Fragment key={`video-${index}-${file instanceof File ? file.name : file}`}>
+                      .map((file, index) => {
+                        // ✅ Key estable basada en contenido
+                        const fileKey = file instanceof File
+                          ? `video-${file.name}-${file.size}-${file.lastModified}`
+                          : `video-url-${file}`;
+
+                        return (
                           <ImagePreviewCard
+                            key={fileKey}
                             file={file}
                             type="videos"
                             index={index}
@@ -576,12 +587,11 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                             onSetCover={(idx) => setValue('coverImageIndex', idx)}
                             onVideoCoverSelect={handleVideoCoverImageSelect}
                           />
-                        </React.Fragment>
-                      ))}
+                        );
+                      })}
                   </div>
                 </div>
               )}
-
 
               {errors.videos && (
                 <p className="text-red-500 text-sm mt-2">
@@ -675,9 +685,15 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                     Audios seleccionados:
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-1 max-h-[32rem] overflow-y-auto auto-rows-max">
-                    {audios.map((file, index) => (
-                      <React.Fragment key={`audio-${index}-${file instanceof File ? file.name : file}`}>
+                    {audios.map((file, index) => {
+                      // ✅ Key estable basada en contenido
+                      const fileKey = file instanceof File
+                        ? `audio-${file.name}-${file.size}-${file.lastModified}`
+                        : `audio-url-${file}`;
+
+                      return (
                         <ImagePreviewCard
+                          key={fileKey}
                           file={file}
                           type="audios"
                           index={index}
@@ -690,8 +706,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                           onSetCover={(idx) => setValue('coverImageIndex', idx)}
                           onVideoCoverSelect={handleVideoCoverImageSelect}
                         />
-                      </React.Fragment>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

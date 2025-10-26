@@ -8,7 +8,6 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAttributeGroups } from '@/hooks/use-attribute-groups';
 import { useProfile } from '@/hooks/use-profile';
@@ -27,7 +26,6 @@ import {
   step2Schema,
   step3Schema,
   step4Schema,
-  step5Schema,
 } from '../../create-profile/schemas';
 import type { AttributeGroup, Rate } from '../../create-profile/types';
 import { SidebarContent } from '../../create-profile/components/SidebarContent';
@@ -35,7 +33,6 @@ import { Step1EssentialInfo } from '../../create-profile/components/Step1Essenti
 import { Step2Description } from '../../create-profile/components/Step2Description';
 import { Step3Details } from '../../create-profile/components/Step3Details';
 import { Step5Multimedia } from '../../create-profile/components/Step5Multimedia';
-import { Step4Plan } from '../../create-profile/components/Step4Plan';
 
 interface EditProfileLayoutProps {
   profileId: string;

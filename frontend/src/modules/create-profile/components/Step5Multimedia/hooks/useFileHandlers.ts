@@ -148,19 +148,35 @@ export const useFileHandlers = ({
                 const processed = processedImages.get(oldIndex);
                 const original = originalImages.get(oldIndex);
                 const file = currentFiles[oldIndex];
+                const currentFileName = file instanceof File ? file.name : (typeof file === 'string' ? file.split('/').pop() : null);
 
-                console.log(`  🔄 ${oldIndex} → ${newIndex}: ${file instanceof File ? file.name : file}`, {
+                console.log(`  🔄 ${oldIndex} → ${newIndex}: ${currentFileName}`, {
                     tieneProcesada: !!processed,
-                    tieneOriginal: !!original
+                    tieneOriginal: !!original,
+                    processedName: processed?.originalFileName
                 });
 
+                // ✅ VERIFICACIÓN CRÍTICA: Solo asignar imagen procesada si el nombre coincide
                 if (processed) {
-                    reindexedProcessedImages.set(newIndex, {
-                        ...processed,
-                        originalIndex: newIndex,
-                        // ✅ ACTUALIZAR también el fileName para evitar confusiones
-                        originalFileName: (file instanceof File ? file.name : processed.originalFileName)
-                    });
+                    const namesMatch = currentFileName && processed.originalFileName === currentFileName;
+                    
+                    if (namesMatch) {
+                        // ✅ La imagen procesada SÍ corresponde a este archivo
+                        reindexedProcessedImages.set(newIndex, {
+                            ...processed,
+                            originalIndex: newIndex
+                        });
+                        console.log(`    ✅ Imagen procesada asignada (nombres coinciden)`);
+                    } else {
+                        // ❌ La imagen procesada NO corresponde - no la asignamos
+                        console.warn(`    ⚠️ Imagen procesada NO coincide:`, {
+                            archivo: currentFileName,
+                            procesada: processed.originalFileName,
+                            accion: 'imagen procesada descartada'
+                        });
+                        // NO asignamos la imagen procesada incorrecta
+                        // El componente usará el archivo original
+                    }
                 }
 
                 if (original) {

@@ -41,7 +41,7 @@ export const ImagePreviewCard = ({
     const fileName = isValidFile ? file.name : isStringUrl ? file.split('/').pop() || 'Archivo' : 'Archivo';
     const fileSize = isValidFile ? file.size : 0;
 
-    // VALIDACIÓN CRÍTICA: Verificar que la imagen procesada corresponde al archivo
+    // VALIDACIÓN: Verificar que la imagen procesada corresponde al archivo
     let displayUrl: string | null = null;
     let isProcessedValid = false;
     let isThisImageProcessing = false;
@@ -50,17 +50,12 @@ export const ImagePreviewCard = ({
     if (isImage) {
         if (processedImage) {
             // Verificar que el nombre de archivo coincida
-            const namesMatch = isValidFile && processedImage.originalFileName === file.name;
+            const namesMatch = isValidFile && processedImage.originalFileName === (file as File).name;
 
             if (namesMatch) {
                 displayUrl = processedImage.url;
                 isProcessedValid = true;
             } else {
-                console.warn(`⚠️ MISMATCH en índice ${index}:`, {
-                    archivoActual: fileName,
-                    imagenProcesada: processedImage.originalFileName,
-                    accion: 'marcando para usar original'
-                });
                 // Marcar para crear blob del original
                 shouldCreateBlob = isValidFile;
             }
@@ -82,7 +77,7 @@ export const ImagePreviewCard = ({
             displayUrl = file;
         }
     } else {
-        // Para videos y audios, usar displayUrl normal
+        // Para videos y audios
         if (isValidFile && file instanceof File) {
             try {
                 displayUrl = URL.createObjectURL(file);
@@ -97,15 +92,6 @@ export const ImagePreviewCard = ({
 
     const currentCoverIndex = coverImageIndex ?? 0;
     const isPreviewImage = isImage && currentCoverIndex === index;
-
-    console.log(`🖼️ [${index}] ${fileName}:`, {
-        hasProcesada: !!processedImage,
-        processedValid: isProcessedValid,
-        processedFileName: processedImage?.originalFileName,
-        isPortada: isPreviewImage,
-        coverIndex: currentCoverIndex,
-        displayUrl: displayUrl?.substring(0, 30)
-    });
 
     const getVideoCoverUrl = () => {
         const coverImage = videoCoverImages?.[index];
@@ -125,8 +111,8 @@ export const ImagePreviewCard = ({
     return (
         <div
             className={`relative group border-2 rounded-xl overflow-hidden transition-all duration-500 hover:shadow-lg w-full sm:w-60 md:w-60 lg:w-64 ${isImage && isPreviewImage
-                ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-400 dark:border-yellow-600 ring-2 ring-yellow-400 dark:ring-yellow-600 shadow-lg'
-                : 'bg-card border-border hover:border-primary/50'
+                    ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-400 dark:border-yellow-600 ring-2 ring-yellow-400 dark:ring-yellow-600 shadow-lg'
+                    : 'bg-card border-border hover:border-primary/50'
                 }`}
         >
             <div className="flex flex-row sm:flex-col h-full">
@@ -140,17 +126,7 @@ export const ImagePreviewCard = ({
                                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                                 onError={(e) => {
                                     console.error(`❌ Error cargando imagen [${index}]: ${fileName}`);
-                                    // Prevenir loops infinitos
                                     e.currentTarget.onerror = null;
-                                    // Intentar con archivo original si falla y es un File válido
-                                    if (isValidFile && file instanceof File) {
-                                        try {
-                                            const newUrl = URL.createObjectURL(file);
-                                            e.currentTarget.src = newUrl;
-                                        } catch (err) {
-                                            console.error('No se pudo crear blob alternativo:', err);
-                                        }
-                                    }
                                 }}
                             />
                             {isThisImageProcessing && (
@@ -159,12 +135,6 @@ export const ImagePreviewCard = ({
                                         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white mx-auto mb-2"></div>
                                         <span className="text-sm font-medium">Procesando...</span>
                                     </div>
-                                </div>
-                            )}
-                            {/* Indicador de debug - OPCIONAL (puedes comentarlo en producción) */}
-                            {!isProcessedValid && processedImage && (
-                                <div className="absolute bottom-2 left-2 bg-red-500 text-white px-2 py-1 text-xs rounded shadow-lg">
-                                    ⚠️ Original
                                 </div>
                             )}
                         </div>
@@ -229,8 +199,8 @@ export const ImagePreviewCard = ({
                                     size="sm"
                                     onClick={() => onSetCover(index)}
                                     className={`flex-1 text-xs sm:text-sm ${isPreviewImage
-                                        ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500'
-                                        : 'hover:bg-yellow-50 hover:border-yellow-300 dark:hover:bg-yellow-950/20'
+                                            ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500'
+                                            : 'hover:bg-yellow-50 hover:border-yellow-300 dark:hover:bg-yellow-950/20'
                                         }`}
                                     title={isPreviewImage ? 'Portada actual' : 'Seleccionar como portada'}
                                 >
