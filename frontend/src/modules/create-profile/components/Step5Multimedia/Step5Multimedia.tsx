@@ -82,7 +82,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     try {
       setIsProcessingImage(true);
 
-      // Asegurar marca de agua después del recorte, incluso en fallbacks
+      // Solo recortar sin aplicar marca de agua
       const processedResult: ProcessedImageResult = await (async () => {
         try {
           const { processImageAfterCrop } = await import('@/utils/imageProcessor');
@@ -90,8 +90,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
             croppedBlob,
             currentImageToCrop.file.name,
             {
-              applyWatermark: true,
-              watermarkText: companyName,
+              applyWatermark: false, // ❌ NO aplicar marca de agua al recortar
+              watermarkText: '',
             },
             currentImageToCrop.index
           );
@@ -179,7 +179,11 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     if (index >= 0 && index < currentPhotos.length) {
       // No reordenar el array para evitar inconsistencias con previews procesadas
       // Solo establecer el índice de portada
-      setValue('coverImageIndex', index);
+      setValue('coverImageIndex', index, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true
+      });
       toast.success('Imagen de portada seleccionada');
     }
   };
@@ -210,11 +214,11 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       setIsProcessingImage(true);
       toast.loading('Procesando imagen de portada...', { id: 'process-video-cover' });
 
-      // Usar processImageAfterCrop con el blob recortado
+      // Usar processImageAfterCrop con el blob recortado SIN marca de agua
       const { processImageAfterCrop } = await import('@/utils/imageProcessor');
       const processedImage = await processImageAfterCrop(croppedBlob, currentVideoCoverToCrop.file.name, {
-        applyWatermark: true,
-        watermarkText: companyName,
+        applyWatermark: false, // ❌ NO aplicar marca de agua en portada de video
+        watermarkText: '',
         maxSizeMB: 0.6,
         maxWidthOrHeight: 1024,
         initialQuality: 0.9,
@@ -222,7 +226,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       });
 
       toast.dismiss('process-video-cover');
-      toast.success('Imagen de portada procesada con marca de agua');
+      toast.success('Imagen de portada procesada');
 
       // Actualizar el objeto de imágenes de portada de videos con la imagen procesada
       const updatedVideoCoverImages = {
@@ -411,7 +415,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                           coverImageIndex={coverImageIndex}
                           onRemove={handleFileRemove}
                           onEdit={handleEditImage}
-                          onSetCover={(idx) => setValue('coverImageIndex', idx)}
+                          onSetCover={handleSetCoverImage}
                           onVideoCoverSelect={handleVideoCoverImageSelect}
                         />
                       );
@@ -584,7 +588,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                             coverImageIndex={coverImageIndex}
                             onRemove={handleFileRemove}
                             onEdit={handleEditImage}
-                            onSetCover={(idx) => setValue('coverImageIndex', idx)}
+                            onSetCover={handleSetCoverImage}
                             onVideoCoverSelect={handleVideoCoverImageSelect}
                           />
                         );
@@ -703,7 +707,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                           coverImageIndex={coverImageIndex}
                           onRemove={handleFileRemove}
                           onEdit={handleEditImage}
-                          onSetCover={(idx) => setValue('coverImageIndex', idx)}
+                          onSetCover={handleSetCoverImage}
                           onVideoCoverSelect={handleVideoCoverImageSelect}
                         />
                       );

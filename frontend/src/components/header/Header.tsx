@@ -56,7 +56,7 @@ const HeaderComponent = () => {
   return (
     <header className={`bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-b sticky top-0 z-50 transition-all duration-500 ease-in-out ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
       }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto md:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-4 lg:space-x-8">
             <div className="flex-shrink-0">

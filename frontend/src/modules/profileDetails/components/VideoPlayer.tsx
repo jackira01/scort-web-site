@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronLeft, ChevronRight, Maximize2, Volume2, VolumeX, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,23 +14,36 @@ interface VideoPlayerProps {
 export default function VideoPlayer({ videos }: VideoPlayerProps) {
   const [isVideoMuted, setIsVideoMuted] = useState(true);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const modalVideoRef = useRef<HTMLVideoElement>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-play carrusel cada 3 segundos
+  // Auto-play carrusel cada 3 segundos (solo cuando no está reproduciendo)
   useEffect(() => {
-    if (!videos || videos.length <= 1) return;
+    if (!videos || videos.length <= 1 || isVideoPlaying || isModalOpen) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
 
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       setCurrentVideoIndex(prev =>
         prev === videos.length - 1 ? 0 : prev + 1
       );
     }, 3000);
 
-    return () => clearInterval(interval);
-  }, [videos]);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [videos, isVideoPlaying, isModalOpen]);
 
   // Pausar video al cambiar de índice
   useEffect(() => {
@@ -38,6 +51,7 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
       videoRef.current.load();
+      setIsVideoPlaying(false);
     }
     if (modalVideoRef.current) {
       modalVideoRef.current.pause();
@@ -63,13 +77,6 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
   const currentVideoUrl = videos.length > 0 ? getVideoUrl(videos[currentVideoIndex]) : '';
   const currentPreviewUrl = videos.length > 0 ? getPreviewUrl(videos[currentVideoIndex]) : '/placeholder.svg';
 
-  const handleMuteToggle = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isVideoMuted;
-      setIsVideoMuted(!isVideoMuted);
-    }
-  };
-
   const handleVideoError = () => {
     setVideoError(true);
   };
@@ -78,9 +85,18 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
     setVideoError(false);
   };
 
+  const handleVideoPlay = () => {
+    setIsVideoPlaying(true);
+  };
+
+  const handleVideoPause = () => {
+    setIsVideoPlaying(false);
+  };
+
   const openModal = () => {
     setIsModalOpen(true);
     setVideoError(false);
+    setIsVideoPlaying(false);
     if (videoRef.current) {
       videoRef.current.pause();
     }
@@ -88,6 +104,7 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
 
   const closeModal = () => {
     setIsModalOpen(false);
+    setIsVideoPlaying(false);
     if (modalVideoRef.current) {
       modalVideoRef.current.pause();
     }
@@ -129,17 +146,19 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
               </div>
             ) : (
               <>
+                {/* Video sin controles - solo preview */}
                 <video
                   ref={videoRef}
-                  className="w-full h-full object-cover"
-                  muted={isVideoMuted}
+                  className="w-full h-full object-cover pointer-events-none"
+                  muted
                   onError={handleVideoError}
                   onLoadedData={handleVideoLoad}
+                  onPlay={handleVideoPlay}
+                  onPause={handleVideoPause}
                   poster={currentPreviewUrl}
                   preload="metadata"
                   playsInline
                   crossOrigin="anonymous"
-                  controls
                 >
                   <source src={currentVideoUrl} type="video/mp4" />
                   <source src={currentVideoUrl} type="video/webm" />
@@ -147,14 +166,14 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
                   Tu navegador no soporta el elemento video.
                 </video>
 
-                {/* Botón de Zoom */}
+                {/* Botón de Play para abrir modal */}
                 <Button
                   size="icon"
-                  className="absolute top-4 right-4 bg-black/70 hover:bg-black/90 text-white backdrop-blur-sm shadow-lg"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white backdrop-blur-sm shadow-lg h-16 w-16"
                   onClick={openModal}
-                  title="Ver en pantalla completa"
+                  title="Reproducir video"
                 >
-                  <Maximize2 className="h-5 w-5" />
+                  <Play className="h-8 w-8" fill="white" />
                 </Button>
 
                 {/* Flechas de Navegación (solo si hay más de 1 video) */}
@@ -190,8 +209,8 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
                     key={index}
                     onClick={() => setCurrentVideoIndex(index)}
                     className={`h-2 rounded-full transition-all shadow-lg ${index === currentVideoIndex
-                        ? 'w-8 bg-white'
-                        : 'w-2 bg-white/50 hover:bg-white/70'
+                      ? 'w-8 bg-white'
+                      : 'w-2 bg-white/50 hover:bg-white/70'
                       }`}
                     aria-label={`Ir al video ${index + 1}`}
                   />
@@ -277,8 +296,8 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
                         key={index}
                         onClick={() => setCurrentVideoIndex(index)}
                         className={`h-2 rounded-full transition-all shadow-lg ${index === currentVideoIndex
-                            ? 'w-8 bg-white'
-                            : 'w-2 bg-white/50 hover:bg-white/70'
+                          ? 'w-8 bg-white'
+                          : 'w-2 bg-white/50 hover:bg-white/70'
                           }`}
                         aria-label={`Ir al video ${index + 1}`}
                       />
