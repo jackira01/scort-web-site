@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Camera, Mic, Video } from 'lucide-react';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
@@ -16,7 +16,7 @@ import { useCompanyName } from '@/utils/watermark';
 
 // Imports de módulos locales
 import { useContentLimits, useImageProcessing, useFileHandlers } from './hooks';
-import { FileUploadZone, LimitAlert, FilesCounterBadge, InfoMessage, ImagePreviewCard } from './components';
+import { ImagePreviewCard } from './components';
 import type { ImageToCrop, VideoCoverToCrop } from './types';
 
 type Step5MultimediaProps = {};
@@ -43,6 +43,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
   // 🎯 USAR HOOKS PERSONALIZADOS
   const { contentLimits } = useContentLimits(selectedPlan);
 
+  // ✅ ORDEN CORRECTO: Primero declarar useImageProcessing
   const {
     isProcessingImage,
     setIsProcessingImage,
@@ -50,9 +51,47 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     setProcessedImages,
     originalImages,
     setOriginalImages,
-    processNewImages
+    processNewImages,
+    updateTrigger
   } = useImageProcessing(companyName);
 
+  // Estados para modales de recorte
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [currentImageToCrop, setCurrentImageToCrop] = useState<ImageToCrop | null>(null);
+  const [videoCoverCropModalOpen, setVideoCoverCropModalOpen] = useState(false);
+  const [currentVideoCoverToCrop, setCurrentVideoCoverToCrop] = useState<VideoCoverToCrop | null>(null);
+
+  // ✅ NUEVO: Estado para guardar las portadas originales de videos (para permitir re-crop sobre la original)
+  const [originalVideoCoverImages, setOriginalVideoCoverImages] = useState<Map<number, File>>(new Map());
+
+  // ✅ LUEGO los useEffects de sincronización
+  // Sincronizar processedImages con el formulario
+  useEffect(() => {
+    if (processedImages.size > 0) {
+      const processedArray = Array.from(processedImages.values());
+
+      console.log('🔄 Sincronizando processedImages con formulario:', {
+        mapSize: processedImages.size,
+        arrayLength: processedArray.length,
+        items: processedArray.map(p => ({
+          idx: p.originalIndex,
+          name: p.originalFileName
+        }))
+      });
+
+      setValue('processedImages', processedArray, {
+        shouldValidate: false,
+        shouldDirty: true
+      });
+    }
+  }, [processedImages, setValue, updateTrigger]);
+
+  // Sincronizar coverImageIndex (sin setValue redundante)
+  useEffect(() => {
+    console.log('📍 coverImageIndex actual:', coverImageIndex);
+  }, [coverImageIndex]);
+
+  // ✅ DESPUÉS declarar useFileHandlers
   const { handleFileSelect, handleFileRemove } = useFileHandlers({
     contentLimits,
     selectedPlan,
@@ -68,12 +107,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     processNewImages,
     setProcessedImages
   });
-
-  // Estados para modales de recorte
-  const [cropModalOpen, setCropModalOpen] = useState(false);
-  const [currentImageToCrop, setCurrentImageToCrop] = useState<ImageToCrop | null>(null);
-  const [videoCoverCropModalOpen, setVideoCoverCropModalOpen] = useState(false);
-  const [currentVideoCoverToCrop, setCurrentVideoCoverToCrop] = useState<VideoCoverToCrop | null>(null);
 
   // Función para manejar el crop completado
   const handleCropComplete = async (croppedBlob: Blob, croppedUrl: string) => {
@@ -136,12 +169,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
         });
       }
 
-      // Guardar las imágenes procesadas en el formulario
-      const processedImagesArray = Array.from(newProcessedImages.values());
-      setValue('processedImages', processedImagesArray, {
-        shouldValidate: true,
-        shouldDirty: true
-      });
+      // ❌ ELIMINADO: No hacer setValue('processedImages') aquí
+      // El useEffect se encargará de sincronizar automáticamente
 
       toast.success(
         `Imagen procesada: ${Math.round(processedResult.compressionRatio)}% de compresión aplicada`
@@ -149,7 +178,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     } catch (error) {
       console.error('Error al procesar la imagen:', error);
       toast.error('Error al procesar la imagen');
-      // Revocar la URL en caso de error
       if (croppedUrl.startsWith('blob:')) {
         URL.revokeObjectURL(croppedUrl);
       }
@@ -162,13 +190,43 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
   // Función para abrir crop modal para una imagen existente
   const handleEditImage = (file: File | string, index: number) => {
-    // Usar la imagen original si existe, de lo contrario usar el archivo actual
+    // ✅ Primero buscar la imagen original guardada
     const originalImage = originalImages.get(index);
-    const imageToEdit = originalImage || (file instanceof File ? file : null);
 
-    if (imageToEdit) {
-      setCurrentImageToCrop({ file: imageToEdit, index });
+    // ✅ Si existe original, usarla. Si no, usar el file actual
+    if (originalImage) {
+      setCurrentImageToCrop({ file: originalImage, index });
       setCropModalOpen(true);
+      return;
+    }
+
+    // ✅ Si el file es un File, usarlo directamente
+    if (file instanceof File) {
+      setCurrentImageToCrop({ file, index });
+      setCropModalOpen(true);
+      return;
+    }
+
+    // ✅ Si es una URL (string), convertirla a File primero
+    if (typeof file === 'string') {
+      fetch(file)
+        .then(res => res.blob())
+        .then(blob => {
+          const newFile = new File([blob], `photo-${index}.jpg`, { type: 'image/jpeg' });
+
+          // ✅ Guardar como imagen original para futuros re-crops
+          const newOriginals = new Map(originalImages);
+          newOriginals.set(index, newFile);
+          setOriginalImages(newOriginals);
+          console.log('📸 Imagen original guardada desde URL para foto:', index);
+
+          setCurrentImageToCrop({ file: newFile, index });
+          setCropModalOpen(true);
+        })
+        .catch(err => {
+          console.error('Error cargando imagen para editar:', err);
+          toast.error('Error al cargar la imagen para editar');
+        });
     }
   };
 
@@ -176,15 +234,35 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
   const handleSetCoverImage = (index: number) => {
     const currentPhotos = [...photos];
 
+    console.log('\n📸 === CAMBIO DE IMAGEN DE PORTADA ===');
+    console.log('Índice seleccionado:', index);
+    console.log('Total fotos:', currentPhotos.length);
+    console.log('coverImageIndex anterior:', coverImageIndex);
+
+    const processedImage = processedImages.get(index);
+    console.log('Imagen procesada existe:', !!processedImage);
+    if (processedImage) {
+      console.log('  - originalIndex:', processedImage.originalIndex);
+      console.log('  - originalFileName:', processedImage.originalFileName);
+      console.log('  - URL:', processedImage.url.substring(0, 50) + '...');
+    }
+
     if (index >= 0 && index < currentPhotos.length) {
-      // No reordenar el array para evitar inconsistencias con previews procesadas
-      // Solo establecer el índice de portada
       setValue('coverImageIndex', index, {
         shouldValidate: true,
         shouldDirty: true,
         shouldTouch: true
       });
+
+      console.log('✅ coverImageIndex actualizado a:', index);
+      console.log('📦 Valores del formulario:');
+      console.log('  - photos.length:', currentPhotos.length);
+      console.log('  - processedImages.size:', processedImages.size);
+      console.log('  - coverImageIndex:', index);
+
       toast.success('Imagen de portada seleccionada');
+    } else {
+      console.error('❌ Índice fuera de rango:', index, 'Total:', currentPhotos.length);
     }
   };
 
@@ -201,9 +279,64 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       return;
     }
 
+    // ✅ Guardar la imagen original si no existe ya
+    if (!originalVideoCoverImages.has(videoIndex)) {
+      const newOriginals = new Map(originalVideoCoverImages);
+      newOriginals.set(videoIndex, file);
+      setOriginalVideoCoverImages(newOriginals);
+      console.log('📸 Portada original guardada para video:', videoIndex);
+    }
+
     // Abrir modal de recorte para la imagen de portada del video
     setCurrentVideoCoverToCrop({ file, videoIndex });
     setVideoCoverCropModalOpen(true);
+  };
+
+  // ✅ NUEVA: Función para editar/recortar la portada existente de un video
+  const handleEditVideoCover = (videoIndex: number) => {
+    // ✅ IGUAL QUE handleEditImage: Primero buscar la imagen original guardada
+    const originalCoverImage = originalVideoCoverImages.get(videoIndex);
+    const currentCoverImage = videoCoverImages[videoIndex];
+
+    // ✅ Usar la imagen original si existe, de lo contrario usar la actual
+    const imageToEdit = originalCoverImage || currentCoverImage;
+
+    if (!imageToEdit) {
+      toast.error('No hay portada para editar');
+      return;
+    }
+
+    // Si es un File, úsalo directamente
+    if (imageToEdit instanceof File) {
+      setCurrentVideoCoverToCrop({ file: imageToEdit, videoIndex });
+      setVideoCoverCropModalOpen(true);
+      return;
+    }
+
+    // Si es una string (URL), necesitamos convertirla a File
+    if (typeof imageToEdit === 'string') {
+      // ✅ Guardar la imagen original después de convertirla
+      fetch(imageToEdit)
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], `video-cover-${videoIndex}.jpg`, { type: 'image/jpeg' });
+
+          // ✅ Guardar como original si no existe
+          if (!originalVideoCoverImages.has(videoIndex)) {
+            const newOriginals = new Map(originalVideoCoverImages);
+            newOriginals.set(videoIndex, file);
+            setOriginalVideoCoverImages(newOriginals);
+            console.log('📸 Portada original guardada desde URL para video:', videoIndex);
+          }
+
+          setCurrentVideoCoverToCrop({ file, videoIndex });
+          setVideoCoverCropModalOpen(true);
+        })
+        .catch(err => {
+          console.error('Error cargando imagen de portada:', err);
+          toast.error('Error al cargar la portada para editar');
+        });
+    }
   };
 
   // Función para manejar el crop completado de la portada de video
@@ -354,7 +487,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
           <CardContent>
             <div className="space-y-4">
               <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${photos.length >= contentLimits.maxPhotos
+                className={`relative border-2 border-dashed rounded-lg text-center transition-colors duration-200 ${photos.length >= contentLimits.maxPhotos
                   ? 'border-red-300 bg-red-50/50 dark:bg-red-950/20 cursor-not-allowed opacity-60'
                   : 'hover:border-purple-500 cursor-pointer'
                   } ${errors.photos
@@ -362,31 +495,30 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                     : 'border-muted-foreground/30'
                   }`}
               >
+                {/* Input invisible que cubre todo el div */}
                 <input
                   type="file"
                   accept="image/*"
                   multiple
                   onChange={(e) => handleFileSelect('photos', e.target.files, e)}
-                  className="hidden"
                   id="photos-upload"
                   disabled={photos.length >= contentLimits.maxPhotos}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
-                <label
-                  htmlFor="photos-upload"
-                  className={`${photos.length >= contentLimits.maxPhotos ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                >
-                  <Camera className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+
+                {/* Contenido visible con padding */}
+                <div className="p-8 flex flex-col items-center justify-center pointer-events-none">
+                  <Camera className="h-12 w-12 text-muted-foreground mb-2" />
                   <p className="text-muted-foreground">
                     {photos.length >= contentLimits.maxPhotos ? 'Límite alcanzado' : 'Añadir fotos'}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    JPG, PNG, WEBP
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WEBP</p>
                   <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
                     📏 Recomendado: mínimo 500×600px para mejor calidad
                   </p>
-                </label>
+                </div>
               </div>
+
 
               {/* Vista previa de fotos */}
               {photos && photos.length > 0 && (
@@ -395,7 +527,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                     Fotos seleccionadas:
                   </h4>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-1 max-h-[32rem] overflow-y-auto auto-rows-max">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-1 max-h-[32rem] overflow-y-auto auto-rows-max">
                     {photos.map((file, index) => {
                       if (!file) return null;
 
@@ -417,6 +549,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                           onEdit={handleEditImage}
                           onSetCover={handleSetCoverImage}
                           onVideoCoverSelect={handleVideoCoverImageSelect}
+                          onEditVideoCover={handleEditVideoCover}
                         />
                       );
                     })}
@@ -519,9 +652,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                       <strong>Imagen de portada:</strong> Puedes subir una imagen personalizada
                       que aparecerá como portada del video haciendo clic en el ícono de subida.
                     </p>
-                    <p>
-                      <strong>Nota:</strong> Los videos se subirán sin marca de agua. Asegúrate de que el contenido sea apropiado.
-                    </p>
+
                   </div>
                 </div>
               </div>
@@ -530,7 +661,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
           <CardContent>
             <div className="space-y-4">
               <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${videos.length >= contentLimits.maxVideos
+                className={`relative border-2 border-dashed rounded-lg text-center transition-colors duration-200 ${videos.length >= contentLimits.maxVideos
                   ? 'border-red-300 bg-red-50/50 dark:bg-red-950/20 cursor-not-allowed opacity-60'
                   : 'hover:border-purple-500 cursor-pointer'
                   } ${errors.videos
@@ -538,28 +669,29 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                     : 'border-muted-foreground/30'
                   }`}
               >
+                {/* input invisible que cubre TODO el div */}
                 <input
                   type="file"
                   accept="video/*"
                   multiple
                   onChange={(e) => handleFileSelect('videos', e.target.files, e)}
-                  className="hidden"
                   id="videos-upload"
                   disabled={videos.length >= contentLimits.maxVideos}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
-                <label
-                  htmlFor="videos-upload"
-                  className={`${videos.length >= contentLimits.maxVideos ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                >
-                  <Video className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+
+                {/* contenido visible, con padding */}
+                <div className="p-8 flex flex-col items-center justify-center pointer-events-none">
+                  <Video className="h-12 w-12 text-muted-foreground mb-2" />
                   <p className="text-muted-foreground">
                     {videos.length >= contentLimits.maxVideos ? 'Límite alcanzado' : 'Añadir videos'}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     MP4, AVI, MOV hasta 10MB cada uno
                   </p>
-                </label>
+                </div>
               </div>
+
 
               {/* Vista previa de videos */}
               {videos.length > 0 && (
@@ -567,14 +699,25 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                   <h4 className="text-sm font-medium text-foreground">
                     Videos seleccionados:
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-1 max-h-[32rem] overflow-y-auto auto-rows-max">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-1 max-h-[32rem] overflow-y-auto auto-rows-max">
                     {videos
-                      .filter((file) => file !== null)
-                      .map((file, index) => {
-                        // ✅ Key estable basada en contenido
-                        const fileKey = file instanceof File
-                          ? `video-${file.name}-${file.size}-${file.lastModified}`
-                          : `video-url-${file}`;
+                      .filter((file: any) => file !== null)
+                      .map((file: any, index: number) => {
+                        // ✅ Key estable y única que incluye el índice para evitar colisiones
+                        let fileKey: string;
+
+                        if (file instanceof File) {
+                          fileKey = `video-file-${index}-${file.name}-${file.size}-${file.lastModified}`;
+                        } else if (typeof file === 'object' && file !== null && 'link' in file) {
+                          // Es un objeto {link, preview}
+                          fileKey = `video-obj-${index}-${file.link}`;
+                        } else if (typeof file === 'string') {
+                          // Es una URL string
+                          fileKey = `video-url-${index}-${file}`;
+                        } else {
+                          // Fallback (no debería llegar aquí)
+                          fileKey = `video-unknown-${index}`;
+                        }
 
                         return (
                           <ImagePreviewCard
@@ -590,6 +733,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                             onEdit={handleEditImage}
                             onSetCover={handleSetCoverImage}
                             onVideoCoverSelect={handleVideoCoverImageSelect}
+                            onEditVideoCover={handleEditVideoCover}
                           />
                         );
                       })}
@@ -651,7 +795,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
           <CardContent>
             <div className="space-y-4">
               <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${audios.length >= contentLimits.maxAudios
+                className={`relative border-2 border-dashed rounded-lg text-center transition-colors duration-200 ${audios.length >= contentLimits.maxAudios
                   ? 'border-red-300 bg-red-50/50 dark:bg-red-950/20 cursor-not-allowed opacity-60'
                   : 'hover:border-purple-500 cursor-pointer'
                   } ${errors.audios
@@ -659,28 +803,29 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                     : 'border-muted-foreground/30'
                   }`}
               >
+                {/* Input invisible que cubre todo el div */}
                 <input
                   type="file"
                   accept="audio/*"
                   multiple
                   onChange={(e) => handleFileSelect('audios', e.target.files, e)}
-                  className="hidden"
                   id="audios-upload"
                   disabled={audios.length >= contentLimits.maxAudios}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
-                <label
-                  htmlFor="audios-upload"
-                  className={`${audios.length >= contentLimits.maxAudios ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                >
-                  <Mic className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+
+                {/* Contenido visible con padding */}
+                <div className="p-8 flex flex-col items-center justify-center pointer-events-none">
+                  <Mic className="h-12 w-12 text-muted-foreground mb-2" />
                   <p className="text-muted-foreground">
                     {audios.length >= contentLimits.maxAudios ? 'Límite alcanzado' : 'Añadir audios'}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     MP3, WAV, OGG hasta 10MB cada uno
                   </p>
-                </label>
+                </div>
               </div>
+
 
               {/* Vista previa de audios */}
               {audios.length > 0 && (
@@ -709,6 +854,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                           onEdit={handleEditImage}
                           onSetCover={handleSetCoverImage}
                           onVideoCoverSelect={handleVideoCoverImageSelect}
+                          onEditVideoCover={handleEditVideoCover}
                         />
                       );
                     })}
@@ -790,7 +936,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
           imageSrc={URL.createObjectURL(currentVideoCoverToCrop.file)}
           onCropComplete={handleVideoCoverCropComplete}
           fileName={currentVideoCoverToCrop.file.name}
-          aspectRatio={1 / 1}  // Aspect ratio 16:9 para portadas de video (horizontal)
+          aspectRatio={16 / 9}  // Aspect ratio 16:9 para portadas de video (horizontal)
         />
       )}
     </div>

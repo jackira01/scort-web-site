@@ -39,9 +39,9 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
 
     return (
         <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${disabled
-                    ? 'border-red-300 bg-red-50/50 dark:bg-red-950/20 cursor-not-allowed opacity-60'
-                    : 'hover:border-purple-500 cursor-pointer'
+            className={`border-2 border-dashed rounded-lg text-center transition-colors duration-200 ${disabled
+                ? 'border-red-300 bg-red-50/50 dark:bg-red-950/20 cursor-not-allowed opacity-60'
+                : 'hover:border-purple-500 cursor-pointer'
                 } ${hasError ? 'border-red-500' : 'border-muted-foreground/30'}`}
         >
             <input

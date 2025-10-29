@@ -8,7 +8,6 @@ import { useSession } from 'next-auth/react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -294,8 +293,10 @@ export function CreateProfileLayout() {
 
       if (currentStep < 5) {
         setCurrentStep(currentStep + 1);
-        // Scroll al inicio del contenido
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // ✅ Scroll después de que React actualice el DOM
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
       }
     } catch (error) {
       toast.error('Error inesperado en la validación');
@@ -305,8 +306,10 @@ export function CreateProfileLayout() {
   const handlePrevious = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
-      // Scroll al inicio del contenido
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // ✅ Scroll después de que React actualice el DOM
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
     }
   };
 
@@ -338,7 +341,7 @@ export function CreateProfileLayout() {
   ) => {
     const features = [];
 
-    // Gender feature - Convertir a {key, label}
+    // Gender feature
     if (formData.gender && groupMap.gender?._id) {
       features.push({
         group_id: groupMap.gender._id,
@@ -346,7 +349,7 @@ export function CreateProfileLayout() {
       });
     }
 
-    // Hair color feature - Convertir a {key, label}
+    // Hair color feature
     if (formData.hairColor && groupMap.hair?._id) {
       features.push({
         group_id: groupMap.hair._id,
@@ -354,7 +357,7 @@ export function CreateProfileLayout() {
       });
     }
 
-    // Eye color feature - Convertir a {key, label}
+    // Eye color feature
     if (formData.eyeColor && groupMap.eyes?._id) {
       features.push({
         group_id: groupMap.eyes._id,
@@ -362,7 +365,7 @@ export function CreateProfileLayout() {
       });
     }
 
-    // Skin color - Convertir a {key, label}
+    // Skin color
     if (formData.skinColor && groupMap.skin?._id) {
       features.push({
         group_id: groupMap.skin._id,
@@ -370,7 +373,7 @@ export function CreateProfileLayout() {
       });
     }
 
-    // Body type feature - Convertir a {key, label}
+    // Body type feature
     if (formData.bodyType && groupMap.body?._id) {
       features.push({
         group_id: groupMap.body._id,
@@ -378,7 +381,7 @@ export function CreateProfileLayout() {
       });
     }
 
-    // Category feature - Convertir a {key, label}
+    // Category feature
     if (formData.category && groupMap.category?._id) {
       features.push({
         group_id: groupMap.category._id,
@@ -386,7 +389,7 @@ export function CreateProfileLayout() {
       });
     }
 
-    // Services - Convertir a {key, label}
+    // Services
     if (formData.selectedServices && groupMap.services?._id) {
       features.push({
         group_id: groupMap.services._id,
@@ -394,23 +397,17 @@ export function CreateProfileLayout() {
       });
     }
 
-    /* // WorkType → gender
-    if (formData.workType && groupMap.gender?._id) {
-      const workTypeMap: Record<string, string> = {
-        'Yo mismo (independiente)': 'Escort',
-        Agencia: 'Agencia',
-      };
-      features.push({
-        group_id: groupMap.gender._id,
-        value: [workTypeMap[formData.workType] || 'Escort'],
-      });
-    } */
-
     const rates = formData.rates?.map((rate) => ({
       hour: rate.time,
       price: rate.price,
       delivery: rate.delivery,
     }));
+
+    // ✅ SIMPLIFICADO: Ya reordenamos en handleFinalSave, así que la primera foto ES la portada
+    console.log('🖼️ === CONSTRUYENDO DATOS PARA BACKEND ===');
+    console.log('coverImageIndex (debe ser 0):', formData.coverImageIndex);
+    console.log('Primera foto (portada):', formData.photos?.[0]?.substring(0, 50) + '...');
+    console.log('Total fotos:', formData.photos?.length || 0);
 
     return {
       user: session?.user?._id,
@@ -435,7 +432,6 @@ export function CreateProfileLayout() {
       contact: formData.contact,
       height: formData.height,
       socialMedia: formData.socialMedia,
-      // Nuevos campos de servicios clasificados - Convertir a {key, label}
       basicServices: formData.basicServices ? getVariantObjects('services', formData.basicServices) : [],
       additionalServices: formData.additionalServices ? getVariantObjects('services', formData.additionalServices) : [],
       media: {
@@ -450,13 +446,13 @@ export function CreateProfileLayout() {
             }
           }),
         audios: formData.audios || [],
-        stories: [], // Las stories se llenan en otra sección, no durante la creación del perfil
-        profilePicture: formData.processedImages?.[formData.coverImageIndex || 0]?.url || formData.processedImages?.[0]?.url || formData.photos?.[0] || '', // Usar la imagen procesada seleccionada como preview
+        stories: [],
+        // ✅ SIMPLIFICADO: La primera foto del array ES la portada (ya reordenada)
+        profilePicture: formData.photos?.[0] || '',
       },
       verification: null,
       availability: formData.availability,
       rates,
-      // planAssignment se eliminó - ahora se maneja con purchasedPlan en el nivel superior
     };
   };
 
@@ -486,22 +482,20 @@ export function CreateProfileLayout() {
     try {
       setUploading(true);
 
-      // ✅ VALIDACIÓN ADICIONAL: Verificar que haya al menos 1 foto
+      // ✅ VALIDACIÓN: Verificar que haya al menos 1 foto
       if (!data.photos || data.photos.length === 0) {
         toast.error('Debes subir al menos una foto para crear tu perfil');
         setUploading(false);
         return;
       }
 
-      // ✅ VALIDACIONES CRÍTICAS PRE-SUBMIT (antes de subir archivos)
-      // Verificar límite de perfiles
+      // ✅ VALIDACIONES CRÍTICAS PRE-SUBMIT
       const loadingValidation = toast.loading('Verificando límites de perfiles...');
       try {
         const { getUserProfiles } = await import('@/services/user.service');
         const userProfiles = await getUserProfiles(session?.user?._id || '');
 
-        // Si hay límites excedidos, detener aquí
-        if (userProfiles.length >= 10) { // Ajusta el límite según tu lógica
+        if (userProfiles.length >= 10) {
           toast.dismiss(loadingValidation);
           toast.error('Has alcanzado el límite máximo de perfiles permitidos.', { duration: 6000 });
           setUploading(false);
@@ -516,18 +510,92 @@ export function CreateProfileLayout() {
         return;
       }
 
+      console.log('🐛 DEBUG CRÍTICO:', {
+        'data.processedImages existe': !!data.processedImages,
+        'data.processedImages es array': Array.isArray(data.processedImages),
+        'data.processedImages.length': data.processedImages?.length || 0,
+        'data.processedImages contenido': data.processedImages,
+        'data.photos.length': data.photos?.length || 0,
+        'data.coverImageIndex': data.coverImageIndex
+      });
+
+      // 🎯 PASO CRÍTICO: REORDENAR IMÁGENES PROCESADAS SEGÚN coverImageIndex
+      console.log('\n🔄 ===== REORDENANDO IMÁGENES PARA SUBIDA =====');
+      console.log('coverImageIndex:', data.coverImageIndex);
+      console.log('Total processedImages:', data.processedImages?.length || 0);
+      console.log('Total photos:', data.photos?.length || 0);
+
+      let orderedProcessedImages: ProcessedImageResult[] = [];
+      const coverIndex = data.coverImageIndex ?? 0;
+
+      if (data.processedImages && data.processedImages.length > 0) {
+        // Convertir array a objeto indexado para fácil acceso
+        const processedMap = new Map<number, ProcessedImageResult>();
+        data.processedImages.forEach((img: ProcessedImageResult) => {
+          if (img.originalIndex !== undefined) {
+            processedMap.set(img.originalIndex, img);
+          }
+        });
+
+        console.log('📦 Map de imágenes procesadas:', Array.from(processedMap.keys()));
+
+        // Verificar que la imagen de portada exista y esté procesada
+        const coverImage = processedMap.get(coverIndex);
+
+        if (!coverImage) {
+          console.error('❌ CRÍTICO: No se encontró imagen procesada para coverIndex', coverIndex);
+          toast.error('Error: La imagen de portada no está procesada. Recorta la imagen de portada.');
+          setUploading(false);
+          return;
+        }
+
+        // 🎯 REORDENAR: La imagen de portada SIEMPRE va primero
+        orderedProcessedImages.push(coverImage);
+        console.log('✅ Imagen de portada agregada primero:', coverImage.originalFileName);
+
+        // Agregar el resto de imágenes en orden, excluyendo la de portada
+        data.photos.forEach((photo, idx) => {
+          if (idx !== coverIndex) {
+            const processedImg = processedMap.get(idx);
+            if (processedImg) {
+              orderedProcessedImages.push(processedImg);
+              console.log(`  ✅ [${orderedProcessedImages.length - 1}] ${processedImg.originalFileName}`);
+            } else {
+              console.warn(`  ⚠️ No hay imagen procesada para índice ${idx}`);
+            }
+          }
+        });
+
+        console.log('📸 Orden final de subida:', orderedProcessedImages.map((img, i) =>
+          `[${i}] ${img.originalFileName}`
+        ));
+      }
+
+      /*  // Verificar que todas las imágenes tengan marca de agua
+       const imagesWithoutWatermark = orderedProcessedImages.filter(img => {
+         // Verificar si la URL del blob contiene indicios de procesamiento
+         // (esto es aproximado, idealmente deberías tener un flag en ProcessedImageResult)
+         return !img.url || img.compressionRatio === 0;
+       });
+ 
+       if (imagesWithoutWatermark.length > 0) {
+         console.warn('⚠️ Imágenes sin marca de agua detectadas:', imagesWithoutWatermark.length);
+         toast('Algunas imágenes pueden no tener marca de agua', { icon: '⚠️' });
+       } */
+
+      console.log('🔄 ===== FIN REORDENAMIENTO =====\n');
+
       // Subir archivos multimedia a Cloudinary
       let photoUrls: (string | null)[] = [];
       let videoUrls: (string | null)[] = [];
       let audioUrls: (string | null)[] = [];
 
       if (data.photos && data.photos.length > 0) {
-
-        // Si hay imágenes procesadas, usarlas exclusivamente
-        if (data.processedImages && data.processedImages.length > 0) {
+        // ✅ USAR IMÁGENES REORDENADAS
+        if (orderedProcessedImages.length > 0) {
           toast.loading('Subiendo fotos procesadas...', { id: 'upload-photos' });
           const processedUrls = await uploadProcessedImages(
-            data.processedImages as ProcessedImageResult[],
+            orderedProcessedImages,
             (current, total) => {
               toast.loading(`Subiendo foto procesada ${current}/${total}...`, { id: 'upload-photos' });
             }
@@ -535,15 +603,21 @@ export function CreateProfileLayout() {
           photoUrls = [...photoUrls, ...processedUrls.filter(url => url !== null)];
           toast.dismiss('upload-photos');
           toast.success(`${processedUrls.filter(url => url !== null).length} fotos procesadas subidas exitosamente`);
+
+          console.log('✅ URLs subidas:', photoUrls.map((url, i) => `[${i}] ${url?.substring(0, 50)}...`));
         } else {
-          // Si no hay imágenes procesadas, usar el flujo original
+          // Fallback: Si no hay imágenes procesadas, usar flujo original
           const photoFiles = data.photos.filter((photo): photo is File => photo instanceof File);
 
           if (photoFiles.length > 0) {
             toast.loading('Procesando y subiendo fotos...', { id: 'upload-photos' });
+
+            // ⚠️ ADVERTENCIA: Este flujo no reordena según coverImageIndex
+            console.warn('⚠️ Usando flujo original sin reordenamiento - considera procesar todas las imágenes');
+
             const originalUrls = await uploadMultipleImages(
               photoFiles,
-              undefined, // Usar texto de marca de agua por defecto
+              undefined,
               (current, total) => {
                 toast.loading(`Procesando foto ${current}/${total}...`, { id: 'upload-photos' });
               }
@@ -559,37 +633,30 @@ export function CreateProfileLayout() {
         photoUrls = [...photoUrls, ...existingPhotoUrls];
       }
 
-      if (data.videos && data.videos.length > 0) {
+      // [... resto del código de videos y audios sin cambios ...]
 
-        // Filtrar solo archivos File, no strings (URLs existentes)
+      if (data.videos && data.videos.length > 0) {
         const videoFiles = data.videos.filter((video): video is File => video instanceof File && video !== null);
 
         if (videoFiles.length > 0) {
           toast.loading('Subiendo videos...');
-
-          // Obtener imágenes de preview de videos si existen
           const videoCoverImages = data.videoCoverImages || {};
-
           const uploadedVideos = await uploadMultipleVideos(videoFiles, videoCoverImages);
           toast.dismiss();
           toast.success(`${uploadedVideos.length} videos subidos exitosamente`);
-
-          // Convertir a formato de objetos con link y preview
           videoUrls = uploadedVideos as any;
         }
 
-        // Mantener URLs existentes (convertir strings a objetos si es necesario)
         const existingVideoUrls = data.videos.filter((video): video is string => typeof video === 'string' && video !== null);
         const existingVideoObjects = existingVideoUrls.map(url => ({
           link: url,
-          preview: '' // Las URLs existentes no tienen preview por ahora
+          preview: ''
         }));
 
         videoUrls = [...(videoUrls as any), ...existingVideoObjects];
       }
 
       if (data.audios && data.audios.length > 0) {
-        // Filtrar solo archivos File, no strings (URLs existentes)
         const audioFiles = data.audios.filter((audio): audio is File => audio instanceof File);
         if (audioFiles.length > 0) {
           toast.loading('Subiendo audios...');
@@ -601,28 +668,30 @@ export function CreateProfileLayout() {
           audioUrls = [...audioUrls, ...uploadedAudios];
         }
 
-        // Mantener URLs existentes (strings)
         const existingAudioUrls = data.audios.filter((audio): audio is string => typeof audio === 'string');
         audioUrls = [...audioUrls, ...existingAudioUrls];
       }
 
-      // Crear datos con URLs de Cloudinary (filtrar valores null)
+      // ✅ Crear datos con URLs reordenadas (la primera es la portada)
       const backendData = transformDataToBackendFormat({
         ...data,
         photos: photoUrls.filter(url => url !== null) as string[],
         videos: videoUrls as any,
         audios: audioUrls.filter(url => url !== null) as string[],
+        // ✅ Ahora coverImageIndex siempre es 0 porque reordenamos
+        coverImageIndex: 0,
+        // ✅ Pasar imágenes reordenadas
+        processedImages: orderedProcessedImages
       });
 
       // Preparar purchasedPlan si se seleccionó un plan de pago
       const purchasedPlan = data.selectedPlan && data.selectedVariant ? {
-        planId: data.selectedPlan.id, // Usar ID del plan en lugar de código
-        planCode: data.selectedPlan.code, // Mantener también el código para compatibilidad
+        planId: data.selectedPlan.id,
+        planCode: data.selectedPlan.code,
         variantDays: data.selectedVariant.days,
-        generateInvoice: data.generateInvoice || false, // Agregar el campo generateInvoice
-        couponCode: data.couponCode || undefined // Agregar el código del cupón si existe
+        generateInvoice: data.generateInvoice || false,
+        couponCode: data.couponCode || undefined
       } : null;
-
 
       // Crear el perfil usando el servicio
       const loadingToast = toast.loading('Creando perfil...');
@@ -638,17 +707,7 @@ export function CreateProfileLayout() {
           });
         }
 
-        // Debug: Verificar si se creó el profileverification
-        try {
-          const { getProfileVerification } = await import('../../../services/user.service');
-          const verification = await getProfileVerification(response.profile._id);
-        } catch (verificationError) {
-          console.error('❌ Error al obtener ProfileVerification:', verificationError);
-        }
-
         toast.success('Perfil creado exitosamente');
-
-        // Debug: Verificar la respuesta del backend
 
         // Guardar información del perfil creado para el modal de verificación
         setCreatedProfileId(response.profile._id);
@@ -665,13 +724,10 @@ export function CreateProfileLayout() {
       } catch (profileError: unknown) {
         toast.dismiss(loadingToast);
 
-        // Manejo específico de errores
         const error = profileError as ApiError;
         if (error?.response?.status === 409) {
           const errorMessage = error?.response?.data?.message || 'Límite de perfiles excedido';
-          toast.error(errorMessage, {
-            duration: 6000
-          });
+          toast.error(errorMessage, { duration: 6000 });
         } else if (profileError?.response?.status === 400) {
           toast.error('Datos del perfil inválidos. Revisa la información ingresada.');
         } else if (profileError?.response?.status === 401) {
@@ -684,7 +740,6 @@ export function CreateProfileLayout() {
         }
       }
     } catch (error) {
-      // Error uploading files
       toast.error('Error al subir archivos. Inténtalo de nuevo.');
     } finally {
       setUploading(false);

@@ -7,6 +7,9 @@ export const useImageProcessing = (companyName: string) => {
     const [processedImages, setProcessedImages] = useState<Map<number, ProcessedImageResult>>(new Map());
     const [originalImages, setOriginalImages] = useState<Map<number, File>>(new Map());
 
+    // ✅ AGREGAR: Trigger para forzar re-renders cuando el Map cambia
+    const [updateTrigger, setUpdateTrigger] = useState(0);
+
     // Cleanup effect para revocar URLs
     useEffect(() => {
         return () => {
@@ -28,7 +31,6 @@ export const useImageProcessing = (companyName: string) => {
             keysActuales: Array.from(processedImages.keys())
         });
 
-        // NO clonar aquí, trabajar directamente con el estado
         const updates: Array<{ index: number; result: ProcessedImageResult }> = [];
 
         try {
@@ -38,7 +40,7 @@ export const useImageProcessing = (companyName: string) => {
                 const file = newFiles[i];
                 const imageIndex = startIndex + i;
 
-                // ✅ IMPORTANTE: Verificar si ya existe una imagen procesada para este índice
+                // ✅ Verificar si ya existe una imagen procesada para este índice
                 const existingProcessed = processedImages.get(imageIndex);
                 if (existingProcessed && existingProcessed.originalFileName === file.name) {
                     console.log(`  ⏭️ Saltando ${imageIndex}: ya procesada (${file.name})`);
@@ -75,7 +77,7 @@ export const useImageProcessing = (companyName: string) => {
                 }
             }
 
-            // ✅ Actualizar el Map una sola vez con todas las nuevas imágenes
+            // ✅ Actualizar el Map y forzar re-render
             if (updates.length > 0) {
                 setProcessedImages(prev => {
                     const newMap = new Map(prev);
@@ -91,6 +93,9 @@ export const useImageProcessing = (companyName: string) => {
 
                     return newMap;
                 });
+
+                // ✅ Forzar actualización para que useEffect detecte el cambio
+                setUpdateTrigger(prev => prev + 1);
             }
         } catch (error) {
             console.error('❌ Error en processNewImages:', error);
@@ -109,6 +114,7 @@ export const useImageProcessing = (companyName: string) => {
         setProcessedImages,
         originalImages,
         setOriginalImages,
-        processNewImages
+        processNewImages,
+        updateTrigger // ✅ Exportar para uso en useEffect
     };
 };

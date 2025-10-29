@@ -121,7 +121,7 @@ export const ProfileGallery = ({
       </div>
 
       {/* Thumbnail Grid */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+      <div className="grid grid-cols-4 gap-2 ">
         {images.map((image, index) => (
           <button
             type="button"
@@ -129,7 +129,7 @@ export const ProfileGallery = ({
             onClick={() => {
               setSelectedImage(index);
             }}
-            className={`relative overflow-hidden rounded-lg aspect-square group transition-all duration-200 ${selectedImage === index
+            className={`relative overflow-hidden rounded-lg aspect-square group transition-all duration-200 h-20 md:h-36 ${selectedImage === index
               ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-background'
               : 'hover:ring-2 hover:ring-purple-300 hover:ring-offset-2 hover:ring-offset-background'
               }`}

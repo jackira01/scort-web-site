@@ -33,8 +33,12 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Perfil no encontrado</h2>
-          <p className="text-gray-600 dark:text-gray-400">El perfil que buscas no existe o ha sido eliminado.</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Perfil no encontrado
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            El perfil que buscas no existe o ha sido eliminado.
+          </p>
         </div>
       </div>
     );
@@ -48,8 +52,12 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Perfil no disponible</h2>
-          <p className="text-gray-600 dark:text-gray-400">Este perfil no está disponible públicamente.</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Perfil no disponible
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            Este perfil no está disponible públicamente.
+          </p>
         </div>
       </div>
     );
@@ -62,7 +70,6 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
     location: `${profile.location?.country?.label || profile.location?.country || ''}, ${profile.location?.department?.label || profile.location?.department || ''}, ${profile.location?.city?.label || profile.location?.city || ''}`
       .replace(/^,\s*|,\s*$/g, '')
       .replace(/,\s*,/g, ','),
-    // Categoría: aceptar string o {key,label}
     category: (() => {
       const cat = profile.features?.find((feature: any) => feature.groupName === 'Categoría');
       if (!cat) return 'ESCORT';
@@ -73,37 +80,46 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
     verified: profile.verification?.verificationStatus === 'verified',
     description: profile.description,
     images: profile.media?.gallery || ['/placeholder.svg?height=400&width=600'],
-    // Normalizar videos a {link, preview}
     videos: (() => {
       const vids = profile.media?.videos || [];
       const cover = (profile as any).coverImageIndex;
-      const previewFallback = (profile.media?.gallery && profile.media.gallery.length > 0)
-        ? (typeof cover === 'number' && profile.media.gallery[cover]) || profile.media.gallery[0]
-        : '/placeholder.svg';
-      return vids.map((v: any) => {
-        // Si es string, crear objeto con fallback
-        if (typeof v === 'string') return { link: v, preview: previewFallback };
-        // Si es objeto, respetar el preview existente, solo usar fallback si está vacío
-        return {
-          link: v.link || '',
-          preview: (v.preview && v.preview.trim() !== '') ? v.preview : previewFallback
-        };
-      });
+      const previewFallback =
+        profile.media?.gallery?.length > 0
+          ? (typeof cover === 'number' && profile.media.gallery[cover]) ||
+          profile.media.gallery[0]
+          : '/placeholder.svg';
+      return vids.map((v: any) =>
+        typeof v === 'string'
+          ? { link: v, preview: previewFallback }
+          : {
+            link: v.link || '',
+            preview:
+              v.preview && v.preview.trim() !== ''
+                ? v.preview
+                : previewFallback,
+          }
+      );
     })(),
     services: profile.services || [],
     basicServices: profile.basicServices || [],
     additionalServices: profile.additionalServices || [],
     physicalTraits: {
       edad: profile.age?.toString() || '',
-      // Convertir AttributeValue[] a string mostrando label si existe
       ...Object.fromEntries(
         (profile.features || []).map((feature: any) => {
-          const values: any[] = Array.isArray(feature.value) ? feature.value : [feature.value];
+          const values: any[] = Array.isArray(feature.value)
+            ? feature.value
+            : [feature.value];
           const display = values
             .filter((v: any) => v != null)
-            .map((v: any) => (typeof v === 'object' && 'label' in v ? (v as any).label : v))
+            .map((v: any) =>
+              typeof v === 'object' && 'label' in v ? v.label : v
+            )
             .join(', ');
-          return [feature.labelName?.toLowerCase() || feature.groupName, display];
+          return [
+            feature.labelName?.toLowerCase() || feature.groupName,
+            display,
+          ];
         })
       ),
       ubicacion: `${profile.location?.department?.label || profile.location?.department || ''}, ${profile.location?.city?.label || profile.location?.city || ''}`
@@ -130,19 +146,17 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-500">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-        {/* Grid: principal primero en DOM (galería > header/social en mobile), sidebar después */}
         <div className="grid grid-cols-1 lg:grid-cols-7 gap-8">
-
-          {/* === Contenido principal (GALERÍA + contenido) - debe ir PRIMERO en el DOM === */}
+          {/* === Contenido principal === */}
           <div className="lg:col-span-5 space-y-8">
-            {/* 1) GALERÍA siempre primero */}
             <ProfileGallery
               {...adaptedProfileData}
-              isIdentityVerified={verification?.data?.steps?.documentPhotos?.isVerified || false}
+              isIdentityVerified={
+                verification?.data?.steps?.documentPhotos?.isVerified || false
+              }
             />
 
-            {/* 2) HEADER + REDES en MOBILE: se muestran debajo de la galería en pantallas pequeñas */}
+            {/* Header + redes sociales solo en mobile */}
             <div className="block lg:hidden space-y-4 px-0">
               <ProfielHeader
                 name={adaptedProfileData.name}
@@ -155,7 +169,6 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
               />
             </div>
 
-            {/* 3) Resto del contenido */}
             <DescriptionProfile
               description={adaptedProfileData.description}
               services={adaptedProfileData.services}
@@ -163,14 +176,14 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
               additionalServices={adaptedProfileData.additionalServices}
             />
 
-            <RatesProfile rates={adaptedProfileData.rates} />
+            <VideoPlayer videos={adaptedProfileData.videos} />
 
             <div id="verification-section">
               <VerificationStatus profileId={id} />
             </div>
           </div>
 
-          {/* === Sidebar (HEADER + REDES para desktop + resto de widgets) - va SEGUNDO en DOM === */}
+          {/* === Sidebar === */}
           <aside className="lg:col-span-2 space-y-6">
             {/* Header + redes en desktop */}
             <div className="hidden lg:block space-y-4">
@@ -185,10 +198,17 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
               />
             </div>
 
-            <PhysicalTraitsProfile physicalTraits={adaptedProfileData.physicalTraits} />
-            <VideoPlayer videos={adaptedProfileData.videos} />
+            <PhysicalTraitsProfile
+              physicalTraits={adaptedProfileData.physicalTraits}
+            />
+
+            {/* RatesProfile movido al sidebar */}
+            <RatesProfile rates={adaptedProfileData.rates} />
+
             <AudioPlayer audios={profile.media?.audios || []} />
-            <AvailabilityProfile availability={adaptedProfileData.availability} />
+            <AvailabilityProfile
+              availability={adaptedProfileData.availability}
+            />
           </aside>
         </div>
       </div>
