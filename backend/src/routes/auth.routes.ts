@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import { 
-  verifyEmailController, 
-  resendVerificationController 
+import {
+  verifyEmailController,
+  resendVerificationController,
+  checkVerificationStatusController
 } from '../controllers/auth.controller';
 
 const router = Router();
@@ -11,5 +12,8 @@ router.post('/verify-email', verifyEmailController);
 
 // Ruta para reenviar código de verificación
 router.post('/resend-verification', resendVerificationController);
+
+// Ruta para verificar estado del código activo
+router.post('/check-verification-status', checkVerificationStatusController);
 
 export default router;

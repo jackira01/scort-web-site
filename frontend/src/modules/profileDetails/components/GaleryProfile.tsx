@@ -2,7 +2,7 @@
 
 import { CheckCircle, Search, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ImageModal } from '@/components/ui/image-modal';
 
@@ -20,6 +20,29 @@ export const ProfileGallery = ({
   const [selectedImage, setSelectedImage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImageIndex, setModalImageIndex] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-carousel every 4 seconds (stops when modal is open or if only 1 image)
+  useEffect(() => {
+    if (!images || images.length <= 1 || isModalOpen) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
+
+    intervalRef.current = setInterval(() => {
+      setSelectedImage((prev) => (prev + 1) % images.length);
+    }, 6000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [images, images?.length, isModalOpen]);
 
   const scrollToTrustFactors = () => {
     const trustSection = document.getElementById('trust-factors');
@@ -57,18 +80,29 @@ export const ProfileGallery = ({
       )}
 
       {/* Main Image */}
-      <div className="relative overflow-hidden rounded-xl bg-muted group cursor-pointer"
+      <div className="relative w-full flex justify-center bg-black/10 rounded-xl overflow-hidden group cursor-pointer"
         onClick={() => {
           setModalImageIndex(selectedImage);
           setIsModalOpen(true);
-        }}>
+        }}
+      >
         <Image
           width={600}
           height={700}
           src={images[selectedImage] || '/placeholder.svg'}
           alt={`${name} - Imagen ${selectedImage + 1}`}
-          className="w-full h-96 lg:h-[750px] object-cover group-hover:scale-105 transition-transform duration-500"
+          className="
+      h-auto 
+      max-h-[700px] 
+      w-auto 
+      max-w-full 
+      object-contain 
+      group-hover:scale-105 
+      transition-transform 
+      duration-500
+    "
         />
+
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
 
         {/* Hover Overlay with Magnifying Glass */}
@@ -87,7 +121,7 @@ export const ProfileGallery = ({
       </div>
 
       {/* Thumbnail Grid */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+      <div className="grid grid-cols-4 gap-2 ">
         {images.map((image, index) => (
           <button
             type="button"
@@ -95,7 +129,7 @@ export const ProfileGallery = ({
             onClick={() => {
               setSelectedImage(index);
             }}
-            className={`relative overflow-hidden rounded-lg aspect-square group transition-all duration-200 ${selectedImage === index
+            className={`relative overflow-hidden rounded-lg aspect-square group transition-all duration-200 h-20 md:h-36 ${selectedImage === index
               ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-background'
               : 'hover:ring-2 hover:ring-purple-300 hover:ring-offset-2 hover:ring-offset-background'
               }`}

@@ -102,13 +102,18 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
         success: true,
         message: 'Perfil creado exitosamente. Se ha generado una factura pendiente.',
         profile: {
-          ...result.profile.toObject(),
-          paymentHistory: result.profile.paymentHistory || []
+          _id: result.profile._id,
+          name: result.profile.name
         },
-        invoice: result.invoice,
+        invoice: {
+          _id: result.invoice._id,
+          invoiceNumber: result.invoice.invoiceNumber,
+          totalAmount: result.invoice.totalAmount,
+          expiresAt: result.invoice.expiresAt,
+          status: result.invoice.status
+        },
         whatsAppMessage: result.whatsAppMessage,
-        paymentRequired: true,
-        expiresAt: result.invoice.expiresAt
+        paymentRequired: true
       });
     } else {
       // Perfil creado sin factura (plan gratuito)
@@ -116,8 +121,8 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
         success: true,
         message: 'Perfil creado exitosamente.',
         profile: {
-          ...result.profile.toObject(),
-          paymentHistory: result.profile.paymentHistory || []
+          _id: result.profile._id,
+          name: result.profile.name
         },
         whatsAppMessage: result.whatsAppMessage,
         paymentRequired: false

@@ -106,13 +106,13 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
                   message: 'La descripción debe tener al menos 50 caracteres',
                 },
                 maxLength: {
-                  value: 300,
-                  message: 'La descripción no puede exceder 300 caracteres',
+                  value: 1200,
+                  message: 'La descripción no puede exceder 1200 caracteres',
                 },
               })}
             />
             <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">
-              {description?.length || 0} / 300 caracteres restantes
+              {description?.length || 0} / 1200 caracteres restantes
             </div>
           </div>
           {errors.description && (

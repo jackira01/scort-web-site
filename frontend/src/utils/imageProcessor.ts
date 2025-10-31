@@ -81,6 +81,15 @@ export const processImageAfterCrop = async (
     watermarkText = 'SCORT'
   } = options;
 
+  console.log('🔍 processImageAfterCrop - Opciones recibidas:', {
+    originalFileName,
+    originalIndex,
+    'options.applyWatermark': options.applyWatermark,
+    'applyWatermark (después de destructuring)': applyWatermark,
+    watermarkText,
+    allOptions: options
+  });
+
   try {
     // Obtener dimensiones originales para validación
     await getImageDimensions(croppedBlob);
@@ -90,9 +99,19 @@ export const processImageAfterCrop = async (
     let processedFile = blobToFile(croppedBlob, originalFileName);
 
     // Aplicar marca de agua si está habilitada
+    console.log('💧 Verificando si aplicar marca de agua:', {
+      applyWatermark,
+      watermarkText,
+      condicion: applyWatermark ? 'SÍ APLICARÁ' : 'NO APLICARÁ'
+    });
+
     if (applyWatermark) {
+      console.log('✅ Aplicando marca de agua...');
       const watermarkedBlob = await applyWatermarkToImage(processedFile, watermarkText);
       processedFile = blobToFile(watermarkedBlob, originalFileName);
+      console.log('✅ Marca de agua aplicada');
+    } else {
+      console.log('⏭️ Saltando marca de agua');
     }
 
     // Comprimir la imagen - TEMPORALMENTE COMENTADO
@@ -104,7 +123,7 @@ export const processImageAfterCrop = async (
     //   useWebWorker,
     //   fileType: 'image/jpeg', // Forzar JPEG para mejor compresión
     // });
-    
+
     // TEMPORALMENTE: usar archivo sin comprimir
     const compressedFile = processedFile;
 

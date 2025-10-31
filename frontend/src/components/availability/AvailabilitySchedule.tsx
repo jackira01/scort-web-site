@@ -370,8 +370,8 @@ export function AvailabilitySchedule({
                         <div
                             key={day}
                             className={`space-y-3 p-4 border rounded-lg transition-all duration-200 ${selectedDays.includes(day)
-                                    ? 'border-purple-300 bg-purple-50/50 dark:bg-purple-950/20'
-                                    : 'border-border bg-background/50'
+                                ? 'border-purple-300 bg-purple-50/50 dark:bg-purple-950/20'
+                                : 'border-border bg-background/50'
                                 }`}
                         >
                             <div className="flex items-center justify-between">
@@ -401,46 +401,50 @@ export function AvailabilitySchedule({
                                 )}
                             </div>
 
-                            <div className="space-y-3">
-                                <div className="space-y-2">
+                            <div className="flex flex-col md:flex-row gap-4">
+                                {/* Hora de inicio */}
+                                <div className="flex-1 space-y-2">
                                     <Label className="text-xs text-muted-foreground">
                                         Hora de inicio
                                     </Label>
                                     <div className="flex items-center gap-2">
                                         <TimePicker
                                             value={dayStates[day].startTime}
-                                            onChange={(value) =>
-                                                handleTimeChange(day, 'startTime', value)
-                                            }
+                                            onChange={(value) => handleTimeChange(day, 'startTime', value)}
                                             disabled={!dayStates[day].isAvailable}
                                             className="flex-1"
                                             placeholder="Seleccionar hora"
                                         />
                                         <span className="text-xs text-muted-foreground min-w-[60px]">
-                                            {dayStates[day].isAvailable ? formatTime12Hour(dayStates[day].startTime) : '--'}
+                                            {dayStates[day].isAvailable
+                                                ? formatTime12Hour(dayStates[day].startTime)
+                                                : '--'}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="space-y-2">
+
+                                {/* Hora de fin */}
+                                <div className="flex-1 space-y-2">
                                     <Label className="text-xs text-muted-foreground">
                                         Hora de fin
                                     </Label>
                                     <div className="flex items-center gap-2">
                                         <TimePicker
                                             value={dayStates[day].endTime}
-                                            onChange={(value) =>
-                                                handleTimeChange(day, 'endTime', value)
-                                            }
+                                            onChange={(value) => handleTimeChange(day, 'endTime', value)}
                                             disabled={!dayStates[day].isAvailable}
                                             className="flex-1"
                                             placeholder="Seleccionar hora"
                                         />
                                         <span className="text-xs text-muted-foreground min-w-[60px]">
-                                            {dayStates[day].isAvailable ? formatTime12Hour(dayStates[day].endTime) : '--'}
+                                            {dayStates[day].isAvailable
+                                                ? formatTime12Hour(dayStates[day].endTime)
+                                                : '--'}
                                         </span>
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     ))}
                 </div>

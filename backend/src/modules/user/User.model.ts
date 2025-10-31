@@ -38,7 +38,7 @@ export interface IUser {
 export interface IUserDocument extends IUser, Document { }
 
 const userSchema = new Schema<IUserDocument>({
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   name: String,
   verificationDocument: [String],
   password: { type: String }, // Hashed password for credentials login

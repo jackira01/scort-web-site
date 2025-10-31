@@ -10,12 +10,10 @@ import AccountMenuContent from './AccountMenuContent';
 import AccountHorizontalMenu from './AccountHorizontalMenu';
 import AccountContent from './AccountContent';
 import { useAccountSection } from '../hooks/useAccountSection';
-import CouponModal from '@/components/modals/CouponModal';
 import CouponConfirmationModal from '@/components/modals/CouponConfirmationModal';
 import PlanSelectorModal from '@/components/modals/PlanSelectorModal';
 import NewsModal from '@/components/modals/NewsModal';
 import EmailVerificationModal from '@/components/modals/EmailVerificationModal';
-import { couponService } from '@/services/coupon.service';
 import { ICoupon } from '@/types/coupon.types';
 import { API_URL } from '@/lib/config';
 import Loader from '@/components/Loader';
@@ -26,14 +24,12 @@ export default function AccountLayout() {
     const { activeSection, setActiveSection } = useAccountSection();
     const { data: user, isLoading } = useUser();
     const { data: userProfiles } = useUserProfiles(user?._id);
-    const accountCompleteness = 65;
 
     // Hook para el modal automático de noticias
     const {
         isModalOpen: isNewsModalOpen,
         currentNews,
         closeModal: closeNewsModal,
-        hasUnreadNews
     } = useAutoNewsModal({
         enabled: !!user, // Solo habilitar si el usuario está autenticado
         delay: 3000, // Esperar 3 segundos después de cargar la página
@@ -41,7 +37,6 @@ export default function AccountLayout() {
     });
 
     // Estados para los modales de cupón
-    const [couponModalOpen, setCouponModalOpen] = useState(false);
     const [confirmationModalOpen, setConfirmationModalOpen] = useState(false);
     const [planSelectorModalOpen, setPlanSelectorModalOpen] = useState(false);
     const [validatedCoupon, setValidatedCoupon] = useState<ICoupon | null>(null);
@@ -50,7 +45,6 @@ export default function AccountLayout() {
     const [selectedPlanPrice, setSelectedPlanPrice] = useState<number>(0);
     const [selectedVariantDays, setSelectedVariantDays] = useState<number>(30);
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
 
     // Estado para el modal de verificación de email
@@ -79,34 +73,6 @@ export default function AccountLayout() {
         }
     }, [user]);
 
-    const handleCouponRedeem = async (couponCode: string) => {
-        try {
-            const result = await couponService.validateCouponForFrontend(couponCode);
-
-            if (result.success && result.data) {
-                setValidatedCoupon(result.data);
-                setCouponModalOpen(true);
-                toast.success(result.message);
-            } else {
-                toast.error(result.message);
-            }
-        } catch (error) {
-            toast.error('Error al validar el cupón. Inténtalo de nuevo.');
-        }
-    };
-
-    const handleApplyCoupon = (profileId: string) => {
-        setSelectedProfileId(profileId);
-        setCouponModalOpen(false);
-
-        // Si el cupón es de tipo porcentual o monto fijo, mostrar selector de planes
-        if (validatedCoupon && (validatedCoupon.type === 'percentage' || validatedCoupon.type === 'fixed_amount')) {
-            setPlanSelectorModalOpen(true);
-        } else {
-            // Para cupones de asignación de plan, ir directamente a confirmación
-            setConfirmationModalOpen(true);
-        }
-    };
 
     const handleSelectPlan = (planCode: string, originalPrice: number, variantDays?: number) => {
         setSelectedPlanCode(planCode);
@@ -348,11 +314,6 @@ export default function AccountLayout() {
         }
     };
 
-    const handleCloseCouponModal = () => {
-        setCouponModalOpen(false);
-        setValidatedCoupon(null);
-    };
-
     const handleClosePlanSelectorModal = () => {
         setPlanSelectorModalOpen(false);
         setSelectedPlanCode('');
@@ -394,7 +355,6 @@ export default function AccountLayout() {
                         <AccountMenuContent
                             activeSection={activeSection}
                             setActiveSection={setActiveSection}
-                            onCouponRedeem={handleCouponRedeem}
                             isVisible={true}
                             onClose={() => { }}
                             isMobile={false}
@@ -410,38 +370,15 @@ export default function AccountLayout() {
 
             {/* Menu horizontal para móvil */}
             <AnimatePresence>
-                {isMobile && !isMenuOpen && (
+                {isMobile && (
                     <AccountHorizontalMenu
                         activeSection={activeSection}
                         setActiveSection={setActiveSection}
-                        onToggleMenu={() => setIsMenuOpen(true)}
                         isVisible={true}
                     />
                 )}
             </AnimatePresence>
 
-            {/* Menu content para móvil */}
-            <AnimatePresence>
-                {isMobile && isMenuOpen && (
-                    <AccountMenuContent
-                        activeSection={activeSection}
-                        setActiveSection={setActiveSection}
-                        onCouponRedeem={handleCouponRedeem}
-                        isVisible={isMenuOpen}
-                        onClose={() => setIsMenuOpen(false)}
-                        isMobile={true}
-                    />
-                )}
-            </AnimatePresence>
-
-            {/* Modal de selección de perfil para cupón */}
-            <CouponModal
-                isOpen={couponModalOpen}
-                onClose={handleCloseCouponModal}
-                coupon={validatedCoupon}
-                userProfiles={userProfiles || []}
-                onApplyCoupon={handleApplyCoupon}
-            />
 
             {/* Modal de selección de plan */}
             <PlanSelectorModal
