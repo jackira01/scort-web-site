@@ -24,7 +24,6 @@ import {
   uploadMultipleImages,
   uploadMultipleVideos,
   uploadProcessedImages,
-  uploadMixedImages,
 } from '@/utils/tools';
 import { ProcessedImageResult } from '@/utils/imageProcessor';
 import { FormProvider } from '../context/FormContext';

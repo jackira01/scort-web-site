@@ -25,7 +25,7 @@ export const verifyEmailController = async (req: Request, res: Response) => {
     if (isValid) {
       // Marcar el email como verificado en la base de datos
       await UserModel.findOneAndUpdate(
-        { email },
+        { email: email.toLowerCase().trim() },
         { emailVerified: new Date() },
         { new: true }
       );
@@ -101,6 +101,44 @@ export const resendVerificationController = async (req: Request, res: Response) 
     return res.status(500).json({
       success: false,
       message: error.message || 'Error al reenviar el código'
+    });
+  }
+};
+
+/**
+ * Verifica si existe un código de verificación activo para el email
+ */
+export const checkVerificationStatusController = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email es requerido'
+      });
+    }
+
+    // Verificar si existe un código activo
+    const codeInfo = await emailVerificationService.getActiveCodeInfo(email);
+
+    if (codeInfo) {
+      return res.status(200).json({
+        success: true,
+        hasActiveCode: true,
+        expiresAt: codeInfo.expiresAt
+      });
+    } else {
+      return res.status(200).json({
+        success: true,
+        hasActiveCode: false
+      });
+    }
+  } catch (error: any) {
+    console.error('Error in checkVerificationStatusController:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Error al verificar el estado'
     });
   }
 };

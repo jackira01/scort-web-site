@@ -7,6 +7,7 @@ import { type PropsWithChildren, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from '@/components/theme-provider';
 import AuthRedirectHandler from '@/components/authentication/AuthRedirectHandler';
+import SessionSyncHandler from '@/components/authentication/SessionSyncHandler';
 import { CookieConsentProvider } from '@/contexts/CookieConsentContext';
 import CookieConsentWrapper from '@/components/CookieConsentWrapper';
 import { AgeVerificationProvider } from '@/contexts/AgeVerificationContext';
@@ -69,6 +70,7 @@ export function Providers({ children }: PropsWithChildren) {
           refetchOnWindowFocus={false}
           refetchWhenOffline={false}
         >
+          <SessionSyncHandler />
           <CookieConsentProvider>
             <AgeVerificationProvider>
               <AuthRedirectHandler />

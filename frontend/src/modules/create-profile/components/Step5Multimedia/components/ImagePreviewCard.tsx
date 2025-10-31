@@ -316,7 +316,6 @@ export const ImagePreviewCard = ({
                                 >
                                     <Star className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 ${isPreviewImage ? 'fill-white' : ''}`} />
                                     <span className="hidden sm:inline">Portada</span>
-                                    <span className="sm:hidden">★</span>
                                 </Button>
                             )}
 

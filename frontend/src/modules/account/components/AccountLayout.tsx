@@ -45,7 +45,6 @@ export default function AccountLayout() {
     const [selectedPlanPrice, setSelectedPlanPrice] = useState<number>(0);
     const [selectedVariantDays, setSelectedVariantDays] = useState<number>(30);
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
 
     // Estado para el modal de verificación de email
@@ -371,25 +370,11 @@ export default function AccountLayout() {
 
             {/* Menu horizontal para móvil */}
             <AnimatePresence>
-                {isMobile && !isMenuOpen && (
+                {isMobile && (
                     <AccountHorizontalMenu
                         activeSection={activeSection}
                         setActiveSection={setActiveSection}
-                        onToggleMenu={() => setIsMenuOpen(true)}
                         isVisible={true}
-                    />
-                )}
-            </AnimatePresence>
-
-            {/* Menu content para móvil */}
-            <AnimatePresence>
-                {isMobile && isMenuOpen && (
-                    <AccountMenuContent
-                        activeSection={activeSection}
-                        setActiveSection={setActiveSection}
-                        isVisible={isMenuOpen}
-                        onClose={() => setIsMenuOpen(false)}
-                        isMobile={true}
                     />
                 )}
             </AnimatePresence>

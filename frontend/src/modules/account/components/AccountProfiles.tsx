@@ -354,9 +354,9 @@ export default function AccountProfiles({
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="p-2 bg-white/90 hover:bg-white hover:border-purple-500 transition-all duration-200"
+                                className="p-2 bg-background hover:bg-accent hover:border-purple-500 transition-all duration-200"
                               >
-                                <Edit className="h-4 w-4" />
+                                <Edit className="h-4 w-4 text-foreground" />
                               </Button>
                             </Link>
                           </TooltipTrigger>
@@ -372,9 +372,9 @@ export default function AccountProfiles({
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="p-2 bg-white/90 hover:bg-white hover:border-green-500 transition-all duration-200"
+                                className="p-2 bg-background hover:bg-accent hover:border-green-500 transition-all duration-200"
                               >
-                                <Shield className="h-4 w-4" />
+                                <Shield className="h-4 w-4 text-foreground" />
                               </Button>
                             </Link>
                           </TooltipTrigger>
@@ -515,7 +515,7 @@ export default function AccountProfiles({
                               onClick={() => openDeleteModal(profile)}
                               className="p-2 hover:bg-red-600 transition-all duration-200"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 text-white" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>

@@ -1,20 +1,18 @@
 'use client';
 
-import { Menu, User, Receipt, Tags, Newspaper } from 'lucide-react';
+import { User, Receipt, Tags, Newspaper } from 'lucide-react';
 import { motion } from 'motion/react';
 import { sidebarItems } from '../data';
 
 interface AccountHorizontalMenuProps {
   activeSection: string;
   setActiveSection: (id: string) => void;
-  onToggleMenu: () => void;
   isVisible: boolean;
 }
 
 const AccountHorizontalMenu = ({
   activeSection,
   setActiveSection,
-  onToggleMenu,
   isVisible,
 }: AccountHorizontalMenuProps) => {
 
@@ -62,16 +60,6 @@ const AccountHorizontalMenu = ({
     >
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 px-3 py-3">
         <div className="flex items-center justify-center space-x-3">
-          {/* Botón de menú acordeón */}
-          <motion.button
-            variants={iconVariants}
-            whileTap="tap"
-            onClick={onToggleMenu}
-            className="p-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-          >
-            <Menu className="h-5 w-5" />
-          </motion.button>
-
           {/* Iconos de navegación */}
           {sidebarItems.map((item, index) => (
             <motion.button
@@ -84,7 +72,7 @@ const AccountHorizontalMenu = ({
                 : 'text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                 }`}
               style={{
-                animationDelay: `${(index + 1) * 50}ms`,
+                animationDelay: `${index * 50}ms`,
               }}
             >
               <item.icon className="h-5 w-5" />

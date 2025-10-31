@@ -13,6 +13,7 @@ export interface DefaultPlanConfig {
 export interface ImageToCrop {
     file: File;
     index: number;
+    isFromUrl?: boolean; // ✅ Indica si la imagen original era una URL (no aplicar marca de agua)
 }
 
 export interface VideoCoverToCrop {

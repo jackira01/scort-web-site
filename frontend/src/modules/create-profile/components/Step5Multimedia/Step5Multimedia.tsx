@@ -64,6 +64,9 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
   // ✅ NUEVO: Estado para guardar las portadas originales de videos (para permitir re-crop sobre la original)
   const [originalVideoCoverImages, setOriginalVideoCoverImages] = useState<Map<number, File>>(new Map());
 
+  // ✅ NUEVO: Estado para trackear qué imágenes originalmente eran URLs (para NO aplicar marca de agua)
+  const [imagesFromUrl, setImagesFromUrl] = useState<Map<number, boolean>>(new Map());
+
   // ✅ LUEGO los useEffects de sincronización
   // Sincronizar processedImages con el formulario
   useEffect(() => {
@@ -115,6 +118,16 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     try {
       setIsProcessingImage(true);
 
+      // ✅ Aplicar marca de agua SOLO si la imagen NO es de URL (es File nuevo)
+      const shouldApplyWatermark = !currentImageToCrop.isFromUrl;
+
+      console.log('🎨 Procesando imagen recortada:', {
+        index: currentImageToCrop.index,
+        isFromUrl: currentImageToCrop.isFromUrl,
+        shouldApplyWatermark,
+        fileName: currentImageToCrop.file.name
+      });
+
       // Solo recortar sin aplicar marca de agua
       const processedResult: ProcessedImageResult = await (async () => {
         try {
@@ -123,8 +136,8 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
             croppedBlob,
             currentImageToCrop.file.name,
             {
-              applyWatermark: false, // ❌ NO aplicar marca de agua al recortar
-              watermarkText: '',
+              applyWatermark: shouldApplyWatermark, // ✅ Aplicar marca SOLO si es File nuevo
+              watermarkText: shouldApplyWatermark ? companyName : '',
             },
             currentImageToCrop.index
           );
@@ -190,43 +203,93 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
   // Función para abrir crop modal para una imagen existente
   const handleEditImage = (file: File | string, index: number) => {
+    console.log('📸 handleEditImage llamado:', {
+      index,
+      fileType: file instanceof File ? 'File' : 'string',
+      fileName: file instanceof File ? file.name : file.substring(0, 80),
+      hasOriginalImage: originalImages.has(index),
+      isMarkedAsFromUrl: imagesFromUrl.get(index)
+    });
+
     // ✅ Primero buscar la imagen original guardada
     const originalImage = originalImages.get(index);
 
-    // ✅ Si existe original, usarla. Si no, usar el file actual
+    // ✅ Si existe original, usarla y consultar el Map para saber si era URL
     if (originalImage) {
-      setCurrentImageToCrop({ file: originalImage, index });
+      const wasFromUrl = imagesFromUrl.get(index) ?? false;
+      console.log('✅ Usando imagen original guardada, wasFromUrl:', wasFromUrl);
+      setCurrentImageToCrop({ file: originalImage, index, isFromUrl: wasFromUrl });
       setCropModalOpen(true);
       return;
     }
 
-    // ✅ Si el file es un File, usarlo directamente
+    // ✅ Si el file es un File, usarlo directamente (aplicar marca de agua)
     if (file instanceof File) {
-      setCurrentImageToCrop({ file, index });
+      console.log('✅ File nuevo detectado, marca de agua: SÍ');
+      setCurrentImageToCrop({ file, index, isFromUrl: false });
       setCropModalOpen(true);
       return;
     }
 
-    // ✅ Si es una URL (string), convertirla a File primero
+    // ✅ Si es una URL (string), convertirla a File usando canvas (NO aplicar marca de agua)
     if (typeof file === 'string') {
-      fetch(file)
-        .then(res => res.blob())
-        .then(blob => {
-          const newFile = new File([blob], `photo-${index}.jpg`, { type: 'image/jpeg' });
+      console.log('🌐 URL detectada, convirtiendo a File, marca de agua: NO');
 
-          // ✅ Guardar como imagen original para futuros re-crops
-          const newOriginals = new Map(originalImages);
-          newOriginals.set(index, newFile);
-          setOriginalImages(newOriginals);
-          console.log('📸 Imagen original guardada desde URL para foto:', index);
+      const img = new Image();
+      img.crossOrigin = 'anonymous'; // ✅ Importante para evitar problemas de CORS
 
-          setCurrentImageToCrop({ file: newFile, index });
-          setCropModalOpen(true);
-        })
-        .catch(err => {
-          console.error('Error cargando imagen para editar:', err);
+      img.onload = () => {
+        try {
+          // Crear canvas para convertir la imagen
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            toast.error('Error al procesar la imagen');
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0);
+
+          // Convertir canvas a Blob
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              toast.error('Error al convertir la imagen');
+              return;
+            }
+
+            const newFile = new File([blob], `photo-${index}.jpg`, { type: 'image/jpeg' });
+
+            // ✅ Guardar como imagen original para futuros re-crops
+            const newOriginals = new Map(originalImages);
+            newOriginals.set(index, newFile);
+            setOriginalImages(newOriginals);
+
+            // ✅ NUEVO: Marcar que esta imagen era originalmente una URL
+            const newFromUrlMap = new Map(imagesFromUrl);
+            newFromUrlMap.set(index, true);
+            setImagesFromUrl(newFromUrlMap);
+
+            console.log('✅ Imagen original guardada desde URL para foto:', index);
+
+            setCurrentImageToCrop({ file: newFile, index, isFromUrl: true }); // ✅ Marcar como URL
+            setCropModalOpen(true);
+          }, 'image/jpeg', 0.95);
+
+        } catch (err) {
+          console.error('Error al procesar imagen:', err);
           toast.error('Error al cargar la imagen para editar');
-        });
+        }
+      };
+
+      img.onerror = (err) => {
+        console.error('Error cargando imagen desde URL:', err);
+        toast.error('No se pudo cargar la imagen. Verifica que la URL sea accesible.');
+      };
+
+      img.src = file;
     }
   };
 
@@ -234,18 +297,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
   const handleSetCoverImage = (index: number) => {
     const currentPhotos = [...photos];
 
-    console.log('\n📸 === CAMBIO DE IMAGEN DE PORTADA ===');
-    console.log('Índice seleccionado:', index);
-    console.log('Total fotos:', currentPhotos.length);
-    console.log('coverImageIndex anterior:', coverImageIndex);
-
     const processedImage = processedImages.get(index);
-    console.log('Imagen procesada existe:', !!processedImage);
-    if (processedImage) {
-      console.log('  - originalIndex:', processedImage.originalIndex);
-      console.log('  - originalFileName:', processedImage.originalFileName);
-      console.log('  - URL:', processedImage.url.substring(0, 50) + '...');
-    }
 
     if (index >= 0 && index < currentPhotos.length) {
       setValue('coverImageIndex', index, {
@@ -253,12 +305,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
         shouldDirty: true,
         shouldTouch: true
       });
-
-      console.log('✅ coverImageIndex actualizado a:', index);
-      console.log('📦 Valores del formulario:');
-      console.log('  - photos.length:', currentPhotos.length);
-      console.log('  - processedImages.size:', processedImages.size);
-      console.log('  - coverImageIndex:', index);
 
       toast.success('Imagen de portada seleccionada');
     } else {
@@ -313,29 +359,61 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       return;
     }
 
-    // Si es una string (URL), necesitamos convertirla a File
+    // ✅ Si es una string (URL), convertirla a File usando canvas (mejor para CORS)
     if (typeof imageToEdit === 'string') {
-      // ✅ Guardar la imagen original después de convertirla
-      fetch(imageToEdit)
-        .then(res => res.blob())
-        .then(blob => {
-          const file = new File([blob], `video-cover-${videoIndex}.jpg`, { type: 'image/jpeg' });
+      console.log('🎬 Convirtiendo portada URL a File para editar:', imageToEdit.substring(0, 80) + '...');
 
-          // ✅ Guardar como original si no existe
-          if (!originalVideoCoverImages.has(videoIndex)) {
-            const newOriginals = new Map(originalVideoCoverImages);
-            newOriginals.set(videoIndex, file);
-            setOriginalVideoCoverImages(newOriginals);
-            console.log('📸 Portada original guardada desde URL para video:', videoIndex);
+      const img = new Image();
+      img.crossOrigin = 'anonymous'; // ✅ Importante para evitar problemas de CORS
+
+      img.onload = () => {
+        try {
+          // Crear canvas para convertir la imagen
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            toast.error('Error al procesar la portada');
+            return;
           }
 
-          setCurrentVideoCoverToCrop({ file, videoIndex });
-          setVideoCoverCropModalOpen(true);
-        })
-        .catch(err => {
-          console.error('Error cargando imagen de portada:', err);
+          ctx.drawImage(img, 0, 0);
+
+          // Convertir canvas a Blob
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              toast.error('Error al convertir la portada');
+              return;
+            }
+
+            const file = new File([blob], `video-cover-${videoIndex}.jpg`, { type: 'image/jpeg' });
+
+            // ✅ Guardar como original si no existe
+            if (!originalVideoCoverImages.has(videoIndex)) {
+              const newOriginals = new Map(originalVideoCoverImages);
+              newOriginals.set(videoIndex, file);
+              setOriginalVideoCoverImages(newOriginals);
+              console.log('✅ Portada original guardada desde URL para video:', videoIndex);
+            }
+
+            setCurrentVideoCoverToCrop({ file, videoIndex });
+            setVideoCoverCropModalOpen(true);
+          }, 'image/jpeg', 0.95);
+
+        } catch (err) {
+          console.error('Error al procesar portada:', err);
           toast.error('Error al cargar la portada para editar');
-        });
+        }
+      };
+
+      img.onerror = (err) => {
+        console.error('Error cargando portada desde URL:', err);
+        toast.error('No se pudo cargar la portada. Verifica que la URL sea accesible.');
+      };
+
+      img.src = imageToEdit;
     }
   };
 
