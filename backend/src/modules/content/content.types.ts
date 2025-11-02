@@ -7,7 +7,16 @@ export enum ContentBlockType {
   PARAGRAPH = 'paragraph',
   LIST = 'list',
   IMAGE = 'image',
-  LINK = 'link'
+  LINK = 'link',
+  FAQ = 'faq'
+}
+
+/**
+ * Interfaz para un item de FAQ
+ */
+export interface IFaqItem {
+  question: string;
+  answer: string;
 }
 
 /**
@@ -15,7 +24,7 @@ export enum ContentBlockType {
  */
 export interface IContentBlock {
   type: ContentBlockType;
-  value: string | string[]; // string para párrafo/imagen/link, string[] para lista
+  value: string | string[] | IFaqItem[]; // string para párrafo/imagen/link, string[] para lista, IFaqItem[] para FAQ
   order?: number; // orden dentro de la sección
 }
 

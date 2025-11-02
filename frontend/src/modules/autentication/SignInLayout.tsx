@@ -47,7 +47,7 @@ export default function SignInLayout() {
   useEffect(() => {
     const message = searchParams.get('message');
     const errorParam = searchParams.get('error');
-    
+
     if (message === 'password_created') {
       setSuccess('Contraseña creada exitosamente. Ya puedes iniciar sesión.');
     } else if (errorParam) {
@@ -80,7 +80,7 @@ export default function SignInLayout() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     // Validar en tiempo real si el campo ya tiene error
     if (errors[name as keyof LoginFormData]) {
       validateField(name as keyof LoginFormData, value);
@@ -111,7 +111,7 @@ export default function SignInLayout() {
   const handleCreatePassword = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevenir comportamiento por defecto
     e.stopPropagation(); // Evitar propagación del evento
-    
+
     if (!formData.email) {
       setAuthError('Por favor ingresa tu email primero');
       return;
@@ -119,9 +119,12 @@ export default function SignInLayout() {
 
     setIsLoading(true);
     try {
-      const result = await initiatePasswordCreation(formData.email);
+      // Normalizar email a minúsculas
+      const normalizedEmail = formData.email.toLowerCase().trim();
+
+      const result = await initiatePasswordCreation(normalizedEmail);
       if (result.success) {
-        router.push(`/autenticacion/crear-contrasena?email=${encodeURIComponent(formData.email)}`);
+        router.push(`/autenticacion/crear-contrasena?email=${encodeURIComponent(normalizedEmail)}`);
       } else {
         setAuthError(result.message);
       }
@@ -148,9 +151,12 @@ export default function SignInLayout() {
     setIsLoading(true);
 
     try {
+      // Normalizar email a minúsculas antes de enviar
+      const normalizedEmail = formData.email.toLowerCase().trim();
+
       const result = await signIn('credentials', {
         redirect: false,
-        email: formData.email,
+        email: normalizedEmail,
         password: formData.password,
       });
 
@@ -197,7 +203,7 @@ export default function SignInLayout() {
 
       // Login exitoso - redirigir
       setSuccess('¡Bienvenido! Redirigiendo...');
-      
+
       // Usar window.location.href para una redirección más confiable
       setTimeout(() => {
         window.location.href = '/';
@@ -219,12 +225,12 @@ export default function SignInLayout() {
   const handleGoogleSignIn = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevenir cualquier comportamiento por defecto
     e.stopPropagation(); // Evitar propagación del evento
-    
+
     // Limpiar errores previos
     setAuthError(null);
     setSuccess(null);
     setInfo(null);
-    
+
     setIsLoading(true);
     try {
       await signIn('google', { callbackUrl: '/' });
@@ -253,14 +259,14 @@ export default function SignInLayout() {
               <AlertDescription>{authError}</AlertDescription>
             </Alert>
           )}
-          
+
           {success && (
             <Alert className="border-green-200 bg-green-50 text-green-800">
               <CheckCircle className="h-4 w-4" />
               <AlertDescription>{success}</AlertDescription>
             </Alert>
           )}
-          
+
           {info && (
             <Alert className="border-blue-200 bg-blue-50 text-blue-800">
               <Info className="h-4 w-4" />
@@ -355,7 +361,7 @@ export default function SignInLayout() {
                 'Iniciar Sesión'
               )}
             </Button>
-            
+
             {/* Botón para crear contraseña */}
             {showCreatePassword && (
               <Button
@@ -393,34 +399,38 @@ export default function SignInLayout() {
           <Button
             type="button"
             variant="outline"
-            className="w-full"
             onClick={handleGoogleSignIn}
             disabled={isLoading}
+            className="w-full flex items-center justify-center gap-3 py-3 text-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-900 transition"
           >
             {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             ) : (
-              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+              <svg
+                className="h-8 w-8" // tamaño real más grande
+                viewBox="0 0 48 48"
+              >
                 <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#EA4335"
+                  d="M24 9.5c3.94 0 6.58 1.7 8.1 3.12l5.93-5.93C34.6 3.6 29.8 1.5 24 1.5 14.82 1.5 7 7.44 3.84 15.5l7.02 5.46C12.38 15.6 17.6 9.5 24 9.5z"
                 />
                 <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                  d="M46.5 24c0-1.6-.15-3.12-.43-4.5H24v9h12.7c-.57 2.9-2.27 5.35-4.8 7.02l7.38 5.74C43.3 37.35 46.5 31.25 46.5 24z"
                 />
                 <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  fill="#FBBC05"
+                  d="M10.86 28.12a13.9 13.9 0 0 1-.86-4.12c0-1.43.3-2.8.86-4.12l-7.02-5.46A22.46 22.46 0 0 0 1.5 24c0 3.7.9 7.18 2.34 10.12l7.02-6z"
                 />
                 <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#4285F4"
+                  d="M24 46.5c6.48 0 11.9-2.14 15.88-5.84l-7.38-5.74c-2.07 1.4-4.72 2.23-8.5 2.23-6.4 0-11.62-4.1-13.62-9.79l-7.02 6C7 40.56 14.82 46.5 24 46.5z"
                 />
               </svg>
             )}
-            Continuar con Google
+            <span className="text-lg font-semibold">Continuar con Google</span>
           </Button>
+
 
           {/* Enlaces adicionales */}
           <div className="text-center space-y-2">

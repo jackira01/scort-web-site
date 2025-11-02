@@ -16,8 +16,8 @@ import { useCompanyName } from '@/utils/watermark';
 
 // Imports de módulos locales
 import { useContentLimits, useImageProcessing, useFileHandlers } from './hooks';
-import { ImagePreviewCard } from './components';
 import type { ImageToCrop, VideoCoverToCrop } from './types';
+import { AudioPreviewCard, PhotoPreviewCard, VideoPreviewCard } from './components/ImagePreviewCard';
 
 type Step5MultimediaProps = {};
 
@@ -615,10 +615,9 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                         : file;
 
                       return (
-                        <ImagePreviewCard
+                        <PhotoPreviewCard
                           key={fileKey} // ✅ Ahora la key es única y estable
                           file={file}
-                          type="photos"
                           index={index}
                           processedImage={processedImages.get(index)}
                           isProcessingImage={isProcessingImage}
@@ -626,8 +625,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                           onRemove={handleFileRemove}
                           onEdit={handleEditImage}
                           onSetCover={handleSetCoverImage}
-                          onVideoCoverSelect={handleVideoCoverImageSelect}
-                          onEditVideoCover={handleEditVideoCover}
                         />
                       );
                     })}
@@ -798,18 +795,13 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                         }
 
                         return (
-                          <ImagePreviewCard
+                          <VideoPreviewCard
                             key={fileKey}
                             file={file}
-                            type="videos"
                             index={index}
-                            processedImage={null}
-                            isProcessingImage={false}
                             videoCoverImages={videoCoverImages}
-                            coverImageIndex={coverImageIndex}
                             onRemove={handleFileRemove}
                             onEdit={handleEditImage}
-                            onSetCover={handleSetCoverImage}
                             onVideoCoverSelect={handleVideoCoverImageSelect}
                             onEditVideoCover={handleEditVideoCover}
                           />
@@ -919,20 +911,12 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                         : `audio-url-${file}`;
 
                       return (
-                        <ImagePreviewCard
+                        <AudioPreviewCard
                           key={fileKey}
                           file={file}
-                          type="audios"
                           index={index}
-                          processedImage={null}
-                          isProcessingImage={false}
-                          videoCoverImages={videoCoverImages}
-                          coverImageIndex={coverImageIndex}
                           onRemove={handleFileRemove}
-                          onEdit={handleEditImage}
-                          onSetCover={handleSetCoverImage}
-                          onVideoCoverSelect={handleVideoCoverImageSelect}
-                          onEditVideoCover={handleEditVideoCover}
+
                         />
                       );
                     })}

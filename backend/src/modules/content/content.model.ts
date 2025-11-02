@@ -20,17 +20,28 @@ const ContentBlockSchema = new Schema<IContentBlock>({
     required: true
   },
   value: {
-    type: Schema.Types.Mixed, // Permite string o array de strings
+    type: Schema.Types.Mixed, // Permite string, array de strings, o array de objetos FAQ
     required: true,
     validate: {
-      validator: function(value: any) {
-        // Para listas debe ser array, para otros tipos debe ser string
+      validator: function (value: any) {
+        // Para listas debe ser array de strings
         if (this.type === ContentBlockType.LIST) {
-          return Array.isArray(value) && value.length > 0;
+          return Array.isArray(value) && value.length > 0 &&
+            value.every((item: any) => typeof item === 'string');
         }
+        // Para FAQ debe ser array de objetos con question y answer
+        if (this.type === ContentBlockType.FAQ) {
+          return Array.isArray(value) && value.length > 0 &&
+            value.every((item: any) =>
+              typeof item === 'object' &&
+              typeof item.question === 'string' &&
+              typeof item.answer === 'string'
+            );
+        }
+        // Para otros tipos debe ser string
         return typeof value === 'string' && value.trim().length > 0;
       },
-      message: 'El valor debe ser un string no vacío para párrafos/imágenes/links o un array no vacío para listas'
+      message: 'El valor debe ser un string no vacío para párrafos/imágenes/links, un array de strings para listas, o un array de objetos {question, answer} para FAQ'
     }
   },
   order: {
@@ -106,11 +117,11 @@ ContentPageSchema.index({ isActive: 1 });
 ContentPageSchema.index({ createdAt: -1 });
 
 // Middleware para ordenar secciones antes de guardar
-ContentPageSchema.pre('save', function(this: IContentPageDocument, next) {
+ContentPageSchema.pre('save', function (this: IContentPageDocument, next) {
   if (this.sections && this.sections.length > 0) {
     // Ordenar secciones por el campo order
     this.sections.sort((a: IContentSection, b: IContentSection) => a.order - b.order);
-    
+
     // Ordenar bloques dentro de cada sección
     this.sections.forEach((section: IContentSection) => {
       if (section.blocks && section.blocks.length > 0) {
@@ -122,30 +133,39 @@ ContentPageSchema.pre('save', function(this: IContentPageDocument, next) {
 });
 
 // Método estático para obtener página por slug
-ContentPageSchema.statics.findBySlug = function(slug: string) {
+ContentPageSchema.statics.findBySlug = function (slug: string) {
   return this.findOne({ slug, isActive: true });
 };
 
 // Método de instancia para validar estructura
-ContentPageSchema.methods.validateStructure = function(this: IContentPageDocument): boolean {
+ContentPageSchema.methods.validateStructure = function (this: IContentPageDocument): boolean {
   try {
     // Verificar que todas las secciones tengan título
     const invalidSections = this.sections.some(section => {
       if (!section.title || section.title.trim().length === 0) {
         return true;
       }
-      
+
       // Verificar que todos los bloques tengan valores válidos
       return section.blocks.some(block => {
         if (block.type === ContentBlockType.LIST) {
-          return !Array.isArray(block.value) || block.value.length === 0 || 
-                 block.value.some(item => typeof item !== 'string' || item.trim().length === 0);
+          return !Array.isArray(block.value) || block.value.length === 0 ||
+            block.value.some((item: any) => typeof item !== 'string' || item.trim().length === 0);
+        } else if (block.type === ContentBlockType.FAQ) {
+          return !Array.isArray(block.value) || block.value.length === 0 ||
+            block.value.some((item: any) =>
+              typeof item !== 'object' ||
+              typeof item.question !== 'string' ||
+              item.question.trim().length === 0 ||
+              typeof item.answer !== 'string' ||
+              item.answer.trim().length === 0
+            );
         } else {
           return typeof block.value !== 'string' || block.value.trim().length === 0;
         }
       });
     });
-    
+
     return !invalidSections;
   } catch (error: any) {
     console.error('Error en validateStructure:', error);

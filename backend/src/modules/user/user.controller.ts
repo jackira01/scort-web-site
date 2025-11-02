@@ -233,8 +233,11 @@ export const registerUserController = async (req: Request, res: Response) => {
       });
     }
 
+    // Normalizar email a minúsculas
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Verificar si el usuario ya existe
-    const existingUser = await userService.findUserByEmail(email);
+    const existingUser = await userService.findUserByEmail(normalizedEmail);
     if (existingUser) {
       return res.status(409).json({
         success: false,
@@ -248,8 +251,8 @@ export const registerUserController = async (req: Request, res: Response) => {
 
     // Crear el usuario
     const user = await userService.createUser({
-      email,
-      name: name || email.split('@')[0], // Usar parte del email si no hay nombre
+      email: normalizedEmail,
+      name: name || normalizedEmail.split('@')[0], // Usar parte del email si no hay nombre
       password: hashedPassword,
       providers: ['credentials'],
       hasPassword: true,
@@ -300,8 +303,11 @@ export const loginUserController = async (req: Request, res: Response) => {
       });
     }
 
+    // Normalizar email a minúsculas
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Buscar usuario por email
-    const user = await userService.findUserByEmail(email);
+    const user = await userService.findUserByEmail(normalizedEmail);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -464,13 +470,16 @@ export const authGoogleUserController = async (req: Request, res: Response) => {
 
   if (!email) return res.status(400).json({ message: 'Email requerido' });
 
+  // Normalizar email a minúsculas
+  const normalizedEmail = email.toLowerCase().trim();
+
   // Buscar usuario por email
-  let user = await userService.findUserByEmail(email);
+  let user = await userService.findUserByEmail(normalizedEmail);
   let isNewUser = false;
 
   if (!user) {
     user = await userService.createUser({
-      email,
+      email: normalizedEmail,
       name,
       providers: ['google'],
       hasPassword: false,

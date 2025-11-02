@@ -6,7 +6,20 @@ export const createAttributeGroup = async (data: CreateAttributeGroupInput) => {
 };
 
 export const getAttributeGroups = async () => {
-    return await AttributeGroupModel.find();
+    const groups = await AttributeGroupModel.find();
+
+    // Ordenar variants alfabéticamente por label
+    return groups.map(group => {
+        const groupObj = group.toObject();
+        if (groupObj.variants && Array.isArray(groupObj.variants)) {
+            groupObj.variants.sort((a, b) => {
+                const labelA = a.label?.toLowerCase() || '';
+                const labelB = b.label?.toLowerCase() || '';
+                return labelA.localeCompare(labelB, 'es', { sensitivity: 'base' });
+            });
+        }
+        return groupObj;
+    });
 };
 
 export const getAttributeGroupByKey = async (key: string) => {
@@ -30,14 +43,14 @@ export const updateVariant = async ({ groupId, variantIndex, newValue, active }:
 export const deleteAttributeGroup = async (groupId: string) => {
     const group = await AttributeGroupModel.findById(groupId);
     if (!group) throw new Error('Group not found');
-    
+
     return await AttributeGroupModel.findByIdAndDelete(groupId);
 };
 
 export const addVariant = async (groupId: string, variant: { label: string; value: string }) => {
     const group = await AttributeGroupModel.findById(groupId);
     if (!group) throw new Error('Group not found');
-    
+
     group.variants.push({ ...variant, active: true });
     await group.save();
     return group;
@@ -46,11 +59,11 @@ export const addVariant = async (groupId: string, variant: { label: string; valu
 export const removeVariant = async (groupId: string, variantIndex: number) => {
     const group = await AttributeGroupModel.findById(groupId);
     if (!group) throw new Error('Group not found');
-    
+
     if (variantIndex < 0 || variantIndex >= group.variants.length) {
         throw new Error('Variant index out of bounds');
     }
-    
+
     group.variants.splice(variantIndex, 1);
     await group.save();
     return group;
@@ -59,10 +72,10 @@ export const removeVariant = async (groupId: string, variantIndex: number) => {
 export const updateGroup = async (groupId: string, data: { name?: string; key?: string }) => {
     const group = await AttributeGroupModel.findById(groupId);
     if (!group) throw new Error('Group not found');
-    
+
     if (data.name !== undefined) group.name = data.name;
     if (data.key !== undefined) group.key = data.key;
-    
+
     await group.save();
     return group;
 };

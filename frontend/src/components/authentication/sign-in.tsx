@@ -30,7 +30,7 @@ export function SignOut() {
           data: null,
           timestamp: Date.now()
         }));
-        
+
         // Limpiar inmediatamente para que otras pestañas puedan detectar el cambio
         setTimeout(() => {
           localStorage.removeItem('nextauth.message');
@@ -54,3 +54,26 @@ export function SignOut() {
     </Button>
   )
 }
+
+// Versión del manejador para usar directamente en DropdownMenuItem
+export const handleSignOut = async () => {
+  try {
+    // Disparar evento personalizado antes de cerrar sesión
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nextauth.message', JSON.stringify({
+        event: 'session',
+        data: null,
+        timestamp: Date.now()
+      }));
+
+      setTimeout(() => {
+        localStorage.removeItem('nextauth.message');
+      }, 100);
+    }
+
+    // Ejecutar signOut de NextAuth
+    await signOut({ callbackUrl: "/" });
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+  }
+};

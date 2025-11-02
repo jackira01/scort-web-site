@@ -685,10 +685,13 @@ export function CreateProfileLayout() {
 
       // Preparar purchasedPlan si se seleccionó un plan de pago
       const purchasedPlan = data.selectedPlan && data.selectedVariant ? {
-        planId: data.selectedPlan.id,
+        planId: data.selectedPlan._id, // Usar _id en lugar de id
         planCode: data.selectedPlan.code,
         variantDays: data.selectedVariant.days,
-        generateInvoice: data.generateInvoice || false,
+        // Solo incluir generateInvoice si el usuario es admin y el campo está definido
+        ...(session?.user?.role === 'admin' && data.generateInvoice !== undefined
+          ? { generateInvoice: data.generateInvoice }
+          : {}),
         couponCode: data.couponCode || undefined
       } : null;
 

@@ -431,7 +431,6 @@ const getFilteredProfiles = async (filters) => {
             profiles: profilesWithVerification,
         };
         await cache_service_1.cacheService.set(cacheKey, result, cache_service_1.CACHE_TTL.MEDIUM);
-        logger_1.logger.info(`Resultado guardado en caché: ${cacheKey}`);
         return result;
     }
     catch (error) {
@@ -477,27 +476,27 @@ const getFilterOptions = async () => {
             ? categoryGroup.variants
                 .filter((variant) => variant.active)
                 .map((variant) => ({
-                label: variant.label || variant.value,
-                value: variant.value,
-            }))
+                    label: variant.label || variant.value,
+                    value: variant.value,
+                }))
             : [];
         const features = {};
         attributeGroups.forEach((group) => {
             features[group.key] = group.variants
                 .filter((variant) => variant.active)
                 .map((variant) => ({
-                label: variant.label || variant.value,
-                value: variant.value,
-            }));
+                    label: variant.label || variant.value,
+                    value: variant.value,
+                }));
         });
         const result = {
             categories: categoryGroup
                 ? categoryGroup.variants
                     .filter((variant) => variant.active)
                     .map((variant) => ({
-                    label: variant.label || variant.value,
-                    value: variant.value,
-                }))
+                        label: variant.label || variant.value,
+                        value: variant.value,
+                    }))
                     .filter(Boolean)
                 : [],
             locations: {

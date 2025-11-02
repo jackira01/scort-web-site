@@ -227,7 +227,7 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
           <VisuallyHidden>
             <DialogTitle>Video Player Modal</DialogTitle>
           </VisuallyHidden>
-          <div className="relative w-full h-full flex items-center justify-center">
+          <div className="relative w-full h-full flex items-center justify-center p-4">
             {/* Botón de Cerrar */}
             <Button
               size="icon"
@@ -248,7 +248,8 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
               <>
                 <video
                   ref={modalVideoRef}
-                  className="max-w-full max-h-full object-contain"
+                  className="max-w-full max-h-[85vh] w-auto h-auto object-contain"
+                  style={{ maxHeight: 'calc(95vh - 8rem)' }}
                   muted={isVideoMuted}
                   onError={handleVideoError}
                   onLoadedData={handleVideoLoad}

@@ -69,7 +69,6 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
     if (planId) {
       const plan = plansResponse.plans.find(p => p._id === planId);
       if (plan) {
-        console.log('✅ Plan asignado encontrado por ID:', plan.name, plan.contentLimits);
         return plan;
       }
     }
@@ -78,7 +77,6 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
     if (planCode) {
       const plan = plansResponse.plans.find(p => p.code === planCode);
       if (plan) {
-        console.log('✅ Plan asignado encontrado por código:', plan.name, plan.contentLimits);
         return plan;
       }
     }
@@ -366,7 +364,6 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
 
       // 🎯 NUEVO: Pasar el plan asignado al formulario para que Step5Multimedia use los límites correctos
       if (assignedPlan) {
-        console.log('📋 Asignando plan al formulario:', assignedPlan.name, assignedPlan.contentLimits);
         form.setValue('selectedPlan', assignedPlan as any);
       } else {
         console.warn('⚠️ No hay plan asignado, Step5Multimedia usará límites por defecto');
@@ -562,10 +559,6 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
     }));
 
     // ✅ SIMPLIFICADO: Ya reordenamos en handleFinalSave, así que la primera foto ES la portada
-    console.log('🖼️ === CONSTRUYENDO DATOS PARA BACKEND ===');
-    console.log('coverImageIndex (debe ser 0):', formData.coverImageIndex);
-    console.log('Primera foto (portada):', formData.photos?.[0]?.substring(0, 50) + '...');
-    console.log('Total fotos:', formData.photos?.length || 0);
 
     return {
       user: session?.user?._id,
@@ -638,17 +631,11 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
   const handleSubmit = async () => {
     const data = form.getValues();
 
-    console.log('🔍 DEBUG Edición - Iniciando proceso de actualización de perfil');
-    console.log('🔍 DEBUG Edición - Datos del formulario:', data);
 
     setUploading(true);
 
     try {
       // 🎯 PASO CRÍTICO: REORDENAR IMÁGENES SEGÚN coverImageIndex (igual que en creación)
-      console.log('\n🔄 ===== REORDENANDO IMÁGENES PARA ACTUALIZACIÓN =====');
-      console.log('coverImageIndex:', data.coverImageIndex);
-      console.log('Total processedImages:', data.processedImages?.length || 0);
-      console.log('Total photos:', data.photos?.length || 0);
 
       let orderedProcessedImages: any[] = [];
       const coverIndex = data.coverImageIndex ?? 0;
@@ -657,15 +644,10 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       const newPhotos = data.photos?.filter(photo => photo instanceof File) || [];
       const existingPhotoUrls = data.photos?.filter(photo => typeof photo === 'string') || [];
 
-      console.log('🔍 Fotos nuevas (File):', newPhotos.length);
-      console.log('🔍 Fotos existentes (URL):', existingPhotoUrls.length);
 
       // 🎯 REORDENAR URLs EXISTENTES según coverImageIndex
       let reorderedExistingUrls = existingPhotoUrls;
       if (existingPhotoUrls.length > 0 && coverIndex > 0 && coverIndex < existingPhotoUrls.length) {
-        console.log('\n🔄 ===== REORDENANDO URLs EXISTENTES =====');
-        console.log('coverIndex:', coverIndex);
-        console.log('URL original en coverIndex:', existingPhotoUrls[coverIndex]?.substring(0, 60) + '...');
 
         // Poner la URL de portada primero
         const coverUrl = existingPhotoUrls[coverIndex];
@@ -674,12 +656,9 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
           ...existingPhotoUrls.filter((_, idx) => idx !== coverIndex)
         ];
 
-        console.log('✅ URLs reordenadas:');
         reorderedExistingUrls.forEach((url, idx) => {
-          console.log(`  [${idx}] ${url.substring(0, 60)}...`);
         });
       } else if (coverIndex === 0) {
-        console.log('📸 coverIndex es 0, no se requiere reordenamiento');
       }
 
       // Solo reordenar si hay imágenes nuevas procesadas
@@ -691,14 +670,12 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
           }
         });
 
-        console.log('📦 Map de imágenes procesadas:', Array.from(processedMap.keys()));
 
         const coverImage = processedMap.get(coverIndex);
 
         if (coverImage) {
           // 🎯 REORDENAR: La imagen de portada va primero
           orderedProcessedImages.push(coverImage);
-          console.log('✅ Imagen de portada agregada primero:', coverImage.originalFileName);
 
           // Agregar el resto excluyendo la de portada
           data.photos.forEach((photo: any, idx: number) => {
@@ -706,14 +683,9 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
               const processedImg = processedMap.get(idx);
               if (processedImg) {
                 orderedProcessedImages.push(processedImg);
-                console.log(`  ✅ [${orderedProcessedImages.length - 1}] ${processedImg.originalFileName}`);
               }
             }
           });
-
-          console.log('📸 Orden final de subida:', orderedProcessedImages.map((img, i) =>
-            `[${i}] ${img.originalFileName}`
-          ));
         }
       }
 
@@ -754,7 +726,6 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         }
       } else {
         // 🎯 CASO CRÍTICO: Solo URLs existentes, usar las reordenadas
-        console.log('📸 Solo URLs existentes, usando reorderedExistingUrls');
         photoUrls = reorderedExistingUrls;
       }
 
@@ -764,8 +735,6 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         typeof video === 'object' && video !== null && 'link' in video
       ) || [];
       const existingVideoStrings = data.videos?.filter(video => typeof video === 'string') || [];
-
-      console.log('🔍 Videos:', { nuevos: newVideos.length, objetos: existingVideos.length, strings: existingVideoStrings.length });
 
       if (newVideos.length > 0) {
         toast.loading('Subiendo videos nuevos...');
@@ -811,12 +780,6 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         coverImageIndex: 0,
         processedImages: orderedProcessedImages
       };
-
-      console.log('🔍 URLs finales:', {
-        photos: photoUrls.length,
-        videos: videoUrls.length,
-        audios: audioUrls.length
-      });
 
       const backendData = transformDataToBackendFormat(dataWithUrls);
 

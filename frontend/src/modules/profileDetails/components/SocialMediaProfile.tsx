@@ -170,7 +170,7 @@ export const SocialMediaProfile = ({
           </Button>
         )}
 
-        {socialMedia?.onlyfans && (
+        {/* {socialMedia?.onlyfans && (
           <Button
             variant="outline"
             className="w-full hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-500"
@@ -181,7 +181,7 @@ export const SocialMediaProfile = ({
             <ExternalLink className="h-4 w-4 mr-2" />
             Ver OnlyFans
           </Button>
-        )}
+        )} */}
 
         {socialMedia?.twitter && (
           <Button

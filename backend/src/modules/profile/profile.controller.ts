@@ -43,15 +43,22 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
     let planId = null;
     let planCode = null;
     let planDays = null;
-    let generateInvoice = false; // Por defecto no generar factura
+    let generateInvoice = true; // Por defecto SÍ generar factura (para usuarios regulares)
     let couponCode = null; // Código de cupón si existe
 
     if (purchasedPlan) {
       planId = purchasedPlan.planId; // ID del plan (nuevo campo prioritario)
       planCode = purchasedPlan.planCode; // Código del plan (mantener para compatibilidad)
       planDays = purchasedPlan.planDays || purchasedPlan.variantDays;
-      generateInvoice = purchasedPlan.generateInvoice || false; // Campo del frontend
       couponCode = purchasedPlan.couponCode || null; // Extraer código de cupón
+
+      // IMPORTANTE: Solo usar el valor del frontend si es un admin explícitamente
+      // Si purchasedPlan.generateInvoice es undefined, mantener el default (true)
+      // Si purchasedPlan.generateInvoice existe (admin), usar ese valor
+      if (purchasedPlan.hasOwnProperty('generateInvoice')) {
+        generateInvoice = purchasedPlan.generateInvoice;
+      }
+      // Para usuarios regulares, generateInvoice queda en true (default)
 
       // Validar que el plan comprado tenga los datos necesarios (ID o Código)
       if ((!planId && !planCode) || !planDays) {

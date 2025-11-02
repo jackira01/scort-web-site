@@ -2,7 +2,9 @@ import { ContentPageModel } from './content.model';
 import {
   IContentPage,
   ContentPageResponse,
-  ContentPagesListResponse
+  ContentPagesListResponse,
+  IFaqItem,
+  ContentBlockType
 } from './content.types';
 import {
   ZodCreateContentPageInput,
@@ -230,11 +232,24 @@ export class ContentService {
         existingPage.sections = data.sections.map(section => ({
           title: section.title ?? '',
           order: section.order ?? 0,
-          blocks: section.blocks?.map(block => ({
-            type: block.type!,
-            value: block.value ?? '',
-            order: block.order ?? 0
-          })) ?? []
+          blocks: section.blocks?.map(block => {
+            // Determinar el valor por defecto según el tipo de bloque
+            let value: string | string[] | IFaqItem[];
+
+            if (block.type === ContentBlockType.LIST) {
+              value = (block.value ?? []) as string[];
+            } else if (block.type === ContentBlockType.FAQ) {
+              value = (block.value ?? []) as IFaqItem[];
+            } else {
+              value = (block.value ?? '') as string;
+            }
+
+            return {
+              type: block.type!,
+              value,
+              order: block.order ?? 0
+            };
+          }) ?? []
         }));
       }
       if (data.isActive !== undefined) existingPage.isActive = data.isActive;

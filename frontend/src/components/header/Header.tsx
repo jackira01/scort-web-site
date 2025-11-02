@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import SignIn, { SignOut } from '../authentication/sign-in';
+import SignIn, { SignOut, handleSignOut } from '../authentication/sign-in';
 import Image from 'next/image';
 
 const HeaderComponent = () => {
@@ -152,11 +152,9 @@ const HeaderComponent = () => {
                           Mi cuenta
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <div className="flex items-center w-full">
-                          <LogOut className="h-4 w-4 mr-2" />
-                          <SignOut />
-                        </div>
+                      <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Cerrar sesión
                       </DropdownMenuItem>
                     </>
                   )}
@@ -262,11 +260,15 @@ const HeaderComponent = () => {
                           Mi cuenta
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <div className="flex items-center w-full" onClick={() => setMobileMenuOpen(false)}>
-                          <LogOut className="h-4 w-4 mr-2" />
-                          <SignOut />
-                        </div>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          handleSignOut();
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Cerrar sesión
                       </DropdownMenuItem>
                     </>
                   )}

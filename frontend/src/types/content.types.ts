@@ -4,12 +4,18 @@ export enum ContentBlockType {
   PARAGRAPH = 'paragraph',
   LIST = 'list',
   IMAGE = 'image',
-  LINK = 'link'
+  LINK = 'link',
+  FAQ = 'faq'
+}
+
+export interface IFaqItem {
+  question: string;
+  answer: string;
 }
 
 export interface IContentBlock {
   type: ContentBlockType;
-  value: string | string[];
+  value: string | string[] | IFaqItem[];
   order?: number;
 }
 

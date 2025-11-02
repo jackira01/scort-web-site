@@ -13,6 +13,7 @@ import {
   Eye,
   EyeOff,
   GripVertical,
+  HelpCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,12 +41,13 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useContentAdmin } from '@/hooks/use-content';
-import { 
-  IContentPage, 
-  IContentSection, 
-  IContentBlock, 
+import {
+  IContentPage,
+  IContentSection,
+  IContentBlock,
   ContentBlockType,
-  UpdateContentPageInput
+  UpdateContentPageInput,
+  IFaqItem
 } from '@/types/content.types';
 import Loader from '@/components/Loader';
 import toast from 'react-hot-toast';
@@ -67,12 +69,12 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
     blockIndex?: number;
   } | null>(null);
 
-  const { 
-    updatePage, 
+  const {
+    updatePage,
     getPageById,
-    getPageBySlugAdmin, 
-    loading: actionLoading, 
-    error: actionError 
+    getPageBySlugAdmin,
+    loading: actionLoading,
+    error: actionError
   } = useContentAdmin();
 
   // Cargar página existente
@@ -84,7 +86,7 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
 
   const loadPage = async () => {
     if (!pageSlug) return;
-    
+
     setIsLoading(true);
     try {
       const loadedPage = await getPageBySlugAdmin(pageSlug);
@@ -110,7 +112,7 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
         sections: page.sections,
         isActive: page.isActive
       };
-      
+
       const savedPage = await updatePage(page.slug, updateData);
 
       if (savedPage) {
@@ -129,13 +131,13 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
   // Funciones para manejar secciones
   const addSection = () => {
     if (!page) return;
-    
+
     const newSection: IContentSection = {
       title: 'Nueva Sección',
       order: page.sections.length + 1,
       blocks: []
     };
-    
+
     setPage({
       ...page,
       sections: [...page.sections, newSection]
@@ -144,10 +146,10 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
 
   const updateSection = (sectionIndex: number, updates: Partial<IContentSection>) => {
     if (!page) return;
-    
+
     const updatedSections = [...page.sections];
     updatedSections[sectionIndex] = { ...updatedSections[sectionIndex], ...updates };
-    
+
     setPage({
       ...page,
       sections: updatedSections
@@ -156,20 +158,20 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
 
   const moveSection = (sectionIndex: number, direction: 'up' | 'down') => {
     if (!page) return;
-    
+
     const sections = [...page.sections];
     const targetIndex = direction === 'up' ? sectionIndex - 1 : sectionIndex + 1;
-    
+
     if (targetIndex < 0 || targetIndex >= sections.length) return;
-    
+
     // Intercambiar secciones
     [sections[sectionIndex], sections[targetIndex]] = [sections[targetIndex], sections[sectionIndex]];
-    
+
     // Actualizar orden
     sections.forEach((section, index) => {
       section.order = index + 1;
     });
-    
+
     setPage({
       ...page,
       sections
@@ -184,18 +186,18 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
   // Funciones para manejar bloques
   const addBlock = (sectionIndex: number) => {
     if (!page) return;
-    
+
     const newBlock: IContentBlock = {
       type: ContentBlockType.PARAGRAPH,
       value: ''
     };
-    
+
     const updatedSections = [...page.sections];
     updatedSections[sectionIndex].blocks = [
       ...(updatedSections[sectionIndex].blocks || []),
       newBlock
     ];
-    
+
     setPage({
       ...page,
       sections: updatedSections
@@ -204,12 +206,12 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
 
   const updateBlock = (sectionIndex: number, blockIndex: number, updates: Partial<IContentBlock>) => {
     if (!page) return;
-    
+
     const updatedSections = [...page.sections];
     const blocks = [...(updatedSections[sectionIndex].blocks || [])];
     blocks[blockIndex] = { ...blocks[blockIndex], ...updates };
     updatedSections[sectionIndex].blocks = blocks;
-    
+
     setPage({
       ...page,
       sections: updatedSections
@@ -218,17 +220,17 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
 
   const moveBlock = (sectionIndex: number, blockIndex: number, direction: 'up' | 'down') => {
     if (!page) return;
-    
+
     const updatedSections = [...page.sections];
     const blocks = [...(updatedSections[sectionIndex].blocks || [])];
     const targetIndex = direction === 'up' ? blockIndex - 1 : blockIndex + 1;
-    
+
     if (targetIndex < 0 || targetIndex >= blocks.length) return;
-    
+
     // Intercambiar bloques
     [blocks[blockIndex], blocks[targetIndex]] = [blocks[targetIndex], blocks[blockIndex]];
     updatedSections[sectionIndex].blocks = blocks;
-    
+
     setPage({
       ...page,
       sections: updatedSections
@@ -242,14 +244,14 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
 
   const confirmDelete = () => {
     if (!page || !itemToDelete) return;
-    
+
     if (itemToDelete.type === 'section' && itemToDelete.sectionIndex !== undefined) {
       const updatedSections = page.sections.filter((_, index) => index !== itemToDelete.sectionIndex);
       // Reordenar
       updatedSections.forEach((section, index) => {
         section.order = index + 1;
       });
-      
+
       setPage({
         ...page,
         sections: updatedSections
@@ -259,13 +261,13 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
       const blocks = [...(updatedSections[itemToDelete.sectionIndex].blocks || [])];
       blocks.splice(itemToDelete.blockIndex, 1);
       updatedSections[itemToDelete.sectionIndex].blocks = blocks;
-      
+
       setPage({
         ...page,
         sections: updatedSections
       });
     }
-    
+
     setIsDeleteDialogOpen(false);
     setItemToDelete(null);
   };
@@ -282,9 +284,11 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
             className="min-h-[200px]"
           />
         );
-      
+
       case ContentBlockType.LIST:
-        const listItems = Array.isArray(block.value) ? block.value : [];
+        const listItems = Array.isArray(block.value) && block.value.length > 0 && typeof block.value[0] === 'string'
+          ? block.value as string[]
+          : [];
         return (
           <div className="space-y-2">
             {listItems.map((item, itemIndex) => (
@@ -323,7 +327,81 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
             </Button>
           </div>
         );
-      
+
+      case ContentBlockType.FAQ:
+        const faqItems: IFaqItem[] = Array.isArray(block.value) && block.value.length > 0 && typeof block.value[0] === 'object'
+          ? block.value as IFaqItem[]
+          : [];
+        return (
+          <div className="space-y-4">
+            {faqItems.map((faqItem, faqIndex) => (
+              <Card key={faqIndex} className="bg-background">
+                <CardContent className="pt-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 space-y-2">
+                        <div>
+                          <Label htmlFor={`faq-question-${sectionIndex}-${blockIndex}-${faqIndex}`}>
+                            Pregunta {faqIndex + 1}
+                          </Label>
+                          <Input
+                            id={`faq-question-${sectionIndex}-${blockIndex}-${faqIndex}`}
+                            value={faqItem.question || ''}
+                            onChange={(e) => {
+                              const newFaqItems = [...faqItems];
+                              newFaqItems[faqIndex] = { ...newFaqItems[faqIndex], question: e.target.value };
+                              updateBlock(sectionIndex, blockIndex, { value: newFaqItems });
+                            }}
+                            placeholder="Escribe la pregunta..."
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`faq-answer-${sectionIndex}-${blockIndex}-${faqIndex}`}>
+                            Respuesta
+                          </Label>
+                          <Textarea
+                            id={`faq-answer-${sectionIndex}-${blockIndex}-${faqIndex}`}
+                            value={faqItem.answer || ''}
+                            onChange={(e) => {
+                              const newFaqItems = [...faqItems];
+                              newFaqItems[faqIndex] = { ...newFaqItems[faqIndex], answer: e.target.value };
+                              updateBlock(sectionIndex, blockIndex, { value: newFaqItems });
+                            }}
+                            placeholder="Escribe la respuesta..."
+                            rows={4}
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newFaqItems = faqItems.filter((_, i) => i !== faqIndex);
+                          updateBlock(sectionIndex, blockIndex, { value: newFaqItems });
+                        }}
+                        className="mt-6"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const newFaqItems = [...faqItems, { question: '', answer: '' }];
+                updateBlock(sectionIndex, blockIndex, { value: newFaqItems });
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Agregar pregunta
+            </Button>
+          </div>
+        );
+
       default:
         return (
           <Input
@@ -484,14 +562,25 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
                           <div className="flex items-center space-x-2">
                             <Select
                               value={block.type}
-                              onValueChange={(value) => 
-                                updateBlock(sectionIndex, blockIndex, { 
-                                  type: value as ContentBlockType,
-                                  value: value === ContentBlockType.LIST ? [] : ''
-                                })
-                              }
+                              onValueChange={(value) => {
+                                const newType = value as ContentBlockType;
+                                let newValue: string | string[] | IFaqItem[];
+
+                                if (newType === ContentBlockType.LIST) {
+                                  newValue = [];
+                                } else if (newType === ContentBlockType.FAQ) {
+                                  newValue = [{ question: '', answer: '' }];
+                                } else {
+                                  newValue = '';
+                                }
+
+                                updateBlock(sectionIndex, blockIndex, {
+                                  type: newType,
+                                  value: newValue
+                                });
+                              }}
                             >
-                              <SelectTrigger className="w-40">
+                              <SelectTrigger className="w-48">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -505,6 +594,12 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
                                   <div className="flex items-center">
                                     <List className="h-4 w-4 mr-2" />
                                     Lista
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value={ContentBlockType.FAQ}>
+                                  <div className="flex items-center">
+                                    <HelpCircle className="h-4 w-4 mr-2" />
+                                    Preguntas y Respuestas
                                   </div>
                                 </SelectItem>
                               </SelectContent>
@@ -590,7 +685,7 @@ const ContentEditor = ({ pageSlug, onBack }: ContentEditorProps) => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={confirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

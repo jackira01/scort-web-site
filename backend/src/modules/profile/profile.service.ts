@@ -451,7 +451,6 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
 
   const profile = await createProfile(profileData);
 
-
   // Validar límites de perfiles gratuitos para determinar visibilidad
   const limitsValidation = await validateUserProfileLimits(profileData.user.toString(), planCode);
   let shouldBeVisible = true;
@@ -511,6 +510,9 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
       }
       // Variante encontrada
 
+      // LÓGICA DE FACTURACIÓN:
+      // - Usuarios regulares: generateInvoice = true (siempre factura para planes de pago)
+      // - Admins: generateInvoice = valor del checkbox (pueden asignar sin factura)
       // Solo generar factura si el plan tiene costo Y se solicita generar factura
       if (variant.price > 0 && generateInvoice) {
         // Plan de pago detectado y facturación solicitada, generando factura
