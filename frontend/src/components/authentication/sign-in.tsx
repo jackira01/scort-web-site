@@ -1,8 +1,9 @@
 "use client"
 
-import { signIn, signOut } from "next-auth/react"
+import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "../ui/button"
+import { broadcastLogout } from "@/hooks/use-auth-sync"
 
 export default function Login() {
   const router = useRouter();
@@ -22,23 +23,8 @@ export default function Login() {
 export function SignOut() {
   const handleSignOut = async () => {
     try {
-      // Disparar evento personalizado antes de cerrar sesión
-      // Esto notifica a otras pestañas que se va a cerrar sesión
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('nextauth.message', JSON.stringify({
-          event: 'session',
-          data: null,
-          timestamp: Date.now()
-        }));
-
-        // Limpiar inmediatamente para que otras pestañas puedan detectar el cambio
-        setTimeout(() => {
-          localStorage.removeItem('nextauth.message');
-        }, 100);
-      }
-
-      // Ejecutar signOut de NextAuth
-      await signOut({ callbackUrl: "/" });
+      // Usar broadcastLogout que notifica a todas las pestañas
+      await broadcastLogout("/");
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     }
@@ -58,21 +44,8 @@ export function SignOut() {
 // Versión del manejador para usar directamente en DropdownMenuItem
 export const handleSignOut = async () => {
   try {
-    // Disparar evento personalizado antes de cerrar sesión
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('nextauth.message', JSON.stringify({
-        event: 'session',
-        data: null,
-        timestamp: Date.now()
-      }));
-
-      setTimeout(() => {
-        localStorage.removeItem('nextauth.message');
-      }, 100);
-    }
-
-    // Ejecutar signOut de NextAuth
-    await signOut({ callbackUrl: "/" });
+    // Usar broadcastLogout que notifica a todas las pestañas
+    await broadcastLogout("/");
   } catch (error) {
     console.error('Error al cerrar sesión:', error);
   }

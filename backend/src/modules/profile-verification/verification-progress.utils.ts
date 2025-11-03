@@ -15,7 +15,7 @@ export const calculateVerificationProgress = (
 
   // 1. Fotos de documentos - Solo cuenta si está verificado
   if ((verification.steps?.documentPhotos?.frontPhoto || 
-       verification.steps?.documentPhotos?.backPhoto) &&
+       verification.steps?.documentPhotos?.selfieWithDocument) &&
     verification.steps?.documentPhotos?.isVerified === true) {
     completedSteps++;
   }

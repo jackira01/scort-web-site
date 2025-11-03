@@ -107,7 +107,7 @@ const HeaderComponent = () => {
                 FAQ
               </Button>
             </Link>
-            <Link href="/terms">
+            <Link href="terminos">
               <Button
                 variant="ghost"
                 className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
@@ -220,7 +220,7 @@ const HeaderComponent = () => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/terms" className="flex items-center w-full" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/terminos" className="flex items-center w-full" onClick={() => setMobileMenuOpen(false)}>
                     Términos
                   </Link>
                 </DropdownMenuItem>

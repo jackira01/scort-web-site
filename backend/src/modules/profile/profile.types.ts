@@ -237,11 +237,11 @@ export interface IProfileVerification extends Document {
     steps: {
         documentPhotos: {
             frontPhoto: string;
-            backPhoto: string;
+            selfieWithDocument: string; // Foto con documento al lado del rostro
             isVerified: boolean;
         }; // required
         mediaVerification: {
-            mediaLink: string; // Puede ser video o imagen
+            mediaLink: string; // Video o foto de verificación con cartel
             mediaType: 'video' | 'image'; // Tipo de media
             isVerified: boolean;
         }; // Media verification (video or image)

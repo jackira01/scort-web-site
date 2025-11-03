@@ -147,14 +147,14 @@ export default function AccountVerificationModal({
                                     Actualizar Documentos
                                 </Button>
 
-                                <Button
+                                {/* <Button
                                     onClick={handleClose}
                                     variant="outline"
                                     className="w-full justify-start"
                                 >
                                     <Settings className="h-4 w-4 mr-2" />
                                     Ver Estado de Verificación
-                                </Button>
+                                </Button> */}
                             </div>
                         </div>
 
@@ -219,11 +219,29 @@ export default function AccountVerificationModal({
 
                     <div className="space-y-6">
                         <div className="grid grid-cols-1 gap-6">
-                            {/* Imagen 1 */}
+                            {/* Imagen 1: Documento de Identidad (Frente) */}
                             <div className="space-y-3">
                                 <Label className="text-foreground font-medium">
                                     Documento de Identidad (Frente)
                                 </Label>
+                                
+                                {/* Imagen de referencia */}
+                                <div className="mb-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200">
+                                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                                        📋 Ejemplo de referencia:
+                                    </p>
+                                    <div className="flex justify-center">
+                                        <img 
+                                            src="/images/documento frontal.png" 
+                                            alt="Ejemplo de documento frontal" 
+                                            className="max-w-full h-auto max-h-48 rounded-lg border border-gray-200 dark:border-gray-700"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-blue-700 dark:text-blue-300 mt-2 text-center">
+                                        Foto clara del frente del documento de identidad
+                                    </p>
+                                </div>
+
                                 <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-6 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer">
                                     <input
                                         type="file"
@@ -250,7 +268,7 @@ export default function AccountVerificationModal({
                                             <div className="space-y-2">
                                                 <Camera className="h-8 w-8 mx-auto text-muted-foreground" />
                                                 <p className="text-sm text-muted-foreground">
-                                                    Subir Imagen 1
+                                                    Subir documento (frente)
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
                                                     JPG, PNG hasta 10MB
@@ -261,15 +279,33 @@ export default function AccountVerificationModal({
                                 </div>
                             </div>
 
-                            {/* Imagen 2 */}
+                            {/* Imagen 2: Video o Foto de Verificación con Cartel */}
                             <div className="space-y-3">
                                 <Label className="text-foreground font-medium">
-                                    Documento de Identidad (Reverso)
+                                    Video o Foto de Verificación con Cartel
                                 </Label>
+
+                                {/* Imagen de referencia */}
+                                <div className="mb-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200">
+                                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                                        📋 Ejemplo de referencia:
+                                    </p>
+                                    <div className="flex justify-center">
+                                        <img 
+                                            src="/images/perfil con cartel.png" 
+                                            alt="Ejemplo de foto con cartel" 
+                                            className="max-w-full h-auto max-h-48 rounded-lg border border-blue-300"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-blue-600 dark:text-blue-300 mt-2 text-center">
+                                        La persona debe sostener un cartel con su nombre y la fecha
+                                    </p>
+                                </div>
+
                                 <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-6 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer">
                                     <input
                                         type="file"
-                                        accept="image/*"
+                                        accept="image/*,video/*"
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             if (file) handleFileUpload('image2', file);
@@ -292,10 +328,10 @@ export default function AccountVerificationModal({
                                             <div className="space-y-2">
                                                 <Camera className="h-8 w-8 mx-auto text-muted-foreground" />
                                                 <p className="text-sm text-muted-foreground">
-                                                    Subir Imagen 2
+                                                    Subir video o foto con cartel
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    JPG, PNG hasta 10MB
+                                                    JPG, PNG, MP4, MOV hasta 50MB
                                                 </p>
                                             </div>
                                         )}
@@ -303,19 +339,29 @@ export default function AccountVerificationModal({
                                 </div>
                             </div>
 
-                            {/* Imagen 3 */}
+                            {/* Imagen 3: Foto con Documento al Lado del Rostro */}
                             <div className="space-y-3">
                                 <Label className="text-foreground font-medium">
-                                    Foto de rostro con documento y cartel
+                                    Foto con Documento al Lado del Rostro
                                 </Label>
-                                <div className="bg-yellow-50 dark:bg-yellow-950/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800 mb-3">
-                                    <div className="flex items-start space-x-2">
-                                        <Info className="h-4 w-4 text-yellow-600 flex-shrink-0 mt-0.5" />
-                                        <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                                            Foto de rostro con documento y cartel con el nombre del perfil y fecha de la solicitud de inscripción registrada en el sistema (el mismo documento de la foto de solo documento).
-                                        </p>
+
+                                {/* Imagen de referencia */}
+                                <div className="mb-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200">
+                                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                                        📋 Ejemplo de referencia:
+                                    </p>
+                                    <div className="flex justify-center">
+                                        <img 
+                                            src="/images/rostro con documento.png" 
+                                            alt="Ejemplo de rostro con documento" 
+                                            className="max-w-full h-auto max-h-48 rounded-lg border border-blue-300"
+                                        />
                                     </div>
+                                    <p className="text-xs text-blue-600 dark:text-blue-300 mt-2 text-center">
+                                        Sostén tu documento al lado de tu rostro (mismo documento de la foto frontal)
+                                    </p>
                                 </div>
+
                                 <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-6 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer">
                                     <input
                                         type="file"
@@ -342,7 +388,7 @@ export default function AccountVerificationModal({
                                             <div className="space-y-2">
                                                 <Camera className="h-8 w-8 mx-auto text-muted-foreground" />
                                                 <p className="text-sm text-muted-foreground">
-                                                    Subir Imagen 3
+                                                    Subir foto con documento
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
                                                     JPG, PNG hasta 10MB
@@ -362,9 +408,10 @@ export default function AccountVerificationModal({
                                         Requisitos importantes:
                                     </h4>
                                     <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                                        <li>• Las imágenes deben ser claras y legibles</li>
+                                        <li>• Las imágenes/videos deben ser claras y legibles</li>
                                         <li>• Documento de identidad válido y vigente</li>
-                                        <li>• La foto con rostro debe incluir el documento y un cartel con nombre del perfil y fecha</li>
+                                        <li>• El video/foto de verificación debe incluir un cartel con tu nombre y fecha</li>
+                                        <li>• La foto con documento debe mostrar claramente tu rostro y el documento</li>
                                         <li>• No se aceptan capturas de pantalla</li>
                                         <li>• El proceso de verificación toma 24-48 horas</li>
                                     </ul>
@@ -384,8 +431,8 @@ export default function AccountVerificationModal({
                                 onClick={handleSubmitVerification}
                                 disabled={!canSubmit || loading}
                                 className={`flex-1 transition-all duration-200 ${canSubmit
-                                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105'
-                                        : 'bg-muted text-muted-foreground cursor-not-allowed'
+                                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105'
+                                    : 'bg-muted text-muted-foreground cursor-not-allowed'
                                     }`}
                             >
                                 Enviar a Verificación

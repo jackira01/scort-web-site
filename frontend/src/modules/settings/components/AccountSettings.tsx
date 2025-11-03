@@ -2,10 +2,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSession } from 'next-auth/react';
-import { Gem, Star, Zap, Crown, Shield } from 'lucide-react';
+import { Gem, Star, Zap, Crown, Shield, CheckCircle, Clock, XCircle } from 'lucide-react';
 import AgencyConversionCard from './AgencyConversionCard';
 import { useUser } from '@/hooks/use-user';
 import ChangePasswordCard from './ChangePasswordCard';
+import { useState } from 'react';
+import AccountVerificationModal from '@/modules/account/components/AccountVerificationModal';
 
 // Tipo para el plan actual
 interface CurrentPlan {
@@ -16,6 +18,7 @@ interface CurrentPlan {
 
 const AccountSettings = () => {
   const { data: user } = useUser();
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
 
   // Función para obtener información del plan
   const getPlanInfo = (level: number) => {
@@ -75,6 +78,54 @@ const AccountSettings = () => {
               </span>
               <p className="text-foreground">{user?.email || 'No disponible'}</p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Tarjeta de Verificación de Identidad */}
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-foreground flex items-center gap-2">
+              <Shield className="h-5 w-5 text-purple-600" />
+              Verificación de Identidad
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">
+                Estado de verificación
+              </span>
+              {user?.isVerified ? (
+                <Badge variant="outline" className="text-green-600 border-green-600">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Verificado
+                </Badge>
+              ) : user?.verification_in_progress ? (
+                <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                  <Clock className="h-3 w-3 mr-1" />
+                  En revisión
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-gray-600 border-gray-600">
+                  <XCircle className="h-3 w-3 mr-1" />
+                  No verificado
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {user?.isVerified
+                ? 'Tu identidad ha sido verificada. Puedes actualizar tus documentos si es necesario.'
+                : user?.verification_in_progress
+                ? 'Tus documentos están siendo revisados por nuestro equipo.'
+                : 'Verifica tu identidad para aumentar la confianza en tu perfil.'}
+            </p>
+            <Button
+              variant="outline"
+              className="w-full hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500 transition-all duration-200"
+              onClick={() => setIsVerificationModalOpen(true)}
+            >
+              <Shield className="h-4 w-4 mr-2" />
+              Administrar Verificación
+            </Button>
           </CardContent>
         </Card>
 
@@ -168,6 +219,16 @@ const AccountSettings = () => {
         </Card>
         */}
       </div>
+
+      {/* Modal de verificación */}
+      {user && (
+        <AccountVerificationModal
+          isOpen={isVerificationModalOpen}
+          onClose={() => setIsVerificationModalOpen(false)}
+          verification_in_progress={user.verification_in_progress || false}
+          userId={user._id}
+        />
+      )}
     </div>
   );
 };

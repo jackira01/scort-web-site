@@ -4,7 +4,7 @@ import * as controller from './sponsored-profiles.controller';
 const router = Router();
 
 /**
- * @route GET /api/sponsored-profiles
+ * @route GET/POST /api/sponsored-profiles
  * @desc Obtiene perfiles patrocinados que cumplen con todos los criterios de validación
  * @access Public
  * @query {
@@ -12,7 +12,18 @@ const router = Router();
  *   limit?: number,
  *   sortBy?: 'createdAt' | 'updatedAt' | 'name' | 'lastShownAt',
  *   sortOrder?: 'asc' | 'desc',
- *   fields?: string (comma-separated field names)
+ *   fields?: string (comma-separated field names),
+ *   category?: string,
+ *   department?: string,
+ *   city?: string,
+ *   minPrice?: number,
+ *   maxPrice?: number,
+ *   identityVerified?: boolean,
+ *   hasVideo?: boolean,
+ *   documentVerified?: boolean
+ * }
+ * @body (POST only) {
+ *   features?: Record<string, string | string[]>
  * }
  * @returns {
  *   success: boolean,
@@ -28,9 +39,11 @@ const router = Router();
  * }
  * @example
  * GET /api/sponsored-profiles?page=1&limit=20&sortBy=lastShownAt&sortOrder=asc
- * GET /api/sponsored-profiles?fields=_id,name,age,location,media
+ * GET /api/sponsored-profiles?fields=_id,name,age,location,media&category=escort&department=bogota
+ * POST /api/sponsored-profiles with body: { features: { gender: 'female', age: ['20-25', '25-30'] } }
  */
 router.get('/', controller.getSponsoredProfiles);
+router.post('/', controller.getSponsoredProfiles);
 
 /**
  * @route GET /api/sponsored-profiles/count

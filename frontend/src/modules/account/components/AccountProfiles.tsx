@@ -309,7 +309,7 @@ export default function AccountProfiles({
                     <h3 className="font-semibold text-lg text-white">
                       {profile.name}
                     </h3>
-                    <div className="flex items-center space-x-4 text-sm text-white/80 mt-1">
+                    <div className="flex flex-col space-y-1 text-sm text-white/80 mt-1">
                       <span className="flex items-center">
                         <Calendar className="h-3 w-3 mr-1" />
                         {profile.age} años

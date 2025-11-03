@@ -13,7 +13,15 @@ export const getSponsoredProfiles = async (req: Request, res: Response) => {
       limit,
       sortBy,
       sortOrder,
-      fields
+      fields,
+      category,
+      department,
+      city,
+      minPrice,
+      maxPrice,
+      identityVerified,
+      hasVideo,
+      documentVerified
     } = req.query;
 
     // Construir query con validación de tipos
@@ -50,6 +58,55 @@ export const getSponsoredProfiles = async (req: Request, res: Response) => {
       query.fields = fields.split(',').map(field => field.trim()).filter(Boolean);
     }
 
+    // Filtros adicionales
+    if (category && typeof category === 'string') {
+      query.category = category;
+    }
+
+    if (department || city) {
+      query.location = {};
+      if (department && typeof department === 'string') {
+        query.location.department = department;
+      }
+      if (city && typeof city === 'string') {
+        query.location.city = city;
+      }
+    }
+
+    // Extraer features del body si existe (método POST) o del query
+    const bodyFeatures = (req.body as any)?.features;
+    if (bodyFeatures && typeof bodyFeatures === 'object') {
+      query.features = bodyFeatures;
+    }
+
+    if (minPrice || maxPrice) {
+      query.priceRange = {};
+      if (minPrice) {
+        const minPriceNum = parseFloat(minPrice as string);
+        if (!isNaN(minPriceNum)) {
+          query.priceRange.min = minPriceNum;
+        }
+      }
+      if (maxPrice) {
+        const maxPriceNum = parseFloat(maxPrice as string);
+        if (!isNaN(maxPriceNum)) {
+          query.priceRange.max = maxPriceNum;
+        }
+      }
+    }
+
+    if (identityVerified || hasVideo || documentVerified) {
+      query.verification = {};
+      if (identityVerified === 'true') {
+        query.verification.identityVerified = true;
+      }
+      if (hasVideo === 'true') {
+        query.verification.hasVideo = true;
+      }
+      if (documentVerified === 'true') {
+        query.verification.documentVerified = true;
+      }
+    }
 
     // Obtener perfiles patrocinados
     const result = await service.getSponsoredProfiles(query);

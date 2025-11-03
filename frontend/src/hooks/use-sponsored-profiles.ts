@@ -182,9 +182,17 @@ export const useSponsoredProfilesActions = () => {
  */
 export const useFeaturedSponsoredProfiles = (
   page: number = 1,
-  limit: number = 20
+  limit: number = 20,
+  filters?: Partial<SponsoredProfilesQuery>
 ) => {
-  const profilesQuery = useSponsoredProfilesForCards(page, limit);
+  // Construir query completo con paginación y filtros
+  const query: SponsoredProfilesQuery = {
+    page,
+    limit,
+    ...filters,
+  };
+
+  const profilesQuery = useSponsoredProfiles(query);
   const countQuery = useSponsoredProfilesCount();
   const actions = useSponsoredProfilesActions();
 

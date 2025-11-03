@@ -21,11 +21,11 @@ const ProfileVerificationSchema = new Schema<IProfileVerification>({
     steps: {
         documentPhotos: {
             frontPhoto: { type: String, default: undefined }, // Paso 1: Foto frontal del documento
-            backPhoto: { type: String, default: undefined }, // Paso 2: Foto reverso del documento
+            selfieWithDocument: { type: String, default: undefined }, // Paso 3: Foto con documento al lado del rostro
             isVerified: { type: Boolean, default: false },
         },
         mediaVerification: {
-            mediaLink: { type: String, default: undefined }, // Paso 3: Video o imagen de verificación
+            mediaLink: { type: String, default: undefined }, // Paso 2: Video o foto de verificación con cartel
             mediaType: { type: String, enum: ['video', 'image'], default: undefined }, // Tipo de media
             isVerified: { type: Boolean, default: false },
         }, // Media verification (video or image).

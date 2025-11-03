@@ -7,6 +7,15 @@ export interface SponsoredProfilesQuery {
   sortBy?: 'createdAt' | 'updatedAt' | 'name' | 'lastShownAt';
   sortOrder?: 'asc' | 'desc';
   fields?: string[];
+  category?: string;
+  department?: string;
+  city?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  identityVerified?: boolean;
+  hasVideo?: boolean;
+  documentVerified?: boolean;
+  features?: Record<string, string | string[]>;
 }
 
 export interface SponsoredProfilesResponse {
@@ -80,13 +89,50 @@ export const getSponsoredProfiles = async (
       searchParams.append('fields', query.fields.join(','));
     }
 
+    if (query.category) {
+      searchParams.append('category', query.category);
+    }
+
+    if (query.department) {
+      searchParams.append('department', query.department);
+    }
+
+    if (query.city) {
+      searchParams.append('city', query.city);
+    }
+
+    if (query.minPrice !== undefined) {
+      searchParams.append('minPrice', query.minPrice.toString());
+    }
+
+    if (query.maxPrice !== undefined) {
+      searchParams.append('maxPrice', query.maxPrice.toString());
+    }
+
+    if (query.identityVerified !== undefined) {
+      searchParams.append('identityVerified', query.identityVerified.toString());
+    }
+
+    if (query.hasVideo !== undefined) {
+      searchParams.append('hasVideo', query.hasVideo.toString());
+    }
+
+    if (query.documentVerified !== undefined) {
+      searchParams.append('documentVerified', query.documentVerified.toString());
+    }
+
     const url = `${API_URL}/api/sponsored-profiles${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
 
+    // Si hay features, usar POST, sino GET
+    const method = query.features && Object.keys(query.features).length > 0 ? 'POST' : 'GET';
+    const body = method === 'POST' ? JSON.stringify({ features: query.features }) : undefined;
+
     const response = await fetch(url, {
-      method: 'GET',
+      method,
       headers: {
         'Content-Type': 'application/json',
       },
+      body,
     });
 
     if (!response.ok) {

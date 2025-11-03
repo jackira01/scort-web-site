@@ -25,8 +25,7 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
       const documentData = stepData as ProfileVerificationData['data']['steps']['documentPhotos'];
       const photos = [
         { key: 'frontPhoto', label: 'Documento (frontal)', url: documentData.frontPhoto },
-        { key: 'backPhoto', label: 'Documento (reverso)', url: documentData.backPhoto },
-        { key: 'selfieWithDocument', label: 'Selfie con documento', url: documentData.selfieWithDocument }
+        { key: 'selfieWithDocument', label: 'Foto con documento al rostro', url: documentData.selfieWithDocument }
       ].filter(photo => photo.url);
 
       if (photos.length === 0) {
@@ -69,21 +68,21 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
       );
     }
 
-    case 'videoVerification': {
-      const currentVideoLink = getCurrentVideoLink('videoVerification');
+    case 'mediaVerification': {
+      const currentVideoLink = getCurrentVideoLink('mediaVerification');
 
       return (
         <div className="mt-4 space-y-4">
           {/* Input para editar el videoLink */}
           <div className="space-y-2">
             <label className="text-sm font-medium">
-              Link de Video de Verificación
+              Link de Video o Foto de Verificación con Cartel
             </label>
             <Input
               type="url"
               placeholder="https://..."
               value={currentVideoLink}
-              onChange={(e) => handleVideoLinkChange('videoVerification', e.target.value)}
+              onChange={(e) => handleVideoLinkChange('mediaVerification', e.target.value)}
               className="w-full"
             />
           </div>

@@ -72,7 +72,8 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                       {profile.name}
                     </h3>
 
-                    <div className="flex items-center space-x-3 text-xs text-white/90">
+                    {/* 🔽 Cambiado de "flex items-center space-x-3" a "flex flex-col space-y-1" */}
+                    <div className="flex flex-col space-y-1 text-xs text-white/90">
                       <span className="flex items-center">
                         <Calendar className="h-3 w-3 mr-1" />
                         {profile.age || 'N/A'} años
@@ -80,8 +81,12 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                       <span className="flex items-center">
                         <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
                         <span className="line-clamp-1">
-                          {(typeof profile.location?.city === 'object' ? profile.location.city.label : profile.location?.city) ||
-                            (typeof profile.location?.department === 'object' ? profile.location.department.label : profile.location?.department) ||
+                          {(typeof profile.location?.city === 'object'
+                            ? profile.location.city.label
+                            : profile.location?.city) ||
+                            (typeof profile.location?.department === 'object'
+                              ? profile.location.department.label
+                              : profile.location?.department) ||
                             'N/A'}
                         </span>
                       </span>
@@ -103,6 +108,7 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                     </div>
                   </div>
                 </div>
+
               </div>
 
               {/* Contenido lateral en MOBILE (siempre visible) */}
