@@ -26,6 +26,6 @@ import { useAuthSync } from '@/hooks/use-auth-sync';
  * </SessionProvider>
  */
 export default function AuthSyncHandler() {
-  useAuthSync();
-  return null;
+    useAuthSync();
+    return null;
 }

@@ -331,8 +331,8 @@ export default function SearchPageClient({
 
       <div className="container mx-auto px-4 py-6">
         {/* Sección de perfiles destacados con los mismos filtros */}
-        <FeaturedProfilesSection 
-          className="mb-8" 
+        <FeaturedProfilesSection
+          className="mb-8"
           filters={{
             category: filters.category,
             department: filters.location?.department,

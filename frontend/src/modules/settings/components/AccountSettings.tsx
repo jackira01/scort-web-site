@@ -115,8 +115,8 @@ const AccountSettings = () => {
               {user?.isVerified
                 ? 'Tu identidad ha sido verificada. Puedes actualizar tus documentos si es necesario.'
                 : user?.verification_in_progress
-                ? 'Tus documentos están siendo revisados por nuestro equipo.'
-                : 'Verifica tu identidad para aumentar la confianza en tu perfil.'}
+                  ? 'Tus documentos están siendo revisados por nuestro equipo.'
+                  : 'Verifica tu identidad para aumentar la confianza en tu perfil.'}
             </p>
             <Button
               variant="outline"

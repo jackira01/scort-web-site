@@ -68,23 +68,23 @@ export const getSponsoredProfiles = async (
   try {
     // Construir parámetros de consulta
     const searchParams = new URLSearchParams();
-    
+
     if (query.page !== undefined) {
       searchParams.append('page', query.page.toString());
     }
-    
+
     if (query.limit !== undefined) {
       searchParams.append('limit', query.limit.toString());
     }
-    
+
     if (query.sortBy) {
       searchParams.append('sortBy', query.sortBy);
     }
-    
+
     if (query.sortOrder) {
       searchParams.append('sortOrder', query.sortOrder);
     }
-    
+
     if (query.fields && query.fields.length > 0) {
       searchParams.append('fields', query.fields.join(','));
     }
@@ -153,8 +153,8 @@ export const getSponsoredProfiles = async (
   } catch (error) {
     console.error('Error en getSponsoredProfiles:', error);
     throw new Error(
-      error instanceof Error 
-        ? error.message 
+      error instanceof Error
+        ? error.message
         : 'Error desconocido al obtener perfiles patrocinados'
     );
   }
@@ -189,8 +189,8 @@ export const getSponsoredProfilesCount = async (): Promise<number> => {
   } catch (error) {
     console.error('Error en getSponsoredProfilesCount:', error);
     throw new Error(
-      error instanceof Error 
-        ? error.message 
+      error instanceof Error
+        ? error.message
         : 'Error desconocido al obtener conteo de perfiles patrocinados'
     );
   }
@@ -229,8 +229,8 @@ export const checkProfileSponsored = async (profileId: string): Promise<boolean>
   } catch (error) {
     console.error('Error en checkProfileSponsored:', error);
     throw new Error(
-      error instanceof Error 
-        ? error.message 
+      error instanceof Error
+        ? error.message
         : 'Error desconocido al verificar perfil patrocinado'
     );
   }

@@ -84,11 +84,11 @@ export const getSponsoredProfiles = async (
       const categoryFeatures = await AttributeGroup.find({
         key: 'category'
       });
-      
+
       if (categoryFeatures.length > 0) {
         const categoryGroupId = categoryFeatures[0]._id;
         const normalizedCategory = category.toLowerCase().trim();
-        
+
         baseFilters['features'] = {
           $elemMatch: {
             group_id: categoryGroupId,
@@ -109,7 +109,7 @@ export const getSponsoredProfiles = async (
     // Aplicar filtros de características adicionales
     const featureConditions: any[] = [];
     const otherFeatures = Object.entries(features).filter(([key]) => key !== 'ageRange');
-    
+
     if (otherFeatures.length > 0) {
       const groupKeys = otherFeatures.map(([key]) => key);
       const attributeGroups = await AttributeGroup.find({

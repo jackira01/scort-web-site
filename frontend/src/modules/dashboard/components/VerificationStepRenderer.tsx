@@ -123,7 +123,7 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
 
     case 'mediaVerification': {
       const mediaData = stepData as ProfileVerificationData['data']['steps']['mediaVerification'];
-      
+
       if (!mediaData.mediaLink) {
         return (
           <div className="mt-4 text-gray-500 text-center">
@@ -156,7 +156,7 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
                 onClick={() => onPreviewImage(mediaData.mediaLink!)}
               />
             )}
-            
+
             <Button
               variant="outline"
               size="sm"
@@ -166,7 +166,7 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
               <Eye className="h-4 w-4" />
             </Button>
           </div>
-          
+
           <div className="mt-2 text-center">
             <p className="text-sm text-gray-600">
               {isVideo ? 'Video de verificación' : 'Imagen de verificación'}

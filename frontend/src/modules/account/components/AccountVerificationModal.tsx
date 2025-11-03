@@ -224,16 +224,16 @@ export default function AccountVerificationModal({
                                 <Label className="text-foreground font-medium">
                                     Documento de Identidad (Frente)
                                 </Label>
-                                
+
                                 {/* Imagen de referencia */}
                                 <div className="mb-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200">
                                     <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
                                         📋 Ejemplo de referencia:
                                     </p>
                                     <div className="flex justify-center">
-                                        <img 
-                                            src="/images/documento frontal.png" 
-                                            alt="Ejemplo de documento frontal" 
+                                        <img
+                                            src="/images/documento frontal.png"
+                                            alt="Ejemplo de documento frontal"
                                             className="max-w-full h-auto max-h-48 rounded-lg border border-gray-200 dark:border-gray-700"
                                         />
                                     </div>
@@ -291,9 +291,9 @@ export default function AccountVerificationModal({
                                         📋 Ejemplo de referencia:
                                     </p>
                                     <div className="flex justify-center">
-                                        <img 
-                                            src="/images/perfil con cartel.png" 
-                                            alt="Ejemplo de foto con cartel" 
+                                        <img
+                                            src="/images/perfil con cartel.png"
+                                            alt="Ejemplo de foto con cartel"
                                             className="max-w-full h-auto max-h-48 rounded-lg border border-blue-300"
                                         />
                                     </div>
@@ -351,9 +351,9 @@ export default function AccountVerificationModal({
                                         📋 Ejemplo de referencia:
                                     </p>
                                     <div className="flex justify-center">
-                                        <img 
-                                            src="/images/rostro con documento.png" 
-                                            alt="Ejemplo de rostro con documento" 
+                                        <img
+                                            src="/images/rostro con documento.png"
+                                            alt="Ejemplo de rostro con documento"
                                             className="max-w-full h-auto max-h-48 rounded-lg border border-blue-300"
                                         />
                                     </div>
