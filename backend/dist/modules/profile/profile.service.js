@@ -46,6 +46,7 @@ const plan_model_1 = require("../plans/plan.model");
 const upgrade_model_1 = require("../plans/upgrade.model");
 const config_parameter_service_1 = require("../config-parameter/config-parameter.service");
 const invoice_service_1 = __importDefault(require("../payments/invoice.service"));
+const email_service_1 = __importDefault(require("../../services/email.service"));
 let defaultPlanConfigCache = null;
 let cacheTimestamp = 0;
 const CACHE_DURATION = 5 * 60 * 1000;
@@ -88,7 +89,7 @@ const getDefaultPlanConfig = async () => {
         return errorFallbackConfig;
     }
 };
-const generateWhatsAppMessage = async (userId, profileId, invoiceId, planCode, variantDays) => {
+const generateWhatsAppMessage = async (userId, profileId, invoiceId, invoiceNumber, planCode, variantDays) => {
     try {
         const [companyName, companyWhatsApp] = await Promise.all([
             config_parameter_service_1.ConfigParameterService.getValue('company.name'),
@@ -108,7 +109,7 @@ const generateWhatsAppMessage = async (userId, profileId, invoiceId, planCode, v
             }
         }
         const message = invoiceId
-            ? `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n📋 **Detalles de mi compra:**\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención. 😊`
+            ? `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n📋 **Detalles de mi compra:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención. 😊`
             : `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n📋 **Detalles:**\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. 😊`;
         return {
             userId,
@@ -147,7 +148,7 @@ const createProfile = async (data) => {
     const { planAssignment, ...profileData } = data;
     let profile = await profile_model_1.ProfileModel.create({
         ...profileData,
-        isActive: true,
+        isActive: false,
         visible: false
     });
     await User_model_1.default.findByIdAndUpdate(data.user, { $push: { profiles: profile._id } }, { new: true });
@@ -196,8 +197,143 @@ const createProfile = async (data) => {
     return profile;
 };
 exports.createProfile = createProfile;
+async function sendProfileCreationNotification(profile, invoice) {
+    try {
+        const user = await User_model_1.default.findById(profile.user).select('name email accountType');
+        if (!user) {
+            console.warn('⚠️ Usuario no encontrado para el perfil:', profile._id);
+            return;
+        }
+        const companyEmail = await config_parameter_service_1.ConfigParameterService.getValue('company.email');
+        const companyName = await config_parameter_service_1.ConfigParameterService.getValue('company.name') || 'Administrador';
+        if (!companyEmail) {
+            console.warn('⚠️ No se ha configurado el correo de la empresa (company.email)');
+            return;
+        }
+        const profileInfo = `
+      <strong>ID:</strong> ${profile._id}<br>
+      <strong>Nombre del perfil:</strong> ${profile.name}<br>
+      <strong>Descripción:</strong> ${profile.description || 'Sin descripción'}<br>
+      <strong>Ubicación:</strong> ${profile.location?.city?.label || 'N/A'}, ${profile.location?.department?.label || 'N/A'}, ${profile.location?.country?.label || 'N/A'}<br>
+      <strong>Estado:</strong> ${profile.isActive ? 'Activo' : 'Inactivo'}<br>
+      <strong>Visible:</strong> ${profile.visible ? 'Sí' : 'No'}<br>
+      <strong>Contacto:</strong> ${profile.contact?.number || 'N/A'}<br>
+      <strong>Edad:</strong> ${profile.age || 'N/A'}
+    `;
+        const userInfo = `
+      <strong>ID:</strong> ${user._id}<br>
+      <strong>Nombre:</strong> ${user.name}<br>
+      <strong>Email:</strong> ${user.email}<br>
+      <strong>Tipo de cuenta:</strong> ${user.accountType === 'agency' ? 'Agencia' : 'Usuario común'}
+    `;
+        let invoiceSection = '';
+        if (invoice) {
+            const invoiceItems = invoice.items?.map(item => {
+                const days = item.days ? ` (${item.days} días)` : '';
+                const price = item.price !== undefined ? item.price.toFixed(2) : '0.00';
+                return `${item.name || 'Item'}${days} - $${price}`;
+            }).join('<br>') || 'Sin items';
+            const couponInfo = invoice.coupon
+                ? `<br><strong>Cupón aplicado:</strong> ${invoice.coupon.code || 'N/A'} - Descuento: $${(invoice.coupon.discountAmount || 0).toFixed(2)}`
+                : '';
+            const totalAmount = invoice.totalAmount !== undefined ? invoice.totalAmount.toFixed(2) : '0.00';
+            invoiceSection = `
+        <div style="background-color: #fff3cd; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
+          <h3 style="color: #856404; margin-top: 0;">💳 Información de Facturación</h3>
+          <p><strong>Número de factura:</strong> #${invoice.invoiceNumber || 'N/A'}</p>
+          <p><strong>Estado:</strong> <span style="color: ${invoice.status === 'paid' ? '#28a745' : '#ffc107'}; font-weight: bold; text-transform: uppercase;">${invoice.status || 'pending'}</span></p>
+          <p><strong>Items:</strong><br>${invoiceItems}</p>
+          <p><strong>Total:</strong> $${totalAmount}</p>
+          ${couponInfo}
+          <p><strong>Creada:</strong> ${invoice.createdAt ? invoice.createdAt.toLocaleString('es-ES') : 'N/A'}</p>
+          <p><strong>Expira:</strong> ${invoice.expiresAt ? invoice.expiresAt.toLocaleString('es-ES') : 'N/A'}</p>
+        </div>
+      `;
+        }
+        const htmlPart = `
+      <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+        <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="color: #007bff; border-bottom: 3px solid #007bff; padding-bottom: 10px; margin-top: 0;">
+            🎉 Nuevo Perfil Creado
+          </h2>
+          
+          <div style="background-color: #e7f3ff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #007bff;">
+            <h3 style="color: #004085; margin-top: 0;">👤 Información del Usuario</h3>
+            <p>${userInfo}</p>
+          </div>
+          
+          <div style="background-color: #d4edda; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #28a745;">
+            <h3 style="color: #155724; margin-top: 0;">📋 Información del Perfil</h3>
+            <p>${profileInfo}</p>
+          </div>
+          
+          ${invoiceSection}
+          
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #dee2e6;">
+          
+          <p style="color: #6c757d; font-size: 12px; text-align: center;">
+            Este correo se generó automáticamente al crear un nuevo perfil en el sistema.<br>
+            Fecha: ${new Date().toLocaleString('es-ES')}
+          </p>
+        </div>
+      </div>
+    `;
+        const textPart = `
+Nuevo Perfil Creado
+
+INFORMACIÓN DEL USUARIO:
+- ID: ${user._id}
+- Nombre: ${user.name}
+- Email: ${user.email}
+- Tipo de cuenta: ${user.accountType === 'agency' ? 'Agencia' : 'Usuario común'}
+
+INFORMACIÓN DEL PERFIL:
+- ID: ${profile._id}
+- Nombre: ${profile.name}
+- Descripción: ${profile.description || 'Sin descripción'}
+- Ubicación: ${profile.location?.city?.label || 'N/A'}, ${profile.location?.department?.label || 'N/A'}, ${profile.location?.country?.label || 'N/A'}
+- Estado: ${profile.isActive ? 'Activo' : 'Inactivo'}
+- Visible: ${profile.visible ? 'Sí' : 'No'}
+- Contacto: ${profile.contact?.number || 'N/A'}
+- Edad: ${profile.age || 'N/A'}
+
+${invoice ? `
+INFORMACIÓN DE FACTURACIÓN:
+- Número de factura: #${invoice.invoiceNumber || 'N/A'}
+- Estado: ${invoice.status || 'pending'}
+- Total: $${invoice.totalAmount !== undefined ? invoice.totalAmount.toFixed(2) : '0.00'}
+- Creada: ${invoice.createdAt ? invoice.createdAt.toLocaleString('es-ES') : 'N/A'}
+- Expira: ${invoice.expiresAt ? invoice.expiresAt.toLocaleString('es-ES') : 'N/A'}
+${invoice.coupon ? `- Cupón aplicado: ${invoice.coupon.code || 'N/A'}` : ''}
+` : ''}
+
+---
+Este correo se generó automáticamente.
+Fecha: ${new Date().toLocaleString('es-ES')}
+    `;
+        const emailService = new email_service_1.default();
+        const result = await emailService.sendSingleEmail({
+            to: {
+                email: companyEmail,
+                name: companyName
+            },
+            content: {
+                subject: `[Nuevo Perfil] ${profile.name} - Usuario: ${user.name}`,
+                textPart: textPart.trim(),
+                htmlPart: htmlPart
+            }
+        });
+        if (!result.success) {
+            console.error('❌ Error al enviar correo de notificación:', result.error);
+        }
+    }
+    catch (error) {
+        console.error('❌ Error en sendProfileCreationNotification:', error);
+        throw error;
+    }
+}
 const createProfileWithInvoice = async (data) => {
-    const { planCode, planDays, ...profileData } = data;
+    const { planId, planCode, planDays, generateInvoice = false, couponCode, ...profileData } = data;
     const profile = await (0, exports.createProfile)(profileData);
     const limitsValidation = await (0, exports.validateUserProfileLimits)(profileData.user.toString(), planCode);
     let shouldBeVisible = true;
@@ -207,31 +343,66 @@ const createProfileWithInvoice = async (data) => {
         shouldBeVisible = false;
     }
     let invoice = null;
-    if (planCode && planDays && planCode !== defaultPlanCode) {
+    if ((planId || planCode) && planDays) {
         try {
-            const plan = await plan_model_1.PlanDefinitionModel.findOne({ code: planCode });
+            let plan;
+            if (planId) {
+                plan = await plan_model_1.PlanDefinitionModel.findById(planId);
+            }
+            if (!plan && planCode) {
+                plan = await plan_model_1.PlanDefinitionModel.findOne({ code: planCode });
+            }
             if (!plan) {
-                throw new Error(`Plan con código ${planCode} no encontrado`);
+                throw new Error(`Plan con ${planId ? `ID ${planId}` : `código ${planCode}`} no encontrado`);
+            }
+            const isPlanGratuito = planCode === defaultPlanCode || plan.code === defaultPlanCode;
+            if (isPlanGratuito) {
+                return {
+                    profile,
+                    invoice: null,
+                    whatsAppMessage: null
+                };
             }
             const variant = plan.variants.find(v => v.days === planDays);
             if (!variant) {
-                throw new Error(`Variante de ${planDays} días no encontrada para el plan ${planCode}`);
+                throw new Error(`Variante de ${planDays} días no encontrada para el plan ${plan.code}`);
             }
-            if (variant.price > 0) {
+            if (variant.price > 0 && generateInvoice) {
                 invoice = await invoice_service_1.default.generateInvoice({
                     profileId: profile._id.toString(),
                     userId: profile.user.toString(),
-                    planCode: planCode,
+                    planId: plan._id.toString(),
+                    planCode: plan.code,
                     planDays: planDays,
-                    notes: `Factura generada automáticamente para nuevo perfil ${profile.name || profile._id}`
+                    couponCode: couponCode,
+                    notes: `Factura generada para nuevo perfil ${profile.name || profile._id}`
                 });
                 await profile_model_1.ProfileModel.findByIdAndUpdate(profile._id, {
                     $push: { paymentHistory: new mongoose_1.Types.ObjectId(invoice._id) },
+                    isActive: false,
+                    visible: false
+                });
+            }
+            else if (variant.price > 0 && !generateInvoice) {
+                const startAt = new Date();
+                const expiresAt = new Date(startAt.getTime() + (planDays * 24 * 60 * 60 * 1000));
+                await profile_model_1.ProfileModel.findByIdAndUpdate(profile._id, {
+                    planAssignment: {
+                        planId: plan._id,
+                        planCode,
+                        variantDays: planDays,
+                        startAt,
+                        expiresAt
+                    },
                     isActive: true,
                     visible: shouldBeVisible
                 });
             }
             else {
+                await profile_model_1.ProfileModel.findByIdAndUpdate(profile._id, {
+                    isActive: true,
+                    visible: shouldBeVisible
+                });
                 const whatsAppMessage = await generateWhatsAppMessage(profile.user.toString(), profile._id.toString());
                 return { profile, invoice: null, whatsAppMessage };
             }
@@ -246,7 +417,13 @@ const createProfileWithInvoice = async (data) => {
             visible: shouldBeVisible
         });
     }
-    const whatsAppMessage = await generateWhatsAppMessage(profile.user.toString(), profile._id.toString(), invoice?._id?.toString(), planCode, planDays);
+    const whatsAppMessage = await generateWhatsAppMessage(profile.user.toString(), profile._id.toString(), invoice?._id?.toString(), invoice?.invoiceNumber, planCode, planDays);
+    try {
+        await sendProfileCreationNotification(profile, invoice);
+    }
+    catch (emailError) {
+        console.error('❌ Error al enviar correo de notificación de perfil:', emailError);
+    }
     return { profile, invoice, whatsAppMessage };
 };
 exports.createProfileWithInvoice = createProfileWithInvoice;
@@ -330,6 +507,7 @@ const getProfilesForHome = async (page = 1, limit = 20) => {
     const profiles = await profile_model_1.ProfileModel.find({
         isActive: true,
         visible: true,
+        isDeleted: { $ne: true },
         $or: [
             {
                 'planAssignment.expiresAt': { $gt: now },
@@ -343,6 +521,7 @@ const getProfilesForHome = async (page = 1, limit = 20) => {
         .select({
         name: 1,
         age: 1,
+        description: 1,
         user: 1,
         'location.city.label': 1,
         'location.department.label': 1,
@@ -966,13 +1145,27 @@ const purchaseUpgrade = async (profileId, upgradeCode, userId) => {
     if (!profile) {
         throw new Error('Perfil no encontrado');
     }
-    if (!profile.planAssignment || profile.planAssignment.expiresAt < new Date()) {
-        const error = new Error('No se pueden comprar upgrades sin un plan activo');
+    const defaultPlanConfig = await getDefaultPlanConfig();
+    const defaultPlanCode = defaultPlanConfig.enabled ? defaultPlanConfig.planCode : 'AMATISTA';
+    const now = new Date();
+    if (!profile.planAssignment) {
+        const error = new Error('No se pueden comprar upgrades sin un plan asignado');
+        error.status = 409;
+        throw error;
+    }
+    if (profile.planAssignment.expiresAt < now) {
+        const error = new Error('No se pueden comprar upgrades con un plan expirado. Por favor renueva tu plan primero');
+        error.status = 409;
+        throw error;
+    }
+    const isDefaultPlan = profile.planAssignment.planCode === defaultPlanCode ||
+        (profile.planAssignment.planId && profile.planAssignment.planId.toString() === defaultPlanConfig.planId);
+    if (isDefaultPlan) {
+        const error = new Error('No se pueden comprar upgrades con el plan gratuito. Por favor adquiere un plan de pago primero');
         error.status = 409;
         throw error;
     }
     if (upgrade.requires && upgrade.requires.length > 0) {
-        const now = new Date();
         const activeUpgrades = profile.upgrades.filter(u => u.endAt > now);
         const activeUpgradeCodes = activeUpgrades.map(u => u.code);
         const missingRequirements = upgrade.requires.filter(req => !activeUpgradeCodes.includes(req));
@@ -980,7 +1173,6 @@ const purchaseUpgrade = async (profileId, upgradeCode, userId) => {
             throw new Error(`Upgrades requeridos no activos: ${missingRequirements.join(', ')}`);
         }
     }
-    const now = new Date();
     const endAt = new Date(now.getTime() + (upgrade.durationHours * 60 * 60 * 1000));
     const existingUpgradeIndex = profile.upgrades.findIndex(u => u.code === upgradeCode && u.endAt > now);
     switch (upgrade.stackingPolicy) {
@@ -993,7 +1185,6 @@ const purchaseUpgrade = async (profileId, upgradeCode, userId) => {
             break;
     }
     let invoice = null;
-    const upgradePrice = 0;
     try {
         invoice = await invoice_service_1.default.generateInvoice({
             profileId: profileId,
@@ -1003,12 +1194,14 @@ const purchaseUpgrade = async (profileId, upgradeCode, userId) => {
         profile.paymentHistory.push(new mongoose_1.Types.ObjectId(invoice._id));
         profile.isActive = false;
         await profile.save();
+        const whatsAppMessage = await generateWhatsAppMessage(profile.user.toString(), profile._id.toString(), invoice._id?.toString(), invoice.invoiceNumber, upgradeCode);
         return {
             profile,
             invoice,
             upgradeCode,
             status: 'pending_payment',
-            message: 'Upgrade pendiente de pago'
+            message: 'Upgrade pendiente de pago',
+            whatsAppMessage
         };
     }
     catch (error) {
@@ -1205,9 +1398,12 @@ const getDeletedProfiles = async (page = 1, limit = 10) => {
     }
 };
 exports.getDeletedProfiles = getDeletedProfiles;
-const getAllProfilesForAdmin = async (page = 1, limit = 10, fields) => {
+const getAllProfilesForAdmin = async (page = 1, limit = 10, fields, userId) => {
     const skip = (page - 1) * limit;
-    let query = profile_model_1.ProfileModel.find({});
+    const filter = {};
+    if (userId)
+        filter.user = userId;
+    let query = profile_model_1.ProfileModel.find(filter);
     if (fields) {
         const cleaned = fields.split(',').map(f => f.trim()).filter(Boolean);
         const needsFeatured = cleaned.includes('featured');
@@ -1251,15 +1447,16 @@ const getAllProfilesForAdmin = async (page = 1, limit = 10, fields) => {
                 isVerified = true;
             }
         }
-        const featured = profile.upgrades?.some(upgrade => (upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT') &&
-            new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now) || false;
+        const featured = profile.upgrades?.some((upgrade) => (upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT') &&
+            new Date(upgrade.startAt) <= now &&
+            new Date(upgrade.endAt) > now) || false;
         return {
             ...profile,
             isVerified,
-            featured
+            featured,
         };
     });
-    const total = await profile_model_1.ProfileModel.countDocuments({});
+    const total = await profile_model_1.ProfileModel.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;

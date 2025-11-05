@@ -10,7 +10,7 @@ const profile_model_1 = require("../profile/profile.model");
 const config_parameter_service_1 = require("../config-parameter/config-parameter.service");
 const invoice_service_1 = __importDefault(require("../payments/invoice.service"));
 const mongoose_1 = require("mongoose");
-const generateWhatsAppMessage = async (userId, profileId, planCode, variantDays, invoiceId, isRenewal, price, expiresAt) => {
+const generateWhatsAppMessage = async (userId, profileId, planCode, variantDays, invoiceId, invoiceNumber, isRenewal, price, expiresAt) => {
     try {
         const [companyName, companyWhatsApp] = await Promise.all([
             config_parameter_service_1.ConfigParameterService.getValue('company.name'),
@@ -33,7 +33,7 @@ const generateWhatsAppMessage = async (userId, profileId, planCode, variantDays,
                     hour: '2-digit',
                     minute: '2-digit'
                 }) : 'No disponible';
-                message = `¡Hola! 👋\n\n🔄 **Quiero renovar mi plan** 🔄\n\nTu solicitud de renovación ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n• Total a pagar: $${(price || 0).toLocaleString()} x${variantDays || 0}\n\n💰 **"Total a pagar: $${totalPrice.toLocaleString()}"**\n\n📅 **"Vence el:"** ${expirationDate} 📅\n\nPor favor, confirma el pago para activar tu perfil. ¡Gracias! 💎`;
+                message = `¡Hola! 👋\n\n🔄 **Quiero renovar mi plan** 🔄\n\nTu solicitud de renovación ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n• Total a pagar: $${(price || 0).toLocaleString()} x${variantDays || 0}\n\n💰 **"Total a pagar: $${totalPrice.toLocaleString()}"**\n\n📅 **"Vence el:"** ${expirationDate} 📅\n\nPor favor, confirma el pago para activar tu perfil. ¡Gracias! 💎`;
             }
             else {
                 const planInfo = planCode && variantDays
@@ -47,7 +47,7 @@ const generateWhatsAppMessage = async (userId, profileId, planCode, variantDays,
                 const planInfo = planCode && variantDays
                     ? `\n• Plan: ${planCode} (${variantDays} días)`
                     : '';
-                message = `¡Hola! 👋\n\nTu compra ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n\n¡Gracias por confiar en ${companyName}! 🙏\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+                message = `¡Hola! 👋\n\nTu compra ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n\n¡Gracias por confiar en ${companyName}! 🙏\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
             }
             else {
                 const planInfo = planCode && variantDays
@@ -258,7 +258,7 @@ class PlansService {
             dependents
         };
     }
-    async purchasePlan(profileId, planCode, variantDays) {
+    async purchasePlan(profileId, planCode, variantDays, isAdmin = false, generateInvoice = true) {
         const profile = await profile_model_1.ProfileModel.findById(profileId);
         if (!profile) {
             throw new Error('Perfil no encontrado');
@@ -278,7 +278,8 @@ class PlansService {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + variantDays);
         let invoiceId;
-        if (variant.price > 0) {
+        let invoiceNumber;
+        if (variant.price > 0 && (!isAdmin || generateInvoice)) {
             try {
                 const invoice = await invoice_service_1.default.generateInvoice({
                     userId: profile.user.toString(),
@@ -288,6 +289,7 @@ class PlansService {
                     upgradeCodes: []
                 });
                 invoiceId = invoice.id;
+                invoiceNumber = String(invoice.invoiceNumber);
                 profile.paymentHistory.push(new mongoose_1.Types.ObjectId(invoice._id));
                 profile.isActive = false;
                 const tempDate = new Date('1970-01-01');
@@ -312,6 +314,7 @@ class PlansService {
                 startAt: now,
                 expiresAt: expiresAt
             };
+            profile.isActive = true;
             if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
                 for (const upgradeCode of plan.includedUpgrades) {
                     const existingUpgrade = profile.upgrades.find(upgrade => upgrade.code === upgradeCode && upgrade.endAt > now);
@@ -323,14 +326,13 @@ class PlansService {
                             purchaseAt: now
                         };
                         profile.upgrades.push(newUpgrade);
-                        console.log(`🎁 Upgrade incluido agregado: ${upgradeCode}`);
                     }
                 }
             }
             profile.isActive = true;
             await profile.save();
         }
-        const whatsAppMessage = await generateWhatsAppMessage(profile.user.toString(), profileId, planCode, variantDays, invoiceId, true, variant.price, expiresAt);
+        const whatsAppMessage = await generateWhatsAppMessage(profile.user.toString(), profileId, planCode, variantDays, invoiceId, invoiceNumber, true, variant.price, expiresAt);
         return {
             profileId,
             planCode,
@@ -342,7 +344,7 @@ class PlansService {
             whatsAppMessage
         };
     }
-    async renewPlan(profileId, planCode, variantDays) {
+    async renewPlan(profileId, planCode, variantDays, isAdmin = false) {
         const profile = await profile_model_1.ProfileModel.findById(profileId);
         if (!profile) {
             throw new Error('Perfil no encontrado');
@@ -355,15 +357,17 @@ class PlansService {
         if (!variant) {
             throw new Error('Variante de plan no encontrada');
         }
-        const now = new Date();
         if (!profile.planAssignment || profile.planAssignment.planCode !== planCode) {
-            throw new Error('El perfil no tiene un plan activo del tipo especificado para renovar');
+            throw new Error('El perfil no tiene un plan del tipo especificado para renovar');
         }
         const currentExpiresAt = profile.planAssignment.expiresAt;
-        const newExpiresAt = new Date(currentExpiresAt);
+        const now = new Date();
+        const baseDate = currentExpiresAt > now ? currentExpiresAt : now;
+        const newExpiresAt = new Date(baseDate);
         newExpiresAt.setDate(newExpiresAt.getDate() + variantDays);
         let invoiceId;
-        if (variant.price > 0) {
+        let invoiceNumber;
+        if (variant.price > 0 && !isAdmin) {
             try {
                 const invoice = await invoice_service_1.default.generateInvoice({
                     userId: profile.user.toString(),
@@ -373,6 +377,7 @@ class PlansService {
                     upgradeCodes: []
                 });
                 invoiceId = invoice.id;
+                invoiceNumber = String(invoice.invoiceNumber);
                 profile.paymentHistory.push(new mongoose_1.Types.ObjectId(invoice._id));
                 profile.isActive = false;
                 await profile.save();
@@ -384,6 +389,7 @@ class PlansService {
         else {
             profile.planAssignment.expiresAt = newExpiresAt;
             profile.planAssignment.variantDays = variantDays;
+            profile.isActive = true;
             if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
                 for (const upgradeCode of plan.includedUpgrades) {
                     const existingUpgrade = profile.upgrades.find(upgrade => upgrade.code === upgradeCode && upgrade.endAt > newExpiresAt);
@@ -395,13 +401,12 @@ class PlansService {
                             purchaseAt: now
                         };
                         profile.upgrades.push(newUpgrade);
-                        console.log(`🎁 Upgrade incluido agregado en renovación: ${upgradeCode}`);
                     }
                 }
             }
             await profile.save();
         }
-        const whatsAppMessage = await generateWhatsAppMessage(profile.user.toString(), profileId, planCode, variantDays, invoiceId, true, variant.price, newExpiresAt);
+        const whatsAppMessage = await generateWhatsAppMessage(profile.user.toString(), profileId, planCode, variantDays, invoiceId, invoiceNumber, true, variant.price, newExpiresAt);
         return {
             profileId,
             planCode,

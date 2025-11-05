@@ -3,7 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const express_validator_1 = require("express-validator");
 const plans_controller_1 = require("./plans.controller");
+const auth_middleware_1 = require("../../middlewares/auth.middleware");
 const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authenticateToken);
 const planCodeValidation = (0, express_validator_1.body)('code')
     .isString()
     .isLength({ min: 2, max: 20 })
@@ -141,6 +143,11 @@ const upgradeEffectValidation = (0, express_validator_1.body)('effect')
     }
     return true;
 });
+const upgradePriceValidation = (0, express_validator_1.body)('price')
+    .optional()
+    .isNumeric()
+    .isFloat({ min: 0 })
+    .withMessage('price debe ser un número mayor o igual a 0');
 const upgradeActiveValidation = (0, express_validator_1.body)('active')
     .optional()
     .isBoolean()
@@ -199,6 +206,7 @@ router.post('/upgrades', [
     upgradeRequiresValidation,
     upgradeStackingPolicyValidation,
     upgradeEffectValidation,
+    upgradePriceValidation,
     upgradeActiveValidation
 ], plans_controller_1.plansController.createUpgrade.bind(plans_controller_1.plansController));
 router.put('/upgrades/:id', [
@@ -209,6 +217,7 @@ router.put('/upgrades/:id', [
     upgradeRequiresValidation,
     upgradeStackingPolicyValidation.optional(),
     upgradeEffectValidation.optional(),
+    upgradePriceValidation,
     upgradeActiveValidation
 ], plans_controller_1.plansController.updateUpgrade.bind(plans_controller_1.plansController));
 router.delete('/upgrades/:id', idParamValidation, plans_controller_1.plansController.deleteUpgrade.bind(plans_controller_1.plansController));

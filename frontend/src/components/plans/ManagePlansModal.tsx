@@ -549,7 +549,7 @@ export default function ManagePlansModal({
 
             // Mostrar toast con información adicional
             toast.success('Factura creada. El plan se actualizará después del pago confirmado.', {
-              duration: 4000,
+              duration: 10000,
             });
 
             // Abrir WhatsApp inmediatamente
@@ -598,7 +598,7 @@ export default function ManagePlansModal({
 
             // Mostrar toast con información adicional
             toast.success('Factura creada. El plan se actualizará después del pago confirmado.', {
-              duration: 4000,
+              duration: 10000,
             });
 
             // Abrir WhatsApp inmediatamente

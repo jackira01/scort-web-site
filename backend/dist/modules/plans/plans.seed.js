@@ -131,6 +131,7 @@ const UPGRADES_DATA = [
     {
         code: 'DESTACADO',
         name: 'Upgrade Destacado',
+        price: 15000,
         durationHours: 24,
         requires: [],
         stackingPolicy: 'extend',
@@ -144,6 +145,7 @@ const UPGRADES_DATA = [
     {
         code: 'IMPULSO',
         name: 'Upgrade Impulso',
+        price: 25000,
         durationHours: 12,
         requires: ['DESTACADO'],
         stackingPolicy: 'replace',
@@ -157,19 +159,13 @@ const UPGRADES_DATA = [
 ];
 async function seedPlans() {
     try {
-        console.log('🌱 Iniciando seed de planes...');
         for (const planData of PLANS_DATA) {
             const existingPlan = await plan_model_1.PlanDefinitionModel.findByCode(planData.code);
             if (!existingPlan) {
                 const plan = new plan_model_1.PlanDefinitionModel(planData);
                 await plan.save();
-                console.log(`✅ Plan ${planData.code} creado exitosamente`);
-            }
-            else {
-                console.log(`⚠️  Plan ${planData.code} ya existe, omitiendo...`);
             }
         }
-        console.log('✅ Seed de planes completado');
     }
     catch (error) {
         console.error('❌ Error en seed de planes:', error);
@@ -178,19 +174,13 @@ async function seedPlans() {
 }
 async function seedUpgrades() {
     try {
-        console.log('🌱 Iniciando seed de upgrades...');
         for (const upgradeData of UPGRADES_DATA) {
             const existingUpgrade = await upgrade_model_1.UpgradeDefinitionModel.findByCode(upgradeData.code);
             if (!existingUpgrade) {
                 const upgrade = new upgrade_model_1.UpgradeDefinitionModel(upgradeData);
                 await upgrade.save();
-                console.log(`✅ Upgrade ${upgradeData.code} creado exitosamente`);
-            }
-            else {
-                console.log(`⚠️  Upgrade ${upgradeData.code} ya existe, omitiendo...`);
             }
         }
-        console.log('✅ Seed de upgrades completado');
     }
     catch (error) {
         console.error('❌ Error en seed de upgrades:', error);
@@ -199,21 +189,13 @@ async function seedUpgrades() {
 }
 async function seedPlansAndUpgrades() {
     try {
-        console.log('🚀 Iniciando seed completo de planes y upgrades...');
         if (mongoose_1.default.connection.readyState !== 1) {
             throw new Error('No hay conexión activa a MongoDB');
         }
-        if (process.env.FEATURE_VISIBILITY_ENGINE !== 'true') {
-            console.log('⚠️  FEATURE_VISIBILITY_ENGINE no está habilitado, pero continuando con el seed...');
-        }
         await seedPlans();
         await seedUpgrades();
-        console.log('🎉 Seed completo ejecutado exitosamente');
         const totalPlans = await plan_model_1.PlanDefinitionModel.countDocuments({ active: true });
         const totalUpgrades = await upgrade_model_1.UpgradeDefinitionModel.countDocuments({ active: true });
-        console.log(`📊 Resumen:`);
-        console.log(`   - Planes activos: ${totalPlans}`);
-        console.log(`   - Upgrades activos: ${totalUpgrades}`);
     }
     catch (error) {
         console.error('❌ Error en seed completo:', error);
@@ -222,10 +204,8 @@ async function seedPlansAndUpgrades() {
 }
 async function clearPlansAndUpgrades() {
     try {
-        console.log('🧹 Limpiando datos de planes y upgrades...');
         await plan_model_1.PlanDefinitionModel.deleteMany({});
         await upgrade_model_1.UpgradeDefinitionModel.deleteMany({});
-        console.log('✅ Datos limpiados exitosamente');
     }
     catch (error) {
         console.error('❌ Error al limpiar datos:', error);

@@ -3,9 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.listContentPagesValidation = exports.slugParamValidation = exports.updateContentPageValidation = exports.createContentPageValidation = void 0;
 const zod_1 = require("zod");
 const content_types_1 = require("./content.types");
+const faqItemSchema = zod_1.z.object({
+    question: zod_1.z.string().trim().min(1, 'La pregunta no puede estar vacía')
+        .max(500, 'La pregunta no puede exceder 500 caracteres'),
+    answer: zod_1.z.string().trim().min(1, 'La respuesta no puede estar vacía')
+        .max(2000, 'La respuesta no puede exceder 2000 caracteres')
+});
 const contentBlockSchema = zod_1.z.object({
     type: zod_1.z.nativeEnum(content_types_1.ContentBlockType, {
-        errorMap: () => ({ message: 'El tipo de bloque debe ser uno de: paragraph, list, image, link' })
+        errorMap: () => ({ message: 'El tipo de bloque debe ser uno de: paragraph, list, image, link, faq' })
     }),
     value: zod_1.z.union([
         zod_1.z.string().trim().min(1, 'El contenido del bloque no puede estar vacío')
@@ -13,13 +19,19 @@ const contentBlockSchema = zod_1.z.object({
         zod_1.z.array(zod_1.z.string().trim().min(1, 'Cada elemento de la lista debe tener al menos 1 carácter')
             .max(500, 'Cada elemento de la lista no puede exceder 500 caracteres'))
             .min(1, 'La lista debe tener al menos un elemento')
-            .max(20, 'La lista no puede tener más de 20 elementos')
+            .max(20, 'La lista no puede tener más de 20 elementos'),
+        zod_1.z.array(faqItemSchema)
+            .min(1, 'El bloque FAQ debe tener al menos una pregunta')
+            .max(50, 'El bloque FAQ no puede tener más de 50 preguntas')
     ]),
     order: zod_1.z.number().int().min(0, 'El orden debe ser un número positivo')
         .max(999, 'El orden no puede exceder 999').default(0)
 }).refine((data) => {
     if (data.type === content_types_1.ContentBlockType.LIST) {
-        return Array.isArray(data.value);
+        return Array.isArray(data.value) && data.value.every((item) => typeof item === 'string');
+    }
+    if (data.type === content_types_1.ContentBlockType.FAQ) {
+        return Array.isArray(data.value) && data.value.every((item) => typeof item === 'object' && 'question' in item && 'answer' in item);
     }
     return typeof data.value === 'string';
 }, {

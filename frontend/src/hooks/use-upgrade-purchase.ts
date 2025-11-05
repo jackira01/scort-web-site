@@ -8,21 +8,24 @@ export const useUpgradePurchase = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ profileId, upgradeCode }: { profileId: string; upgradeCode: string }) =>
-      purchaseUpgrade(profileId, upgradeCode),
+    mutationFn: ({
+      profileId,
+      upgradeCode,
+      generateInvoice = true
+    }: {
+      profileId: string;
+      upgradeCode: string;
+      generateInvoice?: boolean;
+    }) => purchaseUpgrade(profileId, upgradeCode, generateInvoice),
     onSuccess: (data, variables) => {
-      if (data.success) {
-        toast.success(data.message || 'Upgrade activado exitosamente');
-
-        // Invalidar las queries relacionadas para refrescar los datos
-        queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
-        queryClient.invalidateQueries({ queryKey: ['profile', variables.profileId] });
-      } else {
-        toast.error(data.message || 'Error al activar el upgrade');
-      }
+      // No mostrar toast aquí, se maneja en el componente que llama
+      // Solo invalidar las queries relacionadas para refrescar los datos
+      queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
+      queryClient.invalidateQueries({ queryKey: ['profile', variables.profileId] });
     },
     onError: (error: any) => {
-      toast.error('Error al procesar la compra del upgrade');
+      // No mostrar toast aquí, se maneja en el componente que llama
+      console.error('Error al procesar la compra del upgrade:', error);
     },
   });
 };
@@ -36,15 +39,31 @@ export const useUpgradeValidation = () => {
   const validateUpgrade = (profile: any, upgradeCode?: string) => {
     if (!profile) return { canPurchase: false, reason: 'Perfil no encontrado' };
 
-    // Verificar si el perfil tiene un plan activo
     const now = new Date();
-    const hasActivePlan = profile.planAssignment &&
-      new Date(profile.planAssignment.expiresAt) > now;
 
-    if (!hasActivePlan) {
+    // Verificar que el perfil tiene un plan asignado
+    if (!profile.planAssignment) {
       return {
         canPurchase: false,
-        reason: 'Necesitas un plan activo para comprar upgrades'
+        reason: 'Necesitas un plan asignado para comprar upgrades'
+      };
+    }
+
+    // Verificar que el plan no esté expirado
+    const planExpiresAt = new Date(profile.planAssignment.expiresAt);
+    if (planExpiresAt <= now) {
+      return {
+        canPurchase: false,
+        reason: 'Tu plan ha expirado. Por favor renueva tu plan primero'
+      };
+    }
+
+    // Verificar que no sea el plan gratuito (AMATISTA u otro plan por defecto)
+    const planCode = profile.planAssignment.planCode;
+    if (planCode === 'AMATISTA' || !planCode || planCode === 'FREE') {
+      return {
+        canPurchase: false,
+        reason: 'No puedes comprar upgrades con el plan gratuito. Por favor adquiere un plan de pago primero'
       };
     }
 
@@ -57,7 +76,7 @@ export const useUpgradeValidation = () => {
     if (upgradeCode === 'IMPULSO') {
       // IMPULSO requiere DESTACADO activo - calcular directamente
       let hasDestacadoActive = false;
-      
+
       // Si es plan DIAMANTE, incluye DESTACADO automáticamente
       if (profile.planAssignment?.planCode === 'DIAMANTE') {
         hasDestacadoActive = true;
@@ -66,12 +85,12 @@ export const useUpgradeValidation = () => {
         const activeUpgrades = profile.activeUpgrades || profile.upgrades?.filter((upgrade: any) =>
           new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
         ) || [];
-        
+
         hasDestacadoActive = activeUpgrades.some((upgrade: any) =>
           upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT'
         );
       }
-      
+
       if (!hasDestacadoActive) {
         return {
           canPurchase: false,

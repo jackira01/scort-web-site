@@ -3,6 +3,7 @@ import UserModel from './User.model';
 import * as userService from './user.service';
 import { sendWelcomeEmail } from '../../utils/welcome-email.util';
 import bcrypt from 'bcryptjs';
+import EmailService from '../../services/email.service';
 
 export const CreateUserController = async (req: Request, res: Response) => {
   try {
@@ -582,6 +583,22 @@ export const updateUser = async (req: Request, res: Response) => {
         success: false,
         message: 'Usuario no encontrado'
       });
+    }
+
+    // Si se actualizaron documentos de verificación, enviar notificación por email
+    if (updateData.verification_in_progress === true && updateData.verificationDocument) {
+      try {
+        const emailService = new EmailService();
+        await emailService.sendUserVerificationUpdateNotification(
+          user.name || 'Usuario',
+          user.email,
+          user._id?.toString() || ''
+        );
+        // Email de notificación enviado exitosamente
+      } catch (emailError) {
+        // Error al enviar email de notificación, pero no fallar la actualización
+        console.error('Error al enviar notificación de verificación:', emailError);
+      }
     }
 
     // Usuario actualizado exitosamente

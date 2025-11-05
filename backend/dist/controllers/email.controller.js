@@ -111,6 +111,12 @@ exports.testEmailConfigController = testEmailConfigController;
 const sendContactFormController = async (req, res) => {
     try {
         const { name, email, subject, message } = req.body;
+        console.log('📧 Contact form data received:', {
+            name,
+            email,
+            subject,
+            messageLength: message?.length || 0
+        });
         if (!name || !email || !subject || !message) {
             console.error('❌ Missing required fields in contact form');
             return res.status(400).json({
@@ -125,8 +131,13 @@ const sendContactFormController = async (req, res) => {
                 error: 'Formato de email inválido'
             });
         }
+        console.log('🔍 Fetching company email from database...');
         const companyEmail = await config_parameter_service_1.ConfigParameterService.getValue('company.email');
         const companyName = await config_parameter_service_1.ConfigParameterService.getValue('company.name') || 'Equipo de Soporte';
+        console.log('📋 Company configuration:', {
+            companyEmail,
+            companyName
+        });
         if (!companyEmail) {
             console.error('❌ Company email not configured in database');
             return res.status(500).json({

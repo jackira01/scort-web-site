@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const userController = __importStar(require("./user.controller"));
+const middlewares_1 = require("../../middlewares");
 const router = (0, express_1.Router)();
 router.post('/set-password-after-google-register', userController.setPasswordAfterGoogleRegisterController);
 router.post('/register', userController.registerUserController);
@@ -50,4 +51,5 @@ router.post('/', userController.getUsers);
 router.get('/:id', userController.getUserById);
 router.put('/:id', userController.updateUser);
 router.put('/:id/last-login', userController.updateUserLastLogin);
+router.delete('/:id', middlewares_1.authMiddleware, middlewares_1.adminMiddleware, userController.deleteUserController);
 exports.default = router;

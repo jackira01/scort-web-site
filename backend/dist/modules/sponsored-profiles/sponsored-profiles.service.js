@@ -3,9 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.isProfileSponsored = exports.getSponsoredProfilesCount = exports.getSponsoredProfiles = void 0;
 const profile_model_1 = require("../profile/profile.model");
 const plan_model_1 = require("../plans/plan.model");
+const attribute_group_model_1 = require("../attribute-group/attribute-group.model");
 const getSponsoredProfiles = async (query = {}) => {
     try {
-        const { page = 1, limit = 20, sortBy = 'lastShownAt', sortOrder = 'asc', fields = [] } = query;
+        const { page = 1, limit = 20, sortBy = 'lastShownAt', sortOrder = 'asc', fields = [], category, location, features = {}, priceRange, verification } = query;
         const pageNum = Math.max(1, page);
         const limitNum = Math.min(Math.max(1, limit), 100);
         const skip = (pageNum - 1) * limitNum;
@@ -16,6 +17,103 @@ const getSponsoredProfiles = async (query = {}) => {
             'planAssignment.expiresAt': { $gt: new Date() },
             'planAssignment.planId': { $exists: true, $ne: null }
         };
+        if (category) {
+            const categoryFeatures = await attribute_group_model_1.AttributeGroupModel.find({
+                key: 'category'
+            });
+            if (categoryFeatures.length > 0) {
+                const categoryGroupId = categoryFeatures[0]._id;
+                const normalizedCategory = category.toLowerCase().trim();
+                baseFilters['features'] = {
+                    $elemMatch: {
+                        group_id: categoryGroupId,
+                        'value.key': normalizedCategory
+                    }
+                };
+            }
+        }
+        if (location?.department) {
+            baseFilters['location.department.value'] = location.department;
+        }
+        if (location?.city) {
+            baseFilters['location.city.value'] = location.city;
+        }
+        const featureConditions = [];
+        const otherFeatures = Object.entries(features).filter(([key]) => key !== 'ageRange');
+        if (otherFeatures.length > 0) {
+            const groupKeys = otherFeatures.map(([key]) => key);
+            const attributeGroups = await attribute_group_model_1.AttributeGroupModel.find({
+                key: { $in: groupKeys }
+            });
+            const groupKeyToId = new Map();
+            attributeGroups.forEach((group) => {
+                groupKeyToId.set(group.key, group._id);
+            });
+            for (const [groupKey, value] of otherFeatures) {
+                const groupId = groupKeyToId.get(groupKey);
+                if (!groupId)
+                    continue;
+                if (Array.isArray(value)) {
+                    const normalizedValues = value.map((v) => v.toLowerCase().trim());
+                    featureConditions.push({
+                        features: {
+                            $elemMatch: {
+                                group_id: groupId,
+                                'value.key': { $in: normalizedValues }
+                            }
+                        }
+                    });
+                }
+                else {
+                    const normalizedValue = value.toLowerCase().trim();
+                    featureConditions.push({
+                        features: {
+                            $elemMatch: {
+                                group_id: groupId,
+                                'value.key': normalizedValue
+                            }
+                        }
+                    });
+                }
+            }
+        }
+        if (features.ageRange) {
+            const ageGroupData = await attribute_group_model_1.AttributeGroupModel.findOne({ key: 'age' });
+            if (ageGroupData) {
+                featureConditions.push({
+                    features: {
+                        $elemMatch: {
+                            group_id: ageGroupData._id,
+                            'value.key': { $in: Array.isArray(features.ageRange) ? features.ageRange : [features.ageRange] }
+                        }
+                    }
+                });
+            }
+        }
+        if (featureConditions.length > 0) {
+            baseFilters.$and = featureConditions;
+        }
+        if (verification?.identityVerified) {
+            baseFilters['verification.verificationStatus'] = 'verified';
+        }
+        if (verification?.hasVideo) {
+            baseFilters['media.videos'] = { $exists: true, $ne: [] };
+        }
+        if (verification?.documentVerified) {
+            baseFilters['verification.identity.status'] = 'verified';
+        }
+        if (priceRange) {
+            const priceConditions = {};
+            if (priceRange.min !== undefined) {
+                priceConditions.$gte = priceRange.min;
+            }
+            if (priceRange.max !== undefined) {
+                priceConditions.$lte = priceRange.max;
+            }
+            if (Object.keys(priceConditions).length > 0) {
+                baseFilters['rates.hourly'] = priceConditions;
+            }
+        }
         const sponsoredPlans = await plan_model_1.PlanDefinitionModel.find({
             'features.showInSponsored': true,
             active: true

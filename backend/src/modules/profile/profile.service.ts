@@ -1625,7 +1625,18 @@ export const validateProfilePlanUpgrade = async (profileId: string, newPlanCode:
   }
 };
 
-export const purchaseUpgrade = async (profileId: string, upgradeCode: string, userId: string): Promise<{ profile: IProfile; invoice: IInvoice; upgradeCode?: string; status?: string; message?: string }> => {
+export const purchaseUpgrade = async (
+  profileId: string,
+  upgradeCode: string,
+  userId: string
+): Promise<{
+  profile: IProfile;
+  invoice: IInvoice;
+  upgradeCode?: string;
+  status?: string;
+  message?: string;
+  whatsAppMessage?: WhatsAppMessage | null;
+}> => {
   // Validar que el upgrade existe
   const upgrade = await UpgradeDefinitionModel.findOne({ code: upgradeCode });
   if (!upgrade) {
@@ -1637,16 +1648,38 @@ export const purchaseUpgrade = async (profileId: string, upgradeCode: string, us
     throw new Error('Perfil no encontrado');
   }
 
-  // Verificar que el perfil tiene un plan activo
-  if (!profile.planAssignment || profile.planAssignment.expiresAt < new Date()) {
-    const error = new Error('No se pueden comprar upgrades sin un plan activo');
+  // Obtener configuración del plan por defecto
+  const defaultPlanConfig = await getDefaultPlanConfig();
+  const defaultPlanCode = defaultPlanConfig.enabled ? defaultPlanConfig.planCode : 'AMATISTA';
+
+  const now = new Date();
+
+  // Verificar que el perfil tiene un plan asignado
+  if (!profile.planAssignment) {
+    const error = new Error('No se pueden comprar upgrades sin un plan asignado');
+    (error as any).status = 409;
+    throw error;
+  }
+
+  // Verificar que el plan no esté expirado
+  if (profile.planAssignment.expiresAt < now) {
+    const error = new Error('No se pueden comprar upgrades con un plan expirado. Por favor renueva tu plan primero');
+    (error as any).status = 409;
+    throw error;
+  }
+
+  // Verificar que no sea el plan por defecto (gratuito)
+  const isDefaultPlan = profile.planAssignment.planCode === defaultPlanCode ||
+    (profile.planAssignment.planId && profile.planAssignment.planId.toString() === defaultPlanConfig.planId);
+
+  if (isDefaultPlan) {
+    const error = new Error('No se pueden comprar upgrades con el plan gratuito. Por favor adquiere un plan de pago primero');
     (error as any).status = 409;
     throw error;
   }
 
   // Verificar dependencias (upgrades requeridos)
   if (upgrade.requires && upgrade.requires.length > 0) {
-    const now = new Date();
     const activeUpgrades = profile.upgrades.filter(u => u.endAt > now);
     const activeUpgradeCodes = activeUpgrades.map(u => u.code);
 
@@ -1656,7 +1689,6 @@ export const purchaseUpgrade = async (profileId: string, upgradeCode: string, us
     }
   }
 
-  const now = new Date();
   const endAt = new Date(now.getTime() + (upgrade.durationHours * 60 * 60 * 1000));
 
   // Verificar si ya existe un upgrade activo del mismo tipo
@@ -1675,9 +1707,8 @@ export const purchaseUpgrade = async (profileId: string, upgradeCode: string, us
       break;
   }
 
-  // Generar factura para el upgrade (por ahora precio 0, pero se puede configurar)
+  // Generar factura para el upgrade con precio de la base de datos
   let invoice = null;
-  const upgradePrice = 0; // TODO: Configurar precios de upgrades
 
   try {
     invoice = await invoiceService.generateInvoice({
@@ -1696,13 +1727,23 @@ export const purchaseUpgrade = async (profileId: string, upgradeCode: string, us
 
     // Factura generada para upgrade
 
-    // Retornar información de la compra pendiente
+    // Generar mensaje de WhatsApp similar a createProfileWithInvoice
+    const whatsAppMessage = await generateWhatsAppMessage(
+      profile.user.toString(),
+      (profile._id as Types.ObjectId).toString(),
+      invoice._id?.toString(),
+      invoice.invoiceNumber,
+      upgradeCode
+    );
+
+    // Retornar información de la compra pendiente con datos de WhatsApp
     return {
       profile,
       invoice,
       upgradeCode,
       status: 'pending_payment',
-      message: 'Upgrade pendiente de pago'
+      message: 'Upgrade pendiente de pago',
+      whatsAppMessage
     };
 
   } catch (error) {

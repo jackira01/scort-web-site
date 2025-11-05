@@ -39,7 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
 const mongoose_paginate_v2_1 = __importDefault(require("mongoose-paginate-v2"));
 const userSchema = new mongoose_1.Schema({
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     name: String,
     verificationDocument: [String],
     password: { type: String },

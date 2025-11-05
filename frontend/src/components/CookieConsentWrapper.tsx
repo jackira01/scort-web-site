@@ -15,19 +15,18 @@ const CookieConsentWrapper: React.FC<CookieConsentWrapperProps> = ({ children })
   return (
     <>
       {/* Contenido principal con bloqueo condicional */}
-      <div 
-        className={`${
-          showModal && !hasConsent 
-            ? 'pointer-events-none blur-sm opacity-50' 
+      <div
+        className={`${showModal && !hasConsent
+            ? 'pointer-events-none'
             : ''
-        } transition-all duration-300`}
+          } transition-all duration-300`}
       >
         {children}
       </div>
-      
+
       {/* Modal de consentimiento */}
       <CookieConsentModal />
-      
+
       {/* Botón para reabrir configuración */}
       <CookieSettingsButton />
     </>

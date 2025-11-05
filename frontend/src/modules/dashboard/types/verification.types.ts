@@ -29,10 +29,11 @@ export interface ProfileVerificationData {
 }
 
 export interface VerificationStep {
-  key: keyof ProfileVerificationData['data']['steps'];
+  key: keyof ProfileVerificationData['data']['steps'] | string; // Permitir strings para sub-keys
   label: string;
   icon: ReactNode;
   description: string;
+  subKey?: string; // Para acceder a propiedades anidadas
 }
 
 export interface AdminProfileVerificationCarouselProps {

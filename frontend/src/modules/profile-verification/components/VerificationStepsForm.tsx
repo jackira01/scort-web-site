@@ -327,10 +327,10 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   <div key={step} className="flex items-center">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${status === 'completed'
-                          ? 'bg-green-500 text-white'
-                          : status === 'current'
-                            ? 'bg-purple-500 text-white'
-                            : 'bg-gray-200 text-gray-500'
+                        ? 'bg-green-500 text-white'
+                        : status === 'current'
+                          ? 'bg-purple-500 text-white'
+                          : 'bg-gray-200 text-gray-500'
                         }`}
                     >
                       {status === 'completed' ? <CheckCircle className="h-4 w-4" /> : step}
@@ -398,8 +398,8 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
         {/* Step 2: Video o foto de verificación con cartel */}
         <Card className={`border-2 transition-all duration-300 ${isStep1Complete
-            ? 'border-purple-200 bg-purple-50 dark:bg-purple-950/20'
-            : 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
+          ? 'border-purple-200 bg-purple-50 dark:bg-purple-950/20'
+          : 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
           }`}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -444,8 +444,8 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
         {/* Step 3: Foto con documento al lado del rostro */}
         <Card className={`border-2 transition-all duration-300 ${isStep1Complete && isStep2Complete
-            ? 'border-purple-200 bg-purple-50 dark:bg-purple-950/20'
-            : 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
+          ? 'border-purple-200 bg-purple-50 dark:bg-purple-950/20'
+          : 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
           }`}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -465,7 +465,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               </h4>
               <div className="flex justify-center">
                 <img
-                  src="/images/rostro con documento.png"
+                  src="/images/document guide.png"
                   alt="Ejemplo de rostro con documento"
                   className="max-w-full h-auto max-h-48 rounded-lg border border-gray-200 dark:border-gray-700"
                 />
@@ -517,10 +517,16 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
         <div className="flex justify-end space-x-4">
           <Button
             type="submit"
-            disabled={isSubmitting || Object.values(uploadingFiles).some(Boolean)}
+            disabled={
+              isSubmitting ||
+              Object.values(uploadingFiles).some(Boolean) ||
+              !isStep1Complete ||
+              !isStep2Complete ||
+              !isStep3Complete
+            }
             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
           >
-            {isSubmitting ? 'Guardando...' : 'Guardar Verificación'}
+            {isSubmitting ? 'Guardando...' : 'Enviar Verificación'}
           </Button>
         </div>
       </form>

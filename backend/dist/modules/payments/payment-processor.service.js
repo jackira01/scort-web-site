@@ -48,6 +48,7 @@ class PaymentProcessorService {
         }
     }
     static async processPlanPayment(profile, planItem) {
+        console.log(`📦 Procesando pago de plan ${planItem.code}`);
         const plan = await plan_model_1.PlanDefinitionModel.findOne({ code: planItem.code });
         if (!plan) {
             throw new Error(`Plan ${planItem.code} no encontrado`);
@@ -76,8 +77,10 @@ class PaymentProcessorService {
                 }
             }
         }
+        console.log(`✅ Plan ${planItem.code} asignado al perfil ${profile._id}, reemplazando plan anterior`);
     }
     static async processUpgradePayment(profile, upgradeItem) {
+        console.log(`⚡ Procesando pago de upgrade ${upgradeItem.code}`);
         const upgrade = await upgrade_model_1.UpgradeDefinitionModel.findOne({ code: upgradeItem.code });
         if (!upgrade) {
             throw new Error(`Upgrade ${upgradeItem.code} no encontrado`);
@@ -114,6 +117,7 @@ class PaymentProcessorService {
     }
     static async processInvoiceCancellation(invoiceId) {
         try {
+            console.log(`❌ Procesando cancelación de factura ${invoiceId}`);
             const invoice = await invoice_model_1.default.findById(invoiceId);
             if (!invoice) {
                 throw new Error('Factura no encontrada');
@@ -122,8 +126,10 @@ class PaymentProcessorService {
             if (!profile) {
                 throw new Error('Perfil no encontrado');
             }
+            console.log(`🔄 Reactivando perfil ${profile._id} con plan actual: ${profile.planAssignment?.planCode}`);
             profile.isActive = true;
             await profile.save();
+            console.log(`✅ Perfil ${profile._id} reactivado con plan ${profile.planAssignment?.planCode} después de cancelación`);
             return {
                 success: true,
                 message: 'Cancelación procesada exitosamente - perfil reactivado con plan actual'

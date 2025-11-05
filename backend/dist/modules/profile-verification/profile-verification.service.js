@@ -22,12 +22,12 @@ const getDefaultVerificationSteps = (accountType, requiresIndependentVerificatio
     const baseSteps = {
         documentPhotos: {
             frontPhoto: undefined,
-            backPhoto: undefined,
             selfieWithDocument: undefined,
             isVerified: false
         },
-        videoVerification: {
-            videoLink: undefined,
+        mediaVerification: {
+            mediaLink: undefined,
+            mediaType: undefined,
             isVerified: false
         },
         videoCallRequested: {
@@ -48,7 +48,6 @@ const getDefaultVerificationSteps = (accountType, requiresIndependentVerificatio
             ...baseSteps,
             documentPhotos: {
                 frontPhoto: undefined,
-                backPhoto: undefined,
                 selfieWithDocument: undefined,
                 isVerified: false
             }

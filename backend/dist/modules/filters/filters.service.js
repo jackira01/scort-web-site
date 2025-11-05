@@ -188,7 +188,7 @@ const getFilteredProfiles = async (filters) => {
                             features: {
                                 $elemMatch: {
                                     group_id: groupId,
-                                    value: { $in: normalizedValues },
+                                    'value.key': { $in: normalizedValues },
                                 },
                             },
                         };
@@ -200,7 +200,7 @@ const getFilteredProfiles = async (filters) => {
                             features: {
                                 $elemMatch: {
                                     group_id: groupId,
-                                    value: { $in: [normalizedValue] },
+                                    'value.key': normalizedValue,
                                 },
                             },
                         };
@@ -283,6 +283,22 @@ const getFilteredProfiles = async (filters) => {
             : Array.from(new Set([...profileCardFields, ...requiredFields]));
         const selectFields = finalFields.join(' ');
         const startTime = Date.now();
+        if (filters.category) {
+            const sampleProfiles = await profile_model_1.ProfileModel.find({
+                visible: true,
+                isDeleted: { $ne: true }
+            })
+                .select('_id name category features visible isActive')
+                .limit(10)
+                .lean();
+            sampleProfiles.forEach((profile, index) => {
+                if (profile.features && profile.features.length > 0) {
+                    const categoryFeatures = profile.features.filter((f) => {
+                        return f.value && typeof f.value === 'string';
+                    });
+                }
+            });
+        }
         const aggregationPipeline = [
             {
                 $match: query
@@ -375,6 +391,19 @@ const getFilteredProfiles = async (filters) => {
             ])
         ]);
         const totalCount = totalCountResult[0]?.total || 0;
+        if (allProfiles.length > 0) {
+            allProfiles.forEach((profile, index) => {
+                if (profile.features && profile.features.length > 0) {
+                    profile.features.slice(0, 3).forEach((feature) => {
+                    });
+                    if (profile.features.length > 3) {
+                    }
+                }
+                if (filters.category) {
+                    const categoryMatch = profile.features?.some((f) => f.value?.toLowerCase() === filters.category?.toLowerCase());
+                }
+            });
+        }
         const sortedProfiles = await (0, visibility_service_1.sortProfiles)(allProfiles, now);
         const paginatedProfiles = sortedProfiles.slice(skip, skip + limit);
         if (paginatedProfiles.length > 0) {
@@ -476,27 +505,27 @@ const getFilterOptions = async () => {
             ? categoryGroup.variants
                 .filter((variant) => variant.active)
                 .map((variant) => ({
-                    label: variant.label || variant.value,
-                    value: variant.value,
-                }))
+                label: variant.label || variant.value,
+                value: variant.value,
+            }))
             : [];
         const features = {};
         attributeGroups.forEach((group) => {
             features[group.key] = group.variants
                 .filter((variant) => variant.active)
                 .map((variant) => ({
-                    label: variant.label || variant.value,
-                    value: variant.value,
-                }));
+                label: variant.label || variant.value,
+                value: variant.value,
+            }));
         });
         const result = {
             categories: categoryGroup
                 ? categoryGroup.variants
                     .filter((variant) => variant.active)
                     .map((variant) => ({
-                        label: variant.label || variant.value,
-                        value: variant.value,
-                    }))
+                    label: variant.label || variant.value,
+                    value: variant.value,
+                }))
                     .filter(Boolean)
                 : [],
             locations: {

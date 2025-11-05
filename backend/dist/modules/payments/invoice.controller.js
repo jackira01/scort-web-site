@@ -70,6 +70,7 @@ class InvoiceController {
         try {
             const filters = {
                 _id: req.query._id,
+                invoiceNumber: req.query.invoiceNumber,
                 profileId: req.query.profileId,
                 userId: req.query.userId,
                 status: req.query.status,

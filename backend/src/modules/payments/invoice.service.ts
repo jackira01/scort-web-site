@@ -95,8 +95,8 @@ class InvoiceService {
           throw new Error(`Upgrade con código ${upgradeCode} no encontrado`);
         }
 
-        // Los upgrades por ahora son gratuitos o tienen precio fijo
-        const upgradePrice = 0; // TODO: Definir precio de upgrades
+        // Usar el precio del upgrade desde la base de datos
+        const upgradePrice = upgrade.price || 0;
 
         const upgradeItem: InvoiceItem = {
           type: 'upgrade' as const,

@@ -234,7 +234,7 @@ const AdminProfileVerificationCarousel: React.FC<
   if (isLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Verificación de Perfil</DialogTitle>
           </DialogHeader>
@@ -252,7 +252,7 @@ const AdminProfileVerificationCarousel: React.FC<
   if (error || !verificationData) {
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Error de Verificación</DialogTitle>
           </DialogHeader>
@@ -277,7 +277,7 @@ const AdminProfileVerificationCarousel: React.FC<
   if (!verificationData?.data?.steps) {
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Verificación de Perfil</DialogTitle>
           </DialogHeader>
@@ -295,7 +295,7 @@ const AdminProfileVerificationCarousel: React.FC<
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5" />
@@ -364,7 +364,7 @@ const AdminProfileVerificationCarousel: React.FC<
               {verificationSteps.map((step, index) => (
                 <button
                   type="button"
-                  key={`verification-step-${step.key}`}
+                  key={`verification-step-${step.key}-${index}`}
                   onClick={() => setCurrentStepIndex(index)}
                   className={`h-2 w-2 rounded-full transition-colors ${index === currentStepIndex
                     ? 'bg-primary'

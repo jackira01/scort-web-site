@@ -7,6 +7,7 @@ const router = (0, express_1.Router)();
 const jwtService = new jwt_service_1.JWTService();
 router.post('/verify-email', auth_controller_1.verifyEmailController);
 router.post('/resend-verification', auth_controller_1.resendVerificationController);
+router.post('/check-verification-status', auth_controller_1.checkVerificationStatusController);
 router.post('/generate-token', async (req, res) => {
     try {
         const { userId, role } = req.body;

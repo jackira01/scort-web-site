@@ -52,7 +52,6 @@ export class PaymentProcessorService {
       profile.visible = true;  // Hacer visible el perfil al confirmar pago
       await profile.save();
 
-
       return {
         success: true,
         profile,
@@ -73,6 +72,7 @@ export class PaymentProcessorService {
    * NUEVO FLUJO: Ahora asigna el plan comprado reemplazando el plan actual
    */
   private static async processPlanPayment(profile: IProfile, planItem: any): Promise<void> {
+    console.log(`📦 Procesando pago de plan ${planItem.code}`);
 
     // Obtener definición del plan
     const plan = await PlanDefinitionModel.findOne({ code: planItem.code });
@@ -116,12 +116,14 @@ export class PaymentProcessorService {
       }
     }
 
+    console.log(`✅ Plan ${planItem.code} asignado al perfil ${profile._id}, reemplazando plan anterior`);
   }
 
   /**
    * Procesa el pago de un upgrade y lo aplica al perfil
    */
   private static async processUpgradePayment(profile: IProfile, upgradeItem: any): Promise<void> {
+    console.log(`⚡ Procesando pago de upgrade ${upgradeItem.code}`);
 
     // Obtener definición del upgrade
     const upgrade = await UpgradeDefinitionModel.findOne({ code: upgradeItem.code });
@@ -180,6 +182,8 @@ export class PaymentProcessorService {
     message: string;
   }> {
     try {
+      console.log(`❌ Procesando cancelación de factura ${invoiceId}`);
+
       const invoice = await InvoiceModel.findById(invoiceId);
       if (!invoice) {
         throw new Error('Factura no encontrada');
@@ -192,6 +196,7 @@ export class PaymentProcessorService {
 
       // NUEVO FLUJO: Al cancelar factura, mantener plan actual (Amatista) y reactivar perfil
       // El perfil ya tiene plan Amatista asignado, solo necesitamos reactivarlo
+      console.log(`🔄 Reactivando perfil ${profile._id} con plan actual: ${profile.planAssignment?.planCode}`);
 
       // Reactivar el perfil (ya que tiene un plan válido - Amatista)
       profile.isActive = true;
@@ -200,6 +205,8 @@ export class PaymentProcessorService {
       // (esto depende de la lógica de verificaciones del sistema)
 
       await profile.save();
+
+      console.log(`✅ Perfil ${profile._id} reactivado con plan ${profile.planAssignment?.planCode} después de cancelación`);
 
       return {
         success: true,

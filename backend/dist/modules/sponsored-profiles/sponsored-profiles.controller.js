@@ -37,7 +37,7 @@ exports.checkProfileSponsored = exports.getSponsoredProfilesCount = exports.getS
 const service = __importStar(require("./sponsored-profiles.service"));
 const getSponsoredProfiles = async (req, res) => {
     try {
-        const { page, limit, sortBy, sortOrder, fields } = req.query;
+        const { page, limit, sortBy, sortOrder, fields, category, department, city, minPrice, maxPrice, identityVerified, hasVideo, documentVerified } = req.query;
         const query = {};
         if (page) {
             const pageNum = parseInt(page, 10);
@@ -64,6 +64,49 @@ const getSponsoredProfiles = async (req, res) => {
         }
         if (fields && typeof fields === 'string') {
             query.fields = fields.split(',').map(field => field.trim()).filter(Boolean);
+        }
+        if (category && typeof category === 'string') {
+            query.category = category;
+        }
+        if (department || city) {
+            query.location = {};
+            if (department && typeof department === 'string') {
+                query.location.department = department;
+            }
+            if (city && typeof city === 'string') {
+                query.location.city = city;
+            }
+        }
+        const bodyFeatures = req.body?.features;
+        if (bodyFeatures && typeof bodyFeatures === 'object') {
+            query.features = bodyFeatures;
+        }
+        if (minPrice || maxPrice) {
+            query.priceRange = {};
+            if (minPrice) {
+                const minPriceNum = parseFloat(minPrice);
+                if (!isNaN(minPriceNum)) {
+                    query.priceRange.min = minPriceNum;
+                }
+            }
+            if (maxPrice) {
+                const maxPriceNum = parseFloat(maxPrice);
+                if (!isNaN(maxPriceNum)) {
+                    query.priceRange.max = maxPriceNum;
+                }
+            }
+        }
+        if (identityVerified || hasVideo || documentVerified) {
+            query.verification = {};
+            if (identityVerified === 'true') {
+                query.verification.identityVerified = true;
+            }
+            if (hasVideo === 'true') {
+                query.verification.hasVideo = true;
+            }
+            if (documentVerified === 'true') {
+                query.verification.documentVerified = true;
+            }
         }
         const result = await service.getSponsoredProfiles(query);
         res.status(200).json({

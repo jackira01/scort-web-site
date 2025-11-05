@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resendVerificationController = exports.verifyEmailController = void 0;
+exports.checkVerificationStatusController = exports.resendVerificationController = exports.verifyEmailController = void 0;
 const email_verification_service_1 = require("../modules/user/email-verification.service");
 const user_service_1 = require("../modules/user/user.service");
 const User_model_1 = __importDefault(require("../modules/user/User.model"));
@@ -19,7 +19,7 @@ const verifyEmailController = async (req, res) => {
         }
         const isValid = await emailVerificationService.verifyCode(email, code);
         if (isValid) {
-            await User_model_1.default.findOneAndUpdate({ email }, { emailVerified: new Date() }, { new: true });
+            await User_model_1.default.findOneAndUpdate({ email: email.toLowerCase().trim() }, { emailVerified: new Date() }, { new: true });
             return res.status(200).json({
                 success: true,
                 message: 'Email verificado exitosamente'
@@ -85,3 +85,36 @@ const resendVerificationController = async (req, res) => {
     }
 };
 exports.resendVerificationController = resendVerificationController;
+const checkVerificationStatusController = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email es requerido'
+            });
+        }
+        const codeInfo = await emailVerificationService.getActiveCodeInfo(email);
+        if (codeInfo) {
+            return res.status(200).json({
+                success: true,
+                hasActiveCode: true,
+                expiresAt: codeInfo.expiresAt
+            });
+        }
+        else {
+            return res.status(200).json({
+                success: true,
+                hasActiveCode: false
+            });
+        }
+    }
+    catch (error) {
+        console.error('Error in checkVerificationStatusController:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || 'Error al verificar el estado'
+        });
+    }
+};
+exports.checkVerificationStatusController = checkVerificationStatusController;

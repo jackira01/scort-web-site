@@ -37,6 +37,7 @@ const express_1 = require("express");
 const controller = __importStar(require("./sponsored-profiles.controller"));
 const router = (0, express_1.Router)();
 router.get('/', controller.getSponsoredProfiles);
+router.post('/', controller.getSponsoredProfiles);
 router.get('/count', controller.getSponsoredProfilesCount);
 router.get('/check/:profileId', controller.checkProfileSponsored);
 exports.default = router;

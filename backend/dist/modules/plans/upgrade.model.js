@@ -75,6 +75,12 @@ const UpgradeDefinitionSchema = new mongoose_1.Schema({
         min: 1,
         default: 24
     },
+    price: {
+        type: Number,
+        required: true,
+        min: 0,
+        default: 0
+    },
     requires: {
         type: [String],
         default: [],

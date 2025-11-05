@@ -57,7 +57,7 @@ const profileSchema = new mongoose_1.Schema({
     features: [
         {
             group_id: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'AttributeGroup', required: true },
-            value: [{ type: String, required: true }],
+            value: [{ type: mongoose_1.Schema.Types.Mixed, required: true }],
         },
     ],
     age: { type: String, required: true, },
@@ -68,8 +68,8 @@ const profileSchema = new mongoose_1.Schema({
         changedAt: Date,
     },
     height: { type: String, required: true },
-    basicServices: [{ type: String }],
-    additionalServices: [{ type: String }],
+    basicServices: [{ type: mongoose_1.Schema.Types.Mixed }],
+    additionalServices: [{ type: mongoose_1.Schema.Types.Mixed }],
     socialMedia: {
         instagram: { type: String, required: false },
         facebook: { type: String, required: false },

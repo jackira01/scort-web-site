@@ -12,31 +12,50 @@ export interface PurchaseUpgradeResponse {
   success: boolean;
   message: string;
   profile?: Profile;
+  invoice?: any;
+  whatsAppMessage?: {
+    companyNumber: string;
+    message: string;
+  } | null;
+  paymentRequired?: boolean;
+  status?: string;
 }
 
 /**
  * Compra un upgrade para un perfil específico
  * @param profileId - ID del perfil
  * @param upgradeCode - Código del upgrade (DESTACADO o IMPULSO)
+ * @param generateInvoice - Si es true, genera factura; si es false, activa inmediatamente (solo admin)
  * @returns Promise con la respuesta de la compra
  */
-export const purchaseUpgrade = async (profileId: string, upgradeCode: string): Promise<PurchaseUpgradeResponse> => {
+export const purchaseUpgrade = async (
+  profileId: string,
+  upgradeCode: string,
+  generateInvoice: boolean = true
+): Promise<PurchaseUpgradeResponse> => {
   try {
     const response = await axios.post(`${API_URL}/api/profile/${profileId}/purchase-upgrade`, {
-      code: upgradeCode
+      code: upgradeCode,
+      generateInvoice
     });
+
+    // Si la respuesta incluye datos de WhatsApp, los retornamos
     return {
       success: true,
-      message: 'Upgrade comprado exitosamente',
-      profile: response.data
+      message: response.data.message || 'Upgrade procesado exitosamente',
+      profile: response.data.profile,
+      invoice: response.data.invoice,
+      whatsAppMessage: response.data.whatsAppMessage,
+      paymentRequired: response.data.paymentRequired,
+      status: response.data.status
     };
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'response' in error) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      if (axiosError.response?.data?.message) {
+      const axiosError = error as { response?: { data?: { message?: string, error?: string } } };
+      if (axiosError.response?.data?.message || axiosError.response?.data?.error) {
         return {
           success: false,
-          message: axiosError.response.data.message
+          message: axiosError.response.data.message || axiosError.response.data.error || 'Error al procesar la compra'
         };
       }
     }
