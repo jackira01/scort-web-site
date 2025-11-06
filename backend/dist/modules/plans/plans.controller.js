@@ -405,8 +405,9 @@ class PlansController {
                 });
                 return;
             }
-            const { profileId, planCode, variantDays } = req.body;
-            const result = await plans_service_1.plansService.purchasePlan(profileId, planCode, variantDays);
+            const { profileId, planCode, variantDays, generateInvoice } = req.body;
+            const isAdmin = req.user?.role === 'admin';
+            const result = await plans_service_1.plansService.purchasePlan(profileId, planCode, variantDays, isAdmin, generateInvoice);
             res.status(200).json({
                 success: true,
                 message: 'Plan comprado exitosamente',
@@ -447,7 +448,8 @@ class PlansController {
                 return;
             }
             const planCode = profile.planAssignment.planCode;
-            const result = await plans_service_1.plansService.renewPlan(profileId, planCode, extensionDays);
+            const isAdmin = req.user?.role === 'admin';
+            const result = await plans_service_1.plansService.renewPlan(profileId, planCode, extensionDays, isAdmin);
             res.status(200).json({
                 success: true,
                 message: 'Plan renovado exitosamente',

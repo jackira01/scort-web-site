@@ -37,6 +37,7 @@ exports.upgradePlanController = exports.validatePlanOperationsController = expor
 const service = __importStar(require("./profile.service"));
 const profile_service_1 = require("./profile.service");
 const config_parameter_service_1 = require("../config-parameter/config-parameter.service");
+const upgrade_model_1 = require("../plans/upgrade.model");
 const business_validation_service_1 = require("../validation/business-validation.service");
 const createProfile = async (req, res) => {
     try {
@@ -47,15 +48,23 @@ const createProfile = async (req, res) => {
                 message: 'Los datos del perfil (profileData) son requeridos'
             });
         }
+        let planId = null;
         let planCode = null;
         let planDays = null;
+        let generateInvoice = true;
+        let couponCode = null;
         if (purchasedPlan) {
+            planId = purchasedPlan.planId;
             planCode = purchasedPlan.planCode;
             planDays = purchasedPlan.planDays || purchasedPlan.variantDays;
-            if (!planCode || !planDays) {
+            couponCode = purchasedPlan.couponCode || null;
+            if (purchasedPlan.hasOwnProperty('generateInvoice')) {
+                generateInvoice = purchasedPlan.generateInvoice;
+            }
+            if ((!planId && !planCode) || !planDays) {
                 return res.status(400).json({
                     success: false,
-                    message: 'El plan comprado debe incluir planCode y planDays/variantDays'
+                    message: 'El plan comprado debe incluir planId (o planCode) y planDays/variantDays'
                 });
             }
             const defaultPlanConfig = await config_parameter_service_1.ConfigParameterService.findByKey('system.default_plan');
@@ -68,8 +77,11 @@ const createProfile = async (req, res) => {
         }
         const result = await (0, profile_service_1.createProfileWithInvoice)({
             ...profileData,
+            planId: planId,
             planCode: planCode,
-            planDays: planDays
+            planDays: planDays,
+            generateInvoice: generateInvoice,
+            couponCode: couponCode
         });
         if (!result.profile) {
             throw new Error('Error interno: No se pudo crear el perfil');
@@ -79,13 +91,18 @@ const createProfile = async (req, res) => {
                 success: true,
                 message: 'Perfil creado exitosamente. Se ha generado una factura pendiente.',
                 profile: {
-                    ...result.profile.toObject(),
-                    paymentHistory: result.profile.paymentHistory || []
+                    _id: result.profile._id,
+                    name: result.profile.name
                 },
-                invoice: result.invoice,
+                invoice: {
+                    _id: result.invoice._id,
+                    invoiceNumber: result.invoice.invoiceNumber,
+                    totalAmount: result.invoice.totalAmount,
+                    expiresAt: result.invoice.expiresAt,
+                    status: result.invoice.status
+                },
                 whatsAppMessage: result.whatsAppMessage,
-                paymentRequired: true,
-                expiresAt: result.invoice.expiresAt
+                paymentRequired: true
             });
         }
         else {
@@ -93,8 +110,8 @@ const createProfile = async (req, res) => {
                 success: true,
                 message: 'Perfil creado exitosamente.',
                 profile: {
-                    ...result.profile.toObject(),
-                    paymentHistory: result.profile.paymentHistory || []
+                    _id: result.profile._id,
+                    name: result.profile.name
                 },
                 whatsAppMessage: result.whatsAppMessage,
                 paymentRequired: false
@@ -309,7 +326,8 @@ const getAllProfilesForAdmin = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const fields = req.query.fields;
-        const result = await service.getAllProfilesForAdmin(page, limit, fields);
+        const userId = req.query.userId;
+        const result = await service.getAllProfilesForAdmin(page, limit, fields, userId);
         res.json({
             success: true,
             data: result
@@ -374,7 +392,7 @@ exports.subscribeProfileController = subscribeProfileController;
 const purchaseUpgradeController = async (req, res) => {
     try {
         const { id } = req.params;
-        const { code, orderId } = req.body;
+        const { code, orderId, generateInvoice = true } = req.body;
         if (!code) {
             return res.status(400).json({ error: 'code es requerido' });
         }
@@ -382,9 +400,52 @@ const purchaseUpgradeController = async (req, res) => {
         if (!profile) {
             return res.status(404).json({ error: 'Perfil no encontrado' });
         }
+        const user = req.user;
+        const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+        if (isAdmin && !generateInvoice) {
+            const upgrade = await upgrade_model_1.UpgradeDefinitionModel.findOne({ code });
+            if (!upgrade) {
+                return res.status(404).json({ error: `Upgrade ${code} no encontrado` });
+            }
+            const now = new Date();
+            const endAt = new Date(now.getTime() + (upgrade.durationHours * 60 * 60 * 1000));
+            const existingUpgradeIndex = profile.upgrades.findIndex(u => u.code === code && u.endAt > now);
+            if (existingUpgradeIndex !== -1) {
+                if (upgrade.stackingPolicy === 'extend') {
+                    profile.upgrades[existingUpgradeIndex].endAt = new Date(Math.max(profile.upgrades[existingUpgradeIndex].endAt.getTime(), endAt.getTime()));
+                }
+                else if (upgrade.stackingPolicy === 'replace') {
+                    profile.upgrades[existingUpgradeIndex].endAt = endAt;
+                    profile.upgrades[existingUpgradeIndex].startAt = now;
+                }
+            }
+            else {
+                profile.upgrades.push({
+                    code,
+                    startAt: now,
+                    endAt,
+                    purchaseAt: now
+                });
+            }
+            await profile.save();
+            return res.status(200).json({
+                success: true,
+                message: `Upgrade ${code} activado exitosamente`,
+                profile,
+                paymentRequired: false
+            });
+        }
         await (0, business_validation_service_1.validateUpgradePurchase)(profile.user._id.toString(), id, code, orderId);
-        const updatedProfile = await (0, profile_service_1.purchaseUpgrade)(id, code, profile.user._id.toString());
-        res.status(200).json(updatedProfile);
+        const result = await (0, profile_service_1.purchaseUpgrade)(id, code, profile.user._id.toString());
+        res.status(200).json({
+            profile: result.profile,
+            invoice: result.invoice,
+            upgradeCode: result.upgradeCode,
+            status: result.status,
+            message: result.message,
+            whatsAppMessage: result.whatsAppMessage,
+            paymentRequired: true
+        });
     }
     catch (error) {
         console.error('Error purchasing upgrade:', error);
@@ -505,19 +566,19 @@ const getProfilePlanInfoController = async (req, res) => {
         if (!profile) {
             return res.status(404).json({ error: 'Perfil no encontrado' });
         }
-        const now = new Date();
-        const expiresAt = profile.planAssignment ? new Date(profile.planAssignment.expiresAt) : null;
-        const hasActivePlan = profile.planAssignment && expiresAt && expiresAt > now;
-        if (!hasActivePlan) {
-            return res.status(404).json({ error: 'El perfil no tiene un plan activo' });
+        if (!profile.planAssignment) {
+            return res.status(404).json({ error: 'El perfil no tiene un plan asignado' });
         }
-        const daysRemaining = Math.max(0, Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        const now = new Date();
+        const expiresAt = new Date(profile.planAssignment.expiresAt);
+        const isActive = expiresAt > now;
+        const daysRemaining = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         const planInfo = {
             planCode: profile.planAssignment.planCode,
             variantDays: profile.planAssignment.variantDays,
             startAt: profile.planAssignment.startAt,
             expiresAt: profile.planAssignment.expiresAt,
-            isActive: true,
+            isActive,
             daysRemaining
         };
         res.json(planInfo);

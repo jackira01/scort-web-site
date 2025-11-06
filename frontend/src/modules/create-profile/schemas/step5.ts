@@ -7,6 +7,12 @@ export const step5Schema = z.object({
   }),
   videos: z.array(z.any()).optional(),
   audios: z.array(z.any()).optional(),
+
+  // ✅ AGREGAR ESTOS CAMPOS CRÍTICOS
+  coverImageIndex: z.number().optional().default(0),
+  processedImages: z.array(z.any()).optional(),
+  videoCoverImages: z.record(z.union([z.string(), z.instanceof(File)])).optional(),
+
   acceptTerms: z.boolean().refine((val) => val === true, {
     message: 'Debes aceptar los términos y condiciones',
   }),

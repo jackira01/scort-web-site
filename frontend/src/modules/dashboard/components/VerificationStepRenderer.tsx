@@ -20,13 +20,54 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
     );
   }
 
+  // Si tiene subKey, renderizar solo ese campo específico
+  if (step.subKey) {
+    const documentData = stepData as ProfileVerificationData['data']['steps']['documentPhotos'];
+    const photoUrl = documentData[step.subKey as keyof typeof documentData] as string;
+
+    if (!photoUrl) {
+      return (
+        <div className="mt-4 text-gray-500 text-center">
+          No se ha subido {step.label.toLowerCase()}.
+        </div>
+      );
+    }
+
+    return (
+      <div className="mt-4">
+        <div className="flex justify-center">
+          <div className="relative group max-w-md">
+            <CloudinaryImage
+              src={photoUrl}
+              alt={step.label}
+              width={400}
+              height={300}
+              className="w-full h-auto object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => onPreviewImage(photoUrl)}
+            />
+            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => onPreviewImage(photoUrl)}
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                Ver
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   switch (step.key) {
     case 'documentPhotos': {
       const documentData = stepData as ProfileVerificationData['data']['steps']['documentPhotos'];
       const photos = [
         { key: 'frontPhoto', label: 'Documento (frontal)', url: documentData.frontPhoto },
-        { key: 'backPhoto', label: 'Documento (reverso)', url: documentData.backPhoto },
-        { key: 'selfieWithDocument', label: 'Selfie con documento', url: documentData.selfieWithDocument }
+        { key: 'selfieWithDocument', label: 'Foto con documento al rostro', url: documentData.selfieWithDocument }
       ].filter(photo => photo.url);
 
       if (photos.length === 0) {
@@ -69,46 +110,58 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
       );
     }
 
-    case 'videoVerification': {
-      const currentVideoLink = getCurrentVideoLink('videoVerification');
+    case 'mediaVerification': {
+      const mediaData = stepData as ProfileVerificationData['data']['steps']['mediaVerification'];
+      const currentVideoLink = getCurrentVideoLink('mediaVerification');
 
       return (
         <div className="mt-4 space-y-4">
           {/* Input para editar el videoLink */}
           <div className="space-y-2">
             <label className="text-sm font-medium">
-              Link de Video de Verificación
+              Link de Video o Foto de Verificación con Cartel
             </label>
             <Input
               type="url"
               placeholder="https://..."
               value={currentVideoLink}
-              onChange={(e) => handleVideoLinkChange('videoVerification', e.target.value)}
+              onChange={(e) => handleVideoLinkChange('mediaVerification', e.target.value)}
               className="w-full"
             />
           </div>
 
-          {/* Mostrar el video/link actual si existe */}
-          {currentVideoLink && (
+          {/* Mostrar el video/imagen actual si existe */}
+          {(currentVideoLink || mediaData.mediaLink) && (
             <div>
               {/* Check if it's a video file or external link */}
               {(
-                currentVideoLink.includes('.mp4') ||
-                currentVideoLink.includes('.webm') ||
-                currentVideoLink.includes('.ogg')
+                (currentVideoLink || mediaData.mediaLink || '').includes('.mp4') ||
+                (currentVideoLink || mediaData.mediaLink || '').includes('.webm') ||
+                (currentVideoLink || mediaData.mediaLink || '').includes('.ogg') ||
+                mediaData.mediaType === 'video'
               ) ? (
                 <video
-                  src={currentVideoLink}
+                  src={currentVideoLink || mediaData.mediaLink}
                   controls
-                  className="w-full max-w-md rounded-lg"
+                  className="w-full max-w-md mx-auto rounded-lg shadow-md"
+                  style={{ maxHeight: '300px' }}
                 >
                   Tu navegador no soporta el elemento de video.
                 </video>
+              ) : mediaData.mediaType === 'image' && mediaData.mediaLink ? (
+                <CloudinaryImage
+                  src={mediaData.mediaLink}
+                  alt="Imagen de verificación con cartel"
+                  width={400}
+                  height={300}
+                  className="w-full max-w-md mx-auto rounded-lg shadow-md cursor-pointer"
+                  onClick={() => onPreviewImage(mediaData.mediaLink!)}
+                />
               ) : (
                 <Button
                   variant="outline"
                   onClick={() => {
-                    window.open(currentVideoLink, '_blank');
+                    window.open(currentVideoLink || mediaData.mediaLink!, '_blank');
                   }}
                   className="flex items-center gap-2"
                 >
@@ -118,61 +171,6 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
               )}
             </div>
           )}
-        </div>
-      );
-    }
-
-    case 'mediaVerification': {
-      const mediaData = stepData as ProfileVerificationData['data']['steps']['mediaVerification'];
-      
-      if (!mediaData.mediaLink) {
-        return (
-          <div className="mt-4 text-gray-500 text-center">
-            No hay video o imagen de verificación.
-          </div>
-        );
-      }
-
-      const isVideo = mediaData.mediaType === 'video';
-
-      return (
-        <div className="mt-4">
-          <div className="relative group">
-            {isVideo ? (
-              <video
-                src={mediaData.mediaLink}
-                controls
-                className="w-full max-w-md mx-auto rounded-lg shadow-md"
-                style={{ maxHeight: '300px' }}
-              >
-                Tu navegador no soporta el elemento de video.
-              </video>
-            ) : (
-              <CloudinaryImage
-                src={mediaData.mediaLink}
-                alt="Verificación de identidad"
-                width={300}
-                height={300}
-                className="w-full max-w-md mx-auto rounded-lg shadow-md cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={() => onPreviewImage(mediaData.mediaLink!)}
-              />
-            )}
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPreviewImage(mediaData.mediaLink!)}
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          <div className="mt-2 text-center">
-            <p className="text-sm text-gray-600">
-              {isVideo ? 'Video de verificación' : 'Imagen de verificación'}
-            </p>
-          </div>
         </div>
       );
     }

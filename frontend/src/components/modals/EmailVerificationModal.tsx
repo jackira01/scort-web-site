@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mail, Clock, RefreshCw, Send, CheckCircle } from 'lucide-react';
+import { Mail, Clock, RefreshCw, Send, CheckCircle, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 interface EmailVerificationModalProps {
   isOpen: boolean;
@@ -25,8 +26,50 @@ export default function EmailVerificationModal({
   const [timeLeft, setTimeLeft] = useState(0);
   const [codeSent, setCodeSent] = useState(false);
   const [codeExpiration, setCodeExpiration] = useState<Date | null>(null);
+  const router = useRouter();
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+  // Verificar estado del código activo al abrir el modal
+  useEffect(() => {
+    const checkActiveCode = async () => {
+      if (!isOpen || !userEmail) return;
+
+      try {
+        const response = await fetch(`${API_URL}/api/auth/check-verification-status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email: userEmail }),
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.hasActiveCode) {
+          setCodeSent(true);
+
+          // Calcular el tiempo restante para el cooldown
+          const expiresAt = new Date(result.expiresAt);
+          const now = new Date();
+          const timeDiff = expiresAt.getTime() - now.getTime();
+
+          if (timeDiff > 0) {
+            setCodeExpiration(expiresAt);
+            // Calcular cuánto tiempo falta para que pasen 3 minutos desde que se envió
+            const sentAt = new Date(expiresAt.getTime() - 15 * 60 * 1000); // 15 minutos antes de expirar
+            const cooldownEnd = new Date(sentAt.getTime() + 3 * 60 * 1000); // 3 minutos después de enviar
+            const cooldownRemaining = Math.max(0, Math.floor((cooldownEnd.getTime() - now.getTime()) / 1000));
+            setTimeLeft(cooldownRemaining);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking active code:', error);
+      }
+    };
+
+    checkActiveCode();
+  }, [isOpen, userEmail, API_URL]);
 
   // Timer para el cooldown de reenvío
   useEffect(() => {
@@ -72,7 +115,7 @@ export default function EmailVerificationModal({
       if (result.success) {
         toast.success('Código de verificación enviado a tu email');
         setCodeSent(true);
-        setTimeLeft(60); // Cooldown de 60 segundos
+        setTimeLeft(180); // Cooldown de 180 segundos (3 minutos)
 
         // Establecer expiración del código (15 minutos)
         const expiration = new Date();
@@ -307,6 +350,18 @@ export default function EmailVerificationModal({
                   </div>
                 </>
               )}
+            </div>
+
+            {/* Footer con botón de volver al inicio */}
+            <div className="px-6 pb-6">
+              <Button
+                variant="ghost"
+                onClick={() => router.push('/')}
+                className="w-full text-gray-600 hover:text-gray-900"
+              >
+                <Home className="w-4 h-4 mr-2" />
+                Volver al inicio
+              </Button>
             </div>
           </motion.div>
         </div>

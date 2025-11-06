@@ -491,13 +491,8 @@ export class PlansController {
 
     async renewPlan(req: Request, res: Response): Promise<void> {
         try {
-            console.log('🔍 DEBUG BACKEND - renewPlan controller iniciado');
-            console.log('🔍 DEBUG BACKEND - Request body:', req.body);
-            console.log('🔍 DEBUG BACKEND - User role:', (req as any).user?.role);
-            
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                console.log('🔍 DEBUG BACKEND - Errores de validación:', errors.array());
                 res.status(400).json({
                     success: false,
                     message: 'Errores de validación',
@@ -507,18 +502,12 @@ export class PlansController {
             }
 
             const { profileId, extensionDays } = req.body;
-            console.log('🔍 DEBUG BACKEND - Datos extraídos:', { profileId, extensionDays });
-            
+
             // Obtener el perfil para determinar el plan actual
             const ProfileModel = require('../profile/profile.model').ProfileModel;
             const profile = await ProfileModel.findById(profileId);
-            console.log('🔍 DEBUG BACKEND - Perfil encontrado:', {
-                id: profile?._id,
-                planAssignment: profile?.planAssignment
-            });
-            
+
             if (!profile || !profile.planAssignment) {
-                console.log('🔍 DEBUG BACKEND - Error: Plan no encontrado o inactivo');
                 res.status(400).json({
                     success: false,
                     message: 'Plan no encontrado o inactivo',
@@ -529,15 +518,8 @@ export class PlansController {
 
             const planCode = profile.planAssignment.planCode;
             const isAdmin = (req as any).user?.role === 'admin';
-            console.log('🔍 DEBUG BACKEND - Llamando plansService.renewPlan con:', {
-                profileId,
-                planCode,
-                extensionDays,
-                isAdmin
-            });
-            
+
             const result = await plansService.renewPlan(profileId, planCode, extensionDays, isAdmin);
-            console.log('🔍 DEBUG BACKEND - Resultado del servicio:', result);
 
             res.status(200).json({
                 success: true,
@@ -548,7 +530,6 @@ export class PlansController {
                 }
             });
         } catch (error: any) {
-            console.log('🔍 DEBUG BACKEND - Error en renewPlan:', error);
             res.status(400).json({
                 success: false,
                 message: error.message || 'Error al renovar el plan',

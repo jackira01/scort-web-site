@@ -14,6 +14,7 @@ import {
   getDeletedProfiles
 } from './profile.service';
 import { ConfigParameterService } from '../config-parameter/config-parameter.service';
+import { UpgradeDefinitionModel } from '../plans/upgrade.model';
 import {
   validatePaidPlanAssignment,
   validateUpgradePurchase,
@@ -43,15 +44,22 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
     let planId = null;
     let planCode = null;
     let planDays = null;
-    let generateInvoice = false; // Por defecto no generar factura
+    let generateInvoice = true; // Por defecto SÍ generar factura (para usuarios regulares)
     let couponCode = null; // Código de cupón si existe
 
     if (purchasedPlan) {
       planId = purchasedPlan.planId; // ID del plan (nuevo campo prioritario)
       planCode = purchasedPlan.planCode; // Código del plan (mantener para compatibilidad)
       planDays = purchasedPlan.planDays || purchasedPlan.variantDays;
-      generateInvoice = purchasedPlan.generateInvoice || false; // Campo del frontend
       couponCode = purchasedPlan.couponCode || null; // Extraer código de cupón
+
+      // IMPORTANTE: Solo usar el valor del frontend si es un admin explícitamente
+      // Si purchasedPlan.generateInvoice es undefined, mantener el default (true)
+      // Si purchasedPlan.generateInvoice existe (admin), usar ese valor
+      if (purchasedPlan.hasOwnProperty('generateInvoice')) {
+        generateInvoice = purchasedPlan.generateInvoice;
+      }
+      // Para usuarios regulares, generateInvoice queda en true (default)
 
       // Validar que el plan comprado tenga los datos necesarios (ID o Código)
       if ((!planId && !planCode) || !planDays) {
@@ -102,13 +110,18 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
         success: true,
         message: 'Perfil creado exitosamente. Se ha generado una factura pendiente.',
         profile: {
-          ...result.profile.toObject(),
-          paymentHistory: result.profile.paymentHistory || []
+          _id: result.profile._id,
+          name: result.profile.name
         },
-        invoice: result.invoice,
+        invoice: {
+          _id: result.invoice._id,
+          invoiceNumber: result.invoice.invoiceNumber,
+          totalAmount: result.invoice.totalAmount,
+          expiresAt: result.invoice.expiresAt,
+          status: result.invoice.status
+        },
         whatsAppMessage: result.whatsAppMessage,
-        paymentRequired: true,
-        expiresAt: result.invoice.expiresAt
+        paymentRequired: true
       });
     } else {
       // Perfil creado sin factura (plan gratuito)
@@ -116,8 +129,8 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
         success: true,
         message: 'Perfil creado exitosamente.',
         profile: {
-          ...result.profile.toObject(),
-          paymentHistory: result.profile.paymentHistory || []
+          _id: result.profile._id,
+          name: result.profile.name
         },
         whatsAppMessage: result.whatsAppMessage,
         paymentRequired: false
@@ -466,7 +479,7 @@ export const subscribeProfileController = async (req: AuthRequest, res: Response
 export const purchaseUpgradeController = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { code, orderId } = req.body;
+    const { code, orderId, generateInvoice = true } = req.body;
 
     if (!code) {
       return res.status(400).json({ error: 'code es requerido' });
@@ -478,6 +491,57 @@ export const purchaseUpgradeController = async (req: AuthRequest, res: Response)
       return res.status(404).json({ error: 'Perfil no encontrado' });
     }
 
+    // Verificar si el usuario es admin
+    const user = req.user;
+    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+
+    // Si es admin y no quiere generar factura, activar directamente el upgrade
+    if (isAdmin && !generateInvoice) {
+      // Activar upgrade directamente sin factura (lógica para admin)
+      const upgrade = await UpgradeDefinitionModel.findOne({ code });
+      if (!upgrade) {
+        return res.status(404).json({ error: `Upgrade ${code} no encontrado` });
+      }
+
+      const now = new Date();
+      const endAt = new Date(now.getTime() + (upgrade.durationHours * 60 * 60 * 1000));
+
+      // Agregar upgrade directamente al perfil
+      const existingUpgradeIndex = profile.upgrades.findIndex(
+        u => u.code === code && u.endAt > now
+      );
+
+      if (existingUpgradeIndex !== -1) {
+        // Si ya existe, extender o reemplazar según stackingPolicy
+        if (upgrade.stackingPolicy === 'extend') {
+          profile.upgrades[existingUpgradeIndex].endAt = new Date(
+            Math.max(profile.upgrades[existingUpgradeIndex].endAt.getTime(), endAt.getTime())
+          );
+        } else if (upgrade.stackingPolicy === 'replace') {
+          profile.upgrades[existingUpgradeIndex].endAt = endAt;
+          profile.upgrades[existingUpgradeIndex].startAt = now;
+        }
+      } else {
+        // Agregar nuevo upgrade
+        profile.upgrades.push({
+          code,
+          startAt: now,
+          endAt,
+          purchaseAt: now
+        } as any);
+      }
+
+      await profile.save();
+
+      return res.status(200).json({
+        success: true,
+        message: `Upgrade ${code} activado exitosamente`,
+        profile,
+        paymentRequired: false
+      });
+    }
+
+    // Flujo normal: generar factura
     // Validaciones de negocio
     await validateUpgradePurchase(
       profile.user._id.toString(),
@@ -486,8 +550,18 @@ export const purchaseUpgradeController = async (req: AuthRequest, res: Response)
       orderId
     );
 
-    const updatedProfile = await purchaseUpgrade(id, code, profile.user._id.toString());
-    res.status(200).json(updatedProfile);
+    const result = await purchaseUpgrade(id, code, profile.user._id.toString());
+
+    // Retornar respuesta con datos de WhatsApp si están disponibles
+    res.status(200).json({
+      profile: result.profile,
+      invoice: result.invoice,
+      upgradeCode: result.upgradeCode,
+      status: result.status,
+      message: result.message,
+      whatsAppMessage: result.whatsAppMessage,
+      paymentRequired: true
+    });
   } catch (error: any) {
     console.error('Error purchasing upgrade:', error);
 

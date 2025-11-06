@@ -16,15 +16,16 @@ class EmailVerificationService {
     }
     async sendVerificationCode(email, userName) {
         try {
-            await email_verification_model_1.EmailVerification.deleteOne({ email });
+            const normalizedEmail = email.toLowerCase().trim();
+            await email_verification_model_1.EmailVerification.deleteOne({ email: normalizedEmail });
             const code = this.generateVerificationCode();
             await email_verification_model_1.EmailVerification.create({
-                email,
+                email: normalizedEmail,
                 code,
                 expiresAt: new Date(Date.now() + 15 * 60 * 1000),
                 attempts: 0,
             });
-            await this.emailService.sendEmailVerificationCode(email, code, userName);
+            await this.emailService.sendEmailVerificationCode(normalizedEmail, code, userName);
         }
         catch (error) {
             console.error('Error sending verification code:', error);
@@ -33,16 +34,17 @@ class EmailVerificationService {
     }
     async verifyCode(email, code) {
         try {
-            const verification = await email_verification_model_1.EmailVerification.findOne({ email });
+            const normalizedEmail = email.toLowerCase().trim();
+            const verification = await email_verification_model_1.EmailVerification.findOne({ email: normalizedEmail });
             if (!verification) {
                 throw new Error('No se encontró código de verificación para este email');
             }
             if (verification.expiresAt < new Date()) {
-                await email_verification_model_1.EmailVerification.deleteOne({ email });
+                await email_verification_model_1.EmailVerification.deleteOne({ email: normalizedEmail });
                 throw new Error('El código de verificación ha expirado');
             }
             if (verification.attempts >= 5) {
-                await email_verification_model_1.EmailVerification.deleteOne({ email });
+                await email_verification_model_1.EmailVerification.deleteOne({ email: normalizedEmail });
                 throw new Error('Demasiados intentos fallidos. Solicita un nuevo código');
             }
             verification.attempts += 1;
@@ -50,7 +52,7 @@ class EmailVerificationService {
             if (verification.code !== code) {
                 throw new Error('Código de verificación incorrecto');
             }
-            await email_verification_model_1.EmailVerification.deleteOne({ email });
+            await email_verification_model_1.EmailVerification.deleteOne({ email: normalizedEmail });
             return true;
         }
         catch (error) {
@@ -70,8 +72,9 @@ class EmailVerificationService {
     }
     async hasActiveCode(email) {
         try {
+            const normalizedEmail = email.toLowerCase().trim();
             const verification = await email_verification_model_1.EmailVerification.findOne({
-                email,
+                email: normalizedEmail,
                 expiresAt: { $gt: new Date() }
             });
             return !!verification;
@@ -79,6 +82,25 @@ class EmailVerificationService {
         catch (error) {
             console.error('Error checking active code:', error);
             return false;
+        }
+    }
+    async getActiveCodeInfo(email) {
+        try {
+            const normalizedEmail = email.toLowerCase().trim();
+            const verification = await email_verification_model_1.EmailVerification.findOne({
+                email: normalizedEmail,
+                expiresAt: { $gt: new Date() }
+            });
+            if (verification) {
+                return {
+                    expiresAt: verification.expiresAt
+                };
+            }
+            return null;
+        }
+        catch (error) {
+            console.error('Error getting active code info:', error);
+            return null;
         }
     }
 }

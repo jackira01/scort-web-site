@@ -28,6 +28,9 @@ class CouponController {
                     value: validation.coupon?.value,
                     planCode: validation.coupon?.planCode,
                     applicablePlans: validation.coupon?.applicablePlans,
+                    validPlanIds: validation.coupon?.validPlanIds,
+                    validUpgradeIds: validation.coupon?.validUpgradeIds,
+                    variantDays: validation.coupon?.variantDays,
                     validUntil: validation.coupon?.validUntil,
                     remainingUses: validation.coupon?.maxUses === -1 ? -1 :
                         Math.max(0, (validation.coupon?.maxUses || 0) - (validation.coupon?.currentUses || 0))
@@ -301,48 +304,17 @@ class CouponController {
         }
     }
     async applyCoupon(req, res) {
-        const startTime = Date.now();
-        console.log('🎯 [COUPON CONTROLLER] Iniciando aplicación de cupón:', {
-            body: req.body,
-            headers: {
-                'content-type': req.headers['content-type'],
-                'user-agent': req.headers['user-agent']?.substring(0, 50) + '...',
-                'x-forwarded-for': req.headers['x-forwarded-for'],
-                'origin': req.headers.origin
-            },
-            timestamp: new Date().toISOString()
-        });
         try {
             const { code, originalPrice, planCode, variantDays, upgradeId } = req.body;
-            console.log('📝 [COUPON CONTROLLER] Validando parámetros de entrada:', {
-                code: code || 'NO_CODE',
-                originalPrice,
-                originalPriceType: typeof originalPrice,
-                planCode: planCode || 'NO_PLAN',
-                variantDays: variantDays || 'NO_VARIANT',
-                upgradeId: upgradeId || 'NO_UPGRADE',
-                isValidPrice: typeof originalPrice === 'number' && originalPrice >= 0
-            });
             if (!code || typeof originalPrice !== 'number' || originalPrice < 0) {
-                console.log('❌ [COUPON CONTROLLER] Parámetros inválidos');
                 res.status(400).json({
                     success: false,
                     message: 'Código de cupón y precio original son requeridos'
                 });
                 return;
             }
-            console.log('🔄 [COUPON CONTROLLER] Llamando al servicio de cupones...');
             const result = await coupon_service_1.couponService.applyCoupon(code, originalPrice, planCode, variantDays, upgradeId);
-            console.log('📊 [COUPON CONTROLLER] Resultado del servicio:', {
-                success: result.success,
-                originalPrice: result.originalPrice,
-                finalPrice: result.finalPrice,
-                discount: result.discount,
-                planCode: result.planCode,
-                error: result.error
-            });
             if (!result.success) {
-                console.log('⚠️ [COUPON CONTROLLER] Aplicación de cupón falló:', result.error);
                 let userMessage = result.error;
                 if (result.error === 'El cupón no puede aplicarse a planes gratuitos') {
                     userMessage = 'Los cupones no pueden aplicarse a planes gratuitos';
@@ -367,12 +339,6 @@ class CouponController {
                 discountPercentage: result.originalPrice > 0 ? Math.round((result.discount / result.originalPrice) * 100) : 0,
                 planCode: result.planCode
             };
-            const duration = Date.now() - startTime;
-            console.log('✅ [COUPON CONTROLLER] Aplicación exitosa:', {
-                responseData,
-                duration: `${duration}ms`,
-                savings: result.originalPrice - result.finalPrice
-            });
             res.json({
                 success: true,
                 message: 'Cupón aplicado exitosamente',
@@ -380,13 +346,6 @@ class CouponController {
             });
         }
         catch (error) {
-            const duration = Date.now() - startTime;
-            console.log('💥 [COUPON CONTROLLER] Error en aplicación de cupón:', {
-                error: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-                duration: `${duration}ms`,
-                body: req.body
-            });
             logger_1.logger.error('Error en applyCoupon:', error);
             res.status(500).json({
                 success: false,

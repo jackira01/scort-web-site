@@ -14,8 +14,8 @@ export const calculateVerificationProgress = (
   const totalSteps = 3; // Siempre 3 pasos en la versión simplificada
 
   // 1. Fotos de documentos - Solo cuenta si está verificado
-  if ((verification.steps?.documentPhotos?.frontPhoto || 
-       verification.steps?.documentPhotos?.backPhoto) &&
+  if ((verification.steps?.documentPhotos?.frontPhoto ||
+    verification.steps?.documentPhotos?.selfieWithDocument) &&
     verification.steps?.documentPhotos?.isVerified === true) {
     completedSteps++;
   }

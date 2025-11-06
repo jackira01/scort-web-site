@@ -7,7 +7,18 @@ const createAttributeGroup = async (data) => {
 };
 exports.createAttributeGroup = createAttributeGroup;
 const getAttributeGroups = async () => {
-    return await attribute_group_model_1.AttributeGroupModel.find();
+    const groups = await attribute_group_model_1.AttributeGroupModel.find();
+    return groups.map(group => {
+        const groupObj = group.toObject();
+        if (groupObj.variants && Array.isArray(groupObj.variants)) {
+            groupObj.variants.sort((a, b) => {
+                const labelA = a.label?.toLowerCase() || '';
+                const labelB = b.label?.toLowerCase() || '';
+                return labelA.localeCompare(labelB, 'es', { sensitivity: 'base' });
+            });
+        }
+        return groupObj;
+    });
 };
 exports.getAttributeGroups = getAttributeGroups;
 const getAttributeGroupByKey = async (key) => {

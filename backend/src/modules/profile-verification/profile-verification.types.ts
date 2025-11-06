@@ -137,11 +137,11 @@ export interface UpdateVerificationStatusDTO {
 export interface UpdateVerificationStepsDTO {
   documentPhotos?: {
     frontPhoto?: string;
-    backPhoto?: string;
+    selfieWithDocument?: string; // Foto con documento al lado del rostro
     isVerified?: boolean;
   };
   mediaVerification?: {
-    mediaLink?: string;
+    mediaLink?: string; // Video o foto de verificación con cartel
     mediaType?: 'video' | 'image';
     isVerified?: boolean;
   };

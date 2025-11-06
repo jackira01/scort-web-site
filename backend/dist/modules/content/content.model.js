@@ -48,11 +48,18 @@ const ContentBlockSchema = new mongoose_1.Schema({
         validate: {
             validator: function (value) {
                 if (this.type === content_types_1.ContentBlockType.LIST) {
-                    return Array.isArray(value) && value.length > 0;
+                    return Array.isArray(value) && value.length > 0 &&
+                        value.every((item) => typeof item === 'string');
+                }
+                if (this.type === content_types_1.ContentBlockType.FAQ) {
+                    return Array.isArray(value) && value.length > 0 &&
+                        value.every((item) => typeof item === 'object' &&
+                            typeof item.question === 'string' &&
+                            typeof item.answer === 'string');
                 }
                 return typeof value === 'string' && value.trim().length > 0;
             },
-            message: 'El valor debe ser un string no vacío para párrafos/imágenes/links o un array no vacío para listas'
+            message: 'El valor debe ser un string no vacío para párrafos/imágenes/links, un array de strings para listas, o un array de objetos {question, answer} para FAQ'
         }
     },
     order: {
@@ -141,7 +148,15 @@ ContentPageSchema.methods.validateStructure = function () {
             return section.blocks.some(block => {
                 if (block.type === content_types_1.ContentBlockType.LIST) {
                     return !Array.isArray(block.value) || block.value.length === 0 ||
-                        block.value.some(item => typeof item !== 'string' || item.trim().length === 0);
+                        block.value.some((item) => typeof item !== 'string' || item.trim().length === 0);
+                }
+                else if (block.type === content_types_1.ContentBlockType.FAQ) {
+                    return !Array.isArray(block.value) || block.value.length === 0 ||
+                        block.value.some((item) => typeof item !== 'object' ||
+                            typeof item.question !== 'string' ||
+                            item.question.trim().length === 0 ||
+                            typeof item.answer !== 'string' ||
+                            item.answer.trim().length === 0);
                 }
                 else {
                     return typeof block.value !== 'string' || block.value.trim().length === 0;

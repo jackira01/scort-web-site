@@ -36,11 +36,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserProfiles = exports.setPasswordAfterGoogleRegisterController = exports.updateUserLastLogin = exports.getUsers = exports.updateUser = exports.uploadUserDocumentController = exports.authGoogleUserController = exports.verifyUserController = exports.requestPasswordResetController = exports.loginUserController = exports.registerUserController = exports.getUserById = exports.resetPasswordController = exports.verifyPasswordResetCodeController = exports.CreateUserController = void 0;
+exports.deleteUserController = exports.getUserProfiles = exports.setPasswordAfterGoogleRegisterController = exports.updateUserLastLogin = exports.getUsers = exports.updateUser = exports.uploadUserDocumentController = exports.authGoogleUserController = exports.verifyUserController = exports.requestPasswordResetController = exports.loginUserController = exports.registerUserController = exports.getUserById = exports.resetPasswordController = exports.verifyPasswordResetCodeController = exports.CreateUserController = void 0;
 const User_model_1 = __importDefault(require("./User.model"));
 const userService = __importStar(require("./user.service"));
 const welcome_email_util_1 = require("../../utils/welcome-email.util");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const email_service_1 = __importDefault(require("../../services/email.service"));
 const CreateUserController = async (req, res) => {
     try {
         const user = await userService.createUser(req.body);
@@ -221,7 +222,8 @@ const registerUserController = async (req, res) => {
                 message: 'Email y contraseña son requeridos'
             });
         }
-        const existingUser = await userService.findUserByEmail(email);
+        const normalizedEmail = email.toLowerCase().trim();
+        const existingUser = await userService.findUserByEmail(normalizedEmail);
         if (existingUser) {
             return res.status(409).json({
                 success: false,
@@ -231,8 +233,8 @@ const registerUserController = async (req, res) => {
         const saltRounds = 12;
         const hashedPassword = await bcryptjs_1.default.hash(password, saltRounds);
         const user = await userService.createUser({
-            email,
-            name: name || email.split('@')[0],
+            email: normalizedEmail,
+            name: name || normalizedEmail.split('@')[0],
             password: hashedPassword,
             providers: ['credentials'],
             hasPassword: true,
@@ -277,7 +279,8 @@ const loginUserController = async (req, res) => {
                 message: 'Email y contraseña son requeridos'
             });
         }
-        const user = await userService.findUserByEmail(email);
+        const normalizedEmail = email.toLowerCase().trim();
+        const user = await userService.findUserByEmail(normalizedEmail);
         if (!user) {
             return res.status(401).json({
                 success: false,
@@ -412,11 +415,12 @@ const authGoogleUserController = async (req, res) => {
     const { email, name } = req.body;
     if (!email)
         return res.status(400).json({ message: 'Email requerido' });
-    let user = await userService.findUserByEmail(email);
+    const normalizedEmail = email.toLowerCase().trim();
+    let user = await userService.findUserByEmail(normalizedEmail);
     let isNewUser = false;
     if (!user) {
         user = await userService.createUser({
-            email,
+            email: normalizedEmail,
             name,
             providers: ['google'],
             hasPassword: false,
@@ -499,6 +503,15 @@ const updateUser = async (req, res) => {
                 success: false,
                 message: 'Usuario no encontrado'
             });
+        }
+        if (updateData.verification_in_progress === true && updateData.verificationDocument) {
+            try {
+                const emailService = new email_service_1.default();
+                await emailService.sendUserVerificationUpdateNotification(user.name || 'Usuario', user.email, user._id?.toString() || '');
+            }
+            catch (emailError) {
+                console.error('Error al enviar notificación de verificación:', emailError);
+            }
         }
         res.json({
             success: true,
@@ -641,3 +654,37 @@ const getUserProfiles = async (req, res) => {
     res.json(profiles);
 };
 exports.getUserProfiles = getUserProfiles;
+const deleteUserController = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de usuario requerido'
+            });
+        }
+        const currentUser = req.user;
+        if (!currentUser || currentUser.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'No tienes permisos para realizar esta acción'
+            });
+        }
+        if (currentUser.id === userId || currentUser._id === userId) {
+            return res.status(400).json({
+                success: false,
+                message: 'No puedes eliminar tu propia cuenta de administrador'
+            });
+        }
+        const result = await userService.deleteUserCompletely(userId);
+        res.json(result);
+    }
+    catch (error) {
+        console.error('❌ Error al eliminar usuario:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Error al eliminar el usuario'
+        });
+    }
+};
+exports.deleteUserController = deleteUserController;

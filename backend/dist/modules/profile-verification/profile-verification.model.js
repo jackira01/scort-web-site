@@ -55,7 +55,7 @@ const ProfileVerificationSchema = new mongoose_1.Schema({
     steps: {
         documentPhotos: {
             frontPhoto: { type: String, default: undefined },
-            backPhoto: { type: String, default: undefined },
+            selfieWithDocument: { type: String, default: undefined },
             isVerified: { type: Boolean, default: false },
         },
         mediaVerification: {

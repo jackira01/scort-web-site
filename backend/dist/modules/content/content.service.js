@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ContentService = void 0;
 const content_model_1 = require("./content.model");
+const content_types_1 = require("./content.types");
 const mongoose_1 = __importDefault(require("mongoose"));
 class ContentService {
     static async getAllPages(page = 1, limit = 10, isActive, search) {
@@ -177,11 +178,23 @@ class ContentService {
                 existingPage.sections = data.sections.map(section => ({
                     title: section.title ?? '',
                     order: section.order ?? 0,
-                    blocks: section.blocks?.map(block => ({
-                        type: block.type,
-                        value: block.value ?? '',
-                        order: block.order ?? 0
-                    })) ?? []
+                    blocks: section.blocks?.map(block => {
+                        let value;
+                        if (block.type === content_types_1.ContentBlockType.LIST) {
+                            value = (block.value ?? []);
+                        }
+                        else if (block.type === content_types_1.ContentBlockType.FAQ) {
+                            value = (block.value ?? []);
+                        }
+                        else {
+                            value = (block.value ?? '');
+                        }
+                        return {
+                            type: block.type,
+                            value,
+                            order: block.order ?? 0
+                        };
+                    }) ?? []
                 }));
             }
             if (data.isActive !== undefined)

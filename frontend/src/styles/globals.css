@@ -223,3 +223,24 @@
     min-height: 2.8em;
   }
 }
+
+@keyframes content-pulse {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pulse-content {
+  animation: content-pulse 6s ease-in-out infinite;
+}
+
+.group:hover .pulse-content {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}

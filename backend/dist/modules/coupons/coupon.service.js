@@ -230,9 +230,8 @@ class CouponService {
             if (!coupon) {
                 throw new AppError_1.AppError('Cupón no encontrado', 404);
             }
-            coupon.isActive = false;
-            await coupon.save();
-            logger_1.logger.info(`Cupón eliminado (soft delete): ${coupon.code}`);
+            await coupon_model_1.default.findByIdAndDelete(id);
+            logger_1.logger.info(`Cupón eliminado permanentemente: ${coupon.code}`);
             return true;
         }
         catch (error) {

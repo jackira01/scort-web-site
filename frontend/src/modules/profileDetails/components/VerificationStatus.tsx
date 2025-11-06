@@ -182,8 +182,8 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
               {step.label === "Consistencia en datos de contacto" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified
-                    ? "El usuario mantiene estabilidad en su información de contacto sin cambios frecuentes, lo que indica confiabilidad."
-                    : "Se han detectado cambios recientes en los datos de contacto del usuario, lo que puede afectar la confiabilidad."}
+                    ? "El perfil mantiene estabilidad en su información de contacto sin cambios frecuentes, lo que indica confiabilidad."
+                    : "Se han detectado cambios recientes en los datos de contacto del perfil, lo que puede afectar la confiabilidad."}
                 </p>
               )}
               {step.label === "Verificación por redes sociales" && (

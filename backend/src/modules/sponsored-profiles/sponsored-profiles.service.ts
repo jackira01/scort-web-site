@@ -1,5 +1,6 @@
 import { ProfileModel } from '../profile/profile.model';
 import { PlanDefinitionModel } from '../plans/plan.model';
+import { AttributeGroupModel as AttributeGroup } from '../attribute-group/attribute-group.model';
 import type { IProfile } from '../profile/profile.types';
 
 export interface SponsoredProfilesQuery {
@@ -8,6 +9,22 @@ export interface SponsoredProfilesQuery {
   sortBy?: 'createdAt' | 'updatedAt' | 'name' | 'lastShownAt';
   sortOrder?: 'asc' | 'desc';
   fields?: string[];
+  // Filtros adicionales para compatibilidad con filtros de perfiles principales
+  category?: string;
+  location?: {
+    department?: string;
+    city?: string;
+  };
+  features?: Record<string, string | string[]>;
+  priceRange?: {
+    min?: number;
+    max?: number;
+  };
+  verification?: {
+    identityVerified?: boolean;
+    hasVideo?: boolean;
+    documentVerified?: boolean;
+  };
 }
 
 export interface SponsoredProfilesResponse {
@@ -28,6 +45,7 @@ export interface SponsoredProfilesResponse {
  * - No eliminado (isDeleted: false)
  * - Plan con showInSponsored: true
  * - Plan no expirado
+ * - Filtros adicionales opcionales (categoría, ubicación, características, etc.)
  */
 export const getSponsoredProfiles = async (
   query: SponsoredProfilesQuery = {}
@@ -39,7 +57,12 @@ export const getSponsoredProfiles = async (
       limit = 20,
       sortBy = 'lastShownAt',
       sortOrder = 'asc',
-      fields = []
+      fields = [],
+      category,
+      location,
+      features = {},
+      priceRange,
+      verification
     } = query;
 
     // Validar parámetros
@@ -48,13 +71,128 @@ export const getSponsoredProfiles = async (
     const skip = (pageNum - 1) * limitNum;
 
     // Construir filtros base para perfiles válidos
-    const baseFilters = {
+    const baseFilters: any = {
       isActive: true,
       visible: true,
       isDeleted: false,
       'planAssignment.expiresAt': { $gt: new Date() }, // Plan no expirado
       'planAssignment.planId': { $exists: true, $ne: null } // Debe tener plan asignado
     };
+
+    // Aplicar filtro de categoría
+    if (category) {
+      const categoryFeatures = await AttributeGroup.find({
+        key: 'category'
+      });
+
+      if (categoryFeatures.length > 0) {
+        const categoryGroupId = categoryFeatures[0]._id;
+        const normalizedCategory = category.toLowerCase().trim();
+
+        baseFilters['features'] = {
+          $elemMatch: {
+            group_id: categoryGroupId,
+            'value.key': normalizedCategory
+          }
+        };
+      }
+    }
+
+    // Aplicar filtros de ubicación
+    if (location?.department) {
+      baseFilters['location.department.value'] = location.department;
+    }
+    if (location?.city) {
+      baseFilters['location.city.value'] = location.city;
+    }
+
+    // Aplicar filtros de características adicionales
+    const featureConditions: any[] = [];
+    const otherFeatures = Object.entries(features).filter(([key]) => key !== 'ageRange');
+
+    if (otherFeatures.length > 0) {
+      const groupKeys = otherFeatures.map(([key]) => key);
+      const attributeGroups = await AttributeGroup.find({
+        key: { $in: groupKeys }
+      });
+
+      const groupKeyToId = new Map();
+      attributeGroups.forEach((group) => {
+        groupKeyToId.set(group.key, group._id);
+      });
+
+      for (const [groupKey, value] of otherFeatures) {
+        const groupId = groupKeyToId.get(groupKey);
+        if (!groupId) continue;
+
+        if (Array.isArray(value)) {
+          const normalizedValues = value.map((v) => v.toLowerCase().trim());
+          featureConditions.push({
+            features: {
+              $elemMatch: {
+                group_id: groupId,
+                'value.key': { $in: normalizedValues }
+              }
+            }
+          });
+        } else {
+          const normalizedValue = (value as string).toLowerCase().trim();
+          featureConditions.push({
+            features: {
+              $elemMatch: {
+                group_id: groupId,
+                'value.key': normalizedValue
+              }
+            }
+          });
+        }
+      }
+    }
+
+    // Aplicar filtro de rango de edad si existe
+    if (features.ageRange) {
+      const ageGroupData = await AttributeGroup.findOne({ key: 'age' });
+      if (ageGroupData) {
+        featureConditions.push({
+          features: {
+            $elemMatch: {
+              group_id: ageGroupData._id,
+              'value.key': { $in: Array.isArray(features.ageRange) ? features.ageRange : [features.ageRange] }
+            }
+          }
+        });
+      }
+    }
+
+    // Aplicar condiciones de features si existen
+    if (featureConditions.length > 0) {
+      baseFilters.$and = featureConditions;
+    }
+
+    // Aplicar filtros de verificación
+    if (verification?.identityVerified) {
+      baseFilters['verification.verificationStatus'] = 'verified';
+    }
+    if (verification?.hasVideo) {
+      baseFilters['media.videos'] = { $exists: true, $ne: [] };
+    }
+    if (verification?.documentVerified) {
+      baseFilters['verification.identity.status'] = 'verified';
+    }
+
+    // Aplicar filtro de rango de precios
+    if (priceRange) {
+      const priceConditions: any = {};
+      if (priceRange.min !== undefined) {
+        priceConditions.$gte = priceRange.min;
+      }
+      if (priceRange.max !== undefined) {
+        priceConditions.$lte = priceRange.max;
+      }
+      if (Object.keys(priceConditions).length > 0) {
+        baseFilters['rates.hourly'] = priceConditions;
+      }
+    }
 
     const sponsoredPlans = await PlanDefinitionModel.find({
       'features.showInSponsored': true,

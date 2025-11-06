@@ -109,20 +109,16 @@ export const purchasePlan = async (request: PlanPurchaseRequest) => {
  */
 export const renewPlan = async (request: PlanRenewalRequest) => {
   try {
-    console.log('🔍 DEBUG SERVICIO - renewPlan llamado con:', request);
-    
+
     // Validar que el perfil tenga información de plan
     const planInfo = await getProfilePlanInfo(request.profileId);
-    console.log('🔍 DEBUG SERVICIO - planInfo obtenida:', planInfo);
 
     if (!planInfo) {
       throw new Error('El perfil no tiene información de plan para renovar');
     }
 
     // Permitir renovación tanto de planes activos como expirados
-    console.log('🔍 DEBUG SERVICIO - Enviando request al backend:', request);
     const response = await axiosInstance.post('/api/plans/renew', request);
-    console.log('🔍 DEBUG SERVICIO - Respuesta del backend:', response.data);
 
     return response.data;
   } catch (error: unknown) {
@@ -240,7 +236,7 @@ export const getAvailablePlans = async () => {
 export const getAvailableUpgrades = async () => {
   try {
     const response = await axiosInstance.get('/api/plans/upgrades');
-    
+
     // Validar estructura de respuesta
     if (!response.data || typeof response.data !== 'object') {
       throw new Error('Respuesta del backend inválida: no es un objeto');

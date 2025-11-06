@@ -9,12 +9,11 @@ export interface ProfileVerificationData {
     steps: {
       documentPhotos: {
         frontPhoto?: string;
-        backPhoto?: string;
-        selfieWithDocument?: string;
+        selfieWithDocument?: string; // Foto con documento al lado del rostro
         isVerified: boolean;
       };
       mediaVerification: {
-        mediaLink?: string;
+        mediaLink?: string; // Video o foto de verificación con cartel
         mediaType?: 'video' | 'image';
         isVerified: boolean;
       };
@@ -30,10 +29,11 @@ export interface ProfileVerificationData {
 }
 
 export interface VerificationStep {
-  key: keyof ProfileVerificationData['data']['steps'];
+  key: keyof ProfileVerificationData['data']['steps'] | string; // Permitir strings para sub-keys
   label: string;
   icon: ReactNode;
   description: string;
+  subKey?: string; // Para acceder a propiedades anidadas
 }
 
 export interface AdminProfileVerificationCarouselProps {

@@ -1,8 +1,9 @@
 "use client"
 
-import { signIn, signOut } from "next-auth/react"
+import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "../ui/button"
+import { broadcastLogout } from "@/hooks/use-auth-sync"
 
 export default function Login() {
   const router = useRouter();
@@ -20,9 +21,18 @@ export default function Login() {
 }
 
 export function SignOut() {
+  const handleSignOut = async () => {
+    try {
+      // Usar broadcastLogout que notifica a todas las pestañas
+      await broadcastLogout("/");
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
+
   return (
     <Button
-      onClick={() => signOut({ callbackUrl: "/" })}
+      onClick={handleSignOut}
       variant="ghost"
       className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
     >
@@ -30,3 +40,13 @@ export function SignOut() {
     </Button>
   )
 }
+
+// Versión del manejador para usar directamente en DropdownMenuItem
+export const handleSignOut = async () => {
+  try {
+    // Usar broadcastLogout que notifica a todas las pestañas
+    await broadcastLogout("/");
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+  }
+};

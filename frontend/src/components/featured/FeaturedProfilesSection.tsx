@@ -6,15 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ProfileCard } from '@/modules/catalogs/components/ProfileCard';
 import { useFeaturedSponsoredProfiles } from '@/hooks/use-sponsored-profiles';
+import type { SponsoredProfilesQuery } from '@/services/sponsored-profiles.service';
 
 interface FeaturedProfilesSectionProps {
   className?: string;
+  filters?: Partial<SponsoredProfilesQuery>;
 }
 
-export default function FeaturedProfilesSection({ className = '' }: FeaturedProfilesSectionProps) {
+export default function FeaturedProfilesSection({ className = '', filters }: FeaturedProfilesSectionProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Usar el hook personalizado para perfiles patrocinados
+  // Usar el hook personalizado para perfiles patrocinados con filtros
   const {
     profiles: featuredProfiles,
     isLoading,
@@ -22,7 +24,7 @@ export default function FeaturedProfilesSection({ className = '' }: FeaturedProf
     error,
     isFetching,
     prefetchNextPage,
-  } = useFeaturedSponsoredProfiles(1, 10);
+  } = useFeaturedSponsoredProfiles(1, 10, filters);
 
   // Número de perfiles visibles según el tamaño de pantalla
   const getVisibleCount = () => {

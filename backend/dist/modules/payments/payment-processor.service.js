@@ -11,7 +11,6 @@ const upgrade_model_1 = require("../plans/upgrade.model");
 class PaymentProcessorService {
     static async processInvoicePayment(invoiceId) {
         try {
-            console.log(`🔄 Procesando pago de factura ${invoiceId}`);
             const invoice = await invoice_model_1.default.findById(invoiceId);
             if (!invoice) {
                 throw new Error('Factura no encontrada');
@@ -23,7 +22,6 @@ class PaymentProcessorService {
             if (!profile) {
                 throw new Error('Perfil no encontrado');
             }
-            console.log(`📋 Procesando items de factura para perfil ${profile._id}`);
             for (const item of invoice.items) {
                 if (item.type === 'plan') {
                     await this.processPlanPayment(profile, item);
@@ -35,7 +33,6 @@ class PaymentProcessorService {
             profile.isActive = true;
             profile.visible = true;
             await profile.save();
-            console.log(`✅ Perfil ${profile._id} activado y visible después del pago`);
             return {
                 success: true,
                 profile,
@@ -77,7 +74,6 @@ class PaymentProcessorService {
                         purchaseAt: now
                     };
                     profile.upgrades.push(newUpgrade);
-                    console.log(`🎁 Upgrade incluido agregado: ${upgradeCode}`);
                 }
             }
         }
@@ -102,13 +98,11 @@ class PaymentProcessorService {
                 if (existingUpgradeIndex !== -1) {
                     const existingUpgrade = profile.upgrades[existingUpgradeIndex];
                     existingUpgrade.endAt = new Date(existingUpgrade.endAt.getTime() + (upgrade.durationHours * 60 * 60 * 1000));
-                    console.log(`🔄 Upgrade ${upgradeItem.code} extendido hasta ${existingUpgrade.endAt}`);
                     return;
                 }
                 break;
             case 'reject':
                 if (existingUpgradeIndex !== -1) {
-                    console.log(`⚠️ Upgrade ${upgradeItem.code} ya activo, rechazando duplicado`);
                     return;
                 }
                 break;
@@ -120,7 +114,6 @@ class PaymentProcessorService {
             purchaseAt: now
         };
         profile.upgrades.push(newUpgrade);
-        console.log(`✅ Upgrade ${upgradeItem.code} aplicado al perfil ${profile._id}`);
     }
     static async processInvoiceCancellation(invoiceId) {
         try {

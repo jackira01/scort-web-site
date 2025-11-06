@@ -3,6 +3,7 @@ import UserModel from './User.model';
 import * as userService from './user.service';
 import { sendWelcomeEmail } from '../../utils/welcome-email.util';
 import bcrypt from 'bcryptjs';
+import EmailService from '../../services/email.service';
 
 export const CreateUserController = async (req: Request, res: Response) => {
   try {
@@ -233,8 +234,11 @@ export const registerUserController = async (req: Request, res: Response) => {
       });
     }
 
+    // Normalizar email a minúsculas
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Verificar si el usuario ya existe
-    const existingUser = await userService.findUserByEmail(email);
+    const existingUser = await userService.findUserByEmail(normalizedEmail);
     if (existingUser) {
       return res.status(409).json({
         success: false,
@@ -248,8 +252,8 @@ export const registerUserController = async (req: Request, res: Response) => {
 
     // Crear el usuario
     const user = await userService.createUser({
-      email,
-      name: name || email.split('@')[0], // Usar parte del email si no hay nombre
+      email: normalizedEmail,
+      name: name || normalizedEmail.split('@')[0], // Usar parte del email si no hay nombre
       password: hashedPassword,
       providers: ['credentials'],
       hasPassword: true,
@@ -300,8 +304,11 @@ export const loginUserController = async (req: Request, res: Response) => {
       });
     }
 
+    // Normalizar email a minúsculas
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Buscar usuario por email
-    const user = await userService.findUserByEmail(email);
+    const user = await userService.findUserByEmail(normalizedEmail);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -464,13 +471,16 @@ export const authGoogleUserController = async (req: Request, res: Response) => {
 
   if (!email) return res.status(400).json({ message: 'Email requerido' });
 
+  // Normalizar email a minúsculas
+  const normalizedEmail = email.toLowerCase().trim();
+
   // Buscar usuario por email
-  let user = await userService.findUserByEmail(email);
+  let user = await userService.findUserByEmail(normalizedEmail);
   let isNewUser = false;
 
   if (!user) {
     user = await userService.createUser({
-      email,
+      email: normalizedEmail,
       name,
       providers: ['google'],
       hasPassword: false,
@@ -573,6 +583,22 @@ export const updateUser = async (req: Request, res: Response) => {
         success: false,
         message: 'Usuario no encontrado'
       });
+    }
+
+    // Si se actualizaron documentos de verificación, enviar notificación por email
+    if (updateData.verification_in_progress === true && updateData.verificationDocument) {
+      try {
+        const emailService = new EmailService();
+        await emailService.sendUserVerificationUpdateNotification(
+          user.name || 'Usuario',
+          user.email,
+          user._id?.toString() || ''
+        );
+        // Email de notificación enviado exitosamente
+      } catch (emailError) {
+        // Error al enviar email de notificación, pero no fallar la actualización
+        console.error('Error al enviar notificación de verificación:', emailError);
+      }
     }
 
     // Usuario actualizado exitosamente

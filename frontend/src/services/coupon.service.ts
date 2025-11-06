@@ -212,14 +212,7 @@ class CouponService {
     planCode?: string,
     variantDays?: number
   ): Promise<CouponApplicationResult> {
-    console.log('🌐 [FRONTEND COUPON SERVICE] Iniciando aplicación de cupón:', {
-      code,
-      originalPrice,
-      planCode,
-      variantDays,
-      timestamp: new Date().toISOString(),
-      apiUrl: `${this.baseUrl}/apply`
-    });
+
 
     try {
       const requestBody = {
@@ -229,30 +222,11 @@ class CouponService {
         variantDays
       };
 
-      console.log('📤 [FRONTEND COUPON SERVICE] Enviando petición:', {
-        method: 'POST',
-        url: `${this.baseUrl}/apply`,
-        body: requestBody,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
       const response = await axios.post<CouponResponse>(
         `${this.baseUrl}/apply`,
         requestBody
       );
-
-      console.log('📥 [FRONTEND COUPON SERVICE] Respuesta recibida:', {
-        status: response.status,
-        statusText: response.statusText,
-        success: response.data.success,
-        data: response.data.data,
-        message: response.data.message
-      });
-
       if (!response.data.success) {
-        console.log('⚠️ [FRONTEND COUPON SERVICE] Aplicación falló:', response.data.message);
         return {
           success: false,
           originalPrice,
@@ -279,11 +253,6 @@ class CouponService {
         planCode: data.planCode
       };
 
-      console.log('✅ [FRONTEND COUPON SERVICE] Aplicación exitosa:', {
-        result,
-        savings: data.originalPrice - data.finalPrice,
-        discountAmount: data.discount
-      });
 
       return result;
     } catch (error: unknown) {
@@ -291,13 +260,6 @@ class CouponService {
       if (error instanceof Error) {
         errorMessage = error.message;
       }
-
-      console.log('💥 [FRONTEND COUPON SERVICE] Error en aplicación:', {
-        error: errorMessage,
-        code,
-        originalPrice,
-        planCode
-      });
 
       return {
         success: false,

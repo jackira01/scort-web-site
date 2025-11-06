@@ -52,7 +52,6 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
 
     // Filtros de características - ya vienen como objeto
     if (features) {
-      console.log('🔍 DEBUG Controller - Features received:', JSON.stringify(features, null, 2));
       filters.features = features;
     }
 
@@ -124,8 +123,6 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
         message: 'sortOrder debe ser "asc" o "desc"'
       });
     }
-
-    console.log('🔍 DEBUG Controller - Final filters object:', JSON.stringify(filters, null, 2));
 
     // Obtener perfiles filtrados
     const result = await service.getFilteredProfiles(filters);

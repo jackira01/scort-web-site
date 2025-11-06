@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import SignIn, { SignOut } from '../authentication/sign-in';
+import SignIn, { SignOut, handleSignOut } from '../authentication/sign-in';
 import Image from 'next/image';
 
 const HeaderComponent = () => {
@@ -56,7 +56,7 @@ const HeaderComponent = () => {
   return (
     <header className={`bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-b sticky top-0 z-50 transition-all duration-500 ease-in-out ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
       }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto md:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-4 lg:space-x-8">
             <div className="flex-shrink-0">
@@ -107,7 +107,7 @@ const HeaderComponent = () => {
                 FAQ
               </Button>
             </Link>
-            <Link href="/terms">
+            <Link href="terminos">
               <Button
                 variant="ghost"
                 className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
@@ -152,11 +152,9 @@ const HeaderComponent = () => {
                           Mi cuenta
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <div className="flex items-center w-full">
-                          <LogOut className="h-4 w-4 mr-2" />
-                          <SignOut />
-                        </div>
+                      <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Cerrar sesión
                       </DropdownMenuItem>
                     </>
                   )}
@@ -222,7 +220,7 @@ const HeaderComponent = () => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/terms" className="flex items-center w-full" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/terminos" className="flex items-center w-full" onClick={() => setMobileMenuOpen(false)}>
                     Términos
                   </Link>
                 </DropdownMenuItem>
@@ -248,7 +246,7 @@ const HeaderComponent = () => {
                 <DropdownMenuContent align="start" className="w-48">
                   {isAdmin && (
                     <DropdownMenuItem asChild>
-                      <Link href="/adminboard" className="flex items-center">
+                      <Link href="/adminboard" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
                         <Shield className="h-4 w-4 mr-2" />
                         Panel de administrador
                       </Link>
@@ -257,16 +255,20 @@ const HeaderComponent = () => {
                   {status === 'authenticated' && (
                     <>
                       <DropdownMenuItem asChild>
-                        <Link href="/cuenta" className="flex items-center">
+                        <Link href="/cuenta" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
                           <UserRound className="h-4 w-4 mr-2" />
                           Mi cuenta
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <div className="flex items-center w-full">
-                          <LogOut className="h-4 w-4 mr-2" />
-                          <SignOut />
-                        </div>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          handleSignOut();
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Cerrar sesión
                       </DropdownMenuItem>
                     </>
                   )}

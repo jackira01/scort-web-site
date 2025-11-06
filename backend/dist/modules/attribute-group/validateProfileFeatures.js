@@ -9,9 +9,12 @@ const validateProfileFeatures = async (features) => {
             throw new Error(`El grupo de atributo con ID "${feature.group_id}" no existe.`);
         }
         for (const val of feature.value) {
-            const isValidVariant = group.variants.some((variant) => variant.value === val.toLowerCase().trim() && variant.active);
+            const valueToValidate = typeof val === 'object' && val !== null && 'key' in val
+                ? val.key
+                : val;
+            const isValidVariant = group.variants.some((variant) => variant.value === valueToValidate.toLowerCase().trim() && variant.active);
             if (!isValidVariant) {
-                throw new Error(`El valor "${val}" no es válido o está inactivo para el grupo "${group.name}".`);
+                throw new Error(`El valor "${valueToValidate}" no es válido o está inactivo para el grupo "${group.name}".`);
             }
         }
     }

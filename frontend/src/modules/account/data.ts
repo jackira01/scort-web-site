@@ -16,7 +16,7 @@ export const sidebarItems = [
   {
     id: 'grupos-atributos',
     label: 'Configuración',
-    icon: Tags,
+    icon: Settings,
     description: 'Gestiona la configuración de tu cuenta, datos personales y preferencias del perfil',
   },
   {

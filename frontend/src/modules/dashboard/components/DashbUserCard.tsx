@@ -54,27 +54,28 @@ export const DashboardUserCard = ({
             </div>
 
             <div className="flex-1 space-y-2">
-              <div className="flex items-center justify-between">
+              {/* Contenedor del título y el badge uno debajo del otro */}
+              <div>
                 <h3 className="font-semibold text-lg text-foreground group-hover:text-purple-600 transition-colors duration-300">
                   {user.name}
                 </h3>
 
+                {/* Badge debajo del nombre */}
                 <Badge
                   variant={user.isVerified ? 'default' : 'secondary'}
-                  className={
-                    user.isVerified
+                  className={`mt-1 ${user.isVerified
                       ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
                       : ''
-                  }
+                    }`}
                 >
                   {user.isVerified ? 'Verificado' : 'No verificado'}
                 </Badge>
               </div>
 
-
-
+              {/* Otros elementos debajo */}
               <div className="flex items-center space-x-4 text-sm"></div>
             </div>
+
           </div>
 
           <Separator className="my-4" />

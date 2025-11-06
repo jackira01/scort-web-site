@@ -1,6 +1,6 @@
 'use client';
 
-import { DollarSign, Plus, Trash2 } from 'lucide-react';
+import { DollarSign, Edit2, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +30,7 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
     delivery: false,
   });
   const [showValidationError, setShowValidationError] = useState(false);
+  const [editingRateId, setEditingRateId] = useState<string | null>(null);
 
   const formatPrice = (price: number): string => {
     return new Intl.NumberFormat('es-CO', {
@@ -89,14 +90,31 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
     );
     const priceValue = parseInt(newRate.price.replace(/[^\d]/g, ''));
 
-    const rate: Rate = {
-      id: Date.now().toString(),
-      time: timeForBackend,
-      price: priceValue,
-      delivery: newRate.delivery,
-    };
+    if (editingRateId) {
+      // Modo edición: actualizar tarifa existente
+      const updatedRates = rates.map((rate) =>
+        rate.id === editingRateId
+          ? {
+            ...rate,
+            time: timeForBackend,
+            price: priceValue,
+            delivery: newRate.delivery,
+          }
+          : rate
+      );
+      onChange(updatedRates);
+      setEditingRateId(null);
+    } else {
+      // Modo agregar: crear nueva tarifa
+      const rate: Rate = {
+        id: Date.now().toString(),
+        time: timeForBackend,
+        price: priceValue,
+        delivery: newRate.delivery,
+      };
+      onChange([...rates, rate]);
+    }
 
-    onChange([...rates, rate]);
     setNewRate({
       days: '',
       hours: '',
@@ -109,6 +127,31 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
 
   const removeRate = (id: string) => {
     onChange(rates.filter((rate) => rate.id !== id));
+  };
+
+  const editRate = (rate: Rate) => {
+    const { days, hours, minutes } = parseTimeFromBackend(rate.time);
+    setNewRate({
+      days,
+      hours,
+      minutes,
+      price: rate.price.toString(),
+      delivery: rate.delivery,
+    });
+    setEditingRateId(rate.id);
+    setShowValidationError(false);
+  };
+
+  const cancelEdit = () => {
+    setEditingRateId(null);
+    setNewRate({
+      days: '',
+      hours: '',
+      minutes: '',
+      price: '',
+      delivery: false,
+    });
+    setShowValidationError(false);
   };
 
   const getDisplayTime = (timeStr: string) => {
@@ -146,7 +189,10 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
             {rates.map((rate) => (
               <div
                 key={rate.id}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 border border-border rounded-lg bg-muted/50"
+                className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 border rounded-lg ${editingRateId === rate.id
+                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
+                    : 'border-border bg-muted/50'
+                  }`}
               >
                 <div className="flex-1">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
@@ -164,14 +210,27 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
                   </div>
                 </div>
 
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => removeRate(rate.id)}
-                  className="self-end sm:self-center h-8 w-8 p-0"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2 self-end sm:self-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => editRate(rate)}
+                    className="h-8 w-8 p-0 border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/20"
+                    title="Editar tarifa"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => removeRate(rate.id)}
+                    className="h-8 w-8 p-0"
+                    title="Eliminar tarifa"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ))}
 
@@ -180,9 +239,21 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
 
         {/* Formulario para agregar nueva tarifa */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-foreground">
-            Agregar nueva tarifa
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium text-foreground">
+              {editingRateId ? '✏️ Editando tarifa' : 'Agregar nueva tarifa'}
+            </h3>
+            {editingRateId && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={cancelEdit}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Cancelar edición
+              </Button>
+            )}
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <div className='flex flex-col min-w-[80px] w-full sm:w-auto'>
@@ -306,11 +377,22 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
 
           <Button
             onClick={addRate}
-
-            className="w-full bg-green-600 hover:bg-green-700 text-white"
+            className={`w-full ${editingRateId
+                ? 'bg-purple-600 hover:bg-purple-700'
+                : 'bg-green-600 hover:bg-green-700'
+              } text-white`}
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Agregar tarifa
+            {editingRateId ? (
+              <>
+                <Edit2 className="h-4 w-4 mr-2" />
+                Actualizar tarifa
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar tarifa
+              </>
+            )}
           </Button>
         </div>
 

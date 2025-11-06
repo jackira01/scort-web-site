@@ -66,14 +66,13 @@ export const getFilteredProfiles = async (
     }
 
     // Filtro por categoría (se maneja como feature)
-    // DEBUG - Category filter
     if (category) {
+
       // Agregar la categoría a las features para procesarla junto con las demás
       if (!features) {
         features = {};
       }
       features.category = category;
-      // DEBUG - Features after adding category
     }
 
     // Filtro por ubicación
@@ -211,9 +210,6 @@ export const getFilteredProfiles = async (
       const featureConditions: any[] = [];
 
       // Manejo especial para ageRange
-      // Reemplaza esta sección en tu código:
-
-      // Manejo especial para ageRange
       if (features.ageRange && typeof features.ageRange === 'object') {
         const { min, max } = features.ageRange as { min?: number; max?: number };
 
@@ -255,9 +251,11 @@ export const getFilteredProfiles = async (
       if (Object.keys(otherFeatures).length > 0) {
         // Primero necesitamos obtener los IDs de los grupos por sus keys
         const groupKeys = Object.keys(otherFeatures);
+
         const attributeGroups = await AttributeGroup.find({
           key: { $in: groupKeys },
         });
+
         const groupKeyToId = new Map();
         attributeGroups.forEach((group) => {
           groupKeyToId.set(group.key, group._id);
@@ -265,6 +263,7 @@ export const getFilteredProfiles = async (
 
         for (const [groupKey, value] of Object.entries(otherFeatures)) {
           const groupId = groupKeyToId.get(groupKey);
+
           if (!groupId) {
             console.warn('⚠️ WARNING - No groupId found for feature key:', groupKey);
             continue;
@@ -273,26 +272,30 @@ export const getFilteredProfiles = async (
           if (Array.isArray(value)) {
             // Si es un array, buscar cualquiera de los valores (normalizados)
             const normalizedValues = value.map((v) => v.toLowerCase().trim());
+
             const condition = {
               features: {
                 $elemMatch: {
                   group_id: groupId,
-                  value: { $in: normalizedValues },
+                  'value.key': { $in: normalizedValues },
                 },
               },
             };
+
             featureConditions.push(condition);
           } else {
             // Si es un valor único (normalizado) - buscar en el array de valores del perfil
             const normalizedValue = (value as string).toLowerCase().trim();
+
             const condition = {
               features: {
                 $elemMatch: {
                   group_id: groupId,
-                  value: { $in: [normalizedValue] },
+                  'value.key': normalizedValue,
                 },
               },
             };
+
             featureConditions.push(condition);
           }
         }
@@ -392,8 +395,26 @@ export const getFilteredProfiles = async (
 
     const startTime = Date.now();
 
-    // Debug: Log para verificar la query
-    // DEBUG getFilteredProfiles - Query inicial
+    // 🔍 DEBUG: Obtener muestra de perfiles ANTES de aplicar filtros (para comparación)
+    if (filters.category) {
+      const sampleProfiles = await Profile.find({
+        visible: true,
+        isDeleted: { $ne: true }
+      })
+        .select('_id name category features visible isActive')
+        .limit(10)
+        .lean();
+
+      sampleProfiles.forEach((profile, index) => {
+
+        if (profile.features && profile.features.length > 0) {
+          const categoryFeatures = profile.features.filter((f: any) => {
+            // Buscar features que podrían ser categoría
+            return f.value && typeof f.value === 'string';
+          });
+        }
+      });
+    }
 
     // Usar agregación para obtener todos los perfiles con información de usuario
     const aggregationPipeline: any[] = [
@@ -503,10 +524,26 @@ export const getFilteredProfiles = async (
       ])
     ]);
 
-    // DEBUG getFilteredProfiles - Perfiles encontrados y total count result
-
     const totalCount = totalCountResult[0]?.total || 0;
+    if (allProfiles.length > 0) {
+      allProfiles.forEach((profile, index) => {
 
+        // Mostrar features si existen
+        if (profile.features && profile.features.length > 0) {
+          profile.features.slice(0, 3).forEach((feature: any) => {
+          });
+          if (profile.features.length > 3) {
+          }
+        }
+
+        // Si se filtró por categoría, verificar si coincide
+        if (filters.category) {
+          const categoryMatch = profile.features?.some((f: any) =>
+            f.value?.toLowerCase() === filters.category?.toLowerCase()
+          );
+        }
+      });
+    }
     // Ordenar perfiles usando el motor de visibilidad (nivel -> score -> lastShownAt -> createdAt)
     const sortedProfiles = await sortProfiles(allProfiles as any, now);
 
@@ -586,8 +623,6 @@ export const getFilteredProfiles = async (
 
     // Guardar resultado en caché (5 minutos para consultas de filtros)
     await cacheService.set(cacheKey, result, CACHE_TTL.MEDIUM);
-    logger.info(`Resultado guardado en caché: ${cacheKey}`);
-
     return result;
   } catch (error) {
     // Error in getFilteredProfiles

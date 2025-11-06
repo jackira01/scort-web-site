@@ -43,7 +43,7 @@ const upgrade_model_1 = require("../plans/upgrade.model");
 const coupon_service_1 = require("../coupons/coupon.service");
 class InvoiceService {
     async generateInvoice(data) {
-        const { profileId, userId, planCode, planDays, upgradeCodes = [], couponCode, notes } = data;
+        const { profileId, userId, planId, planCode, planDays, upgradeCodes = [], couponCode, notes } = data;
         if (!mongoose_1.default.Types.ObjectId.isValid(profileId)) {
             throw new Error('ID de perfil inválido');
         }
@@ -53,11 +53,19 @@ class InvoiceService {
         const items = [];
         let totalAmount = 0;
         let planDetails = '';
-        if (planCode && planDays) {
-            const plan = await plan_model_1.PlanDefinitionModel.findByCode(planCode);
-            if (!plan) {
-                throw new Error(`Plan con código ${planCode} no encontrado`);
+        let resolvedPlanId;
+        if ((planId || planCode) && planDays) {
+            let plan;
+            if (planId) {
+                plan = await plan_model_1.PlanDefinitionModel.findById(planId);
             }
+            if (!plan && planCode) {
+                plan = await plan_model_1.PlanDefinitionModel.findByCode(planCode);
+            }
+            if (!plan) {
+                throw new Error(`Plan con ${planId ? `ID ${planId}` : `código ${planCode}`} no encontrado`);
+            }
+            resolvedPlanId = plan._id.toString();
             const variant = plan.variants.find((v) => v.days === planDays);
             if (!variant) {
                 throw new Error(`Variante de ${planDays} días no encontrada para el plan ${planCode}`);
@@ -80,7 +88,7 @@ class InvoiceService {
                 if (!upgrade) {
                     throw new Error(`Upgrade con código ${upgradeCode} no encontrado`);
                 }
-                const upgradePrice = 0;
+                const upgradePrice = upgrade.price || 0;
                 const upgradeItem = {
                     type: 'upgrade',
                     code: upgradeCode,
@@ -98,7 +106,7 @@ class InvoiceService {
         let finalAmount = totalAmount;
         let couponInfo = undefined;
         if (couponCode) {
-            const couponResult = await coupon_service_1.couponService.applyCoupon(couponCode, totalAmount, planCode);
+            const couponResult = await coupon_service_1.couponService.applyCoupon(couponCode, totalAmount, resolvedPlanId);
             if (couponResult.success) {
                 finalAmount = couponResult.finalPrice;
                 if (couponResult.planCode && couponResult.planCode !== planCode) {
@@ -186,6 +194,15 @@ class InvoiceService {
                 query._id = { $regex: new RegExp(filters._id, 'i') };
             }
         }
+        if (filters.invoiceNumber) {
+            const invoiceNumberValue = parseInt(filters.invoiceNumber);
+            if (!isNaN(invoiceNumberValue)) {
+                query.invoiceNumber = invoiceNumberValue;
+            }
+            else {
+                query.invoiceNumber = { $regex: new RegExp(filters.invoiceNumber, 'i') };
+            }
+        }
         if (filters.profileId) {
             if (!mongoose_1.default.Types.ObjectId.isValid(filters.profileId)) {
                 throw new Error('ID de perfil inválido');
@@ -203,13 +220,13 @@ class InvoiceService {
         }
         if (filters.fromDate || filters.toDate) {
             query.createdAt = {};
-            if (filters.fromDate) {
+            if (filters.fromDate)
                 query.createdAt.$gte = filters.fromDate;
-            }
-            if (filters.toDate) {
+            if (filters.toDate)
                 query.createdAt.$lte = filters.toDate;
-            }
         }
+        const now = new Date();
+        await invoice_model_1.default.updateMany({ status: 'pending', expiresAt: { $lte: now } }, { $set: { status: 'expired' } });
         const skip = (page - 1) * limit;
         const total = await invoice_model_1.default.countDocuments(query);
         const invoices = await invoice_model_1.default.find(query)

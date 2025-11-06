@@ -58,15 +58,42 @@ export default function AccountVerificationModal({
 
     const handleSubmitVerification = () => {
         toast.loading('Subiendo imagenes...');
-        if (uploadedFiles.image1 && uploadedFiles.image2 && uploadedFiles.image3) {
+
+        // Recopilar solo los archivos que se han subido
+        const filesToUpload = [
+            uploadedFiles.image1,
+            uploadedFiles.image2,
+            uploadedFiles.image3,
+        ].filter((file): file is File => file !== null);
+
+        if (filesToUpload.length > 0) {
             setLoading(true);
-            uploadMultipleImages([uploadedFiles.image1, uploadedFiles.image2, uploadedFiles.image3])
+            uploadMultipleImages(filesToUpload)
                 .then((urls) => {
                     const filteredUrls = urls.filter(
                         (url): url is string => url !== null,
                     );
+
+                    // Combinar URLs existentes con las nuevas
+                    const existingUrls = user?.verificationDocument || [];
+
+                    // Crear array con las URLs actualizadas
+                    // Si hay nuevos archivos, reemplazar en las posiciones correspondientes
+                    const updatedUrls = [...existingUrls];
+                    let urlIndex = 0;
+
+                    if (uploadedFiles.image1) {
+                        updatedUrls[0] = filteredUrls[urlIndex++];
+                    }
+                    if (uploadedFiles.image2) {
+                        updatedUrls[1] = filteredUrls[urlIndex++];
+                    }
+                    if (uploadedFiles.image3) {
+                        updatedUrls[2] = filteredUrls[urlIndex++];
+                    }
+
                     const data: Partial<User> = {
-                        verificationDocument: filteredUrls,
+                        verificationDocument: updatedUrls.filter(url => url), // Filtrar valores vacíos
                         verification_in_progress: true,
                     };
                     updateUserMutation({
@@ -88,7 +115,8 @@ export default function AccountVerificationModal({
         }
     };
 
-    const canSubmit = uploadedFiles.image1 && uploadedFiles.image2 && uploadedFiles.image3;
+    // Permitir envío si hay al menos un archivo nuevo subido
+    const canSubmit = uploadedFiles.image1 || uploadedFiles.image2 || uploadedFiles.image3;
 
     const handleClose = () => {
         setShowUploadForm(false);
@@ -137,7 +165,8 @@ export default function AccountVerificationModal({
                                 </CardContent>
                             </Card>
 
-                            <div className="space-y-2">
+                            {/* No mostrar botón de actualizar documentos cuando está verificado */}
+                            {/* <div className="space-y-2">
                                 <Button
                                     onClick={() => setShowUploadForm(true)}
                                     variant="outline"
@@ -146,21 +175,12 @@ export default function AccountVerificationModal({
                                     <FileText className="h-4 w-4 mr-2" />
                                     Actualizar Documentos
                                 </Button>
-
-                                <Button
-                                    onClick={handleClose}
-                                    variant="outline"
-                                    className="w-full justify-start"
-                                >
-                                    <Settings className="h-4 w-4 mr-2" />
-                                    Ver Estado de Verificación
-                                </Button>
-                            </div>
+                            </div> */}
                         </div>
 
                         <div className="text-center">
                             <p className="text-xs text-muted-foreground">
-                                Si necesitas actualizar tu información de verificación, puedes subir nuevos documentos.
+                                Tu cuenta está completamente verificada. Si necesitas actualizar tu información, contacta al soporte.
                             </p>
                         </div>
                     </div>
@@ -169,7 +189,7 @@ export default function AccountVerificationModal({
         );
     }
 
-    if (verification_in_progress) {
+    if (verification_in_progress && !showUploadForm) {
         return (
             <Dialog open={isOpen} onOpenChange={handleClose}>
                 <DialogContent className="max-w-md">
@@ -188,13 +208,27 @@ export default function AccountVerificationModal({
                             24-48 horas. Le notificaremos por email una vez que la
                             verificación esté completa.
                         </p>
-                        <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 mb-6">
                             <p className="text-sm text-blue-700 dark:text-blue-300">
                                 <strong>Tiempo estimado:</strong> 24-48 horas
                                 <br />
                                 <strong>Estado:</strong> En revisión
                             </p>
                         </div>
+
+                        {/* Botón para actualizar documentos */}
+                        <Button
+                            onClick={() => setShowUploadForm(true)}
+                            variant="outline"
+                            className="w-full justify-center"
+                        >
+                            <FileText className="h-4 w-4 mr-2" />
+                            Actualizar Documentos
+                        </Button>
+
+                        <p className="text-xs text-muted-foreground mt-4">
+                            Si necesitas actualizar tu información de verificación, puedes subir nuevos documentos.
+                        </p>
                     </div>
                 </DialogContent>
             </Dialog>
@@ -219,12 +253,39 @@ export default function AccountVerificationModal({
 
                     <div className="space-y-6">
                         <div className="grid grid-cols-1 gap-6">
-                            {/* Imagen 1 */}
+
+                            {/* Imagen 1: Documento de Identidad (Frente) */}
                             <div className="space-y-3">
                                 <Label className="text-foreground font-medium">
                                     Documento de Identidad (Frente)
                                 </Label>
-                                <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-6 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer">
+
+                                {/* Imagen de referencia */}
+                                <div className="mb-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200">
+                                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                                        📋 Ejemplo de referencia:
+                                    </p>
+                                    <div className="flex justify-center">
+                                        <img
+                                            src="/images/documento frontal.png"
+                                            alt="Ejemplo de documento frontal"
+                                            className="max-w-full h-auto max-h-48 rounded-lg border border-gray-200 dark:border-gray-700"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-blue-700 dark:text-blue-300 mt-2 text-center">
+                                        Foto clara del frente del documento de identidad
+                                    </p>
+                                </div>
+
+                                {/* Área de carga */}
+                                <div
+                                    className={`relative border-2 border-dashed rounded-lg text-center transition-colors duration-200 
+        ${uploadedFiles.image1
+                                            ? 'border-green-300 bg-green-50/30 dark:bg-green-950/10'
+                                            : 'hover:border-purple-500 border-muted-foreground/30'
+                                        } cursor-pointer`}
+                                >
+                                    {/* ✅ Input invisible que cubre todo el área */}
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -232,91 +293,174 @@ export default function AccountVerificationModal({
                                             const file = e.target.files?.[0];
                                             if (file) handleFileUpload('image1', file);
                                         }}
-                                        className="hidden"
                                         id="image1-upload"
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                     />
-                                    <label htmlFor="image1-upload" className="cursor-pointer">
+
+                                    {/* Contenido visible */}
+                                    <div className="p-8 flex flex-col items-center justify-center pointer-events-none">
                                         {uploadedFiles.image1 ? (
-                                            <div className="space-y-2">
-                                                <CheckCircle className="h-8 w-8 mx-auto text-green-500" />
+                                            <>
+                                                <CheckCircle className="h-10 w-10 text-green-500 mb-2" />
                                                 <p className="text-sm text-foreground font-medium">
                                                     {uploadedFiles.image1.name}
                                                 </p>
-                                                <p className="text-xs text-green-600">
+                                                <p className="text-xs text-green-600 mt-1">
                                                     Archivo cargado correctamente
                                                 </p>
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                <Camera className="h-8 w-8 mx-auto text-muted-foreground" />
-                                                <p className="text-sm text-muted-foreground">
-                                                    Subir Imagen 1
+                                            </>
+                                        ) : user?.verificationDocument?.[0] ? (
+                                            <>
+                                                <div className="mb-3">
+                                                    <img
+                                                        src={user.verificationDocument[0]}
+                                                        alt="Documento actual"
+                                                        className="max-w-full h-auto max-h-32 rounded-lg border border-gray-300 dark:border-gray-600"
+                                                    />
+                                                </div>
+                                                <CheckCircle className="h-8 w-8 text-blue-500 mb-2" />
+                                                <p className="text-sm text-foreground font-medium">
+                                                    Documento actual subido
                                                 </p>
-                                                <p className="text-xs text-muted-foreground">
+                                                <p className="text-xs text-blue-600 mt-1">
+                                                    Clic para cambiar
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Camera className="h-10 w-10 text-muted-foreground mb-2" />
+                                                <p className="text-sm text-muted-foreground">
+                                                    Subir documento (frente)
+                                                </p>
+                                                <p className="text-xs text-muted-foreground mt-1">
                                                     JPG, PNG hasta 10MB
                                                 </p>
-                                            </div>
+                                            </>
                                         )}
-                                    </label>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Imagen 2 */}
+                            {/* Imagen 2: Video o Foto de Verificación con Cartel */}
                             <div className="space-y-3">
                                 <Label className="text-foreground font-medium">
-                                    Documento de Identidad (Reverso)
+                                    Video o Foto de Verificación con Cartel
                                 </Label>
-                                <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-6 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer">
+
+                                {/* Imagen de referencia */}
+                                <div className="mb-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200">
+                                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                                        📋 Ejemplo de referencia:
+                                    </p>
+                                    <div className="flex justify-center">
+                                        <img
+                                            src="/images/perfil con cartel.png"
+                                            alt="Ejemplo de foto con cartel"
+                                            className="max-w-full h-auto max-h-48 rounded-lg border border-blue-300"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-blue-600 dark:text-blue-300 mt-2 text-center">
+                                        La persona debe sostener un cartel con su nombre y la fecha
+                                    </p>
+                                </div>
+
+                                {/* Área de carga */}
+                                <div
+                                    className={`relative border-2 border-dashed rounded-lg text-center transition-colors duration-200 
+        ${uploadedFiles.image2
+                                            ? 'border-green-300 bg-green-50/30 dark:bg-green-950/10'
+                                            : user?.verificationDocument?.[1]
+                                                ? 'border-blue-300 bg-blue-50/30 dark:bg-blue-950/10'
+                                                : 'hover:border-purple-500 border-muted-foreground/30'
+                                        } cursor-pointer`}
+                                >
                                     <input
                                         type="file"
-                                        accept="image/*"
+                                        accept="image/*,video/*"
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             if (file) handleFileUpload('image2', file);
                                         }}
-                                        className="hidden"
                                         id="image2-upload"
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                     />
-                                    <label htmlFor="image2-upload" className="cursor-pointer">
+
+                                    <div className="p-8 flex flex-col items-center justify-center pointer-events-none">
                                         {uploadedFiles.image2 ? (
-                                            <div className="space-y-2">
-                                                <CheckCircle className="h-8 w-8 mx-auto text-green-500" />
+                                            <>
+                                                <CheckCircle className="h-10 w-10 text-green-500 mb-2" />
                                                 <p className="text-sm text-foreground font-medium">
                                                     {uploadedFiles.image2.name}
                                                 </p>
-                                                <p className="text-xs text-green-600">
+                                                <p className="text-xs text-green-600 mt-1">
                                                     Archivo cargado correctamente
                                                 </p>
-                                            </div>
+                                            </>
+                                        ) : user?.verificationDocument?.[1] ? (
+                                            <>
+                                                <div className="mb-3">
+                                                    <img
+                                                        src={user.verificationDocument[1]}
+                                                        alt="Documento actual"
+                                                        className="max-w-full h-auto max-h-32 rounded-lg border border-gray-300 dark:border-gray-600"
+                                                    />
+                                                </div>
+                                                <CheckCircle className="h-8 w-8 text-blue-500 mb-2" />
+                                                <p className="text-sm text-foreground font-medium">
+                                                    Documento actual subido
+                                                </p>
+                                                <p className="text-xs text-blue-600 mt-1">
+                                                    Clic para cambiar
+                                                </p>
+                                            </>
                                         ) : (
-                                            <div className="space-y-2">
-                                                <Camera className="h-8 w-8 mx-auto text-muted-foreground" />
+                                            <>
+                                                <Camera className="h-10 w-10 text-muted-foreground mb-2" />
                                                 <p className="text-sm text-muted-foreground">
-                                                    Subir Imagen 2
+                                                    Subir video o foto con cartel
                                                 </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    JPG, PNG hasta 10MB
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    JPG, PNG, MP4, MOV hasta 50MB
                                                 </p>
-                                            </div>
+                                            </>
                                         )}
-                                    </label>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Imagen 3 */}
+                            {/* Imagen 3: Foto con Documento al Lado del Rostro */}
                             <div className="space-y-3">
                                 <Label className="text-foreground font-medium">
-                                    Foto de rostro con documento y cartel
+                                    Foto con Documento al Lado del Rostro
                                 </Label>
-                                <div className="bg-yellow-50 dark:bg-yellow-950/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800 mb-3">
-                                    <div className="flex items-start space-x-2">
-                                        <Info className="h-4 w-4 text-yellow-600 flex-shrink-0 mt-0.5" />
-                                        <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                                            Foto de rostro con documento y cartel con el nombre del perfil y fecha de la solicitud de inscripción registrada en el sistema (el mismo documento de la foto de solo documento).
-                                        </p>
+
+                                {/* Imagen de referencia */}
+                                <div className="mb-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200">
+                                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                                        📋 Ejemplo de referencia:
+                                    </p>
+                                    <div className="flex justify-center">
+                                        <img
+                                            src="/images/document guide.png"
+                                            alt="Ejemplo de rostro con documento"
+                                            className="max-w-full h-auto max-h-48 rounded-lg border border-blue-300"
+                                        />
                                     </div>
+                                    <p className="text-xs text-blue-600 dark:text-blue-300 mt-2 text-center">
+                                        Sostén tu documento al lado de tu rostro (mismo documento de la foto frontal)
+                                    </p>
                                 </div>
-                                <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-6 text-center hover:border-purple-500 transition-colors duration-200 cursor-pointer">
+
+                                {/* Área de carga */}
+                                <div
+                                    className={`relative border-2 border-dashed rounded-lg text-center transition-colors duration-200 
+        ${uploadedFiles.image3
+                                            ? 'border-green-300 bg-green-50/30 dark:bg-green-950/10'
+                                            : user?.verificationDocument?.[2]
+                                                ? 'border-blue-300 bg-blue-50/30 dark:bg-blue-950/10'
+                                                : 'hover:border-purple-500 border-muted-foreground/30'
+                                        } cursor-pointer`}
+                                >
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -324,36 +468,55 @@ export default function AccountVerificationModal({
                                             const file = e.target.files?.[0];
                                             if (file) handleFileUpload('image3', file);
                                         }}
-                                        className="hidden"
                                         id="image3-upload"
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                     />
-                                    <label htmlFor="image3-upload" className="cursor-pointer">
+
+                                    <div className="p-8 flex flex-col items-center justify-center pointer-events-none">
                                         {uploadedFiles.image3 ? (
-                                            <div className="space-y-2">
-                                                <CheckCircle className="h-8 w-8 mx-auto text-green-500" />
+                                            <>
+                                                <CheckCircle className="h-10 w-10 text-green-500 mb-2" />
                                                 <p className="text-sm text-foreground font-medium">
                                                     {uploadedFiles.image3.name}
                                                 </p>
-                                                <p className="text-xs text-green-600">
+                                                <p className="text-xs text-green-600 mt-1">
                                                     Archivo cargado correctamente
                                                 </p>
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                <Camera className="h-8 w-8 mx-auto text-muted-foreground" />
-                                                <p className="text-sm text-muted-foreground">
-                                                    Subir Imagen 3
+                                            </>
+                                        ) : user?.verificationDocument?.[2] ? (
+                                            <>
+                                                <div className="mb-3">
+                                                    <img
+                                                        src={user.verificationDocument[2]}
+                                                        alt="Documento actual"
+                                                        className="max-w-full h-auto max-h-32 rounded-lg border border-gray-300 dark:border-gray-600"
+                                                    />
+                                                </div>
+                                                <CheckCircle className="h-8 w-8 text-blue-500 mb-2" />
+                                                <p className="text-sm text-foreground font-medium">
+                                                    Documento actual subido
                                                 </p>
-                                                <p className="text-xs text-muted-foreground">
+                                                <p className="text-xs text-blue-600 mt-1">
+                                                    Clic para cambiar
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Camera className="h-10 w-10 text-muted-foreground mb-2" />
+                                                <p className="text-sm text-muted-foreground">
+                                                    Subir foto con documento
+                                                </p>
+                                                <p className="text-xs text-muted-foreground mt-1">
                                                     JPG, PNG hasta 10MB
                                                 </p>
-                                            </div>
+                                            </>
                                         )}
-                                    </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
+                        {/* Requisitos importantes */}
                         <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                             <div className="flex items-start space-x-3">
                                 <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -362,9 +525,10 @@ export default function AccountVerificationModal({
                                         Requisitos importantes:
                                     </h4>
                                     <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                                        <li>• Las imágenes deben ser claras y legibles</li>
+                                        <li>• Las imágenes/videos deben ser claras y legibles</li>
                                         <li>• Documento de identidad válido y vigente</li>
-                                        <li>• La foto con rostro debe incluir el documento y un cartel con nombre del perfil y fecha</li>
+                                        <li>• El video/foto de verificación debe incluir un cartel con tu nombre y fecha</li>
+                                        <li>• La foto con documento debe mostrar claramente tu rostro y el documento</li>
                                         <li>• No se aceptan capturas de pantalla</li>
                                         <li>• El proceso de verificación toma 24-48 horas</li>
                                     </ul>
@@ -372,6 +536,7 @@ export default function AccountVerificationModal({
                             </div>
                         </div>
 
+                        {/* Botones */}
                         <div className="flex space-x-4 pt-4">
                             <Button
                                 variant="outline"
@@ -384,14 +549,15 @@ export default function AccountVerificationModal({
                                 onClick={handleSubmitVerification}
                                 disabled={!canSubmit || loading}
                                 className={`flex-1 transition-all duration-200 ${canSubmit
-                                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105'
-                                        : 'bg-muted text-muted-foreground cursor-not-allowed'
+                                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105'
+                                    : 'bg-muted text-muted-foreground cursor-not-allowed'
                                     }`}
                             >
                                 Enviar a Verificación
                             </Button>
                         </div>
                     </div>
+
                 </DialogContent>
             </Dialog>
         );

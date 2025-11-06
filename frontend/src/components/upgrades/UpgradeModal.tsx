@@ -57,6 +57,7 @@ export default function UpgradeModal({
   upgradeCode
 }: UpgradeModalProps) {
   const [adminOverride, setAdminOverride] = useState(false);
+  const [generateInvoice, setGenerateInvoice] = useState(true);
   const { mutate: purchaseUpgrade, isPending: isPurchasing } = useUpgradePurchase();
   const { validateUpgrade } = useUpgradeValidation();
   const { data: user } = useUser();
@@ -65,7 +66,7 @@ export default function UpgradeModal({
   const IconComponent = upgrade.icon;
 
   const validation = validateUpgrade(profile, upgradeCode);
-  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+  const isAdmin = user?.role === 'admin';
   const canPurchase = validation.canPurchase || (isAdmin && adminOverride);
 
   const handlePurchase = () => {
@@ -74,17 +75,30 @@ export default function UpgradeModal({
       return;
     }
 
+    // Si es admin y NO genera factura, activar directamente
+    const shouldGenerateInvoice = isAdmin ? generateInvoice : true;
+
     purchaseUpgrade(
-      { profileId, upgradeCode },
+      { profileId, upgradeCode, generateInvoice: shouldGenerateInvoice },
       {
-        onSuccess: () => {
-          toast.success(`${upgrade.name} activado correctamente`);
-          onClose();
-          // Recargar para mostrar cambios
-          setTimeout(() => window.location.reload(), 1000);
+        onSuccess: (data) => {
+          // Si requiere pago y hay datos de WhatsApp, redirigir
+          if (data.paymentRequired && data.whatsAppMessage) {
+            toast.success('Factura generada. Serás redirigido a WhatsApp para completar el pago.');
+
+            // Abrir WhatsApp
+            const whatsappUrl = `https://wa.me/${data.whatsAppMessage.companyNumber}?text=${encodeURIComponent(data.whatsAppMessage.message)}`;
+            window.open(whatsappUrl, '_blank');
+
+            onClose();
+          } else {
+            // Admin sin factura o activación directa
+            toast.success(`${upgrade.name} activado correctamente`);
+            onClose();
+          }
         },
         onError: (error: any) => {
-          toast.error(error.response?.data?.message || `Error al activar ${upgrade.name}`);
+          toast.error(error.response?.data?.message || error.response?.data?.error || `Error al activar ${upgrade.name}`);
         }
       }
     );
@@ -153,7 +167,7 @@ export default function UpgradeModal({
             </div>
           )}
 
-          {/* Checkbox para administradores */}
+          {/* Checkbox para administradores - omitir validaciones */}
           {isAdmin && !validation.canPurchase && (
             <>
               <Separator />
@@ -161,13 +175,33 @@ export default function UpgradeModal({
                 <Checkbox
                   id="admin-override"
                   checked={adminOverride}
-                  onCheckedChange={setAdminOverride}
+                  onCheckedChange={(checked) => setAdminOverride(checked === true)}
                 />
                 <label
                   htmlFor="admin-override"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   Activar como administrador (omitir validaciones)
+                </label>
+              </div>
+            </>
+          )}
+
+          {/* Checkbox para administradores - generar factura */}
+          {isAdmin && (
+            <>
+              <Separator />
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="generate-invoice"
+                  checked={generateInvoice}
+                  onCheckedChange={(checked) => setGenerateInvoice(checked === true)}
+                />
+                <label
+                  htmlFor="generate-invoice"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Generar factura (si está deshabilitado, activa el upgrade inmediatamente)
                 </label>
               </div>
             </>

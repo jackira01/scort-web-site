@@ -9,6 +9,7 @@ import { PlanDefinitionModel } from '../plans/plan.model';
 import { UpgradeDefinitionModel } from '../plans/upgrade.model';
 import { ConfigParameterService } from '../config-parameter/config-parameter.service';
 import invoiceService from '../payments/invoice.service';
+import EmailService from '../../services/email.service';
 
 // Interfaz para la configuración del plan por defecto
 interface DefaultPlanConfig {
@@ -279,6 +280,164 @@ export const createProfile = async (data: CreateProfileDTO): Promise<IProfile> =
 };
 
 /**
+ * Envía un correo de notificación al administrador cuando se crea un nuevo perfil
+ */
+async function sendProfileCreationNotification(profile: IProfile, invoice: IInvoice | null): Promise<void> {
+  try {
+    // Obtener información del usuario
+    const user = await UserModel.findById(profile.user).select('name email accountType');
+    if (!user) {
+      console.warn('⚠️ Usuario no encontrado para el perfil:', profile._id);
+      return;
+    }
+
+    // Obtener el correo de la empresa desde la configuración
+    const companyEmail = await ConfigParameterService.getValue('company.email');
+    const companyName = await ConfigParameterService.getValue('company.name') || 'Administrador';
+
+    if (!companyEmail) {
+      console.warn('⚠️ No se ha configurado el correo de la empresa (company.email)');
+      return;
+    }
+
+    // Preparar información del perfil
+    const profileInfo = `
+      <strong>ID:</strong> ${profile._id}<br>
+      <strong>Nombre del perfil:</strong> ${profile.name}<br>
+      <strong>Descripción:</strong> ${profile.description || 'Sin descripción'}<br>
+      <strong>Ubicación:</strong> ${profile.location?.city?.label || 'N/A'}, ${profile.location?.department?.label || 'N/A'}, ${profile.location?.country?.label || 'N/A'}<br>
+      <strong>Estado:</strong> ${profile.isActive ? 'Activo' : 'Inactivo'}<br>
+      <strong>Visible:</strong> ${profile.visible ? 'Sí' : 'No'}<br>
+      <strong>Contacto:</strong> ${profile.contact?.number || 'N/A'}<br>
+      <strong>Edad:</strong> ${profile.age || 'N/A'}
+    `;
+
+    // Preparar información del usuario
+    const userInfo = `
+      <strong>ID:</strong> ${user._id}<br>
+      <strong>Nombre:</strong> ${user.name}<br>
+      <strong>Email:</strong> ${user.email}<br>
+      <strong>Tipo de cuenta:</strong> ${user.accountType === 'agency' ? 'Agencia' : 'Usuario común'}
+    `;
+
+    // Preparar información de la factura (si existe)
+    let invoiceSection = '';
+    if (invoice) {
+      const invoiceItems = invoice.items?.map(item => {
+        const days = item.days ? ` (${item.days} días)` : '';
+        const price = item.price !== undefined ? item.price.toFixed(2) : '0.00';
+        return `${item.name || 'Item'}${days} - $${price}`;
+      }).join('<br>') || 'Sin items';
+
+      const couponInfo = invoice.coupon
+        ? `<br><strong>Cupón aplicado:</strong> ${invoice.coupon.code || 'N/A'} - Descuento: $${(invoice.coupon.discountAmount || 0).toFixed(2)}`
+        : '';
+
+      const totalAmount = invoice.totalAmount !== undefined ? invoice.totalAmount.toFixed(2) : '0.00';
+
+      invoiceSection = `
+        <div style="background-color: #fff3cd; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
+          <h3 style="color: #856404; margin-top: 0;">💳 Información de Facturación</h3>
+          <p><strong>Número de factura:</strong> #${invoice.invoiceNumber || 'N/A'}</p>
+          <p><strong>Estado:</strong> <span style="color: ${invoice.status === 'paid' ? '#28a745' : '#ffc107'}; font-weight: bold; text-transform: uppercase;">${invoice.status || 'pending'}</span></p>
+          <p><strong>Items:</strong><br>${invoiceItems}</p>
+          <p><strong>Total:</strong> $${totalAmount}</p>
+          ${couponInfo}
+          <p><strong>Creada:</strong> ${invoice.createdAt ? invoice.createdAt.toLocaleString('es-ES') : 'N/A'}</p>
+          <p><strong>Expira:</strong> ${invoice.expiresAt ? invoice.expiresAt.toLocaleString('es-ES') : 'N/A'}</p>
+        </div>
+      `;
+    }
+
+    // Construir el HTML del correo
+    const htmlPart = `
+      <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+        <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="color: #007bff; border-bottom: 3px solid #007bff; padding-bottom: 10px; margin-top: 0;">
+            🎉 Nuevo Perfil Creado
+          </h2>
+          
+          <div style="background-color: #e7f3ff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #007bff;">
+            <h3 style="color: #004085; margin-top: 0;">👤 Información del Usuario</h3>
+            <p>${userInfo}</p>
+          </div>
+          
+          <div style="background-color: #d4edda; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #28a745;">
+            <h3 style="color: #155724; margin-top: 0;">📋 Información del Perfil</h3>
+            <p>${profileInfo}</p>
+          </div>
+          
+          ${invoiceSection}
+          
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #dee2e6;">
+          
+          <p style="color: #6c757d; font-size: 12px; text-align: center;">
+            Este correo se generó automáticamente al crear un nuevo perfil en el sistema.<br>
+            Fecha: ${new Date().toLocaleString('es-ES')}
+          </p>
+        </div>
+      </div>
+    `;
+
+    // Preparar el texto plano
+    const textPart = `
+Nuevo Perfil Creado
+
+INFORMACIÓN DEL USUARIO:
+- ID: ${user._id}
+- Nombre: ${user.name}
+- Email: ${user.email}
+- Tipo de cuenta: ${user.accountType === 'agency' ? 'Agencia' : 'Usuario común'}
+
+INFORMACIÓN DEL PERFIL:
+- ID: ${profile._id}
+- Nombre: ${profile.name}
+- Descripción: ${profile.description || 'Sin descripción'}
+- Ubicación: ${profile.location?.city?.label || 'N/A'}, ${profile.location?.department?.label || 'N/A'}, ${profile.location?.country?.label || 'N/A'}
+- Estado: ${profile.isActive ? 'Activo' : 'Inactivo'}
+- Visible: ${profile.visible ? 'Sí' : 'No'}
+- Contacto: ${profile.contact?.number || 'N/A'}
+- Edad: ${profile.age || 'N/A'}
+
+${invoice ? `
+INFORMACIÓN DE FACTURACIÓN:
+- Número de factura: #${invoice.invoiceNumber || 'N/A'}
+- Estado: ${invoice.status || 'pending'}
+- Total: $${invoice.totalAmount !== undefined ? invoice.totalAmount.toFixed(2) : '0.00'}
+- Creada: ${invoice.createdAt ? invoice.createdAt.toLocaleString('es-ES') : 'N/A'}
+- Expira: ${invoice.expiresAt ? invoice.expiresAt.toLocaleString('es-ES') : 'N/A'}
+${invoice.coupon ? `- Cupón aplicado: ${invoice.coupon.code || 'N/A'}` : ''}
+` : ''}
+
+---
+Este correo se generó automáticamente.
+Fecha: ${new Date().toLocaleString('es-ES')}
+    `;
+
+    // Enviar el correo
+    const emailService = new EmailService();
+    const result = await emailService.sendSingleEmail({
+      to: {
+        email: companyEmail,
+        name: companyName
+      },
+      content: {
+        subject: `[Nuevo Perfil] ${profile.name} - Usuario: ${user.name}`,
+        textPart: textPart.trim(),
+        htmlPart: htmlPart
+      }
+    });
+
+    if (!result.success) {
+      console.error('❌ Error al enviar correo de notificación:', result.error);
+    }
+  } catch (error) {
+    console.error('❌ Error en sendProfileCreationNotification:', error);
+    throw error;
+  }
+}
+
+/**
  * Crea un perfil con generación automática de factura para planes de pago
  */
 export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId?: string; planCode?: string; planDays?: number; generateInvoice?: boolean; couponCode?: string }): Promise<{
@@ -288,21 +447,9 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
 }> => {
   const { planId, planCode, planDays, generateInvoice = false, couponCode, ...profileData } = data;
 
-  // DEBUG: Log de datos recibidos en el servicio
-  console.log('DEBUG SERVICIO - createProfileWithInvoice llamado con:', {
-    planId,
-    planCode,
-    planDays,
-    generateInvoice,
-    hasProfileData: !!profileData
-  });
-
-
-
   // Crear el perfil primero (con plan por defecto configurado)
 
   const profile = await createProfile(profileData);
-
 
   // Validar límites de perfiles gratuitos para determinar visibilidad
   const limitsValidation = await validateUserProfileLimits(profileData.user.toString(), planCode);
@@ -326,18 +473,15 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
     try {
       // Validar que el plan existe y obtener el precio
       // Buscando definición del plan por ID (prioritario) o por código
-      console.log('🔍 DEBUG Profile Service - Buscando plan:', { planId, planCode });
 
       let plan;
       if (planId) {
         plan = await PlanDefinitionModel.findById(planId);
-        console.log('🔍 DEBUG Profile Service - Plan encontrado por ID:', !!plan);
       }
 
       // Fallback a búsqueda por código si no se encontró por ID
       if (!plan && planCode) {
         plan = await PlanDefinitionModel.findOne({ code: planCode });
-        console.log('🔍 DEBUG Profile Service - Plan encontrado por código:', !!plan);
       }
 
       if (!plan) {
@@ -347,10 +491,8 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
 
       // Verificar si es el plan por defecto (no cobrar)
       const isPlanGratuito = planCode === defaultPlanCode || plan.code === defaultPlanCode;
-      console.log('🔍 DEBUG Profile Service - Es plan gratuito:', isPlanGratuito);
 
       if (isPlanGratuito) {
-        console.log('🔍 DEBUG Profile Service - Plan gratuito detectado, no generar factura');
         // No generar factura para plan gratuito
         return {
           profile,
@@ -368,25 +510,12 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
       }
       // Variante encontrada
 
+      // LÓGICA DE FACTURACIÓN:
+      // - Usuarios regulares: generateInvoice = true (siempre factura para planes de pago)
+      // - Admins: generateInvoice = valor del checkbox (pueden asignar sin factura)
       // Solo generar factura si el plan tiene costo Y se solicita generar factura
       if (variant.price > 0 && generateInvoice) {
-        // DEBUG: Generando factura
-        console.log('DEBUG SERVICIO - Generando factura:', {
-          planCode,
-          planDays,
-          price: variant.price,
-          generateInvoice
-        });
-
         // Plan de pago detectado y facturación solicitada, generando factura
-        console.log('🔍 DEBUG Cupón Service - Generando factura con:', {
-          profileId: (profile._id as Types.ObjectId).toString(),
-          userId: profile.user.toString(),
-          planId: plan._id.toString(),
-          planCode: plan.code,
-          planDays,
-          couponCode
-        });
         invoice = await invoiceService.generateInvoice({
           profileId: (profile._id as Types.ObjectId).toString(),
           userId: profile.user.toString(),
@@ -395,11 +524,6 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
           planDays: planDays,
           couponCode: couponCode, // Pasar el código del cupón
           notes: `Factura generada para nuevo perfil ${profile.name || profile._id}`
-        });
-        console.log('🔍 DEBUG Cupón Service - Factura generada:', {
-          invoiceId: invoice._id,
-          totalAmount: invoice.totalAmount,
-          coupon: invoice.coupon
         });
 
         // Factura generada exitosamente
@@ -416,14 +540,6 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
         );
         // Historial de pagos actualizado con factura
       } else if (variant.price > 0 && !generateInvoice) {
-        // DEBUG: Asignando plan sin factura
-        console.log('DEBUG SERVICIO - Asignando plan sin factura:', {
-          planCode,
-          planDays,
-          price: variant.price,
-          generateInvoice
-        });
-
         // Plan de pago pero sin generar factura (administrador), asignar plan directamente
         // Calcular fechas para asignación directa
         const startAt = new Date();
@@ -446,7 +562,6 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
         );
 
         // Plan asignado directamente sin factura
-        console.log('DEBUG SERVICIO - Plan asignado exitosamente sin factura');
       } else {
         // Plan gratuito, activar el perfil inmediatamente
         // Plan gratuito detectado, activando perfil inmediatamente
@@ -501,6 +616,14 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
   );
 
   // Mensaje de WhatsApp procesado
+
+  // Enviar correo de notificación al administrador
+  try {
+    await sendProfileCreationNotification(profile, invoice);
+  } catch (emailError) {
+    console.error('❌ Error al enviar correo de notificación de perfil:', emailError);
+    // No lanzar error - el correo es secundario, no debe interrumpir la creación del perfil
+  }
 
   // Finalizando createProfileWithInvoice
   return { profile, invoice, whatsAppMessage };
@@ -1502,7 +1625,18 @@ export const validateProfilePlanUpgrade = async (profileId: string, newPlanCode:
   }
 };
 
-export const purchaseUpgrade = async (profileId: string, upgradeCode: string, userId: string): Promise<{ profile: IProfile; invoice: IInvoice; upgradeCode?: string; status?: string; message?: string }> => {
+export const purchaseUpgrade = async (
+  profileId: string,
+  upgradeCode: string,
+  userId: string
+): Promise<{
+  profile: IProfile;
+  invoice: IInvoice;
+  upgradeCode?: string;
+  status?: string;
+  message?: string;
+  whatsAppMessage?: WhatsAppMessage | null;
+}> => {
   // Validar que el upgrade existe
   const upgrade = await UpgradeDefinitionModel.findOne({ code: upgradeCode });
   if (!upgrade) {
@@ -1514,16 +1648,38 @@ export const purchaseUpgrade = async (profileId: string, upgradeCode: string, us
     throw new Error('Perfil no encontrado');
   }
 
-  // Verificar que el perfil tiene un plan activo
-  if (!profile.planAssignment || profile.planAssignment.expiresAt < new Date()) {
-    const error = new Error('No se pueden comprar upgrades sin un plan activo');
+  // Obtener configuración del plan por defecto
+  const defaultPlanConfig = await getDefaultPlanConfig();
+  const defaultPlanCode = defaultPlanConfig.enabled ? defaultPlanConfig.planCode : 'AMATISTA';
+
+  const now = new Date();
+
+  // Verificar que el perfil tiene un plan asignado
+  if (!profile.planAssignment) {
+    const error = new Error('No se pueden comprar upgrades sin un plan asignado');
+    (error as any).status = 409;
+    throw error;
+  }
+
+  // Verificar que el plan no esté expirado
+  if (profile.planAssignment.expiresAt < now) {
+    const error = new Error('No se pueden comprar upgrades con un plan expirado. Por favor renueva tu plan primero');
+    (error as any).status = 409;
+    throw error;
+  }
+
+  // Verificar que no sea el plan por defecto (gratuito)
+  const isDefaultPlan = profile.planAssignment.planCode === defaultPlanCode ||
+    (profile.planAssignment.planId && profile.planAssignment.planId.toString() === defaultPlanConfig.planId);
+
+  if (isDefaultPlan) {
+    const error = new Error('No se pueden comprar upgrades con el plan gratuito. Por favor adquiere un plan de pago primero');
     (error as any).status = 409;
     throw error;
   }
 
   // Verificar dependencias (upgrades requeridos)
   if (upgrade.requires && upgrade.requires.length > 0) {
-    const now = new Date();
     const activeUpgrades = profile.upgrades.filter(u => u.endAt > now);
     const activeUpgradeCodes = activeUpgrades.map(u => u.code);
 
@@ -1533,7 +1689,6 @@ export const purchaseUpgrade = async (profileId: string, upgradeCode: string, us
     }
   }
 
-  const now = new Date();
   const endAt = new Date(now.getTime() + (upgrade.durationHours * 60 * 60 * 1000));
 
   // Verificar si ya existe un upgrade activo del mismo tipo
@@ -1552,9 +1707,8 @@ export const purchaseUpgrade = async (profileId: string, upgradeCode: string, us
       break;
   }
 
-  // Generar factura para el upgrade (por ahora precio 0, pero se puede configurar)
+  // Generar factura para el upgrade con precio de la base de datos
   let invoice = null;
-  const upgradePrice = 0; // TODO: Configurar precios de upgrades
 
   try {
     invoice = await invoiceService.generateInvoice({
@@ -1573,13 +1727,23 @@ export const purchaseUpgrade = async (profileId: string, upgradeCode: string, us
 
     // Factura generada para upgrade
 
-    // Retornar información de la compra pendiente
+    // Generar mensaje de WhatsApp similar a createProfileWithInvoice
+    const whatsAppMessage = await generateWhatsAppMessage(
+      profile.user.toString(),
+      (profile._id as Types.ObjectId).toString(),
+      invoice._id?.toString(),
+      invoice.invoiceNumber,
+      upgradeCode
+    );
+
+    // Retornar información de la compra pendiente con datos de WhatsApp
     return {
       profile,
       invoice,
       upgradeCode,
       status: 'pending_payment',
-      message: 'Upgrade pendiente de pago'
+      message: 'Upgrade pendiente de pago',
+      whatsAppMessage
     };
 
   } catch (error) {

@@ -17,7 +17,7 @@ import { usePlans } from '@/hooks/usePlans';
 import { useConfigValue } from '@/hooks/use-config-parameters';
 import { useValidateCoupon } from '@/hooks/use-coupons';
 import { couponService } from '@/services/coupon.service';
-import { Loader, CheckCircle, AlertCircle, Image, Video, Music, Users, Star, Crown, Gem, Shield, Zap, Ticket } from 'lucide-react';
+import { Loader, CheckCircle, AlertCircle, X, Image, Video, Music, Users, Star, Crown, Gem, Shield, Zap, Ticket } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Plan {
@@ -335,9 +335,10 @@ export function Step4Plan() {
                   variant="ghost"
                   size="sm"
                   onClick={handleClearCoupon}
-                  className="h-8 w-8 p-0 self-end sm:self-center"
+                  className="h-8 w-8 p-0 self-end sm:self-center hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20"
+                  title="Eliminar cupón"
                 >
-                  <AlertCircle className="h-4 w-4 text-red-500" />
+                  <X className="h-4 w-4 text-red-500" />
                 </Button>
               </div>
             </div>

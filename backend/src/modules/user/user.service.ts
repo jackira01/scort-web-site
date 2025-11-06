@@ -5,7 +5,9 @@ import ProfileVerification from '../profile-verification/profile-verification.mo
 
 export const createUser = (data: Record<string, any>) => UserModel.create(data);
 export const findUserByEmail = async (email: string) => {
-  return UserModel.findOne({ email });
+  // Normalizar el email a minúsculas y eliminar espacios
+  const normalizedEmail = email.toLowerCase().trim();
+  return UserModel.findOne({ email: normalizedEmail });
 };
 
 export const uploadUserDocument = async (userId: string, documentUrl: string) => {

@@ -7,4 +7,5 @@ var ContentBlockType;
     ContentBlockType["LIST"] = "list";
     ContentBlockType["IMAGE"] = "image";
     ContentBlockType["LINK"] = "link";
+    ContentBlockType["FAQ"] = "faq";
 })(ContentBlockType || (exports.ContentBlockType = ContentBlockType = {}));

@@ -549,7 +549,7 @@ export default function ManagePlansModal({
 
             // Mostrar toast con información adicional
             toast.success('Factura creada. El plan se actualizará después del pago confirmado.', {
-              duration: 4000,
+              duration: 10000,
             });
 
             // Abrir WhatsApp inmediatamente
@@ -598,7 +598,7 @@ export default function ManagePlansModal({
 
             // Mostrar toast con información adicional
             toast.success('Factura creada. El plan se actualizará después del pago confirmado.', {
-              duration: 4000,
+              duration: 10000,
             });
 
             // Abrir WhatsApp inmediatamente
@@ -762,10 +762,10 @@ export default function ManagePlansModal({
                     <div>
                       <p className="text-muted-foreground">Días restantes</p>
                       <p className={`font-medium ${isPlanPending()
-                          ? 'text-yellow-600'
-                          : getDaysRemaining() <= 7
-                            ? 'text-red-600'
-                            : 'text-green-600'
+                        ? 'text-yellow-600'
+                        : getDaysRemaining() <= 7
+                          ? 'text-red-600'
+                          : 'text-green-600'
                         }`}>
                         {isPlanPending() ? 'Pendiente de pago' : `${getDaysRemaining()} días`}
                       </p>
@@ -828,7 +828,11 @@ export default function ManagePlansModal({
                 {!isPlanActive() && currentPlanData.code !== 'AMATISTA' && (
                   <div className="mt-4">
                     <div className="space-y-3">
-                      <p className="text-sm font-medium mb-2 text-orange-600">Plan Expirado - Renovar:</p>
+                      {hasNoPlanAssigned() ? (
+                        <p className="text-sm font-medium mb-2 text-orange-600">Sin plan asignado - Comprar:</p>
+                      ) : (
+                        <p className="text-sm font-medium mb-2 text-orange-600">Plan Expirado - Renovar:</p>
+                      )}
                       {/* Selector de variantes para renovación */}
                       {currentPlanData.variants.length > 1 && (
                         <div>
@@ -873,7 +877,9 @@ export default function ManagePlansModal({
                             Procesando...
                           </>
                         ) : (
-                          `Renovar ${currentPlanData.name} (${formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})`
+                          hasNoPlanAssigned()
+                            ? `Comprar ${currentPlanData.name} (${formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})`
+                            : `Renovar ${currentPlanData.name} (${formatPrice(getSelectedVariant(currentPlanData.code, currentPlanData).price)})`
                         )}
                       </Button>
                     </div>

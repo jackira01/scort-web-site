@@ -90,6 +90,7 @@ export const processImageAfterCrop = async (
     let processedFile = blobToFile(croppedBlob, originalFileName);
 
     // Aplicar marca de agua si está habilitada
+
     if (applyWatermark) {
       const watermarkedBlob = await applyWatermarkToImage(processedFile, watermarkText);
       processedFile = blobToFile(watermarkedBlob, originalFileName);
@@ -104,7 +105,7 @@ export const processImageAfterCrop = async (
     //   useWebWorker,
     //   fileType: 'image/jpeg', // Forzar JPEG para mejor compresión
     // });
-    
+
     // TEMPORALMENTE: usar archivo sin comprimir
     const compressedFile = processedFile;
 

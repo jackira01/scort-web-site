@@ -132,7 +132,7 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
               <span className="text-sm text-gray-500">
                 {[
                   verification.steps.documentPhotos.frontPhoto,
-                  verification.steps.documentPhotos.backPhoto
+                  verification.steps.documentPhotos.selfieWithDocument
                 ].filter(Boolean).length} archivo(s)
               </span>
             </div>

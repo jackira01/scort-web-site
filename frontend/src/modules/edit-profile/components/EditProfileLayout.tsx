@@ -8,10 +8,10 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAttributeGroups } from '@/hooks/use-attribute-groups';
 import { useProfile } from '@/hooks/use-profile';
+import { usePlans } from '@/hooks/usePlans';
 import { updateProfile } from '@/services/user.service';
 import {
   uploadMultipleAudios,
@@ -27,7 +27,6 @@ import {
   step2Schema,
   step3Schema,
   step4Schema,
-  step5Schema,
 } from '../../create-profile/schemas';
 import type { AttributeGroup, Rate } from '../../create-profile/types';
 import { SidebarContent } from '../../create-profile/components/SidebarContent';
@@ -35,7 +34,6 @@ import { Step1EssentialInfo } from '../../create-profile/components/Step1Essenti
 import { Step2Description } from '../../create-profile/components/Step2Description';
 import { Step3Details } from '../../create-profile/components/Step3Details';
 import { Step5Multimedia } from '../../create-profile/components/Step5Multimedia';
-import { Step4Plan } from '../../create-profile/components/Step4Plan';
 
 interface EditProfileLayoutProps {
   profileId: string;
@@ -51,6 +49,41 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
   // Obtener datos del perfil existente
   const { data: profileDetails, isLoading: isLoadingProfile, error: profileError } = useProfile(profileId);
   const { data: attributeGroups, isLoading: isLoadingAttributes, error: attributesError } = useAttributeGroups();
+
+  // 🎯 Obtener planes disponibles para buscar el plan asignado
+  const { data: plansResponse } = usePlans({
+    limit: 50,
+    page: 1,
+    isActive: true
+  });
+
+  // Memorizar planes y buscar el plan asignado al perfil
+  const assignedPlan = useMemo(() => {
+    if (!profileDetails?.planAssignment || !plansResponse?.plans) {
+      return null;
+    }
+
+    const { planId, planCode } = profileDetails.planAssignment;
+
+    // Buscar por planId (preferido)
+    if (planId) {
+      const plan = plansResponse.plans.find(p => p._id === planId);
+      if (plan) {
+        return plan;
+      }
+    }
+
+    // Fallback: buscar por planCode
+    if (planCode) {
+      const plan = plansResponse.plans.find(p => p.code === planCode);
+      if (plan) {
+        return plan;
+      }
+    }
+
+    console.warn('⚠️ No se encontró el plan asignado:', { planId, planCode });
+    return null;
+  }, [profileDetails?.planAssignment, plansResponse?.plans]);
 
   const form = useForm<FormData>({
     mode: 'onChange',
@@ -68,6 +101,8 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       // Step 2 - Descripción
       description: '',
       selectedServices: [],
+      basicServices: [],
+      additionalServices: [],
 
       // Step 3 - Detalles
       contact: {
@@ -77,18 +112,27 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       },
       age: '',
       skinColor: '',
-      sexuality: '',
       eyeColor: '',
       hairColor: '',
       bodyType: '',
       height: '',
       rates: [] as Rate[],
       availability: [],
+      socialMedia: {
+        instagram: '',
+        facebook: '',
+        tiktok: '',
+        twitter: '',
+        onlyFans: '',
+      },
 
       // Step 4 - Multimedia
       photos: [],
       videos: [],
       audios: [],
+      videoCoverImages: {}, // ✅ AGREGADO
+      coverImageIndex: 0, // ✅ AGREGADO
+      processedImages: [], // ✅ AGREGADO
 
       // Step 5 - Finalizar
       selectedUpgrades: [],
@@ -173,15 +217,6 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
           ? rawValue.key
           : rawValue;
 
-        return value;
-      };
-
-      // Validar que los valores extraídos no estén vacíos
-      const validateFeatureValue = (value: string, fieldName: string) => {
-        if (!value || value.trim() === '') {
-          // Campo está vacío o no válido
-          return '';
-        }
         return value;
       };
 
@@ -322,16 +357,26 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       form.setValue('videos', formData.videos);
       form.setValue('audios', formData.audios);
 
+      // ✅ AGREGAR: Inicializar multimedia extras
+      form.setValue('videoCoverImages', {});
+      form.setValue('coverImageIndex', 0); // Primera foto por defecto
+      form.setValue('processedImages', []); // Se llenará cuando procesen nuevas imágenes
+
+      // 🎯 NUEVO: Pasar el plan asignado al formulario para que Step5Multimedia use los límites correctos
+      if (assignedPlan) {
+        form.setValue('selectedPlan', assignedPlan as any);
+      } else {
+        console.warn('⚠️ No hay plan asignado, Step5Multimedia usará límites por defecto');
+      }
+
       // Step 5 - Finalizar
       form.setValue('selectedUpgrades', formData.selectedUpgrades);
       form.setValue('acceptTerms', formData.acceptTerms);
 
       // Forzar re-render de los campos controlados
       form.trigger();
-
-      // Valores establecidos en el formulario
     }
-  }, [profileDetails, attributeGroups]);
+  }, [profileDetails, attributeGroups, assignedPlan]);
 
   const acceptTerms = form.watch('acceptTerms');
 
@@ -445,13 +490,13 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
   const transformDataToBackendFormat = (
     formData: FormData & {
       photos?: string[];
-      videos?: Array<string | { link: string; preview: string }>;
+      videos?: (string | { link: string; preview: string })[];
       audios?: string[];
     },
   ) => {
     const features = [];
 
-    // Gender feature - Convertir a {key, label}
+    // Gender feature
     if (formData.gender && groupMap.gender?._id) {
       features.push({
         group_id: groupMap.gender._id,
@@ -459,7 +504,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       });
     }
 
-    // Hair color feature - Convertir a {key, label}
+    // Hair color feature
     if (formData.hairColor && groupMap.hair?._id) {
       features.push({
         group_id: groupMap.hair._id,
@@ -467,7 +512,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       });
     }
 
-    // Eye color feature - Convertir a {key, label}
+    // Eye color feature
     if (formData.eyeColor && groupMap.eyes?._id) {
       features.push({
         group_id: groupMap.eyes._id,
@@ -475,7 +520,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       });
     }
 
-    // Skin color - Convertir a {key, label}
+    // Skin color
     if (formData.skinColor && groupMap.skin?._id) {
       features.push({
         group_id: groupMap.skin._id,
@@ -483,7 +528,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       });
     }
 
-    // Body type feature - Convertir a {key, label}
+    // Body type feature
     if (formData.bodyType && groupMap.body?._id) {
       features.push({
         group_id: groupMap.body._id,
@@ -491,15 +536,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       });
     }
 
-    // Sexuality - REMOVIDO
-    // if (formData.sexuality && groupMap.sex?._id) {
-    //   features.push({
-    //     group_id: groupMap.sex._id,
-    //     value: [formData.sexuality],
-    //   });
-    // }
-
-    // Category feature - Convertir a {key, label}
+    // Category feature
     if (formData.category && groupMap.category?._id) {
       features.push({
         group_id: groupMap.category._id,
@@ -507,7 +544,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       });
     }
 
-    // Services - Convertir a {key, label}
+    // Services
     if (formData.selectedServices && groupMap.services?._id) {
       features.push({
         group_id: groupMap.services._id,
@@ -520,6 +557,8 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       price: rate.price,
       delivery: rate.delivery,
     }));
+
+    // ✅ SIMPLIFICADO: Ya reordenamos en handleFinalSave, así que la primera foto ES la portada
 
     return {
       user: session?.user?._id,
@@ -543,25 +582,28 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       age: formData.age,
       contact: formData.contact,
       height: formData.height,
-      // Nuevos campos de servicios clasificados - Convertir a {key, label}
+      socialMedia: formData.socialMedia,
       basicServices: formData.basicServices ? getVariantObjects('services', formData.basicServices) : [],
       additionalServices: formData.additionalServices ? getVariantObjects('services', formData.additionalServices) : [],
-      rates,
       media: {
         gallery: formData.photos || [],
-        videos: formData.videos?.map(video => {
-          if (typeof video === 'object' && video !== null && 'link' in video) {
-            // Ya es un objeto {link, preview}
-            return video;
-          } else if (typeof video === 'string') {
-            // Convertir string a objeto
-            return { link: video, preview: '' };
-          }
-          return { link: '', preview: '' };
-        }) || [],
-        profilePicture: formData.photos?.[formData.coverImageIndex || 0] || formData.photos?.[0] || '',
+        videos: (formData.videos || [])
+          .filter((video): video is string | { link: string; preview: string } => video !== null)
+          .map(video => {
+            if (typeof video === 'string') {
+              return { link: video, preview: '' };
+            } else {
+              return { link: video.link, preview: video.preview };
+            }
+          }),
+        audios: formData.audios || [],
+        stories: [],
+        // ✅ SIMPLIFICADO: La primera foto del array ES la portada (ya reordenada)
+        profilePicture: formData.photos?.[0] || '',
       },
+      verification: null,
       availability: formData.availability,
+      rates,
     };
   };
 
@@ -569,8 +611,10 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
     const validation = validateStep(currentStep);
     if (validation.success) {
       setCurrentStep((prev) => Math.min(prev + 1, editSteps.length));
-      // Scroll al inicio del contenido
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // ✅ Scroll después de que React actualice el DOM
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
     } else {      // Validation errors
       toast.error('Por favor completa todos los campos requeridos');
     }
@@ -578,107 +622,150 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
 
   const handlePrevious = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
+    // ✅ Scroll después de que React actualice el DOM
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   };
 
   const handleSubmit = async () => {
     const data = form.getValues();
-    // Form data before submission
+
 
     setUploading(true);
 
     try {
-      console.log('🔍 DEBUG Edición - Iniciando proceso de actualización de perfil');
-      console.log('🔍 DEBUG Edición - Datos del formulario:', data);
+      // 🎯 PASO CRÍTICO: REORDENAR IMÁGENES SEGÚN coverImageIndex (igual que en creación)
 
-      // Subir archivos multimedia solo si son nuevos (File objects)
-      let photoUrls: string[] = [];
-      let videoUrls: string[] = [];
-      let audioUrls: string[] = [];
+      let orderedProcessedImages: any[] = [];
+      const coverIndex = data.coverImageIndex ?? 0;
 
-      // Separar archivos nuevos de URLs existentes
+      // Separar archivos nuevos (File) de URLs existentes (string)
       const newPhotos = data.photos?.filter(photo => photo instanceof File) || [];
       const existingPhotoUrls = data.photos?.filter(photo => typeof photo === 'string') || [];
 
-      console.log('🔍 DEBUG Edición - Fotos nuevas:', newPhotos.length);
-      console.log('🔍 DEBUG Edición - Fotos existentes:', existingPhotoUrls.length);
 
-      // Filtrar videos: pueden ser File (nuevos) o objetos {link, preview} (existentes) o strings
+      // 🎯 REORDENAR URLs EXISTENTES según coverImageIndex
+      let reorderedExistingUrls = existingPhotoUrls;
+      if (existingPhotoUrls.length > 0 && coverIndex > 0 && coverIndex < existingPhotoUrls.length) {
+
+        // Poner la URL de portada primero
+        const coverUrl = existingPhotoUrls[coverIndex];
+        reorderedExistingUrls = [
+          coverUrl,
+          ...existingPhotoUrls.filter((_, idx) => idx !== coverIndex)
+        ];
+
+        reorderedExistingUrls.forEach((url, idx) => {
+        });
+      } else if (coverIndex === 0) {
+      }
+
+      // Solo reordenar si hay imágenes nuevas procesadas
+      if (data.processedImages && data.processedImages.length > 0) {
+        const processedMap = new Map<number, any>();
+        data.processedImages.forEach((img: any) => {
+          if (img.originalIndex !== undefined) {
+            processedMap.set(img.originalIndex, img);
+          }
+        });
+
+
+        const coverImage = processedMap.get(coverIndex);
+
+        if (coverImage) {
+          // 🎯 REORDENAR: La imagen de portada va primero
+          orderedProcessedImages.push(coverImage);
+
+          // Agregar el resto excluyendo la de portada
+          data.photos.forEach((photo: any, idx: number) => {
+            if (idx !== coverIndex && photo instanceof File) {
+              const processedImg = processedMap.get(idx);
+              if (processedImg) {
+                orderedProcessedImages.push(processedImg);
+              }
+            }
+          });
+        }
+      }
+
+      // Subir archivos multimedia
+      let photoUrls: string[] = [];
+      let videoUrls: any[] = [];
+      let audioUrls: string[] = [];
+
+      // ✅ FOTOS: Usar imágenes reordenadas si existen
+      if (newPhotos.length > 0) {
+        if (orderedProcessedImages.length > 0) {
+          // Subir imágenes procesadas reordenadas
+          toast.loading('Subiendo fotos procesadas...', { id: 'upload-photos' });
+          const { uploadProcessedImages } = await import('@/utils/tools');
+          const processedUrls = await uploadProcessedImages(
+            orderedProcessedImages,
+            (current, total) => {
+              toast.loading(`Subiendo foto procesada ${current}/${total}...`, { id: 'upload-photos' });
+            }
+          );
+          photoUrls = [...processedUrls.filter((url): url is string => url !== null), ...reorderedExistingUrls];
+          toast.dismiss('upload-photos');
+          toast.success(`${processedUrls.filter(url => url !== null).length} fotos procesadas subidas`);
+        } else {
+          // Procesar y subir sin reordenamiento
+          toast.loading('Procesando y subiendo fotos...', { id: 'upload-photos' });
+          console.warn('⚠️ No hay imágenes procesadas - procesando ahora');
+          const newPhotoUrls = await uploadMultipleImages(
+            newPhotos,
+            undefined,
+            (current, total) => {
+              toast.loading(`Procesando foto ${current}/${total}...`, { id: 'upload-photos' });
+            }
+          );
+          photoUrls = [...newPhotoUrls.filter((url): url is string => url !== null), ...reorderedExistingUrls];
+          toast.dismiss('upload-photos');
+          toast.success(`${newPhotoUrls.filter(url => url !== null).length} fotos subidas`);
+        }
+      } else {
+        // 🎯 CASO CRÍTICO: Solo URLs existentes, usar las reordenadas
+        photoUrls = reorderedExistingUrls;
+      }
+
+      // ✅ VIDEOS: Manejar correctamente objetos y archivos
       const newVideos = data.videos?.filter(video => video instanceof File) || [];
       const existingVideos = data.videos?.filter(video =>
         typeof video === 'object' && video !== null && 'link' in video
       ) || [];
       const existingVideoStrings = data.videos?.filter(video => typeof video === 'string') || [];
 
-      console.log('🔍 DEBUG Edición - Videos nuevos:', newVideos.length);
-      console.log('🔍 DEBUG Edición - Videos existentes (objetos):', existingVideos.length);
-      console.log('🔍 DEBUG Edición - Videos existentes (strings):', existingVideoStrings.length);
-
-      const newAudios = data.audios?.filter(audio => audio instanceof File) || [];
-      const existingAudioUrls = data.audios?.filter(audio => typeof audio === 'string') || [];
-
-      console.log('🔍 DEBUG Edición - Audios nuevos:', newAudios.length);
-      console.log('🔍 DEBUG Edición - Audios existentes:', existingAudioUrls.length);
-
-      if (newPhotos.length > 0) {
-        // Si hay imágenes procesadas con marca de agua, usarlas
-        if (data.processedImages && data.processedImages.length > 0) {
-          toast.loading('Subiendo fotos procesadas...', { id: 'upload-photos' });
-          const { uploadProcessedImages } = await import('@/utils/tools');
-          const processedUrls = await uploadProcessedImages(
-            data.processedImages as any[],
-            (current, total) => {
-              toast.loading(`Subiendo foto procesada ${current}/${total}...`, { id: 'upload-photos' });
-            }
-          );
-          photoUrls = [...existingPhotoUrls, ...processedUrls.filter((url): url is string => url !== null)];
-          toast.dismiss('upload-photos');
-          toast.success(`${processedUrls.filter(url => url !== null).length} fotos procesadas subidas exitosamente`);
-        } else {
-          // Si no hay imágenes procesadas, procesarlas ahora con marca de agua
-          toast.loading('Procesando y subiendo fotos...', { id: 'upload-photos' });
-          const newPhotoUrls = await uploadMultipleImages(
-            newPhotos,
-            undefined, // Usar marca de agua por defecto
-            (current, total) => {
-              toast.loading(`Procesando foto ${current}/${total}...`, { id: 'upload-photos' });
-            }
-          );
-          photoUrls = [...existingPhotoUrls, ...newPhotoUrls.filter((url): url is string => url !== null)];
-          toast.dismiss('upload-photos');
-          toast.success(`${newPhotoUrls.filter(url => url !== null).length} fotos nuevas subidas exitosamente`);
-        }
-      } else {
-        photoUrls = existingPhotoUrls;
-      }
-
       if (newVideos.length > 0) {
         toast.loading('Subiendo videos nuevos...');
         const videoCoverImages = data.videoCoverImages || {};
         const newVideoResults = await uploadMultipleVideos(newVideos, videoCoverImages);
 
-        // Combinar videos existentes (objetos) con videos nuevos subidos
         videoUrls = [
-          ...existingVideos,  // Mantener objetos {link, preview} existentes
-          ...existingVideoStrings.map(url => ({ link: url, preview: '' })), // Convertir strings a objetos
-          ...newVideoResults  // Videos nuevos ya vienen como objetos {link, preview}
+          ...newVideoResults,  // Videos nuevos primero
+          ...existingVideos,
+          ...existingVideoStrings.map(url => ({ link: url, preview: '' }))
         ];
 
         toast.dismiss();
-        toast.success(`${newVideoResults.length} videos nuevos subidos exitosamente`);
+        toast.success(`${newVideoResults.length} videos subidos`);
       } else {
-        // Si no hay videos nuevos, mantener solo los existentes
         videoUrls = [
           ...existingVideos,
           ...existingVideoStrings.map(url => ({ link: url, preview: '' }))
         ];
       }
 
+      // ✅ AUDIOS
+      const newAudios = data.audios?.filter(audio => audio instanceof File) || [];
+      const existingAudioUrls = data.audios?.filter(audio => typeof audio === 'string') || [];
+
       if (newAudios.length > 0) {
         toast.loading('Subiendo audios nuevos...');
         const newAudioUrls = await uploadMultipleAudios(newAudios);
-        audioUrls = [...existingAudioUrls, ...newAudioUrls.filter((url): url is string => url !== null)];
+        audioUrls = [...newAudioUrls.filter((url): url is string => url !== null), ...existingAudioUrls];
         toast.dismiss();
-        toast.success(`${newAudioUrls.filter(url => url !== null).length} audios nuevos subidos exitosamente`);
+        toast.success(`${newAudioUrls.filter(url => url !== null).length} audios subidos`);
       } else {
         audioUrls = existingAudioUrls;
       }
@@ -689,26 +776,20 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         photos: photoUrls,
         videos: videoUrls,
         audios: audioUrls,
+        // ✅ Ahora coverImageIndex siempre es 0 porque reordenamos
+        coverImageIndex: 0,
+        processedImages: orderedProcessedImages
       };
 
-      console.log('🔍 DEBUG Edición - URLs finales:', {
-        photos: photoUrls.length,
-        videos: videoUrls.length,
-        audios: audioUrls.length
-      });
-
-      console.log('🔍 DEBUG Edición - Transformando datos para backend');
       const backendData = transformDataToBackendFormat(dataWithUrls);
-      console.log('🔍 DEBUG Edición - Datos transformados:', backendData);
 
-      // Actualizar el perfil usando el servicio
+      // Actualizar el perfil
       const loadingToast = toast.loading('Actualizando perfil...');
       try {
-        console.log('🔍 DEBUG Edición - Llamando a updateProfile con profileId:', profileId);
         await updateProfile(profileId, backendData);
         toast.dismiss(loadingToast);
 
-        // Invalidar las queries para refrescar los datos
+        // Invalidar queries
         if (session?.user?._id) {
           await queryClient.invalidateQueries({
             queryKey: ['userProfiles', session.user._id],
@@ -719,22 +800,13 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         }
 
         toast.success('Perfil actualizado exitosamente');
-
-        // Redirigir a la página de cuenta
         router.push('/cuenta');
       } catch (profileError) {
         toast.dismiss(loadingToast);
-        // Error updating profile
         toast.error('Error al actualizar perfil. Contacta con servicio al cliente.');
       }
     } catch (error) {
-      // Error uploading files
-      console.error('❌ Error al subir archivos en edición de perfil:', error);
-      console.error('❌ Detalle del error:', {
-        message: error instanceof Error ? error.message : 'Error desconocido',
-        stack: error instanceof Error ? error.stack : undefined,
-        errorObject: error
-      });
+      console.error('❌ Error al subir archivos:', error);
       toast.error('Error al subir archivos. Inténtalo de nuevo.');
     } finally {
       setUploading(false);

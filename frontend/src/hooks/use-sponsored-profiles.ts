@@ -1,13 +1,13 @@
 'use client';
 
 import { useQuery, UseQueryOptions, useQueryClient } from '@tanstack/react-query';
-import { 
-  getSponsoredProfiles, 
-  getSponsoredProfilesForCards, 
+import {
+  getSponsoredProfiles,
+  getSponsoredProfilesForCards,
   getSponsoredProfilesCount,
   checkProfileSponsored,
   type SponsoredProfilesQuery,
-  type SponsoredProfilesResponse 
+  type SponsoredProfilesResponse
 } from '@/services/sponsored-profiles.service';
 
 /**
@@ -182,9 +182,17 @@ export const useSponsoredProfilesActions = () => {
  */
 export const useFeaturedSponsoredProfiles = (
   page: number = 1,
-  limit: number = 20
+  limit: number = 20,
+  filters?: Partial<SponsoredProfilesQuery>
 ) => {
-  const profilesQuery = useSponsoredProfilesForCards(page, limit);
+  // Construir query completo con paginación y filtros
+  const query: SponsoredProfilesQuery = {
+    page,
+    limit,
+    ...filters,
+  };
+
+  const profilesQuery = useSponsoredProfiles(query);
   const countQuery = useSponsoredProfilesCount();
   const actions = useSponsoredProfilesActions();
 
@@ -192,20 +200,20 @@ export const useFeaturedSponsoredProfiles = (
     // Datos de perfiles
     profiles: profilesQuery.data?.profiles || [],
     pagination: profilesQuery.data?.pagination,
-    
+
     // Estados de carga
     isLoading: profilesQuery.isLoading,
     isError: profilesQuery.isError || countQuery.isError,
     error: profilesQuery.error || countQuery.error,
-    
+
     // Estados adicionales
     isFetching: profilesQuery.isFetching,
     isRefetching: profilesQuery.isRefetching,
-    
+
     // Conteo total
     totalCount: countQuery.data || 0,
     isCountLoading: countQuery.isLoading,
-    
+
     // Acciones
     refetch: profilesQuery.refetch,
     refetchCount: countQuery.refetch,

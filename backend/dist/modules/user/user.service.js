@@ -1,15 +1,49 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateUserLastLogin = exports.getUserProfiles = exports.getUsers = exports.updateUser = exports.getUserById = exports.uploadUserDocument = exports.findUserByEmail = exports.createUser = void 0;
+exports.deleteUserCompletely = exports.updateUserLastLogin = exports.getUserProfiles = exports.getUsers = exports.updateUser = exports.getUserById = exports.uploadUserDocument = exports.findUserByEmail = exports.createUser = void 0;
 const User_model_1 = __importDefault(require("./User.model"));
 const profile_verification_model_1 = __importDefault(require("../profile-verification/profile-verification.model"));
 const createUser = (data) => User_model_1.default.create(data);
 exports.createUser = createUser;
 const findUserByEmail = async (email) => {
-    return User_model_1.default.findOne({ email });
+    const normalizedEmail = email.toLowerCase().trim();
+    return User_model_1.default.findOne({ email: normalizedEmail });
 };
 exports.findUserByEmail = findUserByEmail;
 const uploadUserDocument = async (userId, documentUrl) => {
@@ -103,3 +137,41 @@ const updateUserLastLogin = async (userId) => {
     }
 };
 exports.updateUserLastLogin = updateUserLastLogin;
+const deleteUserCompletely = async (userId) => {
+    try {
+        if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+            throw new Error('Formato de ID de usuario inválido');
+        }
+        const user = await User_model_1.default.findById(userId).populate('profiles');
+        if (!user) {
+            throw new Error('Usuario no encontrado');
+        }
+        if (user.profiles && user.profiles.length > 0) {
+            const profileIds = user.profiles.map((profile) => profile._id);
+            await profile_verification_model_1.default.deleteMany({ profile: { $in: profileIds } });
+        }
+        const { ProfileModel } = await Promise.resolve().then(() => __importStar(require('../profile/profile.model')));
+        await ProfileModel.deleteMany({ user: userId });
+        try {
+            const InvoiceModule = await Promise.resolve().then(() => __importStar(require('../payments/invoice.model')));
+            const InvoiceModel = InvoiceModule.default;
+            await InvoiceModel.deleteMany({ user: userId });
+        }
+        catch (error) {
+            console.warn('No se pudieron eliminar las facturas:', error);
+        }
+        await User_model_1.default.findByIdAndDelete(userId);
+        return {
+            success: true,
+            message: 'Usuario y todos sus datos relacionados han sido eliminados exitosamente',
+            deletedData: {
+                userId,
+                profilesCount: user.profiles?.length || 0
+            }
+        };
+    }
+    catch (error) {
+        throw error;
+    }
+};
+exports.deleteUserCompletely = deleteUserCompletely;

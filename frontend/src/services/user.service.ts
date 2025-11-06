@@ -96,12 +96,12 @@ export const getProfileVerification = async (profileId: string) => {
                     steps: {
                         documentPhotos: {
                             frontPhoto: '',
-                            backPhoto: '',
                             selfieWithDocument: '',
                             isVerified: false
                         },
-                        videoVerification: {
-                            videoLink: '',
+                        mediaVerification: {
+                            mediaLink: '',
+                            mediaType: '',
                             isVerified: false
                         },
                         videoCallRequested: {

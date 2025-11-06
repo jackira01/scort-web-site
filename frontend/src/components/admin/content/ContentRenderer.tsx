@@ -1,6 +1,6 @@
 'use client';
 
-import { IContentPage, IContentSection, IContentBlock, ContentBlockType } from '@/types/content.types';
+import { IContentPage, IContentSection, IContentBlock, ContentBlockType, IFaqItem } from '@/types/content.types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -13,44 +13,59 @@ interface ContentRendererProps {
   showSectionTitles?: boolean;
 }
 
-const ContentRenderer = ({ 
-  page, 
+const ContentRenderer = ({
+  page,
   className,
   showTitle = true,
-  showSectionTitles = true 
+  showSectionTitles = true
 }: ContentRendererProps) => {
   const renderBlock = (block: IContentBlock) => {
     switch (block.type) {
       case ContentBlockType.PARAGRAPH:
         return (
-          <div 
+          <div
             className="prose prose-sm max-w-none text-foreground"
-            dangerouslySetInnerHTML={{ 
-              __html: typeof block.value === 'string' ? block.value : '' 
+            dangerouslySetInnerHTML={{
+              __html: typeof block.value === 'string' ? block.value : ''
             }}
           />
         );
 
       case ContentBlockType.LIST:
-        const listItems = Array.isArray(block.value) ? block.value : [];
+        const listItems = Array.isArray(block.value) && block.value.length > 0 && typeof block.value[0] === 'string'
+          ? block.value as string[]
+          : [];
         return (
-          <div className="space-y-2">
+          <ul className="list-disc list-inside space-y-2 text-foreground">
             {listItems.map((item, index) => (
-              <details key={index} className="group border border-border rounded-lg">
+              <li key={index} className="text-sm">
+                {item}
+              </li>
+            ))}
+          </ul>
+        );
+
+      case ContentBlockType.FAQ:
+        const faqItems = Array.isArray(block.value) && block.value.length > 0 && typeof block.value[0] === 'object'
+          ? block.value as IFaqItem[]
+          : [];
+        return (
+          <div className="space-y-3">
+            {faqItems.map((faqItem, index) => (
+              <details key={index} className="group border border-border rounded-lg overflow-hidden">
                 <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                  <span className="font-medium text-foreground">{item}</span>
-                  <svg 
-                    className="w-5 h-5 text-muted-foreground transition-transform group-open:rotate-180" 
-                    fill="none" 
-                    stroke="currentColor" 
+                  <span className="font-medium text-foreground pr-4">{faqItem.question}</span>
+                  <svg
+                    className="w-5 h-5 text-muted-foreground transition-transform group-open:rotate-180 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </summary>
-                <div className="px-4 pb-4 text-sm text-muted-foreground">
-                  {/* Aquí se puede agregar contenido adicional si es necesario */}
-                  Información adicional sobre: {item}
+                <div className="px-4 pb-4 pt-2 text-sm text-muted-foreground border-t border-border bg-muted/20">
+                  <p className="whitespace-pre-wrap">{faqItem.answer}</p>
                 </div>
               </details>
             ))}
@@ -61,9 +76,9 @@ const ContentRenderer = ({
         const imageUrl = typeof block.value === 'string' ? block.value : '';
         return imageUrl ? (
           <div className="my-4">
-            <img 
-              src={imageUrl} 
-              alt="Contenido" 
+            <img
+              src={imageUrl}
+              alt="Contenido"
               className="max-w-full h-auto rounded-lg shadow-sm"
             />
           </div>
@@ -72,7 +87,7 @@ const ContentRenderer = ({
       case ContentBlockType.LINK:
         const linkUrl = typeof block.value === 'string' ? block.value : '';
         return linkUrl ? (
-          <a 
+          <a
             href={linkUrl}
             target="_blank"
             rel="noopener noreferrer"
@@ -97,7 +112,7 @@ const ContentRenderer = ({
           <Separator />
         </div>
       )}
-      
+
       <div className="space-y-4">
         {section.blocks
           .sort((a, b) => (a.order || 0) - (b.order || 0))
@@ -120,7 +135,7 @@ const ContentRenderer = ({
           <Separator />
         </div>
       )}
-      
+
       <div className="space-y-8">
         {page.sections
           .sort((a, b) => (a.order || 0) - (b.order || 0))

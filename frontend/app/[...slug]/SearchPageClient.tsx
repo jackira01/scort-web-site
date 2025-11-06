@@ -330,8 +330,21 @@ export default function SearchPageClient({
       </div>
 
       <div className="container mx-auto px-4 py-6">
-        {/* Sección de perfiles destacados */}
-        <FeaturedProfilesSection className="mb-8" />
+        {/* Sección de perfiles destacados con los mismos filtros */}
+        <FeaturedProfilesSection
+          className="mb-8"
+          filters={{
+            category: filters.category,
+            department: filters.location?.department,
+            city: filters.location?.city,
+            features: normalizeFiltersForQuery().features,
+            minPrice: filters.priceRange?.min,
+            maxPrice: filters.priceRange?.max,
+            identityVerified: filters.verification?.identityVerified,
+            hasVideo: filters.verification?.hasVideo,
+            documentVerified: filters.verification?.documentVerified,
+          }}
+        />
 
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar de filtros - Desktop */}

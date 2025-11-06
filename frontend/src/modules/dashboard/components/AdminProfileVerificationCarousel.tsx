@@ -55,41 +55,22 @@ const AdminProfileVerificationCarousel: React.FC<
 
   // Debug log para verificar los datos de verificación
   useEffect(() => {
-    console.log('🔍 AdminProfileVerificationCarousel - verificationData changed:');
-    console.log('📊 Full verificationData object:', verificationData);
-    console.log('📋 verificationData type:', typeof verificationData);
-    console.log('🔑 verificationData keys:', verificationData ? Object.keys(verificationData) : 'No data');
-    
     if (verificationData) {
-      console.log('🔍 Detailed structure analysis:');
-      console.log('- _id (direct):', verificationData._id);
-      console.log('- success:', verificationData.success);
-      console.log('- data:', verificationData.data);
-      
+
+
       // Si tiene la estructura { success: true, data: { _id, steps, ... } }
       if (verificationData.success && verificationData.data) {
-        console.log('📋 Backend response structure detected:');
-        console.log('- verificationData.data._id:', verificationData.data._id);
-        console.log('- verificationData.data.steps:', verificationData.data.steps);
-        console.log('- verificationData.data.verificationStatus:', verificationData.data.verificationStatus);
-        console.log('- verificationData.data.verificationProgress:', verificationData.data.verificationProgress);
-        
+
         if (verificationData.data.steps) {
-          console.log('🔍 Steps structure:');
           Object.entries(verificationData.data.steps).forEach(([stepKey, stepValue]) => {
-            console.log(`- ${stepKey}:`, stepValue);
           });
         }
       }
       // Si tiene la estructura directa { _id, data: { steps: ... } }
       else if (verificationData._id && verificationData.data) {
-        console.log('📋 Direct structure detected:');
-        console.log('- Direct _id:', verificationData._id);
-        console.log('- Direct data.steps:', verificationData.data.steps);
+
       }
     }
-    
-    console.log('✅ hasData:', !!verificationData);
   }, [verificationData]);
 
   // Fetch profile data using the hook
@@ -138,33 +119,19 @@ const AdminProfileVerificationCarousel: React.FC<
 
   // Debug log para entender por qué el botón permanece deshabilitado
   useEffect(() => {
-    console.log('🔍 Changes detection:', {
-      hasChanges,
-      hasIsActiveChanged,
-      hasAnyChanges,
-      verificationDataExists: !!verificationData,
-      verificationId: verificationData?.data?._id
-    });
   }, [hasChanges, hasIsActiveChanged, hasAnyChanges, verificationData]);
 
   // Función personalizada para guardar todos los cambios
   const handleSaveAllChanges = async () => {
-    console.log('🔍 DEBUG handleSaveAllChanges:');
-    console.log('📊 hasIsActiveChanged:', hasIsActiveChanged);
-    console.log('📊 hasChanges:', hasChanges);
-    console.log('📊 verificationData:', verificationData);
 
     try {
       // Guardar cambios de isActive si han cambiado
       if (hasIsActiveChanged) {
-        console.log('💾 Guardando cambios de isActive...');
         const profileResult = await updateProfileMutation.mutateAsync({ isActive: isActiveLocal });
-        console.log('✅ Cambios de isActive guardados:', profileResult);
       }
 
       // Guardar cambios de verificación si los hay
       if (hasChanges) {
-        console.log('💾 Guardando cambios de verificación...');
         await handleSaveChanges();
       }
 
@@ -177,7 +144,6 @@ const AdminProfileVerificationCarousel: React.FC<
 
   // Función personalizada para cancelar todos los cambios
   const handleCancelAllChanges = () => {
-    console.log('🔄 Canceling all changes');
     // Restaurar isActive al valor original
     if (profileData.data?.isActive !== undefined) {
       setIsActiveLocal(profileData.data.isActive);
@@ -185,7 +151,6 @@ const AdminProfileVerificationCarousel: React.FC<
 
     // Cancelar cambios de verificación
     resetChanges();
-    console.log('✅ All changes canceled');
   };
 
   // Current step and navigation
@@ -206,13 +171,10 @@ const AdminProfileVerificationCarousel: React.FC<
 
   // Save and cancel functions
   const handleSaveChanges = async () => {
-    // Debug: Verificar datos antes de guardar
-    console.log('🔍 DEBUG handleSaveChanges:');
-    console.log('📊 verificationData:', verificationData);
-    
+    // Debug: Verificar datos antes de guarda
+
     // Verificar si tenemos datos de verificación válidos
     if (!verificationData) {
-      console.log('❌ No verificationData available');
       toast.error('No se puede guardar: datos de verificación no disponibles');
       return;
     }
@@ -223,25 +185,17 @@ const AdminProfileVerificationCarousel: React.FC<
 
     // La estructura del backend siempre es { success: true, data: { _id, ... } }
     if (verificationData.success && verificationData.data?._id) {
-      console.log('📋 Backend structure detected');
       actualVerificationData = verificationData.data;
       verificationId = verificationData.data._id;
-      console.log('- Using verificationData.data._id:', verificationId);
-      console.log('- Using verificationData.data for processing:', actualVerificationData);
+
     }
     // Fallback para estructura directa (no debería ocurrir con el backend actual)
     else if (verificationData._id && verificationData.steps) {
-      console.log('📋 Direct structure detected (fallback)');
       actualVerificationData = verificationData;
       verificationId = verificationData._id;
-      console.log('- Using direct _id:', verificationId);
-      console.log('- Using direct data for processing:', actualVerificationData);
     }
     else {
-      console.log('❌ Invalid verificationData structure:', verificationData);
-      console.log('Available keys:', verificationData ? Object.keys(verificationData) : 'No data');
       if (verificationData?.data) {
-        console.log('Data keys:', Object.keys(verificationData.data));
       }
       toast.error('Estructura de datos de verificación inválida');
       return;
@@ -249,7 +203,6 @@ const AdminProfileVerificationCarousel: React.FC<
 
     // Verificar si tenemos el ID de verificación
     if (!verificationId) {
-      console.log('❌ No verification ID available');
       toast.error('No se puede guardar: ID de verificación no disponible');
       return;
     }
@@ -257,22 +210,15 @@ const AdminProfileVerificationCarousel: React.FC<
     // Verificar si tenemos steps válidos (considerando estructura anidada)
     const stepsData = actualVerificationData?.data?.steps || actualVerificationData?.steps;
     if (!stepsData) {
-      console.log('❌ No steps data available');
-      console.log('- actualVerificationData.data:', actualVerificationData?.data);
-      console.log('- actualVerificationData.steps:', actualVerificationData?.steps);
+
       toast.error('No se puede guardar: datos de steps no disponibles');
       return;
     }
 
     try {
-      console.log('🚀 Proceeding with save operation...');
-      console.log('📤 Data to send to buildUpdatedSteps:', verificationData);
-      
       const updatedSteps = buildUpdatedSteps(verificationData);
-      console.log('📤 Sending updated steps:', updatedSteps);
-      
+
       const result = await updateVerificationMutation.mutateAsync(updatedSteps);
-      console.log('✅ Save result:', result);
       resetChanges();
     } catch (error) {
       console.error('❌ Error al guardar cambios de verificación:', error);
@@ -288,7 +234,7 @@ const AdminProfileVerificationCarousel: React.FC<
   if (isLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Verificación de Perfil</DialogTitle>
           </DialogHeader>
@@ -306,7 +252,7 @@ const AdminProfileVerificationCarousel: React.FC<
   if (error || !verificationData) {
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Error de Verificación</DialogTitle>
           </DialogHeader>
@@ -331,7 +277,7 @@ const AdminProfileVerificationCarousel: React.FC<
   if (!verificationData?.data?.steps) {
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Verificación de Perfil</DialogTitle>
           </DialogHeader>
@@ -349,7 +295,7 @@ const AdminProfileVerificationCarousel: React.FC<
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5" />
@@ -418,7 +364,7 @@ const AdminProfileVerificationCarousel: React.FC<
               {verificationSteps.map((step, index) => (
                 <button
                   type="button"
-                  key={`verification-step-${step.key}`}
+                  key={`verification-step-${step.key}-${index}`}
                   onClick={() => setCurrentStepIndex(index)}
                   className={`h-2 w-2 rounded-full transition-colors ${index === currentStepIndex
                     ? 'bg-primary'
@@ -720,7 +666,7 @@ const AdminProfileVerificationCarousel: React.FC<
                     onClick={handleSaveAllChanges}
                     className="flex-1"
                     disabled={
-                      updateVerificationMutation.isPending || 
+                      updateVerificationMutation.isPending ||
                       updateProfileMutation.isPending
                     }
                   >
