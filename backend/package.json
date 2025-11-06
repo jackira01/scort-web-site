@@ -12,7 +12,6 @@
     "start:dev": "ts-node ./src/server.ts",
     "dev": "nodemon --exec ts-node ./src/server.ts",
     "clean": "rimraf dist",
-    "prebuild": "pnpm run clean",
     "migrate:config-parameters": "ts-node ./scripts/migrate-config-parameters.ts",
     "migrate:plan-to-planassignment": "ts-node ./scripts/migrate-plan-to-planassignment.ts",
     "migrate:revert-planassignment": "ts-node ./scripts/migrate-plan-to-planassignment.ts revert",
