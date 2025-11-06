@@ -16,7 +16,7 @@ FROM base AS builder
 ENV NODE_ENV=development
 
 COPY backend ./backend
-COPY tsconfig.json* ./
+COPY backend/tsconfig.json ./backend/
 
 RUN pnpm install --lockfile-only=false --filter backend... --include dev
 WORKDIR /app/backend
