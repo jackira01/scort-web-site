@@ -6,19 +6,19 @@ RUN npm install -g pnpm@10.13.1
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY backend/package.json backend/
+COPY backend/package.json ./backend/
 
 # =======================
 # Etapa de build
 # =======================
 FROM base AS builder
+
 ENV NODE_ENV=development
 
-COPY backend backend
-COPY tsconfig.json* .
+COPY backend ./backend
+COPY tsconfig.json* ./
 
-RUN pnpm install --filter backend... --include dev
-
+RUN pnpm install --lockfile-only=false --filter backend... --include dev
 WORKDIR /app/backend
 RUN pnpm --filter backend run build:prod
 
@@ -30,12 +30,12 @@ RUN npm install -g pnpm@10.13.1
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY backend/package.json backend/
+COPY backend/package.json ./backend/
 
 ENV NODE_ENV=production
-RUN pnpm install --filter backend --prod
+RUN pnpm install --lockfile-only=false --filter backend --prod
 
-COPY --from=builder /app/backend/dist backend/dist
+COPY --from=builder /app/backend/dist ./backend/dist
 
 RUN addgroup -g 1001 -S nodejs \
  && adduser -S backend -u 1001 \
@@ -44,6 +44,7 @@ RUN addgroup -g 1001 -S nodejs \
 
 USER backend
 WORKDIR /app/backend
+
 EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
