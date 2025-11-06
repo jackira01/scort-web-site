@@ -1,0 +1,5 @@
+{
+    "captainVersion": "4",
+    "dockerfilePath": "./Dockerfile",
+    "buildContext": "./"
+}
