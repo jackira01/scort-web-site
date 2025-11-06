@@ -1,0 +1,82 @@
+# Dependencias
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Frontend (no incluir en build de backend)
+frontend/
+
+# Archivos de desarrollo
+.env
+.env.*
+.env.local
+.env.development
+.env.test
+
+# Build
+dist
+build
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+
+# Control de versiones
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Testing
+coverage
+.nyc_output
+*.test.ts
+*.spec.ts
+__tests__
+__mocks__
+
+# Documentación
+README.md
+*.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# CapRover
+captain-definition*
+
+# Scripts de desarrollo
+scripts/deploy.sh
+scripts/backup.sh
+
+# Configuración local
+.prettierrc
+.eslintrc
+.editorconfig
+tsconfig.json
+nodemon.json
+
+# MongoDB
+mongodb.Dockerfile
+
+# Nginx
+nginx/
+
+# Monitoreo
+monitoring.config.js
+lighthouserc.js

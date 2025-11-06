@@ -979,35 +979,84 @@ Todas las imágenes y videos se suben a Cloudinary.
 - MongoDB (Atlas recomendado)
 - Variables de entorno configuradas
 
+### Arquitectura de Archivos (Monorepo)
+
+Este proyecto usa una configuración centralizada en la raíz para despliegues con CapRover:
+
+```
+SCORT-WEB-SITE/                    # Raíz del proyecto
+├── Dockerfile                     # ✅ Dockerfile centralizado
+├── captain-definition-backend     # ✅ Configuración CapRover
+├── .dockerignore                  # ✅ Exclusiones globales
+├── backend/                       # Código del backend
+│   ├── src/
+│   ├── package.json
+│   ├── pnpm-lock.yaml
+│   └── .dockerignore             # Exclusiones específicas del backend
+└── frontend/                      # Código del frontend
+    └── ...
+```
+
+**Nota importante**: Los archivos `Dockerfile` y `captain-definition` están en la **raíz del proyecto**, no dentro de `backend/`. Esto es el enfoque recomendado para monorepos.
+
 ### Archivos de Configuración
 
-**captain-definition**:
+**captain-definition-backend** (en la raíz):
 ```json
 {
   "schemaVersion": 2,
-  "dockerfilePath": "./Dockerfile"
+  "dockerfilePath": "./Dockerfile",
+  "imageName": "scort-web-backend"
 }
 ```
 
-**Dockerfile**:
+**Dockerfile** (en la raíz):
 - Multi-stage build optimizado
-- Usuario no-root
+- Copia archivos desde `./backend/`
+- Usuario no-root para seguridad
 - Health check integrado
-- Variables de entorno
+- Contexto de build desde la raíz del proyecto
+
+**Estructura del Dockerfile**:
+```dockerfile
+# Etapa base: instala dependencias
+FROM node:18-alpine AS base
+COPY ./backend/package.json ./backend/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# Etapa builder: compila TypeScript
+FROM base AS builder
+COPY ./backend .
+RUN pnpm run build:prod
+
+# Etapa producción: imagen final optimizada
+FROM node:18-alpine AS production
+COPY ./backend/package.json ./backend/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
+COPY --from=builder /app/dist ./dist
+CMD ["pnpm", "run", "start:prod"]
+```
 
 ### Pasos de Despliegue
 
 ```bash
-# 1. Instalar CLI
+# 1. Instalar CLI de CapRover
 npm install -g caprover
 
-# 2. Login
+# 2. Login en tu servidor CapRover
 caprover login
 
-# 3. Deploy
-cd backend
-caprover deploy
+# 3. Deploy desde la RAÍZ del proyecto
+cd SCORT-WEB-SITE
+caprover deploy -c captain-definition-backend
+
+# Nota: NO hacer cd backend, el contexto debe ser la raíz
 ```
+
+**Importante**: 
+- El comando `caprover deploy` se ejecuta desde la **raíz del proyecto**
+- Se usa el flag `-c captain-definition-backend` para especificar el archivo de definición
+- El contexto de Docker es la raíz, permitiendo copiar desde `./backend/`
 
 ### Variables de Entorno en CapRover
 
@@ -1027,11 +1076,46 @@ Configurar en App Configs → Environment Variables:
 
 ### Health Check
 
-El Dockerfile incluye health check que verifica `/health` cada 30 segundos.
+El Dockerfile incluye health check que verifica el endpoint `/ping` cada 30 segundos:
+
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 5000) + '/ping', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+```
+
+Asegúrate de que tu backend tenga un endpoint `/ping` o ajusta el health check.
 
 ### SSL/HTTPS
 
 CapRover incluye Let's Encrypt para SSL automático.
+
+### Migración desde Configuración Anterior
+
+Si tenías archivos `Dockerfile` y `captain-definition` dentro de `backend/`, estos han sido migrados a la raíz:
+
+**Antes** (Enfoque 1 - NO recomendado para monorepos):
+```
+backend/
+├── Dockerfile              # ❌ Eliminado
+├── captain-definition      # ❌ Eliminado
+└── src/
+```
+
+**Después** (Enfoque 2 - Recomendado):
+```
+SCORT-WEB-SITE/
+├── Dockerfile                     # ✅ Nuevo
+├── captain-definition-backend     # ✅ Nuevo
+├── .dockerignore                  # ✅ Nuevo
+└── backend/
+    └── src/
+```
+
+**Beneficios del Enfoque 2**:
+- ✅ Mejor organización para monorepos
+- ✅ Contexto de build desde la raíz permite acceso a múltiples carpetas
+- ✅ Preparado para agregar `captain-definition-frontend` en el futuro
+- ✅ Configuración centralizada y clara
 
 ## API Reference
 
