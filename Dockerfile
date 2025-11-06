@@ -5,7 +5,9 @@ FROM node:18-alpine AS base
 
 RUN npm install -g pnpm@10.13.1
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+
+# Copiar archivos de dependencias desde backend
+COPY ./backend/package.json ./backend/pnpm-lock.yaml ./
 
 RUN pnpm install --frozen-lockfile
 
@@ -14,7 +16,10 @@ RUN pnpm install --frozen-lockfile
 # Etapa de build
 # =======================
 FROM base AS builder
-COPY . .
+
+# Copiar todo el código del backend
+COPY ./backend .
+
 RUN pnpm run build:prod
 
 
@@ -27,7 +32,7 @@ RUN npm install -g pnpm@10.13.1
 WORKDIR /app
 
 # Copiar solo package.json para deps mínimas
-COPY package.json pnpm-lock.yaml ./
+COPY ./backend/package.json ./backend/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Copiar el build desde builder
