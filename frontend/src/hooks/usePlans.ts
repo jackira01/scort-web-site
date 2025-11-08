@@ -21,6 +21,7 @@ const transformBackendPlanToFrontend = (backendPlan: any): Plan => {
     _id: backendPlan._id,
     code: backendPlan.code,
     name: backendPlan.name,
+    description: backendPlan.description,
     level: backendPlan.level,
     variants: backendPlan.variants?.map((variant: any, index: number) => ({
       price: variant.price,
@@ -117,6 +118,7 @@ const plansApi = {
     const backendData = {
       code: data.code,
       name: data.name,
+      description: data.description,
       level: data.level,
       active: data.active,
       // Tomar variants pero solo con days, price y durationRank
@@ -153,6 +155,7 @@ const plansApi = {
     const backendData = {
       code: data.code,
       name: data.name,
+      description: data.description,
       level: data.level,
       active: data.active,
       // Tomar variants pero solo con days, price y durationRank

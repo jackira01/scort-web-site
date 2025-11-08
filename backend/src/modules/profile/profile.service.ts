@@ -96,23 +96,39 @@ const getDefaultPlanConfig = async (): Promise<{ planId: string | null; planCode
   }
 };
 
+// Interfaz para información del cupón
+interface CouponInfo {
+  code: string;
+  name: string;
+  type: string;
+  value: number;
+  originalAmount: number;
+  discountAmount: number;
+  finalAmount: number;
+}
+
 const generateWhatsAppMessage = async (
   userId: string,
   profileId: string,
   invoiceId?: string,
   invoiceNumber?: string,
   planCode?: string,
-  variantDays?: number
+  variantDays?: number,
+  couponInfo?: CouponInfo
 ): Promise<WhatsAppMessage | null> => {
   try {
+    console.log('🔍 [generateWhatsAppMessage] Iniciando generación con:', { userId, profileId, invoiceId, invoiceNumber, planCode, variantDays, couponInfo });
+
     // Obtener parámetros de configuración de la empresa
     const [companyName, companyWhatsApp] = await Promise.all([
       ConfigParameterService.getValue('company.name'),
       ConfigParameterService.getValue('company.whatsapp.number')
     ]);
 
+    console.log('📞 [generateWhatsAppMessage] Configuración de empresa:', { companyName, companyWhatsApp });
+
     if (!companyName || !companyWhatsApp) {
-      // Parámetros de empresa no configurados
+      console.warn('⚠️ [generateWhatsAppMessage] Parámetros de empresa no configurados');
       return null;
     }
 
@@ -128,10 +144,21 @@ const generateWhatsAppMessage = async (
       }
     }
 
+    // Agregar información de descuento si existe
+    let discountInfo = '';
+    if (couponInfo && couponInfo.originalAmount !== undefined && couponInfo.discountAmount !== undefined && couponInfo.finalAmount !== undefined) {
+      console.log('💰 [generateWhatsAppMessage] Agregando información de descuento:', couponInfo);
+      discountInfo = `\n\n**Detalle de Descuento:**\n• Cupón: ${couponInfo.code} - ${couponInfo.name}\n• Precio Original: $${couponInfo.originalAmount.toFixed(2)}\n• Descuento Aplicado: -$${couponInfo.discountAmount.toFixed(2)}\n• Total a Pagar: $${couponInfo.finalAmount.toFixed(2)}`;
+    } else if (couponInfo) {
+      console.warn('⚠️ [generateWhatsAppMessage] couponInfo incompleto:', couponInfo);
+    }
+
     // Generar mensaje elegante
     const message = invoiceId
-      ? `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n📋 **Detalles de mi compra:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención. 😊`
-      : `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n📋 **Detalles:**\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. 😊`;
+      ? `¡Hola ${companyName}! \n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n **Detalles de mi compra:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}${discountInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención.`
+      : `¡Hola ${companyName}! \n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n **Detalles:**\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. `;
+
+    console.log('✅ [generateWhatsAppMessage] Mensaje generado exitosamente');
 
     return {
       userId,
@@ -141,7 +168,7 @@ const generateWhatsAppMessage = async (
       message
     };
   } catch (error) {
-    // Error al generar mensaje de WhatsApp
+    console.error('❌ [generateWhatsAppMessage] Error al generar mensaje:', error);
     return null;
   }
 };
@@ -606,14 +633,38 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
 
   // Generar mensaje de WhatsApp
   // Generando mensaje de WhatsApp
+  console.log('🔍 [createProfileWithInvoice] Datos de factura para WhatsApp:', {
+    invoiceId: invoice?._id,
+    invoiceNumber: invoice?.invoiceNumber,
+    hasCoupon: !!invoice?.coupon,
+    couponData: invoice?.coupon
+  });
+
   const whatsAppMessage = await generateWhatsAppMessage(
     profile.user.toString(),
     (profile._id as Types.ObjectId).toString(),
     invoice?._id?.toString(),
-    invoice?.invoiceNumber,
+    invoice?.invoiceNumber?.toString(),
     planCode,
-    planDays
+    planDays,
+    invoice?.coupon &&
+      invoice.coupon.code &&
+      invoice.coupon.originalAmount !== undefined &&
+      invoice.coupon.discountAmount !== undefined &&
+      invoice.coupon.finalAmount !== undefined
+      ? {
+        code: invoice.coupon.code,
+        name: invoice.coupon.name || '',
+        type: invoice.coupon.type || '',
+        value: invoice.coupon.value || 0,
+        originalAmount: invoice.coupon.originalAmount,
+        discountAmount: invoice.coupon.discountAmount,
+        finalAmount: invoice.coupon.finalAmount
+      }
+      : undefined
   );
+
+  console.log('📱 [createProfileWithInvoice] WhatsApp message resultado:', { whatsAppMessage: !!whatsAppMessage });
 
   // Mensaje de WhatsApp procesado
 
@@ -1728,13 +1779,38 @@ export const purchaseUpgrade = async (
     // Factura generada para upgrade
 
     // Generar mensaje de WhatsApp similar a createProfileWithInvoice
+    console.log('🔍 [purchaseUpgrade] Datos de factura para WhatsApp:', {
+      invoiceId: invoice._id,
+      invoiceNumber: invoice.invoiceNumber,
+      hasCoupon: !!invoice.coupon,
+      couponData: invoice.coupon
+    });
+
     const whatsAppMessage = await generateWhatsAppMessage(
       profile.user.toString(),
       (profile._id as Types.ObjectId).toString(),
       invoice._id?.toString(),
-      invoice.invoiceNumber,
-      upgradeCode
+      invoice.invoiceNumber?.toString(),
+      upgradeCode,
+      undefined,
+      invoice.coupon &&
+        invoice.coupon.code &&
+        invoice.coupon.originalAmount !== undefined &&
+        invoice.coupon.discountAmount !== undefined &&
+        invoice.coupon.finalAmount !== undefined
+        ? {
+          code: invoice.coupon.code,
+          name: invoice.coupon.name || '',
+          type: invoice.coupon.type || '',
+          value: invoice.coupon.value || 0,
+          originalAmount: invoice.coupon.originalAmount,
+          discountAmount: invoice.coupon.discountAmount,
+          finalAmount: invoice.coupon.finalAmount
+        }
+        : undefined
     );
+
+    console.log('📱 [purchaseUpgrade] WhatsApp message resultado:', { whatsAppMessage: !!whatsAppMessage });
 
     // Retornar información de la compra pendiente con datos de WhatsApp
     return {

@@ -11,7 +11,11 @@ class CacheService {
   private reconnectTimeout: NodeJS.Timeout | null = null;
 
   constructor() {
-    this.initializeRedis();
+    // Redis desactivado temporalmente - NO INICIALIZAR
+    // this.initializeRedis();
+    logger.info('⚠️ Redis desactivado - Modo sin caché');
+    this.redis = null;
+    this.isConnected = false;
   }
 
   /**
@@ -20,7 +24,7 @@ class CacheService {
   private async initializeRedis(): Promise<void> {
     try {
       const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-      
+
       this.redis = new Redis(redisUrl, {
         maxRetriesPerRequest: null,
         lazyConnect: true,
@@ -54,7 +58,7 @@ class CacheService {
   private handleConnectionError(error: any) {
     const now = Date.now();
     this.connectionAttempts++;
-    
+
     // Si hemos excedido el máximo de intentos, desconectar completamente
     if (this.connectionAttempts > this.maxConnectionAttempts) {
       if (now - this.lastErrorTime > this.errorLogThrottle) {
@@ -64,7 +68,7 @@ class CacheService {
       this.disableRedis();
       return;
     }
-    
+
     // Solo loggear errores cada 30 segundos para evitar spam
     if (now - this.lastErrorTime > this.errorLogThrottle) {
       if (this.connectionAttempts === 1) {
@@ -90,7 +94,7 @@ class CacheService {
     // Solo intentar reconectar si no hemos excedido el máximo de intentos
     if (this.connectionAttempts < this.maxConnectionAttempts) {
       const delay = Math.min(1000 * Math.pow(2, this.connectionAttempts), 30000); // Backoff exponencial
-      
+
       this.reconnectTimeout = setTimeout(() => {
         if (!this.isConnected && this.redis) {
           this.redis.connect().catch(() => {
@@ -109,14 +113,14 @@ class CacheService {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
-    
+
     if (this.redis) {
       // Remover todos los event listeners para evitar más errores
       this.redis.removeAllListeners();
       this.redis.disconnect();
       this.redis = null;
     }
-    
+
     this.isConnected = false;
   }
 
@@ -253,7 +257,7 @@ class CacheService {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
-    
+
     if (this.redis) {
       await this.redis.quit();
       this.isConnected = false;

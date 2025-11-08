@@ -4,11 +4,12 @@ import { ReadPreferenceMode } from 'mongodb';
 // Configuración optimizada para producción
 const getConnectionOptions = () => {
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   return {
     maxPoolSize: isProduction ? 10 : 5, // Máximo de conexiones en el pool
-    serverSelectionTimeoutMS: 5000, // Timeout para selección de servidor
-    socketTimeoutMS: 45000, // Timeout para operaciones de socket
+    serverSelectionTimeoutMS: 10000, // Aumentado a 10s para evitar timeouts prematuros
+    socketTimeoutMS: 0, // Deshabilitado (0) para evitar desconexiones por inactividad
+    heartbeatFrequencyMS: 10000, // Heartbeat cada 10s (default)
     bufferCommands: false, // Deshabilitar buffering de comandos
     retryWrites: true, // Reintentar escrituras automáticamente
     w: 'majority' as any, // Write concern para consistencia
@@ -29,7 +30,7 @@ export const connectDB = async () => {
     }
 
     const options = getConnectionOptions();
-    
+
     // Configurar eventos de conexión
     mongoose.connection.on('connected', () => {
       console.log('✅ MongoDB conectado exitosamente');
@@ -51,7 +52,7 @@ export const connectDB = async () => {
     });
 
     await mongoose.connect(mongoUri, options);
-    
+
   } catch (error) {
     console.error('❌ Error conectando a MongoDB:', error);
     process.exit(1);

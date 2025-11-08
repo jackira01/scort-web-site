@@ -46,6 +46,7 @@ class InvoiceService {
     let totalAmount = 0;
     let planDetails = '';
     let resolvedPlanId: string | undefined; // Guardar el ID del plan para validación de cupones
+    let resolvedPlanCode: string | undefined; // Guardar el CÓDIGO del plan para validación de cupones
 
     // Agregar plan si se especifica (por ID o código)
     if ((planId || planCode) && planDays) {
@@ -62,17 +63,18 @@ class InvoiceService {
         throw new Error(`Plan con ${planId ? `ID ${planId}` : `código ${planCode}`} no encontrado`);
       }
 
-      // Guardar el ID del plan encontrado
+      // Guardar el ID y CÓDIGO del plan encontrado
       resolvedPlanId = plan._id.toString();
+      resolvedPlanCode = plan.code; // ✅ Guardar el código del plan
 
       const variant = plan.variants.find((v: any) => v.days === planDays);
       if (!variant) {
-        throw new Error(`Variante de ${planDays} días no encontrada para el plan ${planCode}`);
+        throw new Error(`Variante de ${planDays} días no encontrada para el plan ${resolvedPlanCode}`);
       }
 
       const planItem: InvoiceItem = {
         type: 'plan' as const,
-        code: planCode,
+        code: resolvedPlanCode, // ✅ Usar el código resuelto
         name: plan.name,
         days: planDays,
         price: variant.price,
@@ -82,7 +84,7 @@ class InvoiceService {
       totalAmount += variant.price;
 
       // Construir detalles del plan para las notas
-      planDetails = `Plan: ${plan.name} (${planCode}) - Variante: ${planDays} días - Precio: $${variant.price}`;
+      planDetails = `Plan: ${plan.name} (${resolvedPlanCode}) - Variante: ${planDays} días - Precio: $${variant.price}`;
 
       // Item de plan agregado
     }
@@ -123,13 +125,18 @@ class InvoiceService {
 
     // Aplicar cupón si se proporciona
     if (couponCode) {
-      // Usar planId en lugar de planCode para la validación
-      const couponResult = await couponService.applyCoupon(couponCode, totalAmount, resolvedPlanId);
+      // ✅ Usar resolvedPlanCode (código del plan) en lugar de resolvedPlanId (MongoDB _id)
+      const couponResult = await couponService.applyCoupon(
+        couponCode,
+        totalAmount,
+        resolvedPlanCode, // ✅ Pasar el código del plan (ej: "PREMIUM", "DO")
+        planDays // ✅ Pasar los días de la variante
+      );
 
       if (couponResult.success) {
         finalAmount = couponResult.finalPrice;
         // Si es un cupón de asignación de plan, actualizar el plan
-        if (couponResult.planCode && couponResult.planCode !== planCode) {
+        if (couponResult.planCode && couponResult.planCode !== resolvedPlanCode) {
           // Reemplazar el item del plan con el nuevo plan del cupón
           const newPlan = await PlanDefinitionModel.findByCode(couponResult.planCode);
           if (newPlan && planDays) {
@@ -146,6 +153,8 @@ class InvoiceService {
                   price: newVariant.price,
                   quantity: 1
                 };
+                // Actualizar también el código resuelto
+                resolvedPlanCode = couponResult.planCode;
               }
             }
           }

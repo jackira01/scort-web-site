@@ -18,6 +18,7 @@ export interface WhatsAppMessage {
 export interface CreatePlanInput {
     code: string;
     name: string;
+    description?: string; // Descripción del plan (opcional)
     level: number;
     variants: PlanVariant[];
     features: PlanFeatures;
@@ -28,6 +29,7 @@ export interface CreatePlanInput {
 
 export interface UpdatePlanInput {
     name?: string;
+    description?: string; // Descripción del plan (opcional)
     level?: number;
     variants?: PlanVariant[];
     features?: PlanFeatures;
@@ -67,6 +69,17 @@ export interface QueryOptions {
     search?: string;
 }
 
+// Interfaz para información del cupón
+interface CouponInfo {
+    code: string;
+    name: string;
+    type: string;
+    value: number;
+    originalAmount: number;
+    discountAmount: number;
+    finalAmount: number;
+}
+
 // Función helper para generar mensaje de WhatsApp
 const generateWhatsAppMessage = async (
     userId: string,
@@ -77,7 +90,8 @@ const generateWhatsAppMessage = async (
     invoiceNumber?: string,
     isRenewal?: boolean,
     price?: number,
-    expiresAt?: Date
+    expiresAt?: Date,
+    couponInfo?: CouponInfo
 ): Promise<WhatsAppMessage | null> => {
     try {
         const [companyName, companyWhatsApp] = await Promise.all([
@@ -88,6 +102,12 @@ const generateWhatsAppMessage = async (
         if (!companyName || !companyWhatsApp) {
             // Configuración de empresa incompleta para WhatsApp
             return null;
+        }
+
+        // Agregar información de descuento si existe
+        let discountInfo = '';
+        if (couponInfo && couponInfo.originalAmount !== undefined && couponInfo.discountAmount !== undefined && couponInfo.finalAmount !== undefined) {
+            discountInfo = `\n\n**Detalle de Descuento:**\n• Cupón: ${couponInfo.code} - ${couponInfo.name}\n• Precio Original: $${couponInfo.originalAmount.toFixed(2)}\n• Descuento Aplicado: -$${couponInfo.discountAmount.toFixed(2)}\n• Total a Pagar: $${couponInfo.finalAmount.toFixed(2)}`;
         }
 
         let message: string;
@@ -107,7 +127,7 @@ const generateWhatsAppMessage = async (
                     minute: '2-digit'
                 }) : 'No disponible';
 
-                message = `¡Hola! 👋\n\n🔄 **Quiero renovar mi plan** 🔄\n\nTu solicitud de renovación ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n• Total a pagar: $${(price || 0).toLocaleString()} x${variantDays || 0}\n\n💰 **"Total a pagar: $${totalPrice.toLocaleString()}"**\n\n📅 **"Vence el:"** ${expirationDate} 📅\n\nPor favor, confirma el pago para activar tu perfil. ¡Gracias! 💎`;
+                message = `¡Hola! 👋\n\n🔄 **Quiero renovar mi plan** 🔄\n\nTu solicitud de renovación ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n• Total a pagar: $${(price || 0).toLocaleString()} x${variantDays || 0}\n\n💰 **"Total a pagar: $${totalPrice.toLocaleString()}"**\n\n📅 **"Vence el:"** ${expirationDate} 📅${discountInfo}\n\nPor favor, confirma el pago para activar tu perfil. ¡Gracias! 💎`;
             } else {
                 const planInfo = planCode && variantDays
                     ? `\n• Plan: ${planCode} (${variantDays} días)`
@@ -122,7 +142,7 @@ const generateWhatsAppMessage = async (
                     ? `\n• Plan: ${planCode} (${variantDays} días)`
                     : '';
 
-                message = `¡Hola! 👋\n\nTu compra ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n\n¡Gracias por confiar en ${companyName}! 🙏\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
+                message = `¡Hola! 👋\n\nTu compra ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}${discountInfo}\n\n¡Gracias por confiar en ${companyName}! 🙏\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
             } else {
                 const planInfo = planCode && variantDays
                     ? `\n• Plan: ${planCode} (${variantDays} días)`
@@ -465,6 +485,8 @@ export class PlansService {
         // Generar factura si el plan tiene precio y NO es admin con asignación directa
         let invoiceId: string | undefined;
         let invoiceNumber: string | undefined;
+        let invoiceCouponInfo: CouponInfo | undefined;
+
         if (variant.price > 0 && (!isAdmin || generateInvoice)) {
             try {
                 const invoice = await InvoiceService.generateInvoice({
@@ -476,6 +498,23 @@ export class PlansService {
                 });
                 invoiceId = invoice.id;
                 invoiceNumber = String(invoice.invoiceNumber);
+
+                // Capturar información del cupón si existe
+                if (invoice.coupon &&
+                    invoice.coupon.code &&
+                    invoice.coupon.originalAmount !== undefined &&
+                    invoice.coupon.discountAmount !== undefined &&
+                    invoice.coupon.finalAmount !== undefined) {
+                    invoiceCouponInfo = {
+                        code: invoice.coupon.code,
+                        name: invoice.coupon.name || '',
+                        type: invoice.coupon.type || '',
+                        value: invoice.coupon.value || 0,
+                        originalAmount: invoice.coupon.originalAmount,
+                        discountAmount: invoice.coupon.discountAmount,
+                        finalAmount: invoice.coupon.finalAmount
+                    };
+                }
 
                 // Agregar factura al historial de pagos del perfil
                 profile.paymentHistory.push(new Types.ObjectId(invoice._id as string));
@@ -549,7 +588,8 @@ export class PlansService {
             invoiceNumber,
             true, // isRenewal = true
             variant.price,
-            expiresAt
+            expiresAt,
+            invoiceCouponInfo
         );
 
         return {
@@ -609,6 +649,7 @@ export class PlansService {
         // Generar factura si el plan tiene precio y NO es admin
         let invoiceId: string | undefined;
         let invoiceNumber: string | undefined;
+        let invoiceCouponInfo: CouponInfo | undefined;
 
         if (variant.price > 0 && !isAdmin) {
             try {
@@ -621,6 +662,23 @@ export class PlansService {
                 });
                 invoiceId = invoice.id;
                 invoiceNumber = String(invoice.invoiceNumber);
+
+                // Capturar información del cupón si existe
+                if (invoice.coupon &&
+                    invoice.coupon.code &&
+                    invoice.coupon.originalAmount !== undefined &&
+                    invoice.coupon.discountAmount !== undefined &&
+                    invoice.coupon.finalAmount !== undefined) {
+                    invoiceCouponInfo = {
+                        code: invoice.coupon.code,
+                        name: invoice.coupon.name || '',
+                        type: invoice.coupon.type || '',
+                        value: invoice.coupon.value || 0,
+                        originalAmount: invoice.coupon.originalAmount,
+                        discountAmount: invoice.coupon.discountAmount,
+                        finalAmount: invoice.coupon.finalAmount
+                    };
+                }
 
                 // Agregar factura al historial de pagos del perfil
                 profile.paymentHistory.push(new Types.ObjectId(invoice._id as string));
@@ -677,7 +735,8 @@ export class PlansService {
             invoiceNumber,
             true, // isRenewal = true
             variant.price,
-            newExpiresAt
+            newExpiresAt,
+            invoiceCouponInfo
         );
 
         return {

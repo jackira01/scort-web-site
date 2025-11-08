@@ -1,22 +1,22 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function (o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
+        desc = { enumerable: true, get: function () { return m[k]; } };
     }
     Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
+}) : (function (o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
 }));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function (o, v) {
     Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
+}) : function (o, v) {
     o["default"] = v;
 });
 var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
+    var ownKeys = function (o) {
         ownKeys = Object.getOwnPropertyNames || function (o) {
             var ar = [];
             for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
@@ -109,8 +109,8 @@ const generateWhatsAppMessage = async (userId, profileId, invoiceId, invoiceNumb
             }
         }
         const message = invoiceId
-            ? `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n📋 **Detalles de mi compra:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención. 😊`
-            : `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n📋 **Detalles:**\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. 😊`;
+            ? `¡Hola ${companyName}! \n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n **Detalles de mi compra:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención. `
+            : `¡Hola ${companyName}! \n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n **Detalles:**\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención.`;
         return {
             userId,
             profileId,
@@ -449,18 +449,18 @@ const getProfiles = async (page = 1, limit = 10, fields) => {
     }
     const rawProfiles = await query
         .populate({
-        path: 'user',
-        select: 'name email',
-    })
+            path: 'user',
+            select: 'name email',
+        })
         .populate({
-        path: 'verification',
-        model: 'ProfileVerification',
-        select: 'verificationProgress verificationStatus'
-    })
+            path: 'verification',
+            model: 'ProfileVerification',
+            select: 'verificationProgress verificationStatus'
+        })
         .populate({
-        path: 'features.group_id',
-        select: 'name label',
-    })
+            path: 'features.group_id',
+            select: 'name label',
+        })
         .skip(skip)
         .limit(limit)
         .lean();
@@ -519,35 +519,35 @@ const getProfilesForHome = async (page = 1, limit = 20) => {
         ]
     })
         .select({
-        name: 1,
-        age: 1,
-        description: 1,
-        user: 1,
-        'location.city.label': 1,
-        'location.department.label': 1,
-        'media.gallery': { $slice: 1 },
-        planAssignment: 1,
-        upgrades: 1,
-        lastLogin: 1,
-        createdAt: 1,
-        updatedAt: 1
-    })
+            name: 1,
+            age: 1,
+            description: 1,
+            user: 1,
+            'location.city.label': 1,
+            'location.department.label': 1,
+            'media.gallery': { $slice: 1 },
+            planAssignment: 1,
+            upgrades: 1,
+            lastLogin: 1,
+            createdAt: 1,
+            updatedAt: 1
+        })
         .populate({
-        path: 'user',
-        model: 'User',
-        select: 'name email isVerified',
-        match: { isVerified: true }
-    })
+            path: 'user',
+            model: 'User',
+            select: 'name email isVerified',
+            match: { isVerified: true }
+        })
         .populate({
-        path: 'verification',
-        model: 'ProfileVerification',
-        select: 'verificationProgress verificationStatus'
-    })
+            path: 'verification',
+            model: 'ProfileVerification',
+            select: 'verificationProgress verificationStatus'
+        })
         .populate({
-        path: 'planAssignment.planId',
-        model: 'PlanDefinition',
-        select: 'name code level features includedUpgrades'
-    })
+            path: 'planAssignment.planId',
+            model: 'PlanDefinition',
+            select: 'name code level features includedUpgrades'
+        })
         .lean();
     const profilesWithVerifiedUsers = profiles.filter(profile => {
         const hasVerifiedUser = profile.user !== null;
@@ -1420,18 +1420,18 @@ const getAllProfilesForAdmin = async (page = 1, limit = 10, fields, userId) => {
     }
     const rawProfiles = await query
         .populate({
-        path: 'user',
-        select: 'name email',
-    })
+            path: 'user',
+            select: 'name email',
+        })
         .populate({
-        path: 'verification',
-        model: 'ProfileVerification',
-        select: 'verificationProgress verificationStatus'
-    })
+            path: 'verification',
+            model: 'ProfileVerification',
+            select: 'verificationProgress verificationStatus'
+        })
         .populate({
-        path: 'features.group_id',
-        select: 'name label',
-    })
+            path: 'features.group_id',
+            select: 'name label',
+        })
         .sort({ updatedAt: -1 })
         .skip(skip)
         .limit(limit)

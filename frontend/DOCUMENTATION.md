@@ -493,6 +493,45 @@ export default function sitemap(): MetadataRoute.Sitemap {
 4. **Canonical URLs** para evitar duplicados
 5. **Implementar AMP** para páginas móviles
 
+## Configuración Backend
+
+### Redis (Temporalmente Deshabilitado)
+
+**Estado actual**: Redis está deshabilitado para evitar logs innecesarios de reconexión durante el desarrollo.
+
+**Ubicación**: `backend/src/services/cache.service.ts`
+
+```typescript
+constructor() {
+  // Redis desactivado temporalmente
+  // this.initializeRedis();
+  logger.info('⚠️ Redis desactivado - Modo sin caché');
+}
+```
+
+**Impacto**:
+- La aplicación funciona sin caché
+- Sin impacto en funcionalidad core
+- Sin logs de reconexión en consola
+
+**Para reactivar Redis**:
+```typescript
+constructor() {
+  this.initializeRedis(); // Descomentar esta línea
+}
+```
+
+Asegúrate de tener Redis ejecutándose:
+```bash
+# Con Docker
+docker run -d -p 6379:6379 redis:alpine
+
+# O instalar localmente
+# Windows: Usar WSL2 o Redis para Windows
+# macOS: brew install redis && brew services start redis
+# Linux: sudo apt-get install redis-server
+```
+
 ## Notas Importantes
 
 - **Rutas**: Usar siempre valores normalizados (sin tildes) en URLs

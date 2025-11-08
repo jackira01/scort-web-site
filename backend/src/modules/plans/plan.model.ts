@@ -31,6 +31,7 @@ export interface ContentLimits {
 export interface IPlanDefinition extends Document {
     code: string;
     name: string;
+    description?: string; // Descripción del plan (opcional)
     level: number; // 1..5; 1=DIAMANTE, 2=ORO, 3=ESMERALDA, 4=ZAFIRO, 5=AMATISTA
     variants: PlanVariant[];
     features: PlanFeatures;
@@ -139,6 +140,11 @@ const PlanDefinitionSchema = new Schema<IPlanDefinition>({
         required: true,
         trim: true
     },
+    description: {
+        type: String,
+        required: false,
+        trim: true
+    },
     level: {
         type: Number,
         required: true,
@@ -178,7 +184,7 @@ const PlanDefinitionSchema = new Schema<IPlanDefinition>({
 });
 
 // Virtual para compatibilidad con frontend (mapea 'active' a 'isActive')
-PlanDefinitionSchema.virtual('isActive').get(function() {
+PlanDefinitionSchema.virtual('isActive').get(function () {
     return this.active;
 });
 

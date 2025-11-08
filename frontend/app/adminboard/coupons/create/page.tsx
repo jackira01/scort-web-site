@@ -19,6 +19,27 @@ import { plansService } from '@/services/plans.service';
 import type { CreateCouponInput } from '@/types/coupon.types';
 import type { IPlanDefinition } from '@/types/plans.types';
 
+// Interfaz para combinaciones plan-variante
+interface PlanVariantCombination {
+  planCode: string;
+  variantDays: number;
+}
+
+// Helper para obtener fecha/hora en zona horaria de Bogotá
+const getBogotaDateTime = (date: Date = new Date()): string => {
+  // Convertir a zona horaria de Bogotá (America/Bogota)
+  const bogotaDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+
+  // Formatear como YYYY-MM-DDTHH:mm para input datetime-local
+  const year = bogotaDate.getFullYear();
+  const month = String(bogotaDate.getMonth() + 1).padStart(2, '0');
+  const day = String(bogotaDate.getDate()).padStart(2, '0');
+  const hours = String(bogotaDate.getHours()).padStart(2, '0');
+  const minutes = String(bogotaDate.getMinutes()).padStart(2, '0');
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 // Esquema de validación con Zod
 const createCouponSchema = z.object({
   code: z.string()
@@ -32,6 +53,12 @@ const createCouponSchema = z.object({
   value: z.number().min(0, 'El valor debe ser mayor o igual a 0'),
   planCode: z.string().optional(),
   variantDays: z.number().optional(),
+  validPlanVariants: z.array(z.object({
+    planCode: z.string(),
+    variantDays: z.number()
+  })).optional(),
+  validPlanCodes: z.array(z.string()).optional(),
+  validVariantDays: z.array(z.number()).optional(),
   validPlanIds: z.array(z.string()).optional(),
   validUpgradeIds: z.array(z.string()).optional(),
   maxUses: z.number(),
@@ -74,26 +101,26 @@ const createCouponSchema = z.object({
 ).refine(
   (data) => {
     if ((data.type === 'percentage' || data.type === 'fixed_amount') &&
-      (!data.validPlanIds || data.validPlanIds.length === 0)) {
+      (!data.validPlanVariants || data.validPlanVariants.length === 0)) {
       return false;
     }
     return true;
   },
   {
-    message: 'Debe seleccionar al menos un plan válido',
-    path: ['validPlanIds']
+    message: 'Debe seleccionar al menos una combinación plan-variante válida',
+    path: ['validPlanVariants']
   }
 ).refine(
   (data) => {
     if (data.type === 'plan_specific' &&
-      (!data.validPlanIds?.length && !data.validUpgradeIds?.length)) {
+      (!data.validPlanCodes?.length && !data.validUpgradeIds?.length)) {
       return false;
     }
     return true;
   },
   {
-    message: 'Debe seleccionar al menos un plan o upgrade válido',
-    path: ['validPlanIds']
+    message: 'Debe seleccionar al menos una combinación plan-variante o upgrade válido',
+    path: ['validPlanVariants']
   }
 ).refine(
   (data) => {
@@ -132,6 +159,9 @@ export default function CreateCouponPage() {
     upgrades: []
   });
 
+  // Estado para manejar combinaciones plan-variante seleccionadas
+  const [selectedPlanVariants, setSelectedPlanVariants] = useState<PlanVariantCombination[]>([]);
+
   // Configurar React Hook Form con Zod
   const {
     register,
@@ -150,19 +180,54 @@ export default function CreateCouponPage() {
       value: 0,
       planCode: '',
       variantDays: undefined,
+      validPlanVariants: [],
+      validPlanCodes: [],
+      validVariantDays: [],
       validPlanIds: [],
       validUpgradeIds: [],
       maxUses: -1,
-      validFrom: new Date().toISOString().split('T')[0],
-      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      validFrom: getBogotaDateTime(), // Fecha y hora actual en Bogotá
+      validUntil: getBogotaDateTime(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)), // +30 días en Bogotá
       isActive: true
     }
   });
 
   const watchType = watch('type');
   const watchPlanCode = watch('planCode');
-  const watchValidPlanIds = watch('validPlanIds');
   const watchValidUpgradeIds = watch('validUpgradeIds');
+
+  // Función para toggle combinación plan-variante
+  const togglePlanVariant = (planCode: string, variantDays: number) => {
+    setSelectedPlanVariants(prev => {
+      const exists = prev.some(
+        pv => pv.planCode === planCode && pv.variantDays === variantDays
+      );
+
+      let newVariants: PlanVariantCombination[];
+
+      if (exists) {
+        // Remover
+        newVariants = prev.filter(
+          pv => !(pv.planCode === planCode && pv.variantDays === variantDays)
+        );
+      } else {
+        // Agregar
+        newVariants = [...prev, { planCode, variantDays }];
+      }
+
+      // Sincronizar con react-hook-form
+      setValue('validPlanVariants', newVariants, { shouldValidate: true });
+
+      return newVariants;
+    });
+  };
+
+  // Función para verificar si una combinación está seleccionada
+  const isVariantSelected = (planCode: string, variantDays: number): boolean => {
+    return selectedPlanVariants.some(
+      pv => pv.planCode === planCode && pv.variantDays === variantDays
+    );
+  };
 
   const loadPlans = async () => {
     try {
@@ -188,7 +253,13 @@ export default function CreateCouponPage() {
     setState(prev => ({ ...prev, loading: true }));
 
     try {
-      await couponService.createCoupon(data as CreateCouponInput);
+      // Incluir validPlanVariants si hay combinaciones seleccionadas
+      const payload = {
+        ...data,
+        validPlanVariants: selectedPlanVariants.length > 0 ? selectedPlanVariants : undefined
+      };
+
+      await couponService.createCoupon(payload as CreateCouponInput);
       toast.success('Cupón creado exitosamente');
       router.push('/adminboard');
     } catch (error: any) {
@@ -382,43 +453,83 @@ export default function CreateCouponPage() {
             {(watchType === 'percentage' || watchType === 'fixed_amount') && (
               <>
                 <div className="space-y-2">
-                  <Label>Planes Válidos *</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
-                    {state.plans.flatMap(plan =>
-                      plan.variants.map(variant => ({
-                        id: plan._id,
-                        displayId: `${plan.code}-${variant.days}`,
-                        name: `${plan.name} - ${variant.days} días - $${variant.price.toLocaleString()}`,
-                        planId: plan._id,
-                        planCode: plan.code,
-                        days: variant.days
-                      }))
-                    ).map((planVariant) => (
-                      <div key={planVariant.displayId} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={`plan-${planVariant.displayId}`}
-                          checked={watchValidPlanIds?.includes(planVariant.planId) || false}
-                          onChange={(e) => {
-                            const currentPlans = watchValidPlanIds || [];
-                            if (e.target.checked) {
-                              if (!currentPlans.includes(planVariant.planId)) {
-                                setValue('validPlanIds', [...currentPlans, planVariant.planId]);
-                              }
-                            } else {
-                              setValue('validPlanIds', currentPlans.filter(id => id !== planVariant.planId));
-                            }
-                          }}
-                          className="rounded"
-                        />
-                        <label htmlFor={`plan-${planVariant.displayId}`} className="text-sm font-medium">
-                          {planVariant.name}
-                        </label>
+                  <Label>Planes y Variantes Válidas *</Label>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Selecciona las <strong>combinaciones exactas</strong> de plan-variante donde se aplicará el cupón
+                  </p>
+                  <div className="space-y-4 max-h-96 overflow-y-auto border rounded-md p-4">
+                    {state.plans.map(plan => (
+                      <div key={plan.code} className="border-b last:border-b-0 pb-4 last:pb-0">
+                        <h4 className="font-semibold text-base mb-3 text-primary">
+                          {plan.name} ({plan.code})
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-4">
+                          {plan.variants.map(variant => {
+                            const isSelected = isVariantSelected(plan.code, variant.days);
+
+                            return (
+                              <label
+                                key={variant.days}
+                                className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all ${isSelected
+                                    ? 'bg-blue-50 border-2 border-blue-500 shadow-sm'
+                                    : 'bg-gray-50 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
+                                  }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => togglePlanVariant(plan.code, variant.days)}
+                                  className="w-4 h-4 text-blue-600 rounded"
+                                />
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">
+                                    {variant.days} días
+                                  </div>
+                                  <div className="text-xs text-gray-600">
+                                    ${variant.price.toLocaleString()}
+                                  </div>
+                                </div>
+                                {isSelected && (
+                                  <span className="text-blue-600 text-sm">✓</span>
+                                )}
+                              </label>
+                            );
+                          })}
+                        </div>
                       </div>
                     ))}
                   </div>
-                  {errors.validPlanIds && (
-                    <p className="text-sm text-red-500">{errors.validPlanIds.message}</p>
+
+                  {/* Resumen de combinaciones seleccionadas */}
+                  {selectedPlanVariants.length > 0 && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-3">
+                      <h5 className="font-semibold text-sm mb-2 text-blue-900">
+                        ✓ Combinaciones seleccionadas ({selectedPlanVariants.length}):
+                      </h5>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedPlanVariants.map((pv, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-300"
+                          >
+                            {pv.planCode} - {pv.variantDays} días
+                            <button
+                              type="button"
+                              onClick={() => togglePlanVariant(pv.planCode, pv.variantDays)}
+                              className="ml-2 text-blue-600 hover:text-blue-800 font-bold"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedPlanVariants.length === 0 && (
+                    <p className="text-sm text-amber-600 mt-2">
+                      ⚠️ Debes seleccionar al menos una combinación plan-variante
+                    </p>
                   )}
                 </div>
 
@@ -480,7 +591,7 @@ export default function CreateCouponPage() {
                 <Label htmlFor="validFrom">Válido Desde *</Label>
                 <Input
                   id="validFrom"
-                  type="date"
+                  type="datetime-local"
                   {...register('validFrom')}
                   className={errors.validFrom ? 'border-red-500' : ''}
                 />
@@ -492,7 +603,7 @@ export default function CreateCouponPage() {
                 <Label htmlFor="validUntil">Válido Hasta *</Label>
                 <Input
                   id="validUntil"
-                  type="date"
+                  type="datetime-local"
                   {...register('validUntil')}
                   className={errors.validUntil ? 'border-red-500' : ''}
                 />

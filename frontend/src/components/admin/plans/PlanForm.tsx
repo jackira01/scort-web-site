@@ -28,6 +28,7 @@ interface PlanFormProps {
 interface FormData {
   code: string;
   name: string;
+  description?: string; // Descripción del plan (opcional)
   level: number;
   isActive: boolean;
   features: PlanFeatures;
@@ -45,6 +46,7 @@ const defaultVariant: PlanVariant = {
 const defaultFormData: FormData = {
   code: '',
   name: '',
+  description: '',
   level: 1,
   isActive: true,
   features: {
@@ -91,6 +93,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
       const initialData = {
         code: plan.code,
         name: plan.name,
+        description: plan.description || '',
         level: plan.level,
         isActive: plan.isActive,
         features: plan.features || {
@@ -320,6 +323,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
         const createData: CreatePlanRequest = {
           code: formData.code,
           name: formData.name,
+          description: formData.description,
           level: formData.level,
           variants: formData.variants,
           features: formData.features,
@@ -332,6 +336,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
         const updateData: UpdatePlanRequest = {
           _id: plan._id,
           name: formData.name,
+          description: formData.description,
           level: formData.level,
           variants: formData.variants,
           features: formData.features,
@@ -396,6 +401,16 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
                     placeholder="Plan Diamante"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Descripción</Label>
+                <Input
+                  id="description"
+                  value={formData.description || ''}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  placeholder="Descripción breve del plan (opcional)"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">

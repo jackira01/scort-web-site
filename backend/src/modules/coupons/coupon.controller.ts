@@ -34,9 +34,17 @@ export class CouponController {
           type: validation.coupon?.type,
           value: validation.coupon?.value,
           planCode: validation.coupon?.planCode,
+
+          // NUEVA ESTRUCTURA - Combinaciones exactas plan-variante
+          validPlanVariants: validation.coupon?.validPlanVariants,
+
+          // ESTRUCTURAS ANTIGUAS (mantener para compatibilidad)
+          validPlanCodes: validation.coupon?.validPlanCodes,
+          validVariantDays: validation.coupon?.validVariantDays,
           applicablePlans: validation.coupon?.applicablePlans,
           validPlanIds: validation.coupon?.validPlanIds,
           validUpgradeIds: validation.coupon?.validUpgradeIds,
+
           variantDays: validation.coupon?.variantDays,
           validUntil: validation.coupon?.validUntil,
           remainingUses: validation.coupon?.maxUses === -1 ? -1 :

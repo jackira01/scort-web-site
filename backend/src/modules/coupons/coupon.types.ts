@@ -1,3 +1,12 @@
+/**
+ * Interfaz para combinaciones exactas de plan y variante
+ * Evita ambigüedad del producto cartesiano
+ */
+export interface PlanVariantCombination {
+  planCode: string;
+  variantDays: number;
+}
+
 export interface ICoupon {
   code: string;
   name: string;
@@ -6,9 +15,17 @@ export interface ICoupon {
   value: number; // Para percentage: 0-100, para fixed_amount: precio final, para plan_assignment: no aplica
   planCode?: string; // Solo para type: 'plan_assignment'
   variantDays?: number; // Solo para type: 'plan_assignment' - días específicos de la variante
+
+  // NUEVA ESTRUCTURA - Combinaciones exactas plan-variante (SIN AMBIGÜEDAD)
+  validPlanVariants?: PlanVariantCombination[]; // Ej: [{ planCode: "PREMIUM", variantDays: 30 }, { planCode: "GOLD", variantDays: 90 }]
+
+  // DEPRECADOS (mantener por retrocompatibilidad)
+  validPlanCodes?: string[]; // DEPRECADO: causaba producto cartesiano
+  validVariantDays?: number[]; // DEPRECADO: causaba producto cartesiano
   applicablePlans?: string[]; // Códigos de planes donde se puede aplicar el cupón
   validPlanIds?: string[]; // Lista de planes específicos donde se puede usar (para percentage y fixed_amount)
   validUpgradeIds?: string[]; // Lista de upgrades específicos donde se puede usar (para percentage y fixed_amount)
+
   maxUses: number; // -1 para ilimitado
   currentUses: number;
   validFrom: Date;
@@ -27,9 +44,17 @@ export interface CreateCouponInput {
   value: number;
   planCode?: string;
   variantDays?: number; // Solo para type: 'plan_assignment' - días específicos de la variante
+
+  // NUEVA ESTRUCTURA - Combinaciones exactas plan-variante
+  validPlanVariants?: PlanVariantCombination[];
+
+  // DEPRECADOS (mantener por retrocompatibilidad)
+  validPlanCodes?: string[]; // DEPRECADO: causaba producto cartesiano
+  validVariantDays?: number[]; // DEPRECADO: causaba producto cartesiano
   applicablePlans?: string[];
   validPlanIds?: string[]; // Lista de planes específicos donde se puede usar (para percentage y fixed_amount)
   validUpgradeIds?: string[]; // Lista de upgrades específicos donde se puede usar (para percentage y fixed_amount)
+
   maxUses: number;
   validFrom: Date;
   validUntil: Date;
@@ -42,9 +67,17 @@ export interface UpdateCouponInput {
   value?: number;
   planCode?: string;
   variantDays?: number; // Solo para type: 'plan_assignment' - días específicos de la variante
+
+  // NUEVA ESTRUCTURA - Combinaciones exactas plan-variante
+  validPlanVariants?: PlanVariantCombination[];
+
+  // DEPRECADOS (mantener por retrocompatibilidad)
+  validPlanCodes?: string[]; // DEPRECADO: causaba producto cartesiano
+  validVariantDays?: number[]; // DEPRECADO: causaba producto cartesiano
   applicablePlans?: string[];
   validPlanIds?: string[]; // Lista de planes específicos donde se puede usar (para percentage y fixed_amount)
   validUpgradeIds?: string[]; // Lista de upgrades específicos donde se puede usar (para percentage y fixed_amount)
+
   maxUses?: number;
   validFrom?: Date;
   validUntil?: Date;

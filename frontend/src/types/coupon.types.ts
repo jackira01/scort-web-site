@@ -7,9 +7,20 @@ export interface ICoupon {
   value: number;
   planCode?: string;
   variantDays?: number; // Solo para type: 'plan_assignment' - días específicos de la variante
+
+  // NUEVA ESTRUCTURA (RECOMENDADO) - Combinaciones exactas plan-variante
+  validPlanVariants?: Array<{
+    planCode: string;
+    variantDays: number;
+  }>;
+
+  // ESTRUCTURAS ANTIGUAS (DEPRECADAS - Mantener para compatibilidad)
+  validPlanCodes?: string[]; // DEPRECADO: Usar validPlanVariants
+  validVariantDays?: number[]; // DEPRECADO: Usar validPlanVariants
   applicablePlans?: string[];
   validPlanIds?: string[]; // Para cupones plan_specific - IDs de planes válidos
   validUpgradeIds?: string[]; // Para cupones plan_specific - IDs de upgrades válidos
+
   maxUses: number;
   currentUses: number;
   remainingUses?: number;
@@ -33,9 +44,20 @@ export interface CreateCouponInput {
   value: number;
   planCode?: string;
   variantDays?: number; // Solo para type: 'plan_assignment' - días específicos de la variante
+
+  // NUEVA ESTRUCTURA (RECOMENDADO) - Combinaciones exactas plan-variante
+  validPlanVariants?: Array<{
+    planCode: string;
+    variantDays: number;
+  }>;
+
+  // ESTRUCTURAS ANTIGUAS (DEPRECADAS - Mantener para compatibilidad)
+  validPlanCodes?: string[]; // DEPRECADO: Usar validPlanVariants
+  validVariantDays?: number[]; // DEPRECADO: Usar validPlanVariants
   applicablePlans?: string[];
   validPlanIds?: string[]; // Para cupones plan_specific - IDs de planes válidos
   validUpgradeIds?: string[]; // Para cupones plan_specific - IDs de upgrades válidos
+
   maxUses: number;
   validFrom: string;
   validUntil: string;
