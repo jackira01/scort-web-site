@@ -10,6 +10,7 @@ import { UpgradeDefinitionModel } from '../plans/upgrade.model';
 import { ConfigParameterService } from '../config-parameter/config-parameter.service';
 import invoiceService from '../payments/invoice.service';
 import EmailService from '../../services/email.service';
+import { sortProfiles } from '../visibility/visibility.service';
 
 // Interfaz para la configuración del plan por defecto
 interface DefaultPlanConfig {
@@ -540,9 +541,51 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
       // LÓGICA DE FACTURACIÓN:
       // - Usuarios regulares: generateInvoice = true (siempre factura para planes de pago)
       // - Admins: generateInvoice = valor del checkbox (pueden asignar sin factura)
-      // Solo generar factura si el plan tiene costo Y se solicita generar factura
-      if (variant.price > 0 && generateInvoice) {
+
+      // ✅ CASO 1: Plan GRATUITO (price === 0)
+      if (variant.price === 0) {
+        // Plan gratuito detectado, asignando plan automáticamente
+        console.log('✅ [createProfileWithInvoice] Plan gratuito detectado, asignando inmediatamente');
+
+        const startAt = new Date();
+        const expiresAt = new Date(startAt.getTime() + (planDays * 24 * 60 * 60 * 1000));
+
+        // Asignar plan gratuito directamente con todas las fechas
+        await ProfileModel.findByIdAndUpdate(
+          profile._id,
+          {
+            planAssignment: {
+              planId: plan._id,
+              planCode: plan.code,
+              variantDays: planDays,
+              startAt,
+              expiresAt
+            },
+            isActive: true,
+            visible: shouldBeVisible
+          }
+        );
+
+        console.log('✅ [createProfileWithInvoice] Plan gratuito asignado correctamente:', {
+          profileId: profile._id,
+          planCode: plan.code,
+          variantDays: planDays,
+          startAt,
+          expiresAt
+        });
+
+        // NO generar factura ni mensaje de WhatsApp para planes gratuitos
+        // La notificación se enviará al final de la función
+      }
+      // ✅ CASO 2: Plan DE PAGO (price > 0) CON factura
+      else if (variant.price > 0 && generateInvoice) {
         // Plan de pago detectado y facturación solicitada, generando factura
+        console.log('💳 [createProfileWithInvoice] Plan de pago con factura:', {
+          planCode: plan.code,
+          price: variant.price,
+          days: planDays
+        });
+
         invoice = await invoiceService.generateInvoice({
           profileId: (profile._id as Types.ObjectId).toString(),
           userId: profile.user.toString(),
@@ -566,8 +609,12 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
           }
         );
         // Historial de pagos actualizado con factura
-      } else if (variant.price > 0 && !generateInvoice) {
+      }
+      // ✅ CASO 3: Plan DE PAGO (price > 0) SIN factura (admin)
+      else if (variant.price > 0 && !generateInvoice) {
         // Plan de pago pero sin generar factura (administrador), asignar plan directamente
+        console.log('👨‍💼 [createProfileWithInvoice] Admin asignando plan de pago sin factura');
+
         // Calcular fechas para asignación directa
         const startAt = new Date();
         const expiresAt = new Date(startAt.getTime() + (planDays * 24 * 60 * 60 * 1000));
@@ -578,7 +625,7 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
           {
             planAssignment: {
               planId: plan._id,
-              planCode,
+              planCode: plan.code,
               variantDays: planDays,
               startAt,
               expiresAt
@@ -589,26 +636,6 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
         );
 
         // Plan asignado directamente sin factura
-      } else {
-        // Plan gratuito, activar el perfil inmediatamente
-        // Plan gratuito detectado, activando perfil inmediatamente
-
-        // Activar perfil para plan gratuito
-        await ProfileModel.findByIdAndUpdate(
-          profile._id,
-          {
-            isActive: true,
-            visible: shouldBeVisible
-          }
-        );
-
-        // Generar mensaje de WhatsApp para plan gratuito
-        const whatsAppMessage = await generateWhatsAppMessage(
-          profile.user.toString(),
-          (profile._id as Types.ObjectId).toString()
-        );
-
-        return { profile, invoice: null, whatsAppMessage };
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
@@ -906,149 +933,28 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
   });
 
   // Filtered profiles for home
+  console.log(`🏠 [getProfilesForHome] Perfiles filtrados para home: ${filteredProfiles.length}`);
 
-  const enrichedProfiles = filteredProfiles.map(profile => {
-    // Verificar upgrades activos
+  // ⭐ APLICAR NUEVO SISTEMA DE ORDENAMIENTO CON SCORING PONDERADO
+  console.log(`🎯 [getProfilesForHome] Aplicando nuevo sistema de ordenamiento con rotación`);
+  const sortedProfiles = await sortProfiles(filteredProfiles as any, now);
+
+  // Aplicar paginación DESPUÉS del ordenamiento
+  const paginatedProfiles = sortedProfiles.slice(skip, skip + limit);
+
+  // Mapear perfiles para incluir información de verificación
+  const cleanProfiles = paginatedProfiles.map(profile => {
+    // Verificar upgrades activos para incluir en respuesta
     const activeUpgrades = profile.upgrades?.filter(upgrade =>
       new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
     ) || [];
 
-    // Determinar el nivel del plan (1=DIAMANTE=Premium, 5=Plan por defecto=Free)
-    let planLevel = 5; // Por defecto Free (plan por defecto)
-    let planCode = 'GRATIS';
-
-    // Obtener información del plan desde planAssignment
-    if (profile.planAssignment?.planCode) {
-      planLevel = planCodeToLevel[profile.planAssignment.planCode] || 5;
-      planCode = profile.planAssignment.planCode;
-    }
-
-    // Verificar si tiene upgrades de boost o highlight
-    let hasBoostUpgrade = activeUpgrades.some(upgrade =>
-      upgrade.code === 'IMPULSO' || upgrade.code === 'BOOST'
+    const hasDestacadoUpgrade = activeUpgrades.some(u =>
+      u.code === 'DESTACADO' || u.code === 'HIGHLIGHT'
     );
-    let hasHighlightUpgrade = activeUpgrades.some(upgrade =>
-      upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT'
+    const hasImpulsoUpgrade = activeUpgrades.some(u =>
+      u.code === 'IMPULSO' || u.code === 'BOOST'
     );
-
-    // Si es plan DIAMANTE, incluye DESTACADO automáticamente
-    if (planCode === 'DIAMANTE') {
-      hasHighlightUpgrade = true;
-    }
-
-    return {
-      ...profile,
-      _hierarchyInfo: {
-        planLevel,
-        planCode,
-        activeUpgrades,
-        hasBoostUpgrade,
-        hasHighlightUpgrade,
-        lastActivity: profile.lastLogin || profile.updatedAt,
-        createdAt: profile.createdAt
-      }
-    };
-  });
-
-  // Aplicar jerarquía de orden según especificaciones
-  const sortedProfiles = enrichedProfiles.sort((a, b) => {
-    const aInfo = a._hierarchyInfo;
-    const bInfo = b._hierarchyInfo;
-
-    // 1. Perfiles con Upgrade "Destacado" o "Boost" aparecen primero
-    if (aInfo.hasHighlightUpgrade || aInfo.hasBoostUpgrade) {
-      if (!(bInfo.hasHighlightUpgrade || bInfo.hasBoostUpgrade)) {
-        return -1; // a va primero
-      }
-
-      // Ambos tienen upgrades, ordenar por nivel efectivo del plan
-      let aEffectiveLevel = aInfo.planLevel;
-      let bEffectiveLevel = bInfo.planLevel;
-
-      // Aplicar efectos de upgrades
-      if (aInfo.hasHighlightUpgrade && aInfo.planLevel > 1) {
-        aEffectiveLevel = Math.max(1, aInfo.planLevel - 1); // DESTACADO sube un nivel
-      }
-      if (bInfo.hasHighlightUpgrade && bInfo.planLevel > 1) {
-        bEffectiveLevel = Math.max(1, bInfo.planLevel - 1); // DESTACADO sube un nivel
-      }
-
-      // Si tienen IMPULSO, van a nivel 1 pero con menor prioridad que DESTACADO solo
-      if (aInfo.hasBoostUpgrade) {
-        aEffectiveLevel = 1;
-      }
-      if (bInfo.hasBoostUpgrade) {
-        bEffectiveLevel = 1;
-      }
-
-      // Ordenar por nivel efectivo
-      if (aEffectiveLevel !== bEffectiveLevel) {
-        return aEffectiveLevel - bEffectiveLevel;
-      }
-
-      // Mismo nivel efectivo: priorizar por duración del plan (durationRank mayor = mayor prioridad)
-      const aPlanDurationRank = a.planAssignment?.variantDays ?
-        planDefinitions.find(p => p.code === aInfo.planCode)?.variants.find(v => v.days === a.planAssignment?.variantDays)?.durationRank || 0 : 0;
-      const bPlanDurationRank = b.planAssignment?.variantDays ?
-        planDefinitions.find(p => p.code === bInfo.planCode)?.variants.find(v => v.days === b.planAssignment?.variantDays)?.durationRank || 0 : 0;
-
-      if (aPlanDurationRank !== bPlanDurationRank) {
-        return bPlanDurationRank - aPlanDurationRank; // Mayor durationRank = mayor prioridad
-      }
-
-      // Si tienen IMPULSO, van al final dentro de su grupo
-      if (aInfo.hasBoostUpgrade && !bInfo.hasBoostUpgrade) {
-        return 1; // a va después
-      }
-      if (bInfo.hasBoostUpgrade && !aInfo.hasBoostUpgrade) {
-        return -1; // b va después
-      }
-
-      // Empate final: por fecha de inicio del upgrade más reciente
-      const aLatestUpgrade = Math.max(...aInfo.activeUpgrades.map(u => new Date(u.startAt).getTime()));
-      const bLatestUpgrade = Math.max(...bInfo.activeUpgrades.map(u => new Date(u.startAt).getTime()));
-      return bLatestUpgrade - aLatestUpgrade;
-    }
-
-    if (bInfo.hasHighlightUpgrade || bInfo.hasBoostUpgrade) {
-      return 1; // b va primero
-    }
-
-    // 2. Sin upgrades activos, ordenar por nivel de plan (1=DIAMANTE=Premium, 5=Plan por defecto=Free)
-    if (aInfo.planLevel !== bInfo.planLevel) {
-      return aInfo.planLevel - bInfo.planLevel;
-    }
-
-    // 3. Mismo nivel de plan: ordenar por duración (durationRank mayor = mayor prioridad)
-    const aPlanDurationRank = a.planAssignment?.variantDays ?
-      planDefinitions.find(p => p.code === aInfo.planCode)?.variants.find(v => v.days === a.planAssignment?.variantDays)?.durationRank || 0 : 0;
-    const bPlanDurationRank = b.planAssignment?.variantDays ?
-      planDefinitions.find(p => p.code === bInfo.planCode)?.variants.find(v => v.days === b.planAssignment?.variantDays)?.durationRank || 0 : 0;
-
-    if (aPlanDurationRank !== bPlanDurationRank) {
-      return bPlanDurationRank - aPlanDurationRank; // Mayor durationRank = mayor prioridad
-    }
-
-    // 4. Mismo nivel y duración: aplicar criterios específicos
-    if (aInfo.planLevel <= 2) {
-      // Planes Premium (DIAMANTE/ORO): ordenar por última actividad
-      const aActivity = new Date(aInfo.lastActivity).getTime();
-      const bActivity = new Date(bInfo.lastActivity).getTime();
-      return bActivity - aActivity; // Más activos primero
-    } else {
-      // Planes Free (plan por defecto): ordenar por fecha de creación descendente
-      const aCreated = new Date(aInfo.createdAt).getTime();
-      const bCreated = new Date(bInfo.createdAt).getTime();
-      return bCreated - aCreated; // Más nuevos primero
-    }
-  });
-
-  // Aplicar paginación
-  const paginatedProfiles = sortedProfiles.slice(skip, skip + limit);
-
-  // Limpiar información de jerarquía antes de devolver y mapear hasDestacadoUpgrade
-  const cleanProfiles = paginatedProfiles.map(profile => {
-    const { _hierarchyInfo, ...cleanProfile } = profile;
 
     // Calcular estado de verificación basado en campos individuales
     let isVerified = false;
@@ -1068,9 +974,9 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
     }
 
     return {
-      ...cleanProfile,
-      hasDestacadoUpgrade: _hierarchyInfo.hasHighlightUpgrade,
-      hasImpulsoUpgrade: _hierarchyInfo.hasBoostUpgrade,
+      ...profile,
+      hasDestacadoUpgrade,
+      hasImpulsoUpgrade,
       verification: {
         ...(typeof profile.verification === 'object' && profile.verification !== null ? profile.verification : {}),
         isVerified,

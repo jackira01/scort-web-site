@@ -572,17 +572,214 @@ interface ICoupon {
 ### 9. Motor de Visibilidad (`/modules/visibility`)
 
 **Responsabilidades**:
-- Control de visibilidad de perfiles
-- Aplicación de reglas de negocio
-- Posicionamiento en búsquedas
+- Control de visibilidad de perfiles en home y filtros
+- Ordenamiento jerárquico por niveles y variantes
+- Rotación consistente por intervalos de 15 minutos
+- Aplicación de efectos de upgrades (DESTACADO, IMPULSO)
 - Integración con planes y upgrades
 
+**Sistema de Ordenamiento con Scoring Ponderado**:
+
+El motor de visibilidad asigna un **score numérico** a cada perfil basado en múltiples factores con pesos específicos que garantizan la jerarquía de niveles:
+
+#### **Componentes del Score (en orden de importancia)**:
+
+1. **Nivel del Plan Base: 1,000,000 - 5,000,000 puntos**
+   - Nivel 1: 5,000,000 puntos
+   - Nivel 2: 4,000,000 puntos
+   - Nivel 3: 3,000,000 puntos
+   - Nivel 4: 2,000,000 puntos
+   - Nivel 5: 1,000,000 puntos
+   
+   Este peso garantiza que **matemáticamente** un perfil de nivel inferior NUNCA supere a uno de nivel superior.
+
+2. **Variante de Duración: 10,000 - 30,000 puntos**
+   - 30 días: +30,000 puntos
+   - 15 días: +20,000 puntos
+   - 7 días: +10,000 puntos
+   
+   Peso suficiente para diferenciar variantes dentro del mismo nivel, pero insuficiente para cruzar niveles.
+
+3. **Upgrades Especiales: +100 a +200 puntos**
+   - **DESTACADO + IMPULSO activos**: +200 puntos
+   - **DESTACADO solo**: +100 puntos
+   - **Otros upgrades**: priorityBonus × 10 (típicamente 10-50 puntos)
+   
+   Ventaja visible pero que no rompe la jerarquía de niveles.
+
+4. **Penalización por Visualizaciones Recientes: -1 a -50 puntos**
+   - Basado en vistas recientes (últimas 24 horas)
+   - Evita que los mismos perfiles aparezcan siempre primero
+
+**Ejemplo de Cálculo**:
+```typescript
+// Perfil: ESMERALDA 30 días + DESTACADO activo
+effectiveLevel = 3 - 1 = 2  // DESTACADO sube 1 nivel
+effectiveVariant = 7         // DESTACADO asigna 7 días por 24h
+
+score = (6 - 2) * 1_000_000  // Nivel: 4,000,000
+      + (7 === 7 ? 10_000 : 0)  // Variante 7 días: +10,000
+      + 100                    // DESTACADO: +100
+      - 0                      // Sin penalización
+      = 4,010,100 puntos
+
+// Perfil: ORO 15 días sin upgrades
+effectiveLevel = 2
+effectiveVariant = 15
+
+score = (6 - 2) * 1_000_000  // Nivel: 4,000,000
+      + (15 === 15 ? 20_000 : 0)  // Variante 15 días: +20,000
+      + 0                      // Sin upgrades
+      - 0                      // Sin penalización
+      = 4,020,000 puntos
+
+// RESULTADO: ORO 15 aparece ANTES que ESMERALDA+DESTACADO
+// Ambos están en nivel 2, pero ORO 15 tiene mejor variante (+20K vs +10K)
+```
+
+#### **Efecto de Upgrades en Nivel y Variante**:
+
+**DESTACADO**:
+- Sube el perfil **1 nivel** durante 24 horas desde activación
+- Asigna variante de **7 días** en el nuevo nivel
+- Ejemplo: ESMERALDA 30 (nivel 3) → ORO 7 (nivel 2)
+
+**IMPULSO**:
+- Requiere **DESTACADO activo** simultáneamente
+- Mejora variante de **7 días a 15 días**
+- Ejemplo: ORO 7 + IMPULSO → ORO 15
+
+**Combinación DESTACADO + IMPULSO**:
+```typescript
+// Perfil: ESMERALDA 30 días original
+Plan: ESMERALDA (nivel 3)
+Variante: 30 días
+
+// Usuario activa DESTACADO
+effectiveLevel = 3 - 1 = 2  // Sube a nivel 2 (ORO)
+effectiveVariant = 7         // Se asigna 7 días
+// Resultado temporal: ORO 7
+
+// Usuario activa IMPULSO (requiere DESTACADO)
+effectiveLevel = 2           // Mantiene nivel 2
+effectiveVariant = 15        // Mejora de 7 a 15 días
+// Resultado temporal: ORO 15
+
+score = 4,000,000 (nivel 2)
+      + 20,000 (variante 15)
+      + 200 (DESTACADO + IMPULSO)
+      = 4,020,200 puntos
+```
+
+#### **Sistema de Rotación con Intervalos de 15 Minutos**:
+
+Los perfiles con **el mismo score** se agrupan y rotan usando **Fisher-Yates shuffle con seed**:
+
+```typescript
+// Seed basado en timestamp redondeado a intervalos de 15 minutos
+seed = Math.floor(Date.now() / (15 * 60 * 1000))
+
+// Ejemplo: 3 perfiles con score 4,020,000
+Intervalo 09:00-09:14: [María, Juan, Ana]
+Intervalo 09:15-09:29: [Ana, María, Juan]  ← Cambio de orden
+Intervalo 09:30-09:44: [Juan, Ana, María]  ← Nuevo cambio
+```
+
+**Ventajas**:
+- ✅ El orden permanece **consistente** durante 15 minutos
+- ✅ Todos los usuarios ven el **mismo orden** en el mismo intervalo
+- ✅ Evita cambios aleatorios en cada request
+- ✅ No requiere Redis ni caché externa (usa seed determinístico)
+- ✅ Rotación justa que previene perfiles "estancados"
+
+#### **Algoritmo Completo**:
+
+```typescript
+1. Obtener perfiles visibles (isActive, visible, plan no expirado)
+
+2. Para cada perfil:
+   a. Calcular nivel y variante efectivos con upgrades
+   b. Calcular score ponderado total
+
+3. Agrupar perfiles por score exacto
+
+4. Para cada grupo:
+   a. Aplicar shuffle con seed basado en intervalo de 15 min
+   b. Ordenar por lastShownAt (ASC) para favorecer no mostrados
+
+5. Ordenar grupos por score (DESC)
+
+6. Concatenar todos los perfiles respetando jerarquía
+
+7. Aplicar paginación
+
+8. Actualizar lastShownAt de perfiles servidos
+```
+
+**Ejemplo Visual Completo**:
+```
+Entrada: 12 perfiles con diferentes planes y upgrades
+
+Después del scoring y rotación:
+
+┌─ SCORE: 5,030,200 ─────────────────────────────┐
+│ 1. Ana       (DIAMANTE 30d)    ← Aleatorio    │
+│ 2. Juan      (DIAMANTE 30d)    seed 15min     │
+└────────────────────────────────────────────────┘
+
+┌─ SCORE: 5,020,000 ─────────────────────────────┐
+│ 3. María     (DIAMANTE 15d)                    │
+└────────────────────────────────────────────────┘
+
+┌─ SCORE: 4,020,200 ─────────────────────────────┐
+│ 4. Elena     (ESMERALDA 30d + DESTACADO+IMPULSO) │
+│              → ORO 15 (nivel 2, 15 días)       │
+└────────────────────────────────────────────────┘
+
+┌─ SCORE: 4,020,000 ─────────────────────────────┐
+│ 5. Diego     (ORO 15d)         ← Aleatorio     │
+│ 6. Laura     (ORO 15d)         seed 15min      │
+└────────────────────────────────────────────────┘
+
+┌─ SCORE: 4,010,100 ─────────────────────────────┐
+│ 7. Pedro     (IRIS 7d + DESTACADO)             │
+│              → ORO 7 (nivel 2, 7 días)         │
+└────────────────────────────────────────────────┘
+
+┌─ SCORE: 3,030,000 ─────────────────────────────┐
+│ 8. Ricardo   (ESMERALDA 30d)   ← Aleatorio     │
+│ 9. Valentina (ESMERALDA 30d)   seed 15min      │
+└────────────────────────────────────────────────┘
+
+┌─ SCORE: 1,010,000 ─────────────────────────────┐
+│ 10. Andrea   (AMATISTA 7d)     ← Aleatorio     │
+│ 11. Mateo    (AMATISTA 7d)     seed 15min      │
+│ 12. Luis     (AMATISTA 7d)                     │
+└────────────────────────────────────────────────┘
+```
+
 **Factores que Afectan la Visibilidad**:
-- Plan activo (no expirado)
-- Upgrades activos (DESTACADO, IMPULSO)
-- Estado de verificación
-- Perfil activo (`isActive: true`)
-- No eliminado (`isDeleted: false`)
+- ✅ Plan activo (no expirado)
+- ✅ Nivel del plan (1-5) - **Factor más importante**
+- ✅ Variante de días (7, 15, 30) - **Factor secundario**
+- ✅ Upgrades activos (DESTACADO: -1 nivel + 7 días, IMPULSO: 7→15 días)
+- ✅ Otros upgrades con priorityBonus
+- ✅ Visualizaciones recientes (penalización leve)
+- ✅ Intervalo de rotación actual (seed cada 15 minutos)
+- ✅ Perfil activo (`isActive: true`)
+- ✅ Perfil visible (`visible: true`)
+- ✅ No eliminado (`isDeleted: false`)
+- ✅ Tiempo desde última visualización (`lastShownAt`)
+
+**Endpoints que Usan el Motor de Visibilidad**:
+- `GET /api/profiles/home` - Perfiles para la página principal
+- `POST /api/filters/profiles` - Búsqueda con filtros
+- `GET /api/sponsored-profiles` - Perfiles patrocinados
+
+**Archivos Clave**:
+- `backend/src/modules/visibility/visibility.service.ts` - Lógica principal
+- `backend/src/modules/profile/profile.service.ts` - Integración con perfiles
+- `backend/src/modules/filters/filters.service.ts` - Integración con filtros
 
 ### 10. Atributos (`/modules/attribute-group`)
 

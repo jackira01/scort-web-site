@@ -24,7 +24,7 @@ export const CATEGORIES = [
   { value: 'escort', label: 'Escort' },
   { value: 'masajista', label: 'Masajista' },
   { value: 'modelo', label: 'Modelo' },
-  { value: 'acompañante', label: 'Acompañante' },
+  { value: 'acompanante', label: 'Acompañante' },
 ];
 
 import { getAllDepartments, getCitiesByDepartment } from '../utils/colombiaData';

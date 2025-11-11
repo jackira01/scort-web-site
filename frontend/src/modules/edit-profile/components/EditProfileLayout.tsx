@@ -874,7 +874,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
             {/* Sidebar - Guidelines */}
             <div className="lg:col-span-1">
               <div className="sticky top-24 space-y-4">
-                <SidebarContent currentStep={currentStep} />
+                <SidebarContent currentStep={currentStep} isEditMode={true} />
               </div>
             </div>
 
