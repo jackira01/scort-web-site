@@ -2,7 +2,7 @@
 
 import { Menu, UserRound, ChevronDown, Shield, LogOut } from 'lucide-react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
+import { useCentralizedSession } from '@/hooks/use-centralized-session';
 import { useState, useEffect } from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
@@ -26,8 +26,7 @@ const HeaderComponent = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-  const { data: session, status } = useSession();
-  const isAdmin = session?.user?.role === 'admin';
+  const { session, status, isAdmin } = useCentralizedSession();
 
   useEffect(() => {
     const controlHeader = () => {

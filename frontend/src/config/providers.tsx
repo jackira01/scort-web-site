@@ -7,11 +7,12 @@ import { type PropsWithChildren, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from '@/components/theme-provider';
 import AuthRedirectHandler from '@/components/authentication/AuthRedirectHandler';
-import SessionSyncHandler from '@/components/authentication/SessionSyncHandler';
 import AuthSyncHandler from '@/components/authentication/AuthSyncHandler';
 import { CookieConsentProvider } from '@/contexts/CookieConsentContext';
 import CookieConsentWrapper from '@/components/CookieConsentWrapper';
 import { AgeVerificationProvider } from '@/contexts/AgeVerificationContext';
+import { SessionContextProvider } from '@/hooks/use-centralized-session';
+import type { Session } from 'next-auth';
 
 const enviroment = process.env.NODE_ENV;
 
@@ -57,7 +58,10 @@ export default function QueryProvider({ children }: PropsWithChildren) {
   );
 }
 
-export function Providers({ children }: PropsWithChildren) {
+export function Providers({
+  children,
+  session
+}: PropsWithChildren<{ session?: Session | null }>) {
   return (
     <QueryProvider>
       <ThemeProvider
@@ -67,23 +71,25 @@ export function Providers({ children }: PropsWithChildren) {
         disableTransitionOnChange
       >
         <SessionProvider
+          session={session}
           refetchInterval={0}
           refetchOnWindowFocus={false}
           refetchWhenOffline={false}
         >
-          {/* Sistema de sincronización moderno con BroadcastChannel */}
-          <AuthSyncHandler />
-          {/* Sistema de sincronización legacy con localStorage (fallback) */}
-          <SessionSyncHandler />
-          <CookieConsentProvider>
-            <AgeVerificationProvider>
-              <AuthRedirectHandler />
-              <Toaster position="top-right" />
-              <CookieConsentWrapper>
-                {children}
-              </CookieConsentWrapper>
-            </AgeVerificationProvider>
-          </CookieConsentProvider>
+          {/* ✅ Contexto centralizado - ÚNICA suscripción a useSession() */}
+          <SessionContextProvider>
+            {/* Sistema de sincronización moderno con BroadcastChannel */}
+            <AuthSyncHandler />
+            <CookieConsentProvider>
+              <AgeVerificationProvider>
+                <AuthRedirectHandler />
+                <Toaster position="top-right" />
+                <CookieConsentWrapper>
+                  {children}
+                </CookieConsentWrapper>
+              </AgeVerificationProvider>
+            </CookieConsentProvider>
+          </SessionContextProvider>
         </SessionProvider>
       </ThemeProvider>
     </QueryProvider>

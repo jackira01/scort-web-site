@@ -26,14 +26,16 @@ export const getAttributeGroupByKey = async (key: string) => {
     return await AttributeGroupModel.findOne({ key });
 };
 
-export const updateVariant = async ({ groupId, variantIndex, newValue, active }: UpdateVariantInput) => {
+export const updateVariant = async ({ groupId, variantValue, newValue, newLabel, active }: UpdateVariantInput) => {
     const group = await AttributeGroupModel.findById(groupId);
     if (!group) throw new Error('Group not found');
 
-    const variant = group.variants[variantIndex];
+    // Buscar la variante por su value actual
+    const variant = group.variants.find(v => v.value === variantValue);
     if (!variant) throw new Error('Variant not found');
 
     if (newValue !== undefined) variant.value = newValue;
+    if (newLabel !== undefined) variant.label = newLabel;
     if (active !== undefined) variant.active = active;
 
     await group.save();
@@ -56,12 +58,15 @@ export const addVariant = async (groupId: string, variant: { label: string; valu
     return group;
 };
 
-export const removeVariant = async (groupId: string, variantIndex: number) => {
+export const removeVariant = async (groupId: string, variantValue: string) => {
     const group = await AttributeGroupModel.findById(groupId);
     if (!group) throw new Error('Group not found');
 
-    if (variantIndex < 0 || variantIndex >= group.variants.length) {
-        throw new Error('Variant index out of bounds');
+    // Buscar el índice de la variante por su value (identificador único)
+    const variantIndex = group.variants.findIndex(v => v.value === variantValue);
+
+    if (variantIndex === -1) {
+        throw new Error('Variant not found');
     }
 
     group.variants.splice(variantIndex, 1);

@@ -194,8 +194,8 @@ const FilterBar = () => {
                 </SelectTrigger>
               </Select>
             ) : (
-              <Select 
-                value={ciudad} 
+              <Select
+                value={ciudad}
                 onValueChange={handleCityChange}
                 disabled={!departamento}
               >

@@ -1,18 +1,16 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
+import { useCentralizedSession } from '@/hooks/use-centralized-session';
 import { useEffect } from 'react';
 import { getUserById } from '@/services/user.service';
 
 export function SeedUserCache() {
-  const { data: session, status } = useSession();
+  const { userId, status } = useCentralizedSession();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?._id) {
-      const userId = session.user._id;
-      
+    if (status === 'authenticated' && userId) {
       // Solo prefetch si no está ya en cache
       const existingData = queryClient.getQueryData(['user', userId]);
       if (!existingData) {
@@ -23,7 +21,7 @@ export function SeedUserCache() {
         });
       }
     }
-  }, [status, session?.user?._id, queryClient]);
+  }, [status, userId, queryClient]);
 
   return null;
 }

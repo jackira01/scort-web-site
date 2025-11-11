@@ -30,7 +30,7 @@ function getRotationSeed(): number {
   // PRODUCCIÓN: const rotationInterval = 15 * 60 * 1000; // 15 minutos
   // DEBUG:      const rotationInterval = 10 * 1000;      // 10 segundos
   const rotationInterval = 10 * 1000; // ⚠️ ACTUALMENTE EN MODO DEBUG (10 segundos)
-  
+
   const seed = Math.floor(now / rotationInterval);
   // console.log(`🔄 [getRotationSeed] Intervalo: ${rotationInterval / 1000}s | Seed actual: ${seed} | Timestamp: ${now}`);
   return seed;
@@ -45,14 +45,14 @@ function shuffleArray<T>(array: T[], seed?: number): T[] {
   const shuffled = [...array];
   const usedSeed = seed ?? getRotationSeed();
   const random = seededRandom(usedSeed);
-  
+
   // console.log(`🎲 [shuffleArray] Mezclando ${array.length} elementos con seed: ${usedSeed}`);
-  
+
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  
+
   return shuffled;
 }/**
  * Interfaz para el resultado del cálculo de nivel y variante efectivos
@@ -294,7 +294,7 @@ export const getPriorityScore = async (profile: IProfile, now: Date = new Date()
 export const sortProfilesWithinLevel = (profiles: IProfile[]): IProfile[] => {
   // Agrupar perfiles por score exacto
   const profilesByScore: { [score: number]: IProfile[] } = {};
-  
+
   profiles.forEach(profile => {
     const score = (profile as any).priorityScore || 0;
     if (!profilesByScore[score]) {

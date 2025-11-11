@@ -1,14 +1,13 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
+import { useCentralizedSession } from '@/hooks/use-centralized-session';
 import { getUserById, getUsers, updateUser } from '@/services/user.service';
 import type { User, UserPaginatedResponse } from '@/types/user.types';
 import { useEffect } from 'react';
 
 export const useUser = () => {
-  const { data: session } = useSession();
-  const userId = session?.user?._id;
+  const { userId } = useCentralizedSession();
 
   const query = useQuery({
     queryKey: ['user', userId],

@@ -32,14 +32,14 @@ import { getAllDepartments, getCitiesByDepartment } from '../utils/colombiaData'
 // Convertir datos de Colombia al formato esperado por la aplicación
 function createLocationsFromColombiaData() {
   const locations: Record<string, { label: string; cities: { value: string; label: string }[] }> = {};
-  
+
   getAllDepartments().forEach(department => {
     locations[department.value] = {
       label: department.label,
       cities: getCitiesByDepartment(department.value)
     };
   });
-  
+
   return locations;
 }
 
@@ -62,7 +62,7 @@ export const ADDITIONAL_ROUTES = {
   // Rutas de solo categoría
   categories: CATEGORIES.map(cat => ({ categoria: cat.value })),
   // Rutas de categoría + departamento
-  categoryDepartments: CATEGORIES.flatMap(cat => 
+  categoryDepartments: CATEGORIES.flatMap(cat =>
     Object.keys(LOCATIONS).map(dept => ({
       categoria: cat.value,
       departamento: dept

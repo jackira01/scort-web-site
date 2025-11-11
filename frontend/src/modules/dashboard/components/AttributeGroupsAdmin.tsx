@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Plus, Save, X } from 'lucide-react';
-import { 
-  useAttributeGroups, 
-  useCreateAttributeGroup, 
+import { Trash2, Edit, Plus, Save, X, Check } from 'lucide-react';
+import {
+  useAttributeGroups,
+  useCreateAttributeGroup,
   useUpdateVariant,
   useDeleteAttributeGroup,
   useAddVariant,
@@ -25,6 +25,13 @@ interface EditingGroup {
   variants: { label: string; value: string }[];
 }
 
+interface EditingVariant {
+  groupId: string;
+  variantValue: string;  // El value original de la variante
+  label: string;
+  value: string;
+}
+
 export const AttributeGroupsAdmin: React.FC = () => {
   const { data: attributeGroups, isLoading, error } = useAttributeGroups();
   const createMutation = useCreateAttributeGroup();
@@ -33,10 +40,11 @@ export const AttributeGroupsAdmin: React.FC = () => {
   const addVariantMutation = useAddVariant();
   const removeVariantMutation = useRemoveVariant();
   const updateGroupMutation = useUpdateGroup();
-  
+
   const [isCreating, setIsCreating] = useState(false);
   const [editingGroup, setEditingGroup] = useState<EditingGroup | null>(null);
   const [editingGroupData, setEditingGroupData] = useState<{ name: string; key: string } | null>(null);
+  const [editingVariant, setEditingVariant] = useState<EditingVariant | null>(null);
   const [addingVariantTo, setAddingVariantTo] = useState<string | null>(null);
   const [newGroup, setNewGroup] = useState<CreateAttributeGroupInput>({
     name: '',
@@ -61,11 +69,11 @@ export const AttributeGroupsAdmin: React.FC = () => {
     }
   };
 
-  const handleUpdateVariant = async (groupId: string, variantIndex: number, newValue: string, active: boolean) => {
+  const handleUpdateVariant = async (groupId: string, variantValue: string, newValue: string, active: boolean) => {
     try {
       await updateMutation.mutateAsync({
         groupId,
-        variantIndex,
+        variantValue,
         newValue,
         active
       });
@@ -77,7 +85,7 @@ export const AttributeGroupsAdmin: React.FC = () => {
 
   const handleDeleteGroup = async (groupId: string) => {
     if (!confirm('¿Estás seguro de que quieres eliminar este grupo?')) return;
-    
+
     try {
       await deleteGroupMutation.mutateAsync(groupId);
     } catch (error) {
@@ -124,17 +132,59 @@ export const AttributeGroupsAdmin: React.FC = () => {
     }
   };
 
-  const handleRemoveVariant = async (groupId: string, variantIndex: number) => {
+  const handleRemoveVariant = async (groupId: string, variantValue: string) => {
     if (!confirm('¿Estás seguro de que quieres eliminar esta variante?')) return;
-    
+
+    console.log(`🗑️ Eliminando variante con value "${variantValue}" del grupo ${groupId}`);
+
     try {
       await removeVariantMutation.mutateAsync({
         groupId,
-        data: { variantIndex }
+        data: { variantValue }
       });
     } catch (error) {
-
+      console.error('Error al eliminar la variante:', error);
       alert('Error al eliminar la variante');
+    }
+  };
+
+  const startEditingVariant = (groupId: string, variant: Variant) => {
+    setEditingVariant({
+      groupId,
+      variantValue: variant.value,  // Guardar el value original
+      label: variant.label,
+      value: variant.value
+    });
+  };
+
+  const cancelEditingVariant = () => {
+    setEditingVariant(null);
+  };
+
+  const handleSaveVariantEdit = async () => {
+    if (!editingVariant) return;
+
+    if (!editingVariant.label || !editingVariant.value) {
+      alert('Por favor completa todos los campos');
+      return;
+    }
+
+    console.log(`✏️ Actualizando variante "${editingVariant.variantValue}" del grupo ${editingVariant.groupId}`);
+
+    try {
+      // Usar updateVariant para actualizar directamente por value
+      await updateMutation.mutateAsync({
+        groupId: editingVariant.groupId,
+        variantValue: editingVariant.variantValue,  // Value original para buscar
+        newLabel: editingVariant.label,
+        newValue: editingVariant.value,  // Nuevo value (puede ser el mismo o diferente)
+        active: true
+      });
+
+      setEditingVariant(null);
+    } catch (error) {
+      console.error('Error al actualizar la variante:', error);
+      alert('Error al actualizar la variante');
     }
   };
 
@@ -165,7 +215,7 @@ export const AttributeGroupsAdmin: React.FC = () => {
   const updateNewGroupVariant = (index: number, field: 'label' | 'value', value: string) => {
     setNewGroup(prev => ({
       ...prev,
-      variants: prev.variants.map((variant, i) => 
+      variants: prev.variants.map((variant, i) =>
         i === index ? { ...variant, [field]: value } : variant
       )
     }));
@@ -191,8 +241,8 @@ export const AttributeGroupsAdmin: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Administrar Grupos de Atributos</h2>
-        <Button 
-          onClick={() => setIsCreating(true)} 
+        <Button
+          onClick={() => setIsCreating(true)}
           disabled={isCreating}
           className="flex items-center gap-2"
         >
@@ -207,9 +257,9 @@ export const AttributeGroupsAdmin: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex justify-between items-center">
               Crear Nuevo Grupo de Atributos
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   setIsCreating(false);
                   setNewGroup({ name: '', key: '', variants: [{ label: '', value: '' }] });
@@ -240,7 +290,7 @@ export const AttributeGroupsAdmin: React.FC = () => {
                 />
               </div>
             </div>
-            
+
             <div>
               <Label>Variantes</Label>
               <div className="space-y-2 mt-2">
@@ -278,9 +328,9 @@ export const AttributeGroupsAdmin: React.FC = () => {
                 </Button>
               </div>
             </div>
-            
+
             <div className="flex gap-2">
-              <Button 
+              <Button
                 onClick={handleCreateGroup}
                 disabled={createMutation.isPending}
                 className="flex items-center gap-2"
@@ -296,97 +346,153 @@ export const AttributeGroupsAdmin: React.FC = () => {
       {/* Lista de grupos existentes */}
       <div className="grid gap-4">
         {attributeGroups?.map((group: IAttributeGroup) => (
-            <Card key={group._id}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  {editingGroup?._id === group._id ? (
-                    <div className="flex items-center gap-2 flex-1">
-                      <Input
-                        value={editingGroupData?.name || ''}
-                        onChange={(e) => setEditingGroupData(prev => prev ? { ...prev, name: e.target.value } : { name: e.target.value, key: '' })}
-                        placeholder="Nombre del grupo"
-                        className="flex-1"
-                      />
-                      <Input
-                        value={editingGroupData?.key || ''}
-                        onChange={(e) => setEditingGroupData(prev => prev ? { ...prev, key: e.target.value } : { name: '', key: e.target.value })}
-                        placeholder="Clave del grupo"
-                        className="flex-1"
-                      />
+          <Card key={group._id}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                {editingGroup?._id === group._id ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editingGroupData?.name || ''}
+                      onChange={(e) => setEditingGroupData(prev => prev ? { ...prev, name: e.target.value } : { name: e.target.value, key: '' })}
+                      placeholder="Nombre del grupo"
+                      className="flex-1"
+                    />
+                    <Input
+                      value={editingGroupData?.key || ''}
+                      onChange={(e) => setEditingGroupData(prev => prev ? { ...prev, key: e.target.value } : { name: '', key: e.target.value })}
+                      placeholder="Clave del grupo"
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={() => handleUpdateGroup(group._id)}
+                      disabled={updateGroupMutation.isPending}
+                      size="sm"
+                    >
+                      <Save className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={cancelEditingGroup}
+                      size="sm"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      {group.name}
+                      <Badge variant="secondary" className="ml-2">{group.key}</Badge>
+                    </div>
+                    <div className="flex gap-2">
                       <Button
-                        onClick={() => handleUpdateGroup(group._id)}
-                        disabled={updateGroupMutation.isPending}
+                        variant="ghost"
                         size="sm"
+                        onClick={() => startEditingGroup(group)}
                       >
-                        <Save className="w-4 h-4" />
+                        <Edit className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
-                        onClick={cancelEditingGroup}
                         size="sm"
+                        onClick={() => handleDeleteGroup(group._id)}
+                        className="text-red-500 hover:text-red-700"
                       >
-                        <X className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
-                  ) : (
-                    <>
-                      <div>
-                        {group.name}
-                        <Badge variant="secondary" className="ml-2">{group.key}</Badge>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => startEditingGroup(group)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleDeleteGroup(group._id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </CardTitle>
-              </CardHeader>
+                  </>
+                )}
+              </CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
                   <Label>Variantes:</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {group.variants.map((variant: Variant, index: number) => (
-                      <div key={index} className="flex items-center gap-1">
-                        <Badge 
-                          variant={variant.active !== false ? "default" : "secondary"}
-                          className="cursor-pointer"
-                          onClick={() => handleUpdateVariant(
-                            group._id, 
-                            index, 
-                            variant.value, 
-                            !(variant.active !== false)
+                    {group.variants.map((variant: Variant, index: number) => {
+                      const isEditing = editingVariant?.groupId === group._id && editingVariant?.variantValue === variant.value;
+                      const uniqueKey = `${group._id}-${variant.value}-${index}`;
+
+                      return (
+                        <div
+                          key={uniqueKey}
+                          className="relative group/variant border rounded-md p-2 bg-background hover:bg-accent/50 transition-colors"
+                        >
+                          {isEditing ? (
+                            <div className="flex items-center gap-2 min-w-[300px]">
+                              <Input
+                                value={editingVariant.label}
+                                onChange={(e) => setEditingVariant({ ...editingVariant, label: e.target.value })}
+                                placeholder="Etiqueta"
+                                className="h-8"
+                              />
+                              <Input
+                                value={editingVariant.value}
+                                onChange={(e) => setEditingVariant({ ...editingVariant, value: e.target.value })}
+                                placeholder="Valor"
+                                className="h-8"
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleSaveVariantEdit}
+                                disabled={addVariantMutation.isPending || removeVariantMutation.isPending}
+                                className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              >
+                                <Check className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={cancelEditingVariant}
+                                className="h-8 w-8 p-0"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant={variant.active !== false ? "default" : "secondary"}
+                                className="cursor-pointer"
+                                onClick={() => handleUpdateVariant(
+                                  group._id,
+                                  variant.value,
+                                  variant.value,
+                                  !(variant.active !== false)
+                                )}
+                              >
+                                {variant.label} ({variant.value})
+                              </Badge>
+                              <div className="flex items-center gap-1 opacity-0 group-hover/variant:opacity-100 transition-opacity">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => startEditingVariant(group._id, variant)}
+                                  className="h-6 w-6 p-0 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                  title="Editar variante"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveVariant(group._id, variant.value)}
+                                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  title="Eliminar variante"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
                           )}
-                        >
-                          {variant.label} ({variant.value})
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveVariant(group._id, index)}
-                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-                
+
                 {addingVariantTo === group._id ? (
                   <div className="space-y-2 p-3 border rounded">
                     <Label>Nueva Variante:</Label>

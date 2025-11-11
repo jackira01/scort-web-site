@@ -50,8 +50,8 @@ export const addVariant = async (req: Request, res: Response) => {
 
 export const removeVariant = async (req: Request, res: Response) => {
     try {
-        const { variantIndex } = req.body;
-        const updated = await service.removeVariant(req.params.id, variantIndex);
+        const { variantValue } = req.body;
+        const updated = await service.removeVariant(req.params.id, variantValue);
         res.json(updated);
     } catch (error) {
         res.status(500).json({ message: 'Error removing variant', error });

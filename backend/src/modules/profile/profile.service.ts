@@ -933,10 +933,10 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
   });
 
   // Filtered profiles for home
-  console.log(`🏠 [getProfilesForHome] Perfiles filtrados para home: ${filteredProfiles.length}`);
+  // console.log(`🏠 [getProfilesForHome] Perfiles filtrados para home: ${filteredProfiles.length}`);
 
   // ⭐ APLICAR NUEVO SISTEMA DE ORDENAMIENTO CON SCORING PONDERADO
-  console.log(`🎯 [getProfilesForHome] Aplicando nuevo sistema de ordenamiento con rotación`);
+  // console.log(`🎯 [getProfilesForHome] Aplicando nuevo sistema de ordenamiento con rotación`);
   const sortedProfiles = await sortProfiles(filteredProfiles as any, now);
 
   // Aplicar paginación DESPUÉS del ordenamiento
