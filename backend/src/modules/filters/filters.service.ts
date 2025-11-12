@@ -67,7 +67,6 @@ export const getFilteredProfiles = async (
 
     // Filtro por categoría (se maneja como feature)
     if (category) {
-
       // Agregar la categoría a las features para procesarla junto con las demás
       if (!features) {
         features = {};
@@ -265,7 +264,7 @@ export const getFilteredProfiles = async (
           const groupId = groupKeyToId.get(groupKey);
 
           if (!groupId) {
-            console.warn('⚠️ WARNING - No groupId found for feature key:', groupKey);
+            console.warn('⚠️ No groupId found for feature key:', groupKey);
             continue;
           }
 
@@ -301,7 +300,12 @@ export const getFilteredProfiles = async (
         }
 
         if (featureConditions.length > 0) {
-          query.$and = featureConditions;
+          // Si ya existe $and (por ejemplo, de ageRange), agregar las condiciones en lugar de sobrescribir
+          if (query.$and) {
+            query.$and.push(...featureConditions);
+          } else {
+            query.$and = featureConditions;
+          }
         }
       }
     }
@@ -395,27 +399,6 @@ export const getFilteredProfiles = async (
 
     const startTime = Date.now();
 
-    // 🔍 DEBUG: Obtener muestra de perfiles ANTES de aplicar filtros (para comparación)
-    if (filters.category) {
-      const sampleProfiles = await Profile.find({
-        visible: true,
-        isDeleted: { $ne: true }
-      })
-        .select('_id name category features visible isActive')
-        .limit(10)
-        .lean();
-
-      sampleProfiles.forEach((profile, index) => {
-
-        if (profile.features && profile.features.length > 0) {
-          const categoryFeatures = profile.features.filter((f: any) => {
-            // Buscar features que podrían ser categoría
-            return f.value && typeof f.value === 'string';
-          });
-        }
-      });
-    }
-
     // Usar agregación para obtener todos los perfiles con información de usuario
     const aggregationPipeline: any[] = [
       {
@@ -440,8 +423,6 @@ export const getFilteredProfiles = async (
         }
       }
     ];
-
-    // DEBUG getFilteredProfiles - Pipeline de agregación
 
     // Agregar lookup para verification si es necesario
     if (!fields || fields.includes('verification')) {
@@ -525,25 +506,7 @@ export const getFilteredProfiles = async (
     ]);
 
     const totalCount = totalCountResult[0]?.total || 0;
-    if (allProfiles.length > 0) {
-      allProfiles.forEach((profile, index) => {
 
-        // Mostrar features si existen
-        if (profile.features && profile.features.length > 0) {
-          profile.features.slice(0, 3).forEach((feature: any) => {
-          });
-          if (profile.features.length > 3) {
-          }
-        }
-
-        // Si se filtró por categoría, verificar si coincide
-        if (filters.category) {
-          const categoryMatch = profile.features?.some((f: any) =>
-            f.value?.toLowerCase() === filters.category?.toLowerCase()
-          );
-        }
-      });
-    }
     // Ordenar perfiles usando el motor de visibilidad (nivel -> score -> lastShownAt -> createdAt)
     const sortedProfiles = await sortProfiles(allProfiles as any, now);
 

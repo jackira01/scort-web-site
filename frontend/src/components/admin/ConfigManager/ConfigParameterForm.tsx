@@ -124,6 +124,12 @@ export function ConfigParameterForm({
             ...prev,
             metadata: {
                 ...prev.metadata,
+                description: prev.metadata?.description,
+                validation: prev.metadata?.validation || {},
+                ui_config: prev.metadata?.ui_config || {},
+                cache_ttl: prev.metadata?.cache_ttl,
+                requires_restart: prev.metadata?.requires_restart,
+                environment: prev.metadata?.environment,
                 [field]: value
             }
         }));

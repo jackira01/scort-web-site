@@ -25,7 +25,10 @@ export const patchVariant = async (req: Request, res: Response) => {
     try {
         const updated = await service.updateVariant(req.body);
         res.json(updated);
-    } catch (error) {
+    } catch (error: any) {
+        if (error.message === 'DUPLICATE_VARIANT') {
+            return res.status(409).json({ message: 'Ya existe una variante con el mismo valor y etiqueta', code: 'DUPLICATE_VARIANT' });
+        }
         res.status(500).json({ message: 'Error updating variant', error });
     }
 };
@@ -43,7 +46,10 @@ export const addVariant = async (req: Request, res: Response) => {
     try {
         const updated = await service.addVariant(req.params.id, req.body);
         res.json(updated);
-    } catch (error) {
+    } catch (error: any) {
+        if (error.message === 'DUPLICATE_VARIANT') {
+            return res.status(409).json({ message: 'Ya existe una variante con el mismo valor y etiqueta', code: 'DUPLICATE_VARIANT' });
+        }
         res.status(500).json({ message: 'Error adding variant', error });
     }
 };

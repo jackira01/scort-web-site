@@ -933,11 +933,25 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
   });
 
   // Filtered profiles for home
-  // console.log(`🏠 [getProfilesForHome] Perfiles filtrados para home: ${filteredProfiles.length}`);
+  console.log(`🏠 [HOME DEBUG] ============================================`);
+  console.log(`🏠 [HOME DEBUG] Perfiles filtrados para home: ${filteredProfiles.length}`);
+
+  // Mostrar muestra de perfiles antes del ordenamiento
+  console.log(`🏠 [HOME DEBUG] Primeros 5 perfiles ANTES de ordenar:`);
+  filteredProfiles.slice(0, 10).forEach((profile: any, index: number) => {
+    console.log(`   ${index + 1}. ${profile.name} - Plan: ${profile.planAssignment?.planCode || 'Sin plan'}`);
+  });
 
   // ⭐ APLICAR NUEVO SISTEMA DE ORDENAMIENTO CON SCORING PONDERADO
-  // console.log(`🎯 [getProfilesForHome] Aplicando nuevo sistema de ordenamiento con rotación`);
+  console.log(`� [HOME DEBUG] Aplicando sistema de ordenamiento con rotación...`);
   const sortedProfiles = await sortProfiles(filteredProfiles as any, now);
+
+  // Mostrar muestra de perfiles después del ordenamiento
+  console.log(`🏠 [HOME DEBUG] Primeros 5 perfiles DESPUÉS de ordenar:`);
+  sortedProfiles.slice(0, 5).forEach((profile: any, index: number) => {
+    console.log(`   ${index + 1}. ${profile.name} - Plan: ${profile.planAssignment?.planCode || 'Sin plan'}`);
+  });
+  console.log(`🏠 [HOME DEBUG] ============================================\n`);
 
   // Aplicar paginación DESPUÉS del ordenamiento
   const paginatedProfiles = sortedProfiles.slice(skip, skip + limit);
@@ -1058,22 +1072,26 @@ export const updateProfile = async (
   id: string,
   data: Partial<CreateProfileDTO>,
 ) => {
+  // Proteger el campo 'user' - no debe cambiar nunca (auditoría)
+  // El perfil siempre debe mantener su propietario original
+  const { user, ...safeData } = data;
+
   // Si se está actualizando el campo media, hacer merge con los datos existentes
-  if (data.media) {
+  if (safeData.media) {
     const existingProfile = await ProfileModel.findById(id);
     if (existingProfile && existingProfile.media) {
       // Hacer merge del campo media preservando los datos existentes
-      // Solo usar datos existentes si el campo no está definido en data.media
-      data.media = {
-        gallery: data.media.gallery !== undefined ? data.media.gallery : (existingProfile.media.gallery || []),
-        videos: data.media.videos !== undefined ? data.media.videos : (existingProfile.media.videos || []),
-        audios: data.media.audios !== undefined ? data.media.audios : (existingProfile.media.audios || []),
-        stories: data.media.stories !== undefined ? data.media.stories : (existingProfile.media.stories || []),
+      // Solo usar datos existentes si el campo no está definido en safeData.media
+      safeData.media = {
+        gallery: safeData.media.gallery !== undefined ? safeData.media.gallery : (existingProfile.media.gallery || []),
+        videos: safeData.media.videos !== undefined ? safeData.media.videos : (existingProfile.media.videos || []),
+        audios: safeData.media.audios !== undefined ? safeData.media.audios : (existingProfile.media.audios || []),
+        stories: safeData.media.stories !== undefined ? safeData.media.stories : (existingProfile.media.stories || []),
       };
     }
   }
 
-  return ProfileModel.findByIdAndUpdate(id, data, { new: true });
+  return ProfileModel.findByIdAndUpdate(id, safeData, { new: true });
 };
 
 export const deleteProfile = async (id: string): Promise<IProfile | null> => {

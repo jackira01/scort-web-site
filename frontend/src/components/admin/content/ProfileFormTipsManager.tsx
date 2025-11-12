@@ -151,8 +151,11 @@ const ProfileFormTipsManager = () => {
           );
 
           if (parameter) {
-            await updateParameter.update(parameter._id, {
-              value: update.value
+            await updateParameter.mutateAsync({
+              id: parameter._id,
+              data: {
+                value: update.value
+              }
             });
           }
         } catch (paramError) {

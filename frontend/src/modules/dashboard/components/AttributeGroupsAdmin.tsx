@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Plus, Save, X, Check } from 'lucide-react';
+import toast from 'react-hot-toast';
 import {
   useAttributeGroups,
   useCreateAttributeGroup,
@@ -55,7 +56,7 @@ export const AttributeGroupsAdmin: React.FC = () => {
 
   const handleCreateGroup = async () => {
     if (!newGroup.name || !newGroup.key || newGroup.variants.some(v => !v.label || !v.value)) {
-      alert('Por favor completa todos los campos');
+      toast.error('Por favor completa todos los campos');
       return;
     }
 
@@ -63,9 +64,10 @@ export const AttributeGroupsAdmin: React.FC = () => {
       await createMutation.mutateAsync(newGroup);
       setNewGroup({ name: '', key: '', variants: [{ label: '', value: '' }] });
       setIsCreating(false);
-    } catch (error) {
-
-      alert('Error al crear el grupo de atributos');
+      toast.success('Grupo creado exitosamente');
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || 'Error al crear el grupo de atributos';
+      toast.error(errorMessage);
     }
   };
 
@@ -77,9 +79,10 @@ export const AttributeGroupsAdmin: React.FC = () => {
         newValue,
         active
       });
-    } catch (error) {
-
-      alert('Error al actualizar la variante');
+      toast.success('Variante actualizada exitosamente');
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || 'Error al actualizar la variante';
+      toast.error(errorMessage);
     }
   };
 
@@ -88,15 +91,16 @@ export const AttributeGroupsAdmin: React.FC = () => {
 
     try {
       await deleteGroupMutation.mutateAsync(groupId);
-    } catch (error) {
-
-      alert('Error al eliminar el grupo');
+      toast.success('Grupo eliminado exitosamente');
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || 'Error al eliminar el grupo';
+      toast.error(errorMessage);
     }
   };
 
   const handleUpdateGroup = async (groupId: string) => {
     if (!editingGroupData?.name || !editingGroupData?.key) {
-      alert('Por favor completa todos los campos');
+      toast.error('Por favor completa todos los campos');
       return;
     }
 
@@ -107,15 +111,16 @@ export const AttributeGroupsAdmin: React.FC = () => {
       });
       setEditingGroup(null);
       setEditingGroupData(null);
-    } catch (error) {
-
-      alert('Error al actualizar el grupo');
+      toast.success('Grupo actualizado exitosamente');
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || 'Error al actualizar el grupo';
+      toast.error(errorMessage);
     }
   };
 
   const handleAddVariantToGroup = async (groupId: string) => {
     if (!newVariantForGroup.label || !newVariantForGroup.value) {
-      alert('Por favor completa todos los campos de la variante');
+      toast.error('Por favor completa todos los campos de la variante');
       return;
     }
 
@@ -126,9 +131,10 @@ export const AttributeGroupsAdmin: React.FC = () => {
       });
       setNewVariantForGroup({ label: '', value: '' });
       setAddingVariantTo(null);
-    } catch (error) {
-
-      alert('Error al agregar la variante');
+      toast.success('Variante agregada exitosamente');
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || 'Error al agregar la variante';
+      toast.error(errorMessage);
     }
   };
 
@@ -142,9 +148,11 @@ export const AttributeGroupsAdmin: React.FC = () => {
         groupId,
         data: { variantValue }
       });
-    } catch (error) {
+      toast.success('Variante eliminada exitosamente');
+    } catch (error: any) {
       console.error('Error al eliminar la variante:', error);
-      alert('Error al eliminar la variante');
+      const errorMessage = error?.response?.data?.message || 'Error al eliminar la variante';
+      toast.error(errorMessage);
     }
   };
 

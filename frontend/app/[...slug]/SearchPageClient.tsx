@@ -89,12 +89,12 @@ export default function SearchPageClient({
       limit: 20
     };
 
-    // Categoría
+    // Categoría - solo incluir si existe y no es undefined
     if (filters.category) {
       normalized.category = filters.category;
     }
 
-    // Ubicación
+    // Ubicación - solo incluir si department está definido
     if (filters.location?.department) {
       normalized.location = filters.location;
     }
@@ -201,13 +201,21 @@ export default function SearchPageClient({
 
   // Función wrapper para limpiar filtros y refrescar datos
   const handleClearFilters = async () => {
+    // Limpiar completamente todos los filtros incluyendo la categoría
     clearFilters();
+    
+    // Actualizar filtros para NO incluir categoría, ubicación, ni nada más
+    // Esto asegura que se muestren TODOS los perfiles
+    updateFilter('category', undefined);
+    updateFilter('location', {});
 
-    // Navegar a la ruta base sin parámetros
-    const baseUrl = `/${categoria}`;
-    router.push(baseUrl);
+    // Navegar a la ruta base de perfiles (sin categoría específica)
+    router.push('/perfiles');
 
-    await refetch();
+    // Esperar un momento para que los filtros se actualicen antes de refetch
+    setTimeout(async () => {
+      await refetch();
+    }, 100);
   };
 
   // Función wrapper para actualizar filtros

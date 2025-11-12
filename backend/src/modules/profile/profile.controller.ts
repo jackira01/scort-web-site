@@ -421,7 +421,11 @@ export const getProfileById = async (req: AuthRequest, res: Response) => {
 };
 
 export const updateProfile = async (req: AuthRequest, res: Response) => {
-  const updated = await service.updateProfile(req.params.id, req.body);
+  // Prevenir que se cambie el campo 'user' (auditoría)
+  // El perfil siempre debe mantener su propietario original
+  const { user, ...safeData } = req.body;
+
+  const updated = await service.updateProfile(req.params.id, safeData);
   res.json(updated);
 };
 
