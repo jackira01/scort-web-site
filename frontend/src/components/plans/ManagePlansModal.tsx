@@ -252,7 +252,7 @@ export default function ManagePlansModal({
   // Verificar si el plan actual está activo
   const isPlanActive = () => {
     const planToUse = profilePlanInfo || currentPlan;
-    if (!planToUse) return false;
+    if (!planToUse || !planToUse.expiresAt) return false;
 
     const expiresAt = new Date(planToUse.expiresAt);
     const tempDate = new Date('1970-01-01');
@@ -268,7 +268,7 @@ export default function ManagePlansModal({
   // Verificar si el plan está pendiente de pago
   const isPlanPending = () => {
     const planToUse = profilePlanInfo || currentPlan;
-    if (!planToUse) return false;
+    if (!planToUse || !planToUse.expiresAt) return false;
 
     const expiresAt = new Date(planToUse.expiresAt);
     const tempDate = new Date('1970-01-01');
@@ -278,13 +278,24 @@ export default function ManagePlansModal({
 
   // Verificar si no tiene plan asignado
   const hasNoPlanAssigned = () => {
+    console.log('🔍 [PLAN DEBUG] Verificando si tiene plan asignado:', {
+      profilePlanInfo,
+      currentPlan,
+      hasNoPlan: profilePlanInfo?.hasNoPlan
+    });
+
+    // Si profilePlanInfo tiene hasNoPlan: true, entonces no tiene plan
+    if (profilePlanInfo?.hasNoPlan) {
+      return true;
+    }
+
     return !profilePlanInfo && !currentPlan;
   };
 
   // Calcular días restantes
   const getDaysRemaining = () => {
     const planToUse = profilePlanInfo || currentPlan;
-    if (!planToUse || !isPlanActive()) return 0;
+    if (!planToUse || !isPlanActive() || !planToUse.expiresAt) return 0;
     const expiresAt = new Date(planToUse.expiresAt);
     const now = new Date();
     const diffTime = expiresAt.getTime() - now.getTime();
@@ -294,7 +305,7 @@ export default function ManagePlansModal({
   // Verificar si se puede hacer upgrade usando las reglas de negocio
   const canUpgradeTo = (planCode: string) => {
     const planToUse = profilePlanInfo || currentPlan;
-    if (!planToUse || !validatePlanBusinessRules.isPlanActive(planToUse.expiresAt)) {
+    if (!planToUse || !planToUse.expiresAt || !validatePlanBusinessRules.isPlanActive(planToUse.expiresAt)) {
       return false;
     }
 
@@ -867,7 +878,10 @@ export default function ManagePlansModal({
                       )}
 
                       <Button
-                        onClick={() => handlePlanAction('renew', currentPlanData.code)}
+                        onClick={() => handlePlanAction(
+                          hasNoPlanAssigned() ? 'purchase' : 'renew',
+                          currentPlanData.code
+                        )}
                         disabled={isProcessing}
                         className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700"
                       >

@@ -507,11 +507,37 @@ export class PlansController {
             const ProfileModel = require('../profile/profile.model').ProfileModel;
             const profile = await ProfileModel.findById(profileId);
 
-            if (!profile || !profile.planAssignment) {
+            if (!profile) {
                 res.status(400).json({
                     success: false,
-                    message: 'Plan no encontrado o inactivo',
-                    error: 'Plan no encontrado o inactivo'
+                    message: 'Perfil no encontrado',
+                    error: 'Perfil no encontrado'
+                });
+                return;
+            }
+
+            // Si no tiene plan asignado, usar un plan por defecto (BÁSICO con los días solicitados)
+            // Este es el caso de compra inicial desde el adminboard
+            if (!profile.planAssignment) {
+                const isAdmin = (req as any).user?.role === 'admin';
+                const defaultPlanCode = 'BASICO'; // Plan por defecto para nuevas asignaciones
+
+                // Usar purchasePlan para asignación inicial
+                const result = await plansService.purchasePlan(
+                    profileId,
+                    defaultPlanCode,
+                    extensionDays,
+                    isAdmin,
+                    false // No generar factura
+                );
+
+                res.status(200).json({
+                    success: true,
+                    message: 'Plan asignado exitosamente',
+                    data: {
+                        ...result,
+                        whatsAppMessage: result.whatsAppMessage
+                    }
                 });
                 return;
             }

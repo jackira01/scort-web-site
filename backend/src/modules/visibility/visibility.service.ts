@@ -193,8 +193,15 @@ export const calculateVisibilityScore = async (profile: IProfile, now: Date = ne
   } = await calculateEffectiveLevelAndVariant(profile, now);
 
   // 2. NIVEL EFECTIVO (peso: 1,000,000)
+  // Nivel 999 = sin plan válido, darle score muy bajo (-1,000,000,000) para que aparezca al final
   // Nivel 1 = 5,000,000, Nivel 2 = 4,000,000, ..., Nivel 5 = 1,000,000
   // Este peso garantiza que NUNCA un nivel inferior supere a uno superior
+  if (effectiveLevel === 999) {
+    // Perfiles sin plan válido van al final
+    score = -1000000000;
+    return score;
+  }
+
   const levelScore = (6 - effectiveLevel) * 1000000;
   score += levelScore;
 
@@ -343,22 +350,34 @@ export const sortProfiles = async (profiles: IProfile[], now: Date = new Date())
     })
   );
 
+  // Filtrar perfiles con niveles inválidos (undefined o NaN)
+  // Esto captura perfiles sin planAssignment válido que no deberían estar en resultados públicos
+  const validProfiles = profilesWithMetadata.filter(profile => {
+    const isValid = typeof profile.effectiveLevel === 'number' &&
+      !isNaN(profile.effectiveLevel) &&
+      typeof profile.priorityScore === 'number' &&
+      !isNaN(profile.priorityScore);
+    return isValid;
+  });
+
   // Agrupar por nivel efectivo
   const profilesByLevel: { [level: number]: any[] } = {};
-  for (const profile of profilesWithMetadata) {
+  for (const profile of validProfiles) {
     if (!profilesByLevel[profile.effectiveLevel]) {
       profilesByLevel[profile.effectiveLevel] = [];
     }
     profilesByLevel[profile.effectiveLevel].push(profile);
   }
 
+  const levelsFound = Object.keys(profilesByLevel).map(Number).sort((a, b) => a - b);
+
   // Ordenar dentro de cada nivel con rotación aleatoria y concatenar
   const sortedProfiles: IProfile[] = [];
-  for (let level = 1; level <= 5; level++) {
-    if (profilesByLevel[level]) {
-      const sortedLevelProfiles = await sortProfilesWithinLevel(profilesByLevel[level]);
-      sortedProfiles.push(...sortedLevelProfiles);
-    }
+
+  // Iterar sobre TODOS los niveles encontrados, no solo 1-5
+  for (const level of levelsFound) {
+    const sortedLevelProfiles = await sortProfilesWithinLevel(profilesByLevel[level]);
+    sortedProfiles.push(...sortedLevelProfiles);
   }
 
   return sortedProfiles;

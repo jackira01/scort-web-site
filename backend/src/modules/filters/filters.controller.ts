@@ -133,8 +133,6 @@ export const getFilteredProfilesPost = async (req: Request, res: Response) => {
       message: 'Perfiles obtenidos exitosamente'
     };
 
-
-
     res.status(200).json(response);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';

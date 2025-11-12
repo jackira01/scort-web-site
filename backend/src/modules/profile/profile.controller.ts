@@ -698,9 +698,17 @@ export const getProfilePlanInfoController = async (req: AuthRequest, res: Respon
       return res.status(404).json({ error: 'Perfil no encontrado' });
     }
 
-    // Verificar si tiene un plan asignado (activo o expirado)
+    // Si no tiene plan asignado, devolver info indicando que no tiene plan
     if (!profile.planAssignment) {
-      return res.status(404).json({ error: 'El perfil no tiene un plan asignado' });
+      return res.status(200).json({
+        planCode: null,
+        variantDays: null,
+        startAt: null,
+        expiresAt: null,
+        isActive: false,
+        daysRemaining: 0,
+        hasNoPlan: true // Indicador útil para el frontend
+      });
     }
 
     const now = new Date();
@@ -717,7 +725,8 @@ export const getProfilePlanInfoController = async (req: AuthRequest, res: Respon
       startAt: profile.planAssignment.startAt,
       expiresAt: profile.planAssignment.expiresAt,
       isActive,
-      daysRemaining
+      daysRemaining,
+      hasNoPlan: false
     };
 
     // Plan info devuelto

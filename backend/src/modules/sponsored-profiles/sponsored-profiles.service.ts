@@ -1,6 +1,7 @@
 import { ProfileModel } from '../profile/profile.model';
 import { PlanDefinitionModel } from '../plans/plan.model';
 import { AttributeGroupModel as AttributeGroup } from '../attribute-group/attribute-group.model';
+import { sortProfiles } from '../visibility/visibility.service';
 import type { IProfile } from '../profile/profile.types';
 
 export interface SponsoredProfilesQuery {
@@ -75,6 +76,7 @@ export const getSponsoredProfiles = async (
       isActive: true,
       visible: true,
       isDeleted: false,
+      planAssignment: { $exists: true, $ne: null }, // CRÍTICO: Debe tener planAssignment (no perfiles en proceso)
       'planAssignment.expiresAt': { $gt: new Date() }, // Plan no expirado
       'planAssignment.planId': { $exists: true, $ne: null } // Debe tener plan asignado
     };
@@ -220,15 +222,16 @@ export const getSponsoredProfiles = async (
       ...baseFilters,
       'planAssignment.planId': { $in: sponsoredPlanIds }
     };
-    // Construir ordenamiento
-    const sortOptions: Record<string, 1 | -1> = {};
-    sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
-
 
     // Construir proyección de campos si se especifica
+    // Siempre incluir campos requeridos por el motor de visibilidad
+    const requiredFields = ['planAssignment', 'upgrades', 'lastShownAt', 'createdAt', 'name'];
+
     let projection = {};
     if (fields.length > 0) {
-      projection = fields.reduce((acc, field) => {
+      // Combinar campos solicitados con campos requeridos
+      const allFields = Array.from(new Set([...fields, ...requiredFields]));
+      projection = allFields.reduce((acc, field) => {
         acc[field] = 1;
         return acc;
       }, {} as Record<string, number>);
@@ -241,19 +244,43 @@ export const getSponsoredProfiles = async (
       ...baseFilters,
       'planAssignment.planId': { $exists: true, $ne: null }
     });
-    // Ejecutar consultas en paralelo
-    const [profiles, totalCount] = await Promise.all([
+
+    const now = new Date();
+
+    // Obtener TODOS los perfiles que cumplen los filtros (sin paginación aún)
+    // para poder aplicar sortProfiles al conjunto completo
+    const [allProfiles, totalCount] = await Promise.all([
       ProfileModel
         .find(finalFilters, projection)
         .populate('user', 'email username')
         .populate('planAssignment.planId', 'code name level features')
         .populate('verification', 'status verifiedAt')
-        .sort(sortOptions)
-        .skip(skip)
-        .limit(limitNum)
         .lean(),
       ProfileModel.countDocuments(finalFilters)
     ]);
+
+    // Aplicar ordenamiento usando el motor de visibilidad
+    const sortedProfiles = await sortProfiles(allProfiles as any, now);
+
+    // Aplicar paginación DESPUÉS del ordenamiento
+    const paginatedProfiles = sortedProfiles.slice(skip, skip + limitNum);
+
+    // Agregar propiedad hasDestacadoUpgrade a cada perfil
+    const profilesWithUpgradeInfo = paginatedProfiles.map(profile => {
+      const hasDestacadoUpgrade = profile.upgrades?.some(
+        (upgrade) =>
+          upgrade.code === 'DESTACADO' &&
+          upgrade.startAt &&
+          upgrade.endAt &&
+          new Date(upgrade.startAt) <= now &&
+          new Date(upgrade.endAt) > now
+      ) || false;
+
+      return {
+        ...profile,
+        hasDestacadoUpgrade
+      };
+    });
 
     // Calcular paginación
     const totalPages = Math.ceil(totalCount / limitNum);
@@ -261,7 +288,7 @@ export const getSponsoredProfiles = async (
     const hasPrevPage = pageNum > 1;
 
     return {
-      profiles: profiles as unknown as IProfile[],
+      profiles: profilesWithUpgradeInfo as unknown as IProfile[],
       pagination: {
         currentPage: pageNum,
         totalPages,
