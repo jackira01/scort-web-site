@@ -1735,5 +1735,452 @@ pnpm run build
 
 ---
 
+## Sistema de Rutas Dinámicas y SSG
+
+### Descripción General
+
+Sistema de rutas dinámicas con Static Site Generation (SSG) que optimiza el SEO y la performance mediante pre-generación de páginas en build time.
+
+### Estructura de Rutas
+
+```
+/[categoria]                    # Todos los perfiles de una categoría
+/[categoria]/[departamento]     # Perfiles por categoría y departamento
+/[categoria]/[departamento]/[ciudad] # Perfiles específicos por ubicación
+```
+
+#### Ejemplos Prácticos
+- `/escort` - Todos los escorts
+- `/escort/bogota` - Escorts en Bogotá
+- `/escort/bogota/chapinero` - Escorts en Chapinero, Bogotá
+- `/masajes/antioquia/medellin` - Masajistas en Medellín
+
+### Implementación SSG
+
+#### Generación de Parámetros Estáticos
+```typescript
+export async function generateStaticParams() {
+  const staticParams: { slug: string[] }[] = [];
+
+  // Rutas de solo categoría
+  CATEGORIES.forEach(category => {
+    staticParams.push({ slug: [category.value] });
+  });
+
+  // Rutas categoría + departamento
+  CATEGORIES.forEach(category => {
+    Object.keys(LOCATIONS).forEach(department => {
+      staticParams.push({ slug: [category.value, department] });
+    });
+  });
+
+  // Rutas populares completas
+  POPULAR_ROUTES.forEach(route => {
+    staticParams.push({ 
+      slug: [route.categoria, route.departamento, route.ciudad] 
+    });
+  });
+
+  return staticParams;
+}
+```
+
+#### Metadata Dinámico
+```typescript
+export async function generateMetadata({ params }: SearchPageProps): Promise<Metadata> {
+  const [categoria, departamento, ciudad] = params.slug || [];
+  
+  let pageTitle: string;
+  let pageDescription: string;
+  
+  if (ciudad && departamento) {
+    pageTitle = `${categoria} en ${cityLabel}, ${deptLabel} - Perfiles Verificados`;
+    pageDescription = `Encuentra los mejores ${categoria} en ${cityLabel}, ${deptLabel}. Perfiles verificados y actualizados.`;
+  } else if (departamento) {
+    pageTitle = `${categoria} en ${deptLabel} - Perfiles Verificados`;
+    pageDescription = `Descubre ${categoria} en ${deptLabel}. Amplia selección de perfiles verificados.`;
+  } else {
+    pageTitle = `${categoria} - Perfiles Verificados`;
+    pageDescription = `Explora nuestra selección de ${categoria}. Perfiles verificados y de calidad.`;
+  }
+
+  return {
+    title: pageTitle,
+    description: pageDescription,
+    openGraph: {
+      title: pageTitle,
+      description: pageDescription,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: pageTitle,
+      description: pageDescription,
+    },
+  };
+}
+```
+
+### Configuración de Revalidación
+```typescript
+// Configuración en page.tsx
+export const revalidate = 3600; // 1 hora
+
+// ISR para rutas dinámicas
+export const dynamicParams = true;
+```
+
+### Rutas Populares
+```typescript
+// src/lib/config.ts
+export const POPULAR_ROUTES = [
+  { categoria: 'escort', departamento: 'bogota', ciudad: 'chapinero' },
+  { categoria: 'escort', departamento: 'antioquia', ciudad: 'el-poblado' },
+  { categoria: 'escort', departamento: 'valle-del-cauca', ciudad: 'cali-aguacatal' },
+  { categoria: 'masajes', departamento: 'bogota', ciudad: 'bogota' },
+  { categoria: 'masajes', departamento: 'antioquia', ciudad: 'medellin' },
+  { categoria: 'trans', departamento: 'bogota', ciudad: 'bogota' },
+];
+```
+
+### Corrección: Categoría 'escorts' vs 'escort'
+
+**Problema Identificado**: Inconsistencia entre frontend y backend en el nombre de la categoría.
+
+**Solución**:
+```typescript
+// Antes
+export const CATEGORIES = [
+  { value: 'escorts', label: 'Escorts' }, // ❌ Plural
+];
+
+// Después
+export const CATEGORIES = [
+  { value: 'escort', label: 'Escorts' }, // ✅ Singular (coincide con backend)
+];
+```
+
+### Middleware Inteligente
+```typescript
+// middleware.ts
+if (categoria && !VALID_CATEGORIES.includes(categoria)) {
+  // Si es un departamento, redirige a /escort/departamento
+  if (VALID_DEPARTMENTS.includes(categoria)) {
+    const redirectUrl = new URL(`/escort/${categoria}`, request.url);
+    return NextResponse.redirect(redirectUrl);
+  }
+}
+```
+
+---
+
+## Sistema de Sincronización de Autenticación Entre Pestañas
+
+### Descripción General
+
+Sistema que garantiza que cuando un usuario cierra sesión en una pestaña, **todas las demás pestañas abiertas** con la misma sesión también se deslogueen automáticamente sin necesidad de recargar.
+
+### Arquitectura
+
+#### Tecnologías Utilizadas
+
+1. **BroadcastChannel API** (Método Principal)
+   - API nativa del navegador para comunicación entre pestañas
+   - Más eficiente que localStorage events
+   - No contamina el storage
+   - Mejor rendimiento
+
+2. **localStorage events** (Fallback/Legacy)
+   - Sistema antiguo para compatibilidad
+   - Se activa en navegadores sin BroadcastChannel
+
+#### Componentes del Sistema
+
+```
+frontend/
+├── src/
+│   ├── hooks/
+│   │   └── use-auth-sync.ts              # Hook principal con BroadcastChannel
+│   └── components/
+│       └── authentication/
+│           ├── AuthSyncHandler.tsx       # Componente wrapper del hook
+│           └── SessionSyncHandler.tsx    # Sistema legacy (fallback)
+```
+
+### Implementación
+
+#### Hook Principal: `use-auth-sync.ts`
+
+**Responsabilidades:**
+- Crear y gestionar el canal `BroadcastChannel` con nombre "auth"
+- Escuchar mensajes de otras pestañas
+- Detectar cambios en el estado de autenticación
+- Emitir mensajes cuando cambia el estado (login/logout)
+- Ejecutar `signOut({ redirect: false })` al recibir mensaje de logout
+
+**Flujo de Logout:**
+```
+Pestaña A                    Canal "auth"                    Pestaña B
+    |                             |                              |
+    | 1. Usuario hace logout      |                              |
+    | 2. status: authenticated    |                              |
+    |    → unauthenticated        |                              |
+    |                             |                              |
+    | 3. Emitir { type: 'logout' }|                              |
+    |------------------------->   |                              |
+    |                             |----------------------------->|
+    |                             |   4. Recibir mensaje         |
+    |                             |   5. signOut({ redirect: false })
+    |                             |   6. Redirigir a '/'         |
+```
+
+#### Función Helper: `broadcastLogout()`
+
+```typescript
+import { broadcastLogout } from '@/hooks/use-auth-sync';
+
+// En tu botón de logout
+<button onClick={() => broadcastLogout('/')}>
+  Cerrar sesión
+</button>
+```
+
+**Ventajas:**
+- Notifica a otras pestañas ANTES de cerrar sesión
+- Garantiza que el mensaje se envíe correctamente
+- Fallback automático si falla el broadcast
+
+#### Componente: `AuthSyncHandler.tsx`
+
+```typescript
+// src/config/providers.tsx
+<SessionProvider>
+  <AuthSyncHandler />    {/* Sistema moderno */}
+  <SessionSyncHandler /> {/* Fallback legacy */}
+  {children}
+</SessionProvider>
+```
+
+### Casos de Uso
+
+#### Escenario 1: Logout Manual
+```
+1. Usuario hace clic en "Cerrar sesión" en Pestaña A
+2. Se ejecuta broadcastLogout('/')
+3. BroadcastChannel emite mensaje { type: 'logout' }
+4. Pestañas B, C, D reciben el mensaje
+5. Todas ejecutan signOut({ redirect: false })
+6. Todas redirigen a '/'
+```
+
+#### Escenario 2: Token Expirado
+```
+1. API responde 401 en Pestaña A
+2. apiClient interceptor ejecuta signOut()
+3. useAuthSync detecta status: unauthenticated
+4. Emite { type: 'logout' } por BroadcastChannel
+5. Otras pestañas se desloguean automáticamente
+```
+
+### Compatibilidad
+
+**Navegadores con BroadcastChannel:**
+- ✅ Chrome 54+
+- ✅ Firefox 38+
+- ✅ Safari 15.4+
+- ✅ Edge 79+
+
+**Navegadores sin BroadcastChannel:**
+- ⚠️ Se activa automáticamente `SessionSyncHandler` (localStorage)
+
+---
+
+## Sistema de Pagos y Facturas
+
+### Componentes Disponibles
+
+#### 1. PaymentAlert
+Componente de alerta que muestra información sobre facturas pendientes.
+
+```tsx
+import { PaymentAlert } from '@/components/payments';
+
+<PaymentAlert
+  invoiceCount={3}
+  totalAmount={150000}
+  onPayClick={() => console.log('Abrir modal de pagos')}
+  className="mb-4"
+/>
+```
+
+#### 2. InvoiceListModal
+Modal que muestra la lista detallada de facturas con opciones de pago.
+
+```tsx
+import { InvoiceListModal } from '@/components/payments';
+
+<InvoiceListModal
+  isOpen={isModalOpen}
+  onClose={() => setIsModalOpen(false)}
+  invoices={invoices}
+  onPayInvoice={(id) => handlePayInvoice(id)}
+  onPayAll={() => handlePayAll()}
+  isLoading={isLoading}
+/>
+```
+
+#### 3. PaymentManager
+Componente principal que integra tanto la alerta como el modal de pagos.
+
+```tsx
+import { PaymentManager } from '@/components/payments';
+
+// Uso completo (alerta + modal)
+<PaymentManager className="mb-6" />
+
+// Solo alerta (sin modal)
+<PaymentManager showAlertOnly={true} className="mb-6" />
+```
+
+#### 4. useInvoices Hook
+Hook personalizado para manejar la lógica de facturas y pagos.
+
+```tsx
+import { useInvoices } from '@/components/payments';
+
+const {
+  invoices,
+  pendingInvoices,
+  isLoading,
+  totalPendingAmount,
+  payInvoice,
+  payAllInvoices,
+  refreshInvoices
+} = useInvoices(userId);
+```
+
+### Ejemplos de Integración
+
+#### En el Dashboard
+```tsx
+// app/cuenta/dashboard/page.tsx
+import { PaymentManager } from '@/components/payments';
+
+export default function Dashboard() {
+  return (
+    <div className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Mi Dashboard</h1>
+      
+      {/* Alerta de pagos pendientes */}
+      <PaymentManager className="mb-6" />
+      
+      {/* Resto del contenido */}
+    </div>
+  );
+}
+```
+
+### Características
+
+- ✅ **Responsive**: Adaptación a diferentes tamaños de pantalla
+- ✅ **Accesible**: Mejores prácticas de accesibilidad
+- ✅ **TypeScript**: Completamente tipado
+- ✅ **Integración con NextAuth**: Manejo automático de sesión
+- ✅ **Notificaciones**: Usa Sonner para notificaciones
+- ✅ **Estados de carga**: Maneja estados durante operaciones
+- ✅ **Actualización automática**: Refresca datos después de operaciones
+- ✅ **Alertas de vencimiento**: Para facturas que vencen pronto
+
+### API Endpoints Requeridos
+
+- `GET /api/invoices?userId={userId}` - Obtener facturas del usuario
+- `POST /api/invoices/{invoiceId}/pay` - Pagar una factura específica
+- `POST /api/invoices/pay-multiple` - Pagar múltiples facturas
+
+---
+
+## Módulo Step5Multimedia - Carga de Archivos
+
+### Descripción
+
+Componente modular para gestionar la carga de archivos multimedia (imágenes, videos, audios) en el proceso de creación de perfiles.
+
+### Estructura Modular
+
+```
+Step5Multimedia/
+├── components/          # Componentes reutilizables
+│   ├── FileUploadZone.tsx
+│   ├── LimitAlert.tsx
+│   ├── FilesCounterBadge.tsx
+│   ├── InfoMessage.tsx
+│   └── index.ts
+├── hooks/              # Custom hooks
+│   ├── useContentLimits.ts
+│   ├── useImageProcessing.ts
+│   ├── useFileHandlers.ts
+│   └── index.ts
+├── types/              # Interfaces y tipos TypeScript
+│   └── index.ts
+├── utils/              # Funciones de utilidad
+│   └── fileValidation.ts
+├── Step5Multimedia.tsx # Componente principal
+└── index.ts           # Punto de entrada
+```
+
+### Responsabilidades por Módulo
+
+#### Components
+- **FileUploadZone**: Zona de carga con drag & drop visual
+- **LimitAlert**: Alerta cuando se alcanza límite del plan
+- **FilesCounterBadge**: Badge con contador actual/máximo
+- **InfoMessage**: Mensajes informativos, warnings y errores
+
+#### Hooks
+- **useContentLimits**: Maneja límites de contenido según el plan
+- **useImageProcessing**: Procesa imágenes (compresión, watermark, crop)
+- **useFileHandlers**: Maneja selección y eliminación de archivos
+
+#### Types
+- Interfaces para ContentLimits, DefaultPlanConfig
+- Tipos FileType, ImageToCrop, VideoCoverToCrop
+- Configuración de validación de archivos
+
+#### Utils
+- **fileValidation**: Valida tipos, tamaños y límites de archivos
+- **extractFilesFromList**: Extrae archivos de FileList con fallbacks
+
+### Uso
+
+```tsx
+import { Step5Multimedia } from '@/modules/create-profile/components/Step5Multimedia';
+
+// En tu formulario
+<Step5Multimedia />
+```
+
+### Mantenimiento
+
+#### Agregar nuevo tipo de archivo
+1. Actualizar `FileType` en `types/index.ts`
+2. Agregar validación en `utils/fileValidation.ts`
+3. Actualizar `handleFileSelect` en `hooks/useFileHandlers.ts`
+
+#### Modificar límites por defecto
+Editar valores iniciales en `hooks/useContentLimits.ts`
+
+#### Agregar nuevo componente UI
+1. Crear en `components/`
+2. Exportar en `components/index.ts`
+3. Importar en `Step5Multimedia.tsx`
+
+### Notas Técnicas
+
+- Todas las validaciones centralizadas en `utils/fileValidation.ts`
+- Procesamiento de imágenes usa `@/utils/imageProcessor` (global)
+- Modals de crop se mantienen en componente principal por complejidad
+
+---
+
 *Sección agregada: Noviembre 2024*
 *Sistema de Rutas Dinámicas v1.0*
