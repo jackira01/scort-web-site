@@ -1,0 +1,530 @@
+{
+    "country": {
+        "value": "colombia",
+        "label": "Colombia"
+    },
+    "departments": [
+        {
+            "value": "bogota",
+            "label": "Bogotá",
+            "cities": [
+                {
+                    "value": "antonio-narino",
+                    "label": "Antonio Nariño"
+                },
+                {
+                    "value": "barrios-unidos",
+                    "label": "Barrios Unidos"
+                },
+                {
+                    "value": "bosa",
+                    "label": "Bosa"
+                },
+                {
+                    "value": "chapinero",
+                    "label": "Chapinero"
+                },
+                {
+                    "value": "ciudad-bolivar",
+                    "label": "Ciudad Bolívar"
+                },
+                {
+                    "value": "engativa",
+                    "label": "Engativá"
+                },
+                {
+                    "value": "fontibon",
+                    "label": "Fontibón"
+                },
+                {
+                    "value": "kennedy",
+                    "label": "Kennedy"
+                },
+                {
+                    "value": "la-candelaria",
+                    "label": "La Candelaria"
+                },
+                {
+                    "value": "los-martires",
+                    "label": "Los Mártires"
+                },
+                {
+                    "value": "puente-aranda",
+                    "label": "Puente Aranda"
+                },
+                {
+                    "value": "rafael-uribe-uribe",
+                    "label": "Rafael Uribe Uribe"
+                },
+                {
+                    "value": "san-cristobal",
+                    "label": "San Cristóbal"
+                },
+                {
+                    "value": "santa-fe",
+                    "label": "Santa Fe"
+                },
+                {
+                    "value": "suba",
+                    "label": "Suba"
+                },
+                {
+                    "value": "sumapaz",
+                    "label": "Sumapaz"
+                },
+                {
+                    "value": "teusaquillo",
+                    "label": "Teusaquillo"
+                },
+                {
+                    "value": "tunjuelito",
+                    "label": "Tunjuelito"
+                },
+                {
+                    "value": "usaquen",
+                    "label": "Usaquén"
+                },
+                {
+                    "value": "usme",
+                    "label": "Usme"
+                }
+            ]
+        },
+        {
+            "value": "antioquia",
+            "label": "Antioquia",
+            "cities": [
+                {
+                    "value": "apartado",
+                    "label": "Apartadó"
+                },
+                {
+                    "value": "bello",
+                    "label": "Bello"
+                },
+                {
+                    "value": "copacabana",
+                    "label": "Copacabana"
+                },
+                {
+                    "value": "envigado",
+                    "label": "Envigado"
+                },
+                {
+                    "value": "itagui",
+                    "label": "Itagüí"
+                },
+                {
+                    "value": "la-estrella",
+                    "label": "La Estrella"
+                },
+                {
+                    "value": "medellin",
+                    "label": "Medellín"
+                },
+                {
+                    "value": "rionegro",
+                    "label": "Rionegro"
+                },
+                {
+                    "value": "sabaneta",
+                    "label": "Sabaneta"
+                },
+                {
+                    "value": "turbo",
+                    "label": "Turbo"
+                }
+            ]
+        },
+        {
+            "value": "atlantico",
+            "label": "Atlántico",
+            "cities": [
+                {
+                    "value": "barranquilla",
+                    "label": "Barranquilla"
+                },
+                {
+                    "value": "malambo",
+                    "label": "Malambo"
+                },
+                {
+                    "value": "puerto-colombia",
+                    "label": "Puerto Colombia"
+                },
+                {
+                    "value": "soledad",
+                    "label": "Soledad"
+                }
+            ]
+        },
+        {
+            "value": "bolivar",
+            "label": "Bolívar",
+            "cities": [
+                {
+                    "value": "arjona",
+                    "label": "Arjona"
+                },
+                {
+                    "value": "cartagena",
+                    "label": "Cartagena"
+                },
+                {
+                    "value": "magangue",
+                    "label": "Magangué"
+                },
+                {
+                    "value": "turbaco",
+                    "label": "Turbaco"
+                }
+            ]
+        },
+        {
+            "value": "boyaca",
+            "label": "Boyacá",
+            "cities": [
+                {
+                    "value": "duitama",
+                    "label": "Duitama"
+                },
+                {
+                    "value": "sogamoso",
+                    "label": "Sogamoso"
+                },
+                {
+                    "value": "tunja",
+                    "label": "Tunja"
+                }
+            ]
+        },
+        {
+            "value": "caldas",
+            "label": "Caldas",
+            "cities": [
+                {
+                    "value": "la-dorada",
+                    "label": "La Dorada"
+                },
+                {
+                    "value": "manizales",
+                    "label": "Manizales"
+                }
+            ]
+        },
+        {
+            "value": "caqueta",
+            "label": "Caquetá",
+            "cities": [
+                {
+                    "value": "florencia",
+                    "label": "Florencia"
+                }
+            ]
+        },
+        {
+            "value": "cauca",
+            "label": "Cauca",
+            "cities": [
+                {
+                    "value": "popayan",
+                    "label": "Popayán"
+                },
+                {
+                    "value": "santander-de-quilichao",
+                    "label": "Santander de Quilichao"
+                }
+            ]
+        },
+        {
+            "value": "cesar",
+            "label": "Cesar",
+            "cities": [
+                {
+                    "value": "aguachica",
+                    "label": "Aguachica"
+                },
+                {
+                    "value": "valledupar",
+                    "label": "Valledupar"
+                }
+            ]
+        },
+        {
+            "value": "cordoba",
+            "label": "Córdoba",
+            "cities": [
+                {
+                    "value": "lorica",
+                    "label": "Lorica"
+                },
+                {
+                    "value": "monteria",
+                    "label": "Montería"
+                },
+                {
+                    "value": "sahagun",
+                    "label": "Sahagún"
+                }
+            ]
+        },
+        {
+            "value": "cundinamarca",
+            "label": "Cundinamarca",
+            "cities": [
+                {
+                    "value": "chia",
+                    "label": "Chía"
+                },
+                {
+                    "value": "facatativa",
+                    "label": "Facatativá"
+                },
+                {
+                    "value": "fusagasuga",
+                    "label": "Fusagasugá"
+                },
+                {
+                    "value": "funza",
+                    "label": "Funza"
+                },
+                {
+                    "value": "girardot",
+                    "label": "Girardot"
+                },
+                {
+                    "value": "madrid",
+                    "label": "Madrid"
+                },
+                {
+                    "value": "mosquera",
+                    "label": "Mosquera"
+                },
+                {
+                    "value": "soacha",
+                    "label": "Soacha"
+                },
+                {
+                    "value": "zipaquira",
+                    "label": "Zipaquirá"
+                }
+            ]
+        },
+        {
+            "value": "huila",
+            "label": "Huila",
+            "cities": [
+                {
+                    "value": "neiva",
+                    "label": "Neiva"
+                },
+                {
+                    "value": "pitalito",
+                    "label": "Pitalito"
+                }
+            ]
+        },
+        {
+            "value": "la-guajira",
+            "label": "La Guajira",
+            "cities": [
+                {
+                    "value": "maicao",
+                    "label": "Maicao"
+                },
+                {
+                    "value": "riohacha",
+                    "label": "Riohacha"
+                }
+            ]
+        },
+        {
+            "value": "magdalena",
+            "label": "Magdalena",
+            "cities": [
+                {
+                    "value": "cienaga",
+                    "label": "Ciénaga"
+                },
+                {
+                    "value": "santa-marta",
+                    "label": "Santa Marta"
+                }
+            ]
+        },
+        {
+            "value": "meta",
+            "label": "Meta",
+            "cities": [
+                {
+                    "value": "acacias",
+                    "label": "Acacías"
+                },
+                {
+                    "value": "villavicencio",
+                    "label": "Villavicencio"
+                }
+            ]
+        },
+        {
+            "value": "narino",
+            "label": "Nariño",
+            "cities": [
+                {
+                    "value": "ipiales",
+                    "label": "Ipiales"
+                },
+                {
+                    "value": "pasto",
+                    "label": "Pasto"
+                },
+                {
+                    "value": "tumaco",
+                    "label": "Tumaco"
+                }
+            ]
+        },
+        {
+            "value": "norte-de-santander",
+            "label": "Norte de Santander",
+            "cities": [
+                {
+                    "value": "cucuta",
+                    "label": "Cúcuta"
+                },
+                {
+                    "value": "ocana",
+                    "label": "Ocaña"
+                },
+                {
+                    "value": "villa-del-rosario",
+                    "label": "Villa del Rosario"
+                }
+            ]
+        },
+        {
+            "value": "quindio",
+            "label": "Quindío",
+            "cities": [
+                {
+                    "value": "armenia",
+                    "label": "Armenia"
+                },
+                {
+                    "value": "calarca",
+                    "label": "Calarcá"
+                },
+                {
+                    "value": "montenegro",
+                    "label": "Montenegro"
+                }
+            ]
+        },
+        {
+            "value": "risaralda",
+            "label": "Risaralda",
+            "cities": [
+                {
+                    "value": "dosquebradas",
+                    "label": "Dosquebradas"
+                },
+                {
+                    "value": "pereira",
+                    "label": "Pereira"
+                },
+                {
+                    "value": "santa-rosa-de-cabal",
+                    "label": "Santa Rosa de Cabal"
+                }
+            ]
+        },
+        {
+            "value": "santander",
+            "label": "Santander",
+            "cities": [
+                {
+                    "value": "barrancabermeja",
+                    "label": "Barrancabermeja"
+                },
+                {
+                    "value": "bucaramanga",
+                    "label": "Bucaramanga"
+                },
+                {
+                    "value": "floridablanca",
+                    "label": "Floridablanca"
+                },
+                {
+                    "value": "giron",
+                    "label": "Girón"
+                },
+                {
+                    "value": "piedecuesta",
+                    "label": "Piedecuesta"
+                }
+            ]
+        },
+        {
+            "value": "sucre",
+            "label": "Sucre",
+            "cities": [
+                {
+                    "value": "sincelejo",
+                    "label": "Sincelejo"
+                }
+            ]
+        },
+        {
+            "value": "tolima",
+            "label": "Tolima",
+            "cities": [
+                {
+                    "value": "espinal",
+                    "label": "Espinal"
+                },
+                {
+                    "value": "ibague",
+                    "label": "Ibagué"
+                }
+            ]
+        },
+        {
+            "value": "valle-del-cauca",
+            "label": "Valle del Cauca",
+            "cities": [
+                {
+                    "value": "buenaventura",
+                    "label": "Buenaventura"
+                },
+                {
+                    "value": "buga",
+                    "label": "Buga"
+                },
+                {
+                    "value": "cali",
+                    "label": "Cali"
+                },
+                {
+                    "value": "cartago",
+                    "label": "Cartago"
+                },
+                {
+                    "value": "jamundi",
+                    "label": "Jamundí"
+                },
+                {
+                    "value": "palmira",
+                    "label": "Palmira"
+                },
+                {
+                    "value": "tulua",
+                    "label": "Tuluá"
+                },
+                {
+                    "value": "yumbo",
+                    "label": "Yumbo"
+                }
+            ]
+        }
+    ]
+}

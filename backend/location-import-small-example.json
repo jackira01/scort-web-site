@@ -1,0 +1,90 @@
+{
+    "country": {
+        "value": "colombia",
+        "label": "Colombia"
+    },
+    "departments": [
+        {
+            "value": "antioquia",
+            "label": "Antioquia",
+            "cities": [
+                {
+                    "value": "medellin",
+                    "label": "Medellín",
+                    "localities": [
+                        {
+                            "value": "el-poblado",
+                            "label": "El Poblado"
+                        },
+                        {
+                            "value": "laureles",
+                            "label": "Laureles"
+                        },
+                        {
+                            "value": "envigado",
+                            "label": "Envigado"
+                        }
+                    ]
+                },
+                {
+                    "value": "bello",
+                    "label": "Bello"
+                },
+                {
+                    "value": "itagui",
+                    "label": "Itagüí"
+                }
+            ]
+        },
+        {
+            "value": "bogota",
+            "label": "Bogotá",
+            "cities": [
+                {
+                    "value": "usaquen",
+                    "label": "Usaquén",
+                    "localities": [
+                        {
+                            "value": "santa-barbara",
+                            "label": "Santa Bárbara"
+                        },
+                        {
+                            "value": "cedritos",
+                            "label": "Cedritos"
+                        }
+                    ]
+                },
+                {
+                    "value": "chapinero",
+                    "label": "Chapinero"
+                },
+                {
+                    "value": "suba",
+                    "label": "Suba"
+                },
+                {
+                    "value": "kennedy",
+                    "label": "Kennedy"
+                }
+            ]
+        },
+        {
+            "value": "valle-del-cauca",
+            "label": "Valle del Cauca",
+            "cities": [
+                {
+                    "value": "cali",
+                    "label": "Cali"
+                },
+                {
+                    "value": "palmira",
+                    "label": "Palmira"
+                },
+                {
+                    "value": "buenaventura",
+                    "label": "Buenaventura"
+                }
+            ]
+        }
+    ]
+}

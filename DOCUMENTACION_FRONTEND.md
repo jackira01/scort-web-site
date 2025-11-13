@@ -1135,5 +1135,605 @@ NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
 
 ---
 
-*Documentación actualizada: Enero 2024*
-*Versión: 2.0.0*
+*Documentación actualizada: Noviembre 2024*
+*Versión: 2.1.0*
+
+---
+
+## Sistema de Rutas Dinámicas y Middleware
+
+### Arquitectura de URL SEO-Friendly
+
+El sistema implementa URLs limpias y amigables para SEO que soportan múltiples patrones de navegación.
+
+#### Patrones de URL Soportados
+
+```
+1. /categoria/departamento/ciudad
+   Ejemplo: /escort/bogota/usaquen
+
+2. /categoria/departamento
+   Ejemplo: /escort/bogota
+
+3. /departamento/ciudad
+   Ejemplo: /bogota/usaquen
+
+4. /departamento
+   Ejemplo: /bogota
+
+5. /categoria
+   Ejemplo: /escort
+
+6. /filtros (con query params)
+   Ejemplo: /filtros?departamento=bogota&ciudad=usaquen
+```
+
+### Flujo Completo de Navegación
+
+#### 1. Generación de URL (FilterBar.tsx)
+
+**Ubicación**: `frontend/src/modules/filters/components/FilterBar.tsx`
+
+```typescript
+const handleSearch = () => {
+  const parts: string[] = [];
+
+  // Normalizar valores: 'all' o vacío = no seleccionado
+  const hasCategoria = categoria && categoria !== 'all';
+  const hasDepartamento = departamento && departamento !== 'all';
+  const hasCiudad = ciudad && ciudad !== 'all';
+
+  // Prioridad 1: Si hay categoría, usarla primero
+  if (hasCategoria) {
+    parts.push(createSlug(categoria));
+    if (hasDepartamento) parts.push(departamento);
+    if (hasCiudad) parts.push(ciudad);
+  }
+  // Prioridad 2: Si NO hay categoría pero SÍ ubicación
+  else if (hasDepartamento) {
+    parts.push(departamento);
+    if (hasCiudad) parts.push(ciudad);
+  }
+
+  const route = parts.length > 0 ? `/${parts.join('/')}` : '/filtros';
+  router.push(route);
+};
+```
+
+**Ejemplos de generación**:
+```typescript
+// Usuario selecciona: Escort + Bogotá → /escort/bogota
+{ categoria: 'escort', departamento: 'bogota' }
+→ parts: ['escort', 'bogota']
+→ route: '/escort/bogota'
+
+// Usuario selecciona: Solo Bogotá → /bogota
+{ categoria: '', departamento: 'bogota' }
+→ parts: ['bogota']
+→ route: '/bogota'
+
+// Usuario selecciona: Solo Escort → /escort
+{ categoria: 'escort', departamento: '' }
+→ parts: ['escort']
+→ route: '/escort'
+```
+
+#### 2. Middleware de Next.js (middleware.ts)
+
+**Ubicación**: `frontend/middleware.ts`
+
+El middleware es la **capa crítica** que intercepta todas las solicitudes antes de llegar a las páginas.
+
+```typescript
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Verificar si es una ruta de categoría válida o departamento
+  const slugMatch = pathname.match(/^\/([^/]+)(?:\/([^/]+))?(?:\/([^/]+))?$/);
+  
+  if (slugMatch) {
+    const [, categoria, departamento, ciudad] = slugMatch;
+
+    // Si el primer segmento NO es categoría válida
+    if (categoria && !VALID_CATEGORIES.includes(categoria)) {
+      // Verificar si es un departamento válido
+      if (VALID_DEPARTMENTS.includes(categoria)) {
+        // ✅ PERMITIR la URL (NO redirigir)
+        return NextResponse.next();
+      }
+      // Si no es ni categoría ni departamento, continuar al 404
+      return NextResponse.next();
+    }
+    
+    // Validar departamento si está presente
+    if (departamento && !VALID_DEPARTMENTS.includes(departamento)) {
+      return NextResponse.next(); // 404
+    }
+  }
+
+  return NextResponse.next();
+}
+```
+
+**⚠️ IMPORTANTE - Bug Histórico Resuelto**:
+
+**PROBLEMA ANTERIOR**:
+```typescript
+// ❌ ANTIGUO: Redirigía automáticamente
+if (VALID_DEPARTMENTS.includes(categoria)) {
+  const redirectUrl = new URL(`/escort/${categoria}`, request.url);
+  return NextResponse.redirect(redirectUrl);
+}
+```
+
+**Resultado**:
+- URL generada: `/bogota`
+- Middleware redirige a: `/escort/bogota`
+- ❌ Usuario ve URL incorrecta
+
+**SOLUCIÓN ACTUAL**:
+```typescript
+// ✅ NUEVO: Permite la URL sin redirigir
+if (VALID_DEPARTMENTS.includes(categoria)) {
+  return NextResponse.next();
+}
+```
+
+**Resultado**:
+- URL generada: `/bogota`
+- Middleware permite: `/bogota`
+- ✅ Usuario ve URL correcta
+
+#### 3. Parsing de URL (page.tsx)
+
+**Ubicación**: `frontend/app/[...slug]/page.tsx`
+
+```typescript
+async function ProfilesPage({ params, searchParams }) {
+  const { slug } = await params;
+  
+  let categoria: string;
+  let departamento: string | undefined;
+  let ciudad: string | undefined;
+
+  if (slug && slug.length > 0) {
+    // CASO 1: /filtros (sin categoría, query params)
+    if (slug[0] === 'filtros' && slug.length === 1) {
+      categoria = '';
+      departamento = queryParams.departamento;
+      ciudad = queryParams.ciudad;
+    }
+    // CASO 2: /filtros/categoria
+    else if (slug[0] === 'filtros' && slug.length > 1) {
+      categoria = slug[1];
+      departamento = queryParams.departamento;
+      ciudad = queryParams.ciudad;
+    }
+    // CASO 3: Verificar si primer segmento es departamento
+    else if (slug.length >= 1) {
+      const isFirstSegmentDepartment = await isValidDepartment(slug[0]);
+      
+      if (isFirstSegmentDepartment) {
+        // CASO 3a: /departamento o /departamento/ciudad
+        categoria = ''; // Sin categoría
+        departamento = slug[0];
+        ciudad = slug.length >= 2 ? slug[1] : undefined;
+      }
+      // CASO 4: /categoria/departamento/ciudad
+      else if (slug.length === 3) {
+        [categoria, departamento, ciudad] = slug;
+      }
+      // CASO 5: /categoria/departamento
+      else if (slug.length === 2) {
+        [categoria, departamento] = slug;
+      }
+      // CASO 6: /categoria
+      else {
+        categoria = slug[0];
+        departamento = queryParams.departamento;
+        ciudad = queryParams.ciudad;
+      }
+    }
+  }
+  
+  // Usar valores parseados para filtrar perfiles
+  return <SearchPageClient initialFilters={{ categoria, departamento, ciudad }} />;
+}
+```
+
+**Validación de Departamento**:
+
+```typescript
+async function isValidDepartment(departamento: string): Promise<boolean> {
+  try {
+    // Durante build, permitir todos (evitar errores de compilación)
+    if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_URL) {
+      return true;
+    }
+
+    // Validar contra backend
+    return await locationService.isValidDepartment(departamento);
+  } catch (error) {
+    return true; // Permitir en caso de error
+  }
+}
+```
+
+### Migración de Datos de Ubicación
+
+#### Sistema Anterior (Estático)
+
+```typescript
+// ❌ DEPRECADO: colombiaData.ts
+export const colombiaDepartments = {
+  "Bogotá": ["Usaquén", "Chapinero", ...],
+  "Antioquia": ["Medellín", "Bello", ...],
+  ...
+}
+
+// Función local de validación
+export const isValidDepartment = (name: string) => {
+  return name in colombiaLocations;
+}
+```
+
+**Problemas**:
+- Datos hardcoded en código
+- Requiere redeploy para actualizar
+- No hay fuente de verdad única
+- Desincronización frontend-backend
+
+#### Sistema Actual (Dinámico)
+
+```typescript
+// ✅ NUEVO: locationService.ts
+class LocationService {
+  async isValidDepartment(value: string): Promise<boolean> {
+    try {
+      const url = `${API_URL}/api/locations/validate/department/${value}`;
+      const result = await this.fetchJSON<{ isValid: boolean }>(url);
+      return result.isValid;
+    } catch (error) {
+      console.error(`Error validating department ${value}:`, error);
+      return false;
+    }
+  }
+  
+  async getDepartments(): Promise<LocationOption[]> {
+    const url = `${API_URL}/api/locations/type/department`;
+    return this.fetchJSON<LocationOption[]>(url);
+  }
+}
+```
+
+**Backend Endpoint**:
+```typescript
+// backend/src/routes/location.routes.ts
+router.get('/validate/department/:value', async (req, res) => {
+  const { value } = req.params;
+  const location = await Location.findOne({ 
+    type: 'department', 
+    value,
+    isActive: true 
+  });
+  res.json({ isValid: !!location });
+});
+```
+
+**Beneficios**:
+- ✅ Datos centralizados en MongoDB
+- ✅ Actualización sin redeploy (admin panel)
+- ✅ Validación consistente frontend-backend
+- ✅ Cache con React Query (5-10 min)
+- ✅ Escalable a jerarquías ilimitadas
+
+### Hooks de React Query
+
+```typescript
+// hooks/use-locations.ts
+export const useDepartments = () => {
+  return useQuery({
+    queryKey: ['locations', 'departments'],
+    queryFn: () => locationService.getDepartments(),
+    staleTime: 10 * 60 * 1000, // 10 minutos
+    cacheTime: 30 * 60 * 1000   // 30 minutos
+  });
+};
+
+export const useCitiesByDepartment = (departmentValue: string) => {
+  return useQuery({
+    queryKey: ['locations', 'cities', departmentValue],
+    queryFn: () => locationService.getCitiesByDepartment(departmentValue),
+    enabled: !!departmentValue,
+    staleTime: 5 * 60 * 1000
+  });
+};
+```
+
+### Select Components con Valores Especiales
+
+**Problema**: React Select no permite `value=""` (cadena vacía).
+
+**Solución**: Usar `'all'` como valor y convertir en handlers.
+
+```typescript
+// FilterBar.tsx
+const FilterBar = () => {
+  // Estado interno normalizado
+  const categoria = filters.category || '';
+  
+  // Select usa 'all' para representar "ninguna selección"
+  return (
+    <Select 
+      value={categoria || 'all'} 
+      onValueChange={handleCategoryChange}
+    >
+      <SelectItem value="all">Todas las categorías</SelectItem>
+      {categories.map(c => (
+        <SelectItem value={c.value}>{c.label}</SelectItem>
+      ))}
+    </Select>
+  );
+};
+
+// Handler convierte 'all' → ''
+const handleCategoryChange = (value: string) => {
+  const newValue = value === 'all' ? '' : value;
+  updateCategory(newValue);
+};
+```
+
+### Diagrama de Flujo Completo
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 1. USUARIO EN FILTROS                                       │
+│    Selecciona: Solo "Bogotá" (sin categoría)               │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 2. FILTERBAR.TSX                                            │
+│    hasCategoria: false                                      │
+│    hasDepartamento: true                                    │
+│    parts: ['bogota']                                        │
+│    route: '/bogota'                                         │
+│    router.push('/bogota')                                   │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 3. MIDDLEWARE.TS                                            │
+│    pathname: '/bogota'                                      │
+│    slug[0]: 'bogota'                                        │
+│    ¿Es categoría válida? NO                                 │
+│    ¿Es departamento válido? SÍ                              │
+│    ✅ NextResponse.next() → Permitir sin modificar          │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 4. PAGE.TSX [...slug]                                       │
+│    slug: ['bogota']                                         │
+│    isValidDepartment('bogota') → true                       │
+│    CASO 3a ejecutado:                                       │
+│      categoria = ''                                         │
+│      departamento = 'bogota'                                │
+│      ciudad = undefined                                     │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 5. SEARCHPAGECLIENT.TSX                                     │
+│    Inicializa filtros:                                      │
+│      category: ''                                           │
+│      location: { department: 'bogota', city: '' }           │
+│    Fetch perfiles con filtros aplicados                    │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 6. BACKEND API                                              │
+│    GET /api/profiles?department=bogota                      │
+│    Retorna perfiles filtrados por departamento              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Casos de Uso y Ejemplos
+
+#### Caso 1: Búsqueda por categoría y ubicación
+```typescript
+// Usuario selecciona: Escort + Bogotá + Usaquén
+FilterBar: { categoria: 'escort', departamento: 'bogota', ciudad: 'usaquen' }
+→ URL: /escort/bogota/usaquen
+→ Middleware: Permite (escort = categoría válida)
+→ page.tsx: CASO 4 → categoria='escort', departamento='bogota', ciudad='usaquen'
+```
+
+#### Caso 2: Búsqueda solo por ubicación
+```typescript
+// Usuario selecciona: Solo Bogotá
+FilterBar: { categoria: '', departamento: 'bogota', ciudad: '' }
+→ URL: /bogota
+→ Middleware: Valida departamento → Permite
+→ page.tsx: CASO 3a → categoria='', departamento='bogota', ciudad=undefined
+```
+
+#### Caso 3: Búsqueda solo por categoría
+```typescript
+// Usuario selecciona: Solo Escort
+FilterBar: { categoria: 'escort', departamento: '', ciudad: '' }
+→ URL: /escort
+→ Middleware: Permite (escort = categoría válida)
+→ page.tsx: CASO 6 → categoria='escort', departamento=undefined, ciudad=undefined
+```
+
+#### Caso 4: Sin filtros
+```typescript
+// Usuario no selecciona nada, presiona buscar
+FilterBar: { categoria: '', departamento: '', ciudad: '' }
+→ URL: /filtros
+→ Middleware: Permite
+→ page.tsx: CASO 1 → categoria='', departamento=undefined, ciudad=undefined
+→ Muestra todos los perfiles
+```
+
+### Debugging y Troubleshooting
+
+#### Problema: URL se transforma incorrectamente
+
+**Síntoma**: Usuario busca por "Bogotá" pero URL muestra `/escort/bogota`
+
+**Causa**: Middleware antiguo redirigía departamentos a categoría por defecto
+
+**Solución**: Actualizar middleware para permitir URLs de departamento sin redirección
+
+```typescript
+// ❌ ANTIGUO
+if (VALID_DEPARTMENTS.includes(categoria)) {
+  return NextResponse.redirect(new URL(`/escort/${categoria}`, request.url));
+}
+
+// ✅ NUEVO
+if (VALID_DEPARTMENTS.includes(categoria)) {
+  return NextResponse.next(); // Permitir sin modificar
+}
+```
+
+#### Problema: Validación de departamento falla
+
+**Síntoma**: Departamentos válidos no se reconocen
+
+**Verificar**:
+1. Backend API está funcionando:
+   ```bash
+   curl http://localhost:5000/api/locations/validate/department/bogota
+   ```
+
+2. MongoDB tiene los datos:
+   ```javascript
+   db.locations.findOne({ type: 'department', value: 'bogota' })
+   ```
+
+3. Variables de entorno configuradas:
+   ```env
+   NEXT_PUBLIC_API_URL=http://localhost:5000
+   ```
+
+#### Problema: Selects no mantienen valor
+
+**Síntoma**: Después de seleccionar, el select vuelve a "Todas"
+
+**Verificar**:
+1. Conversión 'all' ↔ '' es bidireccional:
+   ```typescript
+   // Al mostrar
+   value={categoria || 'all'}
+   
+   // Al cambiar
+   const newValue = value === 'all' ? '' : value;
+   ```
+
+2. Estado se actualiza correctamente:
+   ```typescript
+   updateCategory(newValue); // No updateCategory(value)
+   ```
+
+### Mejores Prácticas
+
+#### 1. Generación de URLs
+
+```typescript
+// ✅ CORRECTO: Construir URL en orden lógico
+const parts = [];
+if (hasCategoria) parts.push(createSlug(categoria));
+if (hasDepartamento) parts.push(departamento);
+if (hasCiudad) parts.push(ciudad);
+const url = `/${parts.join('/')}`;
+
+// ❌ INCORRECTO: Concatenación directa
+const url = `/${categoria}/${departamento}/${ciudad}`.replace(/\/+/g, '/');
+```
+
+#### 2. Validación de Segmentos
+
+```typescript
+// ✅ CORRECTO: Validar antes de asumir tipo
+const isFirstSegmentDepartment = await isValidDepartment(slug[0]);
+if (isFirstSegmentDepartment) {
+  // Es departamento
+} else {
+  // Es categoría
+}
+
+// ❌ INCORRECTO: Asumir tipo sin validar
+if (slug.length === 1) {
+  // ¿Es categoría o departamento? No sabemos
+}
+```
+
+#### 3. Manejo de Cache
+
+```typescript
+// ✅ CORRECTO: Cache apropiado para cada tipo de dato
+// Departamentos cambian raramente → cache largo
+useDepartments({ staleTime: 10 * 60 * 1000 });
+
+// Perfiles cambian frecuentemente → cache corto
+useProfiles({ staleTime: 1 * 60 * 1000 });
+
+// ❌ INCORRECTO: Mismo cache para todo
+useQuery({ staleTime: 5 * 60 * 1000 }); // Generic
+```
+
+#### 4. Error Handling
+
+```typescript
+// ✅ CORRECTO: Graceful degradation
+async function isValidDepartment(dept: string) {
+  try {
+    return await locationService.isValidDepartment(dept);
+  } catch (error) {
+    console.error('Validation error:', error);
+    return true; // Permitir en caso de error
+  }
+}
+
+// ❌ INCORRECTO: Throw sin manejar
+async function isValidDepartment(dept: string) {
+  return await locationService.isValidDepartment(dept);
+  // Si falla, toda la página crashea
+}
+```
+
+### Archivos Clave
+
+| Archivo | Responsabilidad | Líneas Críticas |
+|---------|----------------|-----------------|
+| `FilterBar.tsx` | Generar URLs desde filtros | handleSearch() |
+| `middleware.ts` | Interceptar y validar URLs | líneas 240-255 |
+| `[...slug]/page.tsx` | Parsear slug a filtros | líneas 220-280 |
+| `location.service.ts` | Comunicación con backend | isValidDepartment() |
+| `use-filter-options-query.ts` | Hooks de datos | useDepartmentsQuery() |
+
+### Comandos Útiles
+
+```bash
+# Ver logs de middleware (desarrollo)
+# Los middleware logs aparecen en la terminal del servidor Next.js
+
+# Limpiar cache de Next.js
+rm -rf .next
+
+# Limpiar cache de navegador
+# Chrome DevTools → Application → Clear Storage
+
+# Verificar rutas generadas
+# Next.js build muestra todas las rutas estáticas generadas
+pnpm run build
+```
+
+---
+
+*Sección agregada: Noviembre 2024*
+*Sistema de Rutas Dinámicas v1.0*

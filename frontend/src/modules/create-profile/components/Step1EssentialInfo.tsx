@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Controller } from 'react-hook-form';
-import { colombiaLocations } from '@/utils/colombiaData';
+import { useDepartments, useCitiesByDepartment } from '@/hooks/use-locations';
 import type { AttributeGroup } from '../types';
 import { useFormContext } from '../context/FormContext';
 
@@ -26,6 +26,10 @@ export function Step1EssentialInfo({
   const { register, control, watch, setValue, formState: { errors } } = useFormContext();
   const gender = watch('gender');
   const locationDepartment = watch('location.department');
+
+  // Obtener departamentos y ciudades del backend
+  const { data: departments = [], isLoading: loadingDepartments } = useDepartments();
+  const { data: cities = [], isLoading: loadingCities } = useCitiesByDepartment(locationDepartment || '');
 
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
@@ -191,18 +195,19 @@ export function Step1EssentialInfo({
                         setValue('location.city', ''); // Reset city when department changes
                       }}
                       value={field.value || ''}
-                      key={`department-${field.value}`} // Forzar re-render cuando cambie el valor
+                      key={`department-${field.value}`}
+                      disabled={loadingDepartments}
                     >
                       <SelectTrigger className={errors.location?.department ? 'border-red-500' : ''}>
                         <SelectValue
-                          placeholder="Selecciona departamento"
+                          placeholder={loadingDepartments ? "Cargando..." : "Selecciona departamento"}
                           className={field.value ? 'text-foreground' : 'text-muted-foreground'}
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.values(colombiaLocations).map((department) => (
-                          <SelectItem key={department.original} value={department.original}>
-                            {department.original}
+                        {departments.map((department) => (
+                          <SelectItem key={department.value} value={department.value}>
+                            {department.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -225,24 +230,27 @@ export function Step1EssentialInfo({
                     <Select
                       onValueChange={field.onChange}
                       value={field.value || ''}
-                      key={`city-${field.value}`} // Forzar re-render cuando cambie el valor
-                      disabled={!locationDepartment}
+                      key={`city-${field.value}`}
+                      disabled={!locationDepartment || loadingCities}
                     >
                       <SelectTrigger className={errors.location?.city ? 'border-red-500' : ''}>
                         <SelectValue
-                          placeholder="Selecciona ciudad"
+                          placeholder={
+                            !locationDepartment
+                              ? "Primero selecciona departamento"
+                              : loadingCities
+                                ? "Cargando..."
+                                : "Selecciona ciudad"
+                          }
                           className={field.value ? 'text-foreground' : 'text-muted-foreground'}
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {locationDepartment &&
-                          Object.values(colombiaLocations)
-                            .find(dept => dept.original === locationDepartment)
-                            ?.cities.map((city) => (
-                              <SelectItem key={city.original} value={city.original}>
-                                {city.original}
-                              </SelectItem>
-                            ))}
+                        {cities.map((city) => (
+                          <SelectItem key={city.value} value={city.value}>
+                            {city.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   );

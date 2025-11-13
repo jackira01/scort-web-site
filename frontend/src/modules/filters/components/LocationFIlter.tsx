@@ -5,7 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { getAllDepartments, getCitiesByDepartment } from '@/utils/colombiaData';
+import { useDepartments, useCitiesByDepartment } from '@/hooks/use-locations';
 
 interface LocationFilterProps {
   selectedDepartment?: string;
@@ -18,8 +18,8 @@ const LocationFilter = ({
   selectedCity,
   onLocationChange,
 }: LocationFilterProps) => {
-  const departments = getAllDepartments();
-  const cities = selectedDepartment ? getCitiesByDepartment(selectedDepartment) : [];
+  const { data: departments = [] } = useDepartments();
+  const { data: cities = [] } = useCitiesByDepartment(selectedDepartment || '');
 
   const handleDepartmentChange = (departmentValue: string) => {
     onLocationChange?.(departmentValue, undefined); // Reset city when department changes
@@ -29,11 +29,20 @@ const LocationFilter = ({
     onLocationChange?.(selectedDepartment, cityValue);
   };
 
+  // Usar key para forzar remount cuando los valores se limpien completamente
+  // Esto asegura que los Select se reseteen visualmente
+  const departmentKey = `dept-${selectedDepartment || 'none'}`;
+  const cityKey = `city-${selectedCity || 'none'}-${selectedDepartment || 'none'}`;
+
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium mb-2">Departamento</label>
-        <Select value={selectedDepartment} onValueChange={handleDepartmentChange}>
+        <Select
+          key={departmentKey}
+          value={selectedDepartment || undefined}
+          onValueChange={handleDepartmentChange}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Seleccionar departamento" />
           </SelectTrigger>
@@ -50,7 +59,11 @@ const LocationFilter = ({
       {selectedDepartment && (
         <div>
           <label className="block text-sm font-medium mb-2">Ciudad</label>
-          <Select value={selectedCity} onValueChange={handleCityChange}>
+          <Select
+            key={cityKey}
+            value={selectedCity || undefined}
+            onValueChange={handleCityChange}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Selecciona una ciudad" />
             </SelectTrigger>

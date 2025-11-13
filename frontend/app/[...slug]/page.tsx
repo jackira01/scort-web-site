@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import type { ProfilesResponse } from '@/types/profile.types';
 import { PAGINATION, API_URL } from '@/lib/config';
 import { slugToText } from '@/utils/slug';
-import { getDepartmentByNormalized, isValidDepartment as isValidDepartmentLocal, isValidCity as isValidCityLocal } from '@/utils/colombiaData';
+import { locationService } from '@/services/location.service';
 import SearchPageClient from './SearchPageClient';
 
 // Forzar renderizado dinámico para evitar DYNAMIC_SERVER_USAGE
@@ -49,44 +49,40 @@ async function isValidCategory(categoria: string): Promise<boolean> {
   }
 }
 
-// Función para validar si un departamento es válido usando datos locales
+// Función para validar si un departamento es válido usando el backend
 async function isValidDepartment(departamento: string): Promise<boolean> {
   try {
-    // Usar validación local primero (más confiable y rápida)
-    const isValidLocal = isValidDepartmentLocal(departamento);
-
-    if (isValidLocal) {
+    // Durante build, permitir todos los departamentos
+    if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_URL) {
       return true;
     }
 
-    // Fallback a API solo si es necesario
-    const options = await getFilterOptions();
-    if (!options) return true; // Durante build, permitir todos los departamentos
-    return options.locations?.departments?.includes(departamento) || true;
+    // Validar contra el backend
+    return await locationService.isValidDepartment(departamento);
   } catch (error) {
-    console.error('Error validating department via API:', error);
-    return true; // Durante build, permitir todos los departamentos
+    return true; // Durante errores, permitir el departamento
   }
 }
 
-// Función para validar si una ciudad es válida usando datos locales
+// Función para validar si una ciudad es válida usando el backend
 async function isValidCity(ciudad: string, departamento?: string): Promise<boolean> {
   try {
-    // Si tenemos el departamento, usar validación local primero
-    if (departamento) {
-      const isValidLocal = isValidCityLocal(departamento, ciudad);
-      if (isValidLocal) {
-        return true;
-      }
+    // Durante build, permitir todas las ciudades
+    if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_URL) {
+      return true;
     }
 
-    // Fallback a API
-    const options = await getFilterOptions();
-    if (!options) return true; // Durante build, permitir todas las ciudades
-    return options.locations?.cities?.includes(ciudad) || true;
+    // Si tenemos el departamento, validar contra el backend
+    if (departamento) {
+      const isValid = await locationService.isValidCity(departamento, ciudad);
+      return isValid;
+    }
+
+    // Si no hay departamento, no podemos validar la ciudad
+    return true;
   } catch (error) {
-    console.error('Error validating city via API:', error);
-    return true; // Durante build, permitir todas las ciudades
+    console.error('Error validating city:', error);
+    return true; // Durante errores, permitir la ciudad
   }
 }
 
@@ -103,63 +99,97 @@ export async function generateMetadata({
   let ciudad: string | undefined;
 
   if (slug && slug.length > 0) {
-    // CASO 1: /filtros/categoria?departamento=X&ciudad=Y
-    if (slug[0] === 'filtros' && slug.length > 1) {
+    // CASO 1: /filtros (sin categoría)
+    if (slug[0] === 'filtros' && slug.length === 1) {
+      categoria = '';
+      departamento = queryParams.departamento as string | undefined;
+      ciudad = queryParams.ciudad as string | undefined;
+    }
+    // CASO 2: /filtros/categoria?departamento=X&ciudad=Y
+    else if (slug[0] === 'filtros' && slug.length > 1) {
       categoria = slug[1];
       departamento = queryParams.departamento as string | undefined;
       ciudad = queryParams.ciudad as string | undefined;
     }
-    // CASO 2: /categoria/departamento/ciudad (URL amigable SEO)
-    else if (slug.length === 3) {
-      [categoria, departamento, ciudad] = slug;
-    }
-    // CASO 3: /categoria/departamento
-    else if (slug.length === 2) {
-      [categoria, departamento] = slug;
-    }
-    // CASO 4: /categoria (también puede tener searchParams)
-    else {
-      categoria = slug[0];
-      departamento = queryParams.departamento as string | undefined;
-      ciudad = queryParams.ciudad as string | undefined;
+    // CASO 3: Verificar si el primer segmento es un departamento
+    else if (slug.length >= 1) {
+      const isFirstSegmentDepartment = await isValidDepartment(slug[0]);
+
+      if (isFirstSegmentDepartment) {
+        categoria = '';
+        departamento = slug[0];
+        ciudad = slug.length >= 2 ? slug[1] : undefined;
+      }
+      // CASO 4: /categoria/departamento/ciudad
+      else if (slug.length === 3) {
+        [categoria, departamento, ciudad] = slug;
+      }
+      // CASO 5: /categoria/departamento
+      else if (slug.length === 2) {
+        [categoria, departamento] = slug;
+      }
+      // CASO 6: /categoria
+      else {
+        categoria = slug[0];
+        departamento = queryParams.departamento as string | undefined;
+        ciudad = queryParams.ciudad as string | undefined;
+      }
     }
   } else {
     categoria = '';
   }
 
-  // Validar parámetros
-  if (!categoria || !(await isValidCategory(categoria))) {
-    return {
-      title: 'Online Escorts - Premium Escort Services',
-      description: 'Find premium escort services in your city. Professional, verified, and discreet companions.',
-    };
-  }
-
   let pageTitle = '';
   let pageDescription = '';
-  let keywords = categoria;
+  let keywords = '';
 
-  if (ciudad && departamento) {
-    // Ruta completa: /categoria/departamento/ciudad
+  // Caso: Solo ubicación (sin categoría)
+  if (!categoria && departamento) {
     const deptLabel = slugToText(departamento);
-    const cityLabel = slugToText(ciudad);
 
-    pageTitle = `${slugToText(categoria)} en ${cityLabel}, ${deptLabel} - Perfiles Verificados`;
-    pageDescription = `Encuentra los mejores perfiles de ${categoria} en ${cityLabel}, ${deptLabel}. Perfiles verificados y actualizados.`;
-    keywords = `${categoria}, ${cityLabel}, ${deptLabel}, perfiles, verificados`;
-  } else if (departamento) {
-    // Ruta parcial: /categoria/departamento
-    const deptData = getDepartmentByNormalized(departamento);
-    const deptLabel = deptData?.original || departamento;
+    if (ciudad) {
+      const cityLabel = slugToText(ciudad);
+      pageTitle = `Perfiles en ${cityLabel}, ${deptLabel} - Todos los servicios`;
+      pageDescription = `Descubre todos los perfiles profesionales en ${cityLabel}, ${deptLabel}. Verificados y actualizados.`;
+      keywords = `${cityLabel}, ${deptLabel}, perfiles, servicios`;
+    } else {
+      pageTitle = `Perfiles en ${deptLabel} - Todos los servicios`;
+      pageDescription = `Descubre todos los perfiles profesionales en ${deptLabel}. Verificados y actualizados.`;
+      keywords = `${deptLabel}, perfiles, servicios`;
+    }
+  }
+  // Caso: Categoría con/sin ubicación
+  else if (categoria) {
+    // Validar categoría
+    if (!(await isValidCategory(categoria))) {
+      return {
+        title: 'Online Escorts - Premium Escort Services',
+        description: 'Find premium escort services in your city. Professional, verified, and discreet companions.',
+      };
+    }
 
-    pageTitle = `${categoria.charAt(0).toUpperCase() + categoria.slice(1)} en ${deptLabel} - Perfiles Verificados`;
-    pageDescription = `Encuentra los mejores perfiles de ${categoria} en ${deptLabel}. Perfiles verificados y actualizados.`;
-    keywords = `${categoria}, ${deptLabel}, perfiles, verificados`;
-  } else {
-    // Ruta básica: /categoria
-    pageTitle = `${categoria.charAt(0).toUpperCase() + categoria.slice(1)} - Perfiles Verificados`;
-    pageDescription = `Encuentra los mejores perfiles de ${categoria}. Perfiles verificados y actualizados en toda Colombia.`;
-    keywords = `${categoria}, perfiles, verificados, Colombia`;
+    if (ciudad && departamento) {
+      const deptLabel = slugToText(departamento);
+      const cityLabel = slugToText(ciudad);
+      pageTitle = `${slugToText(categoria)} en ${cityLabel}, ${deptLabel} - Perfiles Verificados`;
+      pageDescription = `Encuentra los mejores perfiles de ${categoria} en ${cityLabel}, ${deptLabel}. Perfiles verificados y actualizados.`;
+      keywords = `${categoria}, ${cityLabel}, ${deptLabel}, perfiles, verificados`;
+    } else if (departamento) {
+      const deptLabel = slugToText(departamento);
+      pageTitle = `${categoria.charAt(0).toUpperCase() + categoria.slice(1)} en ${deptLabel} - Perfiles Verificados`;
+      pageDescription = `Encuentra los mejores perfiles de ${categoria} en ${deptLabel}. Perfiles verificados y actualizados.`;
+      keywords = `${categoria}, ${deptLabel}, perfiles, verificados`;
+    } else {
+      pageTitle = `${categoria.charAt(0).toUpperCase() + categoria.slice(1)} - Perfiles Verificados`;
+      pageDescription = `Encuentra los mejores perfiles de ${categoria}. Perfiles verificados y actualizados en toda Colombia.`;
+      keywords = `${categoria}, perfiles, verificados, Colombia`;
+    }
+  }
+  // Caso: Sin filtros
+  else {
+    pageTitle = 'Online Escorts - Premium Escort Services';
+    pageDescription = 'Find premium escort services in your city. Professional, verified, and discreet companions.';
+    keywords = 'escorts, services, verified, premium';
   }
 
   return {
@@ -188,25 +218,44 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
   let ciudad: string | undefined;
 
   if (slug && slug.length > 0) {
-    // CASO 1: /filtros/categoria?departamento=X&ciudad=Y
-    if (slug[0] === 'filtros' && slug.length > 1) {
+    // CASO 1: /filtros (sin categoría, solo ubicación por query params)
+    if (slug[0] === 'filtros' && slug.length === 1) {
+      categoria = ''; // Sin categoría específica
+      departamento = queryParams.departamento as string | undefined;
+      ciudad = queryParams.ciudad as string | undefined;
+    }
+    // CASO 2: /filtros/categoria?departamento=X&ciudad=Y
+    else if (slug[0] === 'filtros' && slug.length > 1) {
       categoria = slug[1];
       departamento = queryParams.departamento as string | undefined;
       ciudad = queryParams.ciudad as string | undefined;
     }
-    // CASO 2: /categoria/departamento/ciudad (URL amigable SEO)
-    else if (slug.length === 3) {
-      [categoria, departamento, ciudad] = slug;
-    }
-    // CASO 3: /categoria/departamento
-    else if (slug.length === 2) {
-      [categoria, departamento] = slug;
-    }
-    // CASO 4: /categoria (también puede tener searchParams)
-    else {
-      categoria = slug[0];
-      departamento = queryParams.departamento as string | undefined;
-      ciudad = queryParams.ciudad as string | undefined;
+    // CASO 3: Verificar si el primer segmento es un departamento válido
+    // Esto permite URLs como /arauca o /arauca/apartado sin categoría
+    else if (slug.length >= 1) {
+      // Intentar validar el primer segmento como departamento
+      const isFirstSegmentDepartment = await isValidDepartment(slug[0]);
+
+      if (isFirstSegmentDepartment) {
+        // El primer segmento es un departamento
+        categoria = ''; // Sin categoría
+        departamento = slug[0];
+        ciudad = slug.length >= 2 ? slug[1] : undefined;
+      }
+      // CASO 4: /categoria/departamento/ciudad (URL amigable SEO)
+      else if (slug.length === 3) {
+        [categoria, departamento, ciudad] = slug;
+      }
+      // CASO 5: /categoria/departamento
+      else if (slug.length === 2) {
+        [categoria, departamento] = slug;
+      }
+      // CASO 6: /categoria (también puede tener searchParams)
+      else {
+        categoria = slug[0];
+        departamento = queryParams.departamento as string | undefined;
+        ciudad = queryParams.ciudad as string | undefined;
+      }
     }
   } else {
     categoria = '';
@@ -237,21 +286,25 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
   }
 
   // Validaciones simplificadas sin verificaciones dinámicas
-  if (!categoria) {
-    // Missing category parameter
+  // Permitir /filtros sin parámetros para mostrar todos los perfiles
+  // Solo rechazar si no es /filtros Y no hay categoría ni departamento
+  if (!categoria && !departamento && !(slug && slug[0] === 'filtros')) {
+    // Missing both category and department parameter
     // Renderizar contenido por defecto en lugar de notFound
     return (
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold">Categoría requerida</h1>
-        <p>Por favor especifica una categoría válida.</p>
+        <h1 className="text-2xl font-bold">Filtros requeridos</h1>
+        <p>Por favor especifica una categoría o ubicación válida.</p>
       </div>
     );
   }
 
   // Validaciones de categoría, departamento y ciudad sin verificaciones dinámicas
-  const isValidCat = await isValidCategory(categoria);
-  if (!isValidCat) {
-    // Invalid category
+  if (categoria) {
+    const isValidCat = await isValidCategory(categoria);
+    if (!isValidCat) {
+      // Invalid category
+    }
   }
 
   if (departamento) {

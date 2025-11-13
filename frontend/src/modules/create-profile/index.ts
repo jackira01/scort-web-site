@@ -9,4 +9,5 @@ export { SidebarContent } from './components/SidebarContent';
 
 export * from './types';
 export * from './data';
-export * from '@/utils/colombiaData';
+// NOTA: colombiaData.ts ya no se usa - las ubicaciones se obtienen del backend
+// export * from '@/utils/colombiaData';

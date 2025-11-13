@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,12 @@ export default function SearchPageClient({
   const searchParams = useSearchParams();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [hasInitialFetch, setHasInitialFetch] = useState(false);
+
+  // Ref para evitar sincronización circular cuando cambiamos la URL programáticamente
+  const isUpdatingUrlRef = useRef(false);
+  // Ref para rastrear valores previos y evitar actualizaciones innecesarias
+  const prevFiltersRef = useRef<{ department?: string; city?: string }>({});
 
   // CLAVE: Leer los filtros desde searchParams primero, y si no existen, usar los props
   const departamentoFromUrl = searchParams.get('departamento') || departamento;
@@ -63,21 +69,48 @@ export default function SearchPageClient({
   } = useSearchFilters(initialFilters);
 
   // Sincronizar filtros cuando cambian los parámetros de la URL
+  // OPTIMIZACIÓN: Solo actualizar si no estamos en medio de una actualización programática
+  // y si los valores realmente cambiaron
   useEffect(() => {
+    // Si estamos actualizando la URL programáticamente, no sincronizar
+    if (isUpdatingUrlRef.current) {
+      return;
+    }
+
     const newDepartamento = searchParams.get('departamento') || departamento;
     const newCiudad = searchParams.get('ciudad') || ciudad;
+
+    // Comparar con valores previos para evitar actualizaciones innecesarias
+    const prevDepartment = prevFiltersRef.current.department;
+    const prevCity = prevFiltersRef.current.city;
 
     // Solo actualizar si realmente cambiaron
     if (
       filters.location?.department !== newDepartamento ||
       filters.location?.city !== newCiudad
     ) {
-      updateFilter('location', {
-        department: newDepartamento,
-        city: newCiudad,
-      });
+      // Verificar que no sea solo un re-render sin cambios reales
+      if (prevDepartment !== newDepartamento || prevCity !== newCiudad) {
+        console.log('🔄 Sincronizando filtros desde URL:', {
+          newDepartamento,
+          newCiudad,
+          prevDepartment,
+          prevCity
+        });
+
+        updateFilter('location', {
+          department: newDepartamento,
+          city: newCiudad,
+        });
+
+        // Actualizar refs
+        prevFiltersRef.current = {
+          department: newDepartamento,
+          city: newCiudad,
+        };
+      }
     }
-  }, [searchParams, departamento, ciudad]);
+  }, [searchParams, departamento, ciudad]); // Remover filters de dependencias para evitar loop
 
   // Función helper para normalizar filtros al formato esperado por la API
   const normalizeFiltersForQuery = (): any => {
@@ -170,18 +203,27 @@ export default function SearchPageClient({
   // Normalizar filtros también para SearchProfilesSSG (con type assertion)
   const normalizedFiltersForDisplay: any = queryFilters;
 
-  // Determinar si los filtros han cambiado desde los iniciales
-  const hasFiltersChanged = Boolean(
+  // Determinar si hay filtros activos más allá de los básicos de la URL
+  // Solo desactivar el fetch si NO hay filtros adicionales (edad, verificación, etc.)
+  const hasAdditionalFilters = Boolean(
     filters.features?.ageRange ||
     filters.features?.gender ||
     filters.features?.sex ||
-    (filters.location?.department !== departamento) ||
-    (filters.location?.city !== ciudad) ||
-    (filters.category !== categoria) ||
     filters.verification?.identityVerified ||
     filters.verification?.hasVideo ||
     filters.verification?.documentVerified
   );
+
+  // Detectar si los filtros de ubicación/categoría son diferentes a la URL actual
+  const hasLocationOrCategoryChanged = Boolean(
+    (filters.location?.department !== departamentoFromUrl) ||
+    (filters.location?.city !== ciudadFromUrl) ||
+    (filters.category !== categoria)
+  );
+
+  // CRÍTICO: Siempre hacer fetch en el primer montaje del componente
+  // Después, solo hacer fetch si hay filtros adicionales o cambios
+  const shouldFetchClientSide = !hasInitialFetch || hasAdditionalFilters || hasLocationOrCategoryChanged;
 
   // Usar useQuery para manejar los datos filtrados
   const {
@@ -193,28 +235,43 @@ export default function SearchPageClient({
     queryFilters,
     {
       initialData: profilesData,
-      staleTime: hasFiltersChanged ? 0 : 5 * 60 * 1000,
-      enabled: hasFiltersChanged,
-      refetchOnMount: hasFiltersChanged
+      staleTime: shouldFetchClientSide ? 0 : 5 * 60 * 1000,
+      enabled: shouldFetchClientSide,
+      refetchOnMount: true // Siempre refetch en mount para datos frescos
     }
   );
 
+  // Marcar que ya se hizo el fetch inicial después de la primera carga
+  useEffect(() => {
+    if (!isLoadingProfiles && !hasInitialFetch) {
+      setHasInitialFetch(true);
+    }
+  }, [isLoadingProfiles, hasInitialFetch]);
+
   // Función wrapper para limpiar filtros y refrescar datos
   const handleClearFilters = async () => {
-    // Limpiar completamente todos los filtros incluyendo la categoría
+    console.log('🧹 Limpiando todos los filtros');
+
+    // Marcar que estamos actualizando la URL
+    isUpdatingUrlRef.current = true;
+
+    // Limpiar completamente todos los filtros
     clearFilters();
-    
-    // Actualizar filtros para NO incluir categoría, ubicación, ni nada más
-    // Esto asegura que se muestren TODOS los perfiles
-    updateFilter('category', undefined);
-    updateFilter('location', {});
 
-    // Navegar a la ruta base de perfiles (sin categoría específica)
-    router.push('/perfiles');
+    // Resetear los refs para que el LocationFilter se reinicie
+    prevFiltersRef.current = {
+      department: undefined,
+      city: undefined,
+    };
 
-    // Esperar un momento para que los filtros se actualicen antes de refetch
-    setTimeout(async () => {
-      await refetch();
+    // Navegar a la ruta base con solo la categoría
+    const baseUrl = `/${categoria}`;
+    router.push(baseUrl);
+
+    // Resetear la bandera después de un pequeño delay
+    setTimeout(() => {
+      isUpdatingUrlRef.current = false;
+      refetch();
     }, 100);
   };
 
@@ -230,14 +287,33 @@ export default function SearchPageClient({
     city?: string,
     preserveOtherFilters: boolean = true
   ) => {
-    const params = new URLSearchParams();
+    // Construir path limpio SEO-friendly
+    const parts: string[] = [];
 
-    // Agregar departamento y ciudad si existen
-    if (dept) params.set('departamento', dept);
-    if (city) params.set('ciudad', city);
+    // Prioridad 1: Si hay categoría, usarla primero
+    if (cat) {
+      parts.push(cat);
+      if (dept) {
+        parts.push(dept);
+      }
+      if (city && dept) {
+        parts.push(city);
+      }
+    }
+    // Prioridad 2: Si NO hay categoría pero SÍ hay ubicación, usar solo ubicación
+    else if (dept) {
+      parts.push(dept);
+      if (city) {
+        parts.push(city);
+      }
+    }
 
-    // Preservar otros filtros si se solicita
+    const basePath = parts.length > 0 ? `/${parts.join('/')}` : '/filtros';
+
+    // Preservar otros filtros si se solicita (como query params)
     if (preserveOtherFilters) {
+      const params = new URLSearchParams();
+
       // Agregar filtros de features si existen
       if (filters.features?.ageRange) {
         params.set('ageMin', filters.features.ageRange.min?.toString() || '');
@@ -266,20 +342,54 @@ export default function SearchPageClient({
       if (filters.verification?.documentVerified) {
         params.set('document', 'true');
       }
+
+      const queryString = params.toString();
+      return queryString ? `${basePath}?${queryString}` : basePath;
     }
 
-    const queryString = params.toString();
-    return `/${cat}${queryString ? `?${queryString}` : ''}`;
+    return basePath;
   };
 
   // Manejar cambio de ubicación - mantener filtros
   const handleLocationChange = (newDepartment?: string, newCity?: string) => {
+    console.log('🔄 handleLocationChange:', { newDepartment, newCity });
+
+    // Marcar que estamos actualizando la URL para evitar sincronización circular
+    isUpdatingUrlRef.current = true;
+
+    // Actualizar el estado local primero
+    updateFilter('location', {
+      department: newDepartment,
+      city: newCity,
+    });
+
+    // Actualizar refs
+    prevFiltersRef.current = {
+      department: newDepartment,
+      city: newCity,
+    };
+
+    // Construir y navegar a la nueva URL
     const newUrl = buildUrlWithParams(categoria, newDepartment, newCity, true);
     router.push(newUrl);
+
+    // Resetear la bandera después de un pequeño delay para permitir que la navegación complete
+    setTimeout(() => {
+      isUpdatingUrlRef.current = false;
+    }, 100);
   };
 
   // Manejar cambio de categoría - mantener filtros
   const handleCategoryChange = (newCategory: string) => {
+    console.log('🔄 handleCategoryChange:', { newCategory });
+
+    // Marcar que estamos actualizando la URL
+    isUpdatingUrlRef.current = true;
+
+    // Actualizar el estado local primero
+    updateFilter('category', newCategory);
+
+    // Construir y navegar a la nueva URL
     const newUrl = buildUrlWithParams(
       newCategory,
       filters.location?.department,
@@ -287,6 +397,11 @@ export default function SearchPageClient({
       true
     );
     router.push(newUrl);
+
+    // Resetear la bandera
+    setTimeout(() => {
+      isUpdatingUrlRef.current = false;
+    }, 100);
   };
 
   // Obtener información de ubicación para mostrar
@@ -317,8 +432,12 @@ export default function SearchPageClient({
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <span>Inicio</span>
-              <span>/</span>
-              <span className="capitalize font-medium text-purple-600">{categoria}</span>
+              {categoria && (
+                <>
+                  <span>/</span>
+                  <span className="capitalize font-medium text-purple-600">{categoria}</span>
+                </>
+              )}
               {locationInfo?.department && (
                 <>
                   <span>/</span>
@@ -329,6 +448,12 @@ export default function SearchPageClient({
                 <>
                   <span>/</span>
                   <span className="font-medium text-purple-600">{locationInfo.city}</span>
+                </>
+              )}
+              {!categoria && !locationInfo && (
+                <>
+                  <span>/</span>
+                  <span className="font-medium text-purple-600">Todos los perfiles</span>
                 </>
               )}
             </div>

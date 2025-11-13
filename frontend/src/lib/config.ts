@@ -27,45 +27,25 @@ export const CATEGORIES = [
   { value: 'acompanante', label: 'Acompañante' },
 ];
 
-import { getAllDepartments, getCitiesByDepartment } from '../utils/colombiaData';
-
-// Convertir datos de Colombia al formato esperado por la aplicación
-function createLocationsFromColombiaData() {
-  const locations: Record<string, { label: string; cities: { value: string; label: string }[] }> = {};
-
-  getAllDepartments().forEach(department => {
-    locations[department.value] = {
-      label: department.label,
-      cities: getCitiesByDepartment(department.value)
-    };
-  });
-
-  return locations;
-}
-
-// Departamentos y ciudades generados automáticamente desde colombiaData
-export const LOCATIONS = createLocationsFromColombiaData();
+// NOTA: Las ubicaciones ahora se obtienen dinámicamente del backend
+// Mantener LOCATIONS como objeto vacío para compatibilidad con código legacy
+export const LOCATIONS: Record<string, { label: string; cities: { value: string; label: string }[] }> = {};
 
 // Rutas populares para pre-generación
+// NOTA: Estas rutas se generarán dinámicamente en runtime usando datos del backend
 export const POPULAR_ROUTES = [
   { categoria: 'escort', departamento: 'bogota', ciudad: 'chapinero' },
-  { categoria: 'escort', departamento: 'medellin', ciudad: 'el-poblado' },
-  { categoria: 'escort', departamento: 'cali', ciudad: 'cali-aguacatal' },
+  { categoria: 'escort', departamento: 'antioquia', ciudad: 'medellin' },
+  { categoria: 'escort', departamento: 'valle-del-cauca', ciudad: 'cali' },
   { categoria: 'masajista', departamento: 'bogota', ciudad: 'usaquen' },
-  { categoria: 'masajista', departamento: 'medellin', ciudad: 'laureles' },
   { categoria: 'modelo', departamento: 'bogota', ciudad: 'chapinero' },
-  { categoria: 'acompañante', departamento: 'bogota', ciudad: 'zona-rosa' },
+  { categoria: 'acompañante', departamento: 'bogota', ciudad: 'chapinero' },
 ];
 
-// Rutas adicionales para pre-generación (solo categoría y categoría + departamento)
+// Rutas adicionales para pre-generación (solo categoría)
 export const ADDITIONAL_ROUTES = {
   // Rutas de solo categoría
   categories: CATEGORIES.map(cat => ({ categoria: cat.value })),
-  // Rutas de categoría + departamento
-  categoryDepartments: CATEGORIES.flatMap(cat =>
-    Object.keys(LOCATIONS).map(dept => ({
-      categoria: cat.value,
-      departamento: dept
-    }))
-  ),
+  // Las rutas de categoría + departamento se generarán dinámicamente
+  categoryDepartments: [],
 };
