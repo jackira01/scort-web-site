@@ -1,9 +1,15 @@
 import { Metadata } from 'next';
 import type { ProfilesResponse } from '@/types/profile.types';
 import { PAGINATION, API_URL } from '@/lib/config';
-import { slugToText } from '@/utils/slug';
 import { locationService } from '@/services/location.service';
 import SearchPageClient from './SearchPageClient';
+
+// Función helper para convertir slug a texto legible (solo para metadata)
+const slugToReadable = (slug: string): string => {
+  return slug
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
 
 // Forzar renderizado dinámico para evitar DYNAMIC_SERVER_USAGE
 export const dynamic = 'force-dynamic';
@@ -145,10 +151,10 @@ export async function generateMetadata({
 
   // Caso: Solo ubicación (sin categoría)
   if (!categoria && departamento) {
-    const deptLabel = slugToText(departamento);
+    const deptLabel = slugToReadable(departamento);
 
     if (ciudad) {
-      const cityLabel = slugToText(ciudad);
+      const cityLabel = slugToReadable(ciudad);
       pageTitle = `Perfiles en ${cityLabel}, ${deptLabel} - Todos los servicios`;
       pageDescription = `Descubre todos los perfiles profesionales en ${cityLabel}, ${deptLabel}. Verificados y actualizados.`;
       keywords = `${cityLabel}, ${deptLabel}, perfiles, servicios`;
@@ -169,13 +175,13 @@ export async function generateMetadata({
     }
 
     if (ciudad && departamento) {
-      const deptLabel = slugToText(departamento);
-      const cityLabel = slugToText(ciudad);
-      pageTitle = `${slugToText(categoria)} en ${cityLabel}, ${deptLabel} - Perfiles Verificados`;
+      const deptLabel = slugToReadable(departamento);
+      const cityLabel = slugToReadable(ciudad);
+      pageTitle = `${slugToReadable(categoria)} en ${cityLabel}, ${deptLabel} - Perfiles Verificados`;
       pageDescription = `Encuentra los mejores perfiles de ${categoria} en ${cityLabel}, ${deptLabel}. Perfiles verificados y actualizados.`;
       keywords = `${categoria}, ${cityLabel}, ${deptLabel}, perfiles, verificados`;
     } else if (departamento) {
-      const deptLabel = slugToText(departamento);
+      const deptLabel = slugToReadable(departamento);
       pageTitle = `${categoria.charAt(0).toUpperCase() + categoria.slice(1)} en ${deptLabel} - Perfiles Verificados`;
       pageDescription = `Encuentra los mejores perfiles de ${categoria} en ${deptLabel}. Perfiles verificados y actualizados.`;
       keywords = `${categoria}, ${deptLabel}, perfiles, verificados`;
@@ -230,32 +236,58 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
       departamento = queryParams.departamento as string | undefined;
       ciudad = queryParams.ciudad as string | undefined;
     }
-    // CASO 3: Verificar si el primer segmento es un departamento válido
-    // Esto permite URLs como /arauca o /arauca/apartado sin categoría
-    else if (slug.length >= 1) {
-      // Intentar validar el primer segmento como departamento
-      const isFirstSegmentDepartment = await isValidDepartment(slug[0]);
+    // CASO 3: Un solo segmento - /categoria o /departamento
+    // Prioridad: PRIMERO validar categoría, LUEGO departamento
+    else if (slug.length === 1) {
+      const isCategory = await isValidCategory(slug[0]);
 
-      if (isFirstSegmentDepartment) {
-        // El primer segmento es un departamento
-        categoria = ''; // Sin categoría
-        departamento = slug[0];
-        ciudad = slug.length >= 2 ? slug[1] : undefined;
-      }
-      // CASO 4: /categoria/departamento/ciudad (URL amigable SEO)
-      else if (slug.length === 3) {
-        [categoria, departamento, ciudad] = slug;
-      }
-      // CASO 5: /categoria/departamento
-      else if (slug.length === 2) {
-        [categoria, departamento] = slug;
-      }
-      // CASO 6: /categoria (también puede tener searchParams)
-      else {
+      if (isCategory) {
+        // Es una categoría
         categoria = slug[0];
         departamento = queryParams.departamento as string | undefined;
         ciudad = queryParams.ciudad as string | undefined;
+      } else {
+        // Si no es categoría, verificar si es departamento
+        const isDepartment = await isValidDepartment(slug[0]);
+
+        if (isDepartment) {
+          // Es un departamento sin categoría
+          categoria = '';
+          departamento = slug[0];
+          ciudad = undefined;
+        } else {
+          // No es ni categoría ni departamento - tratar como categoría por defecto
+          categoria = slug[0];
+          departamento = queryParams.departamento as string | undefined;
+          ciudad = queryParams.ciudad as string | undefined;
+        }
       }
+    }
+    // CASO 4: Dos segmentos - /categoria/departamento o /departamento/ciudad
+    else if (slug.length === 2) {
+      // Verificar si el primero es categoría
+      const isCategory = await isValidCategory(slug[0]);
+
+      if (isCategory) {
+        // /categoria/departamento
+        [categoria, departamento] = slug;
+        ciudad = undefined;
+      } else {
+        // /departamento/ciudad (sin categoría)
+        categoria = '';
+        departamento = slug[0];
+        ciudad = slug[1];
+      }
+    }
+    // CASO 5: Tres segmentos - /categoria/departamento/ciudad
+    else if (slug.length === 3) {
+      [categoria, departamento, ciudad] = slug;
+    }
+    // CASO 6: Más segmentos - tratar el primero como categoría
+    else {
+      categoria = slug[0];
+      departamento = queryParams.departamento as string | undefined;
+      ciudad = queryParams.ciudad as string | undefined;
     }
   } else {
     categoria = '';
@@ -334,14 +366,16 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
       isActive: true
     };
 
+    // IMPORTANTE: NO usar slugToText() - los slugs ya están en el formato correcto (minúsculas)
+    // El backend espera valores exactos como están en la BD: "escort", "bogota", etc.
     if (categoria) {
-      requestBody.category = slugToText(categoria);
+      requestBody.category = categoria;
     }
 
     if (departamento) {
-      requestBody.location = { department: slugToText(departamento) };
+      requestBody.location = { department: departamento };
       if (ciudad) {
-        requestBody.location.city = slugToText(ciudad);
+        requestBody.location.city = ciudad;
       }
     }
 

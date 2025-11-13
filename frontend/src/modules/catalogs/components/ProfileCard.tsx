@@ -29,7 +29,15 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
   if (variant === 'featured') {
     return (
       <Link href={`/perfil/${profile._id}`} className="block">
-        <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer relative">
+        <Card className="group hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer relative bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30">
+          {/* Banner de DESTACADO */}
+          <div className="pulse-destacado absolute top-0 left-0 right-0 z-20 animate-destacado-pulse">
+            <div className="bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 text-white text-center py-1 px-2 text-xs font-bold tracking-wider shadow-md flex items-center justify-center gap-1">
+              <Star className="h-3 w-3 fill-white" />
+              DESTACADO
+            </div>
+          </div>
+
           <div className="relative h-72 w-full">
             <Image
               src={profile.media?.gallery?.[0] || '/placeholder.svg'}
@@ -48,11 +56,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                   <CheckCircle className="h-3 w-3" />
                 </Badge>
               )}
-              {profile.hasDestacadoUpgrade && (
-                <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white">
-                  <Star className="h-3 w-3" />
-                </Badge>
-              )}
+
             </div>
 
             {/* Overlay con información con pulso */}
@@ -107,8 +111,18 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
             {/* Overlay gradient */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent sm:from-black/60" />
 
-            {/* Badges siempre visibles */}
-            <div className="absolute top-1 right-1 sm:top-2 lg:top-3 sm:right-2 lg:right-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-1 lg:space-x-2 z-10">
+            {/* Banner de DESTACADO */}
+            {profile.hasDestacadoUpgrade && (
+              <div className="pulse-destacado absolute top-0 left-0 right-0 z-20 animate-destacado-pulse">
+                <div className="bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 text-white text-center py-1 px-2 text-[10px] sm:text-xs font-bold tracking-wider shadow-md flex items-center justify-center gap-1">
+                  <Star className="h-2 w-2 sm:h-3 sm:w-3 fill-white" />
+                  DESTACADO
+                </div>
+              </div>
+            )}
+
+            {/* Badges siempre visibles - Movidos debajo del banner */}
+            <div className="absolute top-8 right-1 sm:top-9 lg:top-10 sm:right-2 lg:right-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-1 lg:space-x-2 z-10">
               {profile.verification?.isVerified && (
                 <Badge
                   variant="secondary"
@@ -123,22 +137,12 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
               {profile.hasVideo && (
                 <Badge
                   variant="secondary"
-                  className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 p-1"
+                  className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 p-1 animate-destacado-pulse"
                 >
                   <Video className="h-2 w-2 lg:h-3 lg:w-3" />
                 </Badge>
               )}
             </div>
-
-            {/* Badge de Destacado */}
-            {profile.hasDestacadoUpgrade && (
-              <div className="absolute top-1 left-1 sm:top-3 sm:left-3 z-10">
-                <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs">
-                  <Star className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
-                  <span className="hidden sm:inline">DESTACADO</span>
-                </Badge>
-              </div>
-            )}
 
             {/* Contenido con animación de pulso - SOLO VISIBLE EN DESKTOP (sm y arriba) */}
             <div className="hidden sm:flex pulse-content absolute inset-0 p-4 lg:p-6 flex-col justify-end pointer-events-none group-hover:pointer-events-auto z-10">

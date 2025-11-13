@@ -44,17 +44,18 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                 {/* Overlay gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent sm:from-black/60" />
 
-                {/* Badges siempre visibles */}
-                <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2 z-10">
-                  {profile.hasDestacadoUpgrade && (
-                    <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white animate-pulse text-xs">
-                      <Star className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
-                      <span className="hidden sm:inline">DESTACADO</span>
-                      <span className="sm:hidden">★</span>
-                    </Badge>
-                  )}
-                </div>
-                <div className="absolute top-2 right-2 sm:top-3 sm:right-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2 z-10">
+                {/* Banner de DESTACADO */}
+                {profile.hasDestacadoUpgrade && (
+                  <div className="pulse-destacado absolute top-0 left-0 right-0 z-20 animate-destacado-pulse">
+                    <div className="bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 text-white text-center py-1 px-2 text-[10px] sm:text-xs font-bold tracking-wider shadow-md flex items-center justify-center gap-1">
+                      <Star className="h-2 w-2 sm:h-3 sm:w-3 fill-white" />
+                      DESTACADO
+                    </div>
+                  </div>
+                )}
+
+                {/* Badges siempre visibles - Movidos debajo del banner */}
+                <div className="absolute top-8 right-2 sm:top-9 sm:right-3 flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2 z-10">
                   {profile.verification?.isVerified && (
                     <Badge className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 hover:scale-110 transition-transform duration-200 text-xs">
                       <CheckCircle className="h-2 w-2 sm:h-3 sm:w-3" />

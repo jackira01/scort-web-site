@@ -1,4 +1,4 @@
-# Documentación Completa del Backend - Scort Web Site
+# Documentación del Backend - Scort Web Site
 
 ## Índice
 1. [Descripción General](#descripción-general)
@@ -12,7 +12,6 @@
 9. [Seguridad](#seguridad)
 10. [Despliegue en CapRover](#despliegue-en-caprover)
 11. [API Reference](#api-reference)
-12. [Testing](#testing)
 
 ---
 
@@ -130,31 +129,6 @@ pnpm start
 pnpm clean
 ```
 
-### Scripts de Inicialización
-
-```bash
-# Migrar parámetros de configuración
-pnpm migrate:config-parameters
-
-# Migrar planes a planAssignment
-pnpm migrate:plan-to-planassignment
-
-# Revertir migración de planes
-pnpm migrate:revert-planassignment
-
-# Seed de planes con motor de visibilidad
-pnpm seed:plans
-
-# Inicializar plan por defecto
-pnpm init:default-plan
-
-# Inicializar límites de perfil
-pnpm init:profile-limits
-
-# Inicializar límites para agencias
-pnpm init:agency-limits
-```
-
 ---
 
 ## Estructura del Proyecto
@@ -185,19 +159,6 @@ backend/
 │   ├── types/                    # Tipos TypeScript globales
 │   ├── utils/                    # Utilidades y helpers
 │   └── modules/                  # Módulos de negocio
-│       ├── attribute-group/      # Atributos y categorías
-│       ├── blog/                 # Sistema de blog
-│       ├── cleanup/              # Limpieza de datos
-│       ├── config-parameter/     # Parámetros de configuración
-│       ├── content/              # Contenido estático (páginas)
-│       ├── coupons/              # Sistema de cupones y descuentos
-│       ├── email-inbox/          # Bandeja de entrada de emails
-│       ├── email-log/            # Registro de emails enviados
-│       ├── feeds/                # Feeds RSS/XML
-│       ├── filters/              # Motor de filtros avanzado
-│       ├── news/                 # Sistema de noticias
-│       ├── payments/             # Pagos, invoices y Stripe
-│       ├── plans/                # Planes de suscripción
 │       ├── profile/              # Gestión de perfiles
 │       ├── profile-verification/ # Verificación de perfiles
 │       ├── rates/                # Sistema de valoraciones
@@ -206,15 +167,6 @@ backend/
 │       ├── user/                 # Gestión de usuarios
 │       ├── validation/           # Validaciones personalizadas
 │       └── visibility/           # Motor de visibilidad
-├── scripts/                      # Scripts de utilidad y migración
-│   ├── create-agency-profile-limits-config.ts
-│   ├── create-default-plan-config.ts
-│   ├── create-predefined-content-pages.ts
-│   ├── create-profile-limits-config.ts
-│   ├── init-company-email-config.ts
-│   ├── migrate-config-parameters.ts
-│   ├── migrate-plan-to-planassignment.ts
-│   └── mongo-init.js
 ├── .dockerignore                 # Exclusiones específicas del backend
 ├── .env.example                  # Template de variables de entorno
 ├── package.json
@@ -1184,32 +1136,6 @@ caprover restart --app scort-backend
 caprover info --app scort-backend
 ```
 
-### Migración desde Configuración Anterior
-
-**Antes** (Enfoque 1 - NO recomendado):
-```
-backend/
-├── Dockerfile              # ❌ Eliminado
-├── captain-definition      # ❌ Eliminado
-└── src/
-```
-
-**Después** (Enfoque 2 - Recomendado):
-```
-SCORT-WEB-SITE/
-├── Dockerfile                     # ✅ Nuevo
-├── captain-definition-backend     # ✅ Nuevo
-├── .dockerignore                  # ✅ Nuevo
-└── backend/
-    └── src/
-```
-
-**Beneficios**:
-- ✅ Mejor organización para monorepos
-- ✅ Contexto de build desde la raíz permite acceso a múltiples carpetas
-- ✅ Preparado para agregar `captain-definition-frontend`
-- ✅ Configuración centralizada
-
 ---
 
 ## API Reference
@@ -1268,52 +1194,6 @@ Authorization: Bearer <jwt_token>
 **Content-Type**:
 ```
 Content-Type: application/json
-```
-
----
-
-## Testing
-
-### Endpoints de Prueba Manual
-
-```bash
-# Health check
-curl http://localhost:5000/ping
-
-# Filtrar perfiles
-curl -X POST http://localhost:5000/api/filters/profiles \
-  -H "Content-Type: application/json" \
-  -d '{
-    "category": "escort",
-    "limit": 10
-  }'
-
-# Obtener perfil (requiere auth)
-curl -X GET http://localhost:5000/api/profiles/:id \
-  -H "Authorization: Bearer <token>"
-
-# Login
-curl -X POST http://localhost:5000/api/users/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "password123"
-  }'
-```
-
-### Testing Automatizado
-
-El proyecto está configurado para usar **Jest** (a implementar):
-
-```bash
-# Ejecutar todos los tests
-pnpm test
-
-# Ejecutar tests en modo watch
-pnpm test:watch
-
-# Generar reporte de cobertura
-pnpm test:coverage
 ```
 
 ---

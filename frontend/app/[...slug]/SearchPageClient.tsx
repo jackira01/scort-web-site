@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -63,6 +63,7 @@ export default function SearchPageClient({
 
   const {
     filters,
+    setFilters,
     updateFilter,
     clearFilters,
     updateVerification,
@@ -91,13 +92,6 @@ export default function SearchPageClient({
     ) {
       // Verificar que no sea solo un re-render sin cambios reales
       if (prevDepartment !== newDepartamento || prevCity !== newCiudad) {
-        console.log('🔄 Sincronizando filtros desde URL:', {
-          newDepartamento,
-          newCiudad,
-          prevDepartment,
-          prevCity
-        });
-
         updateFilter('location', {
           department: newDepartamento,
           city: newCiudad,
@@ -137,10 +131,14 @@ export default function SearchPageClient({
     if (hasFeatures) {
       normalized.features = {};
 
-      // Age range -> convertir a array de strings
+      // Age range -> enviar como objeto {min, max} al backend (NO como array)
       if (filters.features?.ageRange) {
         const { min, max } = filters.features.ageRange;
-        normalized.features.age = [`${min}-${max}`];
+
+        // El backend espera ageRange como objeto, no como array de strings
+        if (min !== undefined) {
+          normalized.features.ageRange = { min, max };
+        }
       }
 
       // Gender -> asegurar que sea array
@@ -158,9 +156,6 @@ export default function SearchPageClient({
       }
 
       // Copiar otros features si existen
-      if (filters.features?.age) {
-        normalized.features.age = filters.features.age;
-      }
       if (filters.features?.height) {
         normalized.features.height = filters.features.height;
       }
@@ -191,7 +186,7 @@ export default function SearchPageClient({
     if (filters.verification?.hasVideo) {
       normalized.hasVideos = filters.verification.hasVideo;
     }
-    if (filters.verification?.documentVerified) {
+    if (filters.verification?.documentVerified !== undefined) {
       normalized.documentVerified = filters.verification.documentVerified;
     }
 
@@ -199,6 +194,31 @@ export default function SearchPageClient({
   };
 
   const queryFilters = normalizeFiltersForQuery();
+
+  // Memoizar los filtros para FeaturedProfilesSection para evitar re-renders innecesarios
+  const featuredFilters = useMemo(() => ({
+    category: filters.category,
+    department: filters.location?.department,
+    city: filters.location?.city,
+    features: queryFilters.features,
+    minPrice: filters.priceRange?.min,
+    maxPrice: filters.priceRange?.max,
+    identityVerified: filters.verification?.identityVerified,
+    hasVideo: filters.verification?.hasVideo,
+    documentVerified: filters.verification?.documentVerified,
+  }), [
+    filters.category,
+    filters.location?.department,
+    filters.location?.city,
+    filters.features?.ageRange,
+    filters.features?.gender,
+    filters.features?.sex,
+    filters.priceRange?.min,
+    filters.priceRange?.max,
+    filters.verification?.identityVerified,
+    filters.verification?.hasVideo,
+    filters.verification?.documentVerified,
+  ]);
 
   // Normalizar filtros también para SearchProfilesSSG (con type assertion)
   const normalizedFiltersForDisplay: any = queryFilters;
@@ -221,9 +241,10 @@ export default function SearchPageClient({
     (filters.category !== categoria)
   );
 
-  // CRÍTICO: Siempre hacer fetch en el primer montaje del componente
-  // Después, solo hacer fetch si hay filtros adicionales o cambios
-  const shouldFetchClientSide = !hasInitialFetch || hasAdditionalFilters || hasLocationOrCategoryChanged;
+  // OPTIMIZACIÓN: Solo hacer fetch del cliente si:
+  // 1. Ya hubo un fetch inicial Y (hay filtros adicionales O cambió ubicación/categoría)
+  // En el primer montaje, usar SOLO los datos del servidor (profilesData)
+  const shouldFetchClientSide = hasInitialFetch && (hasAdditionalFilters || hasLocationOrCategoryChanged);
 
   // Usar useQuery para manejar los datos filtrados
   const {
@@ -235,9 +256,9 @@ export default function SearchPageClient({
     queryFilters,
     {
       initialData: profilesData,
-      staleTime: shouldFetchClientSide ? 0 : 5 * 60 * 1000,
+      staleTime: shouldFetchClientSide ? 0 : Infinity, // Infinity para mantener datos del servidor
       enabled: shouldFetchClientSide,
-      refetchOnMount: true // Siempre refetch en mount para datos frescos
+      refetchOnMount: false // NO refetch automático, usar datos del servidor
     }
   );
 
@@ -248,36 +269,53 @@ export default function SearchPageClient({
     }
   }, [isLoadingProfiles, hasInitialFetch]);
 
+  // Refetch automático cuando cambian filtros adicionales (edad, verificación, etc.)
+  useEffect(() => {
+    // Solo refetch si ya hubo un fetch inicial y hay filtros adicionales
+    if (hasInitialFetch && hasAdditionalFilters) {
+      refetch();
+    }
+  }, [filters.features?.ageRange, filters.verification?.identityVerified, filters.verification?.hasVideo, filters.verification?.documentVerified]);
+
+  // Función wrapper para actualizar filtros (usada por AgeFilter y otros)
+  const handleUpdateFilter = (key: string, value: any) => {
+    updateFilter(key, value);
+
+    // Marcar que hubo un fetch inicial para permitir futuras búsquedas
+    if (!hasInitialFetch) {
+      setHasInitialFetch(true);
+    }
+  };
+
   // Función wrapper para limpiar filtros y refrescar datos
   const handleClearFilters = async () => {
-    console.log('🧹 Limpiando todos los filtros');
-
     // Marcar que estamos actualizando la URL
     isUpdatingUrlRef.current = true;
 
-    // Limpiar completamente todos los filtros
-    clearFilters();
+    // Limpiar TODOS los filtros para mostrar todos los perfiles
+    setFilters((prev: any) => ({
+      page: 1,
+      limit: 12,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+      isActive: true,
+      // NO mantener category ni location - limpiar todo
+    }));
 
-    // Resetear los refs para que el LocationFilter se reinicie
+    // Resetear los refs
     prevFiltersRef.current = {
       department: undefined,
       city: undefined,
     };
 
-    // Navegar a la ruta base con solo la categoría
-    const baseUrl = `/${categoria}`;
-    router.push(baseUrl);
+    // Navegar a /filtros para mostrar TODOS los perfiles
+    router.push('/filtros');
 
-    // Resetear la bandera después de un pequeño delay
+    // Forzar refetch después de navegar
     setTimeout(() => {
       isUpdatingUrlRef.current = false;
       refetch();
-    }, 100);
-  };
-
-  // Función wrapper para actualizar filtros
-  const handleUpdateFilter = (key: string, value: any) => {
-    updateFilter(key, value);
+    }, 150);
   };
 
   // Función para construir URL con searchParams
@@ -409,13 +447,17 @@ export default function SearchPageClient({
   const { data: cities = [] } = useCitiesByDepartmentQuery(departamentoFromUrl || '');
 
   // Encontrar el label del departamento actual
+  // FALLBACK: Si no hay label del backend, usar el valor de la URL capitalizado
   const departmentLabel = departamentoFromUrl
-    ? departments.find(d => d.value === departamentoFromUrl)?.label
+    ? departments.find((d: any) => d.value === departamentoFromUrl)?.label ||
+    departamentoFromUrl.charAt(0).toUpperCase() + departamentoFromUrl.slice(1)
     : undefined;
 
   // Encontrar el label de la ciudad actual
+  // FALLBACK: Si no hay label del backend, usar el valor de la URL capitalizado
   const cityLabel = ciudadFromUrl
-    ? cities.find(c => c.value === ciudadFromUrl)?.label
+    ? cities.find((c: any) => c.value === ciudadFromUrl)?.label ||
+    ciudadFromUrl.charAt(0).toUpperCase() + ciudadFromUrl.slice(1)
     : undefined;
 
   const locationInfo = (departmentLabel || cityLabel) ? {
@@ -465,17 +507,7 @@ export default function SearchPageClient({
         {/* Sección de perfiles destacados con los mismos filtros */}
         <FeaturedProfilesSection
           className="mb-8"
-          filters={{
-            category: filters.category,
-            department: filters.location?.department,
-            city: filters.location?.city,
-            features: normalizeFiltersForQuery().features,
-            minPrice: filters.priceRange?.min,
-            maxPrice: filters.priceRange?.max,
-            identityVerified: filters.verification?.identityVerified,
-            hasVideo: filters.verification?.hasVideo,
-            documentVerified: filters.verification?.documentVerified,
-          }}
+          filters={featuredFilters}
         />
 
         <div className="flex flex-col lg:flex-row gap-6">

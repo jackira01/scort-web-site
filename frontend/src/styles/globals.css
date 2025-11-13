@@ -157,6 +157,35 @@
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
+@keyframes destacado-pulse {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  45% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+
+.animate-destacado-pulse {
+  animation: destacado-pulse 6s ease-in-out infinite;
+}
+
+/* Pausar animación del banner destacado en hover del grupo */
+.group:hover .pulse-destacado {
+  animation-play-state: paused !important;
+  opacity: 1 !important;
+}
+
 /* Smooth transitions for all interactive elements */
 * {
   transition-property:
@@ -225,15 +254,28 @@
 }
 
 @keyframes content-pulse {
-  0%, 100% {
+  0% {
     opacity: 0;
     transform: translateY(10px);
   }
-  50% {
+  15% {
     opacity: 1;
     transform: translateY(0);
   }
+  45% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  60% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
 }
+
 
 .pulse-content {
   animation: content-pulse 6s ease-in-out infinite;
