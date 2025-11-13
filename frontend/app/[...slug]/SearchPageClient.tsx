@@ -21,8 +21,8 @@ import LocationFilter from '@/modules/filters/components/LocationFIlter';
 import HorizontalFilterBar from '@/modules/filters/components/HorizontalFilterBar';
 import { useSearchFilters } from '@/hooks/use-search-filters';
 import { useFilteredProfiles } from '@/hooks/use-filtered-profiles';
+import { useDepartmentsQuery, useCitiesByDepartmentQuery } from '@/hooks/use-filter-options-query';
 import type { ProfilesResponse } from '@/types/profile.types';
-import { LOCATIONS } from '@/lib/config';
 
 interface SearchPageClientProps {
   categoria: string;
@@ -404,24 +404,24 @@ export default function SearchPageClient({
     }, 100);
   };
 
-  // Obtener información de ubicación para mostrar
-  const getLocationInfo = () => {
-    const currentDept = departamentoFromUrl;
-    if (!currentDept) return null;
+  // Obtener información de ubicación desde el backend
+  const { data: departments = [] } = useDepartmentsQuery();
+  const { data: cities = [] } = useCitiesByDepartmentQuery(departamentoFromUrl || '');
 
-    const deptInfo = LOCATIONS[currentDept as keyof typeof LOCATIONS];
-    if (!deptInfo) return null;
+  // Encontrar el label del departamento actual
+  const departmentLabel = departamentoFromUrl
+    ? departments.find(d => d.value === departamentoFromUrl)?.label
+    : undefined;
 
-    const currentCity = ciudadFromUrl;
-    const cityInfo = currentCity ? deptInfo.cities.find(c => c.value === currentCity) : null;
+  // Encontrar el label de la ciudad actual
+  const cityLabel = ciudadFromUrl
+    ? cities.find(c => c.value === ciudadFromUrl)?.label
+    : undefined;
 
-    return {
-      department: deptInfo.label,
-      city: cityInfo?.label,
-    };
-  };
-
-  const locationInfo = getLocationInfo();
+  const locationInfo = (departmentLabel || cityLabel) ? {
+    department: departmentLabel,
+    city: cityLabel,
+  } : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50">

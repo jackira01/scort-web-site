@@ -118,18 +118,13 @@ const generateWhatsAppMessage = async (
   couponInfo?: CouponInfo
 ): Promise<WhatsAppMessage | null> => {
   try {
-    console.log('🔍 [generateWhatsAppMessage] Iniciando generación con:', { userId, profileId, invoiceId, invoiceNumber, planCode, variantDays, couponInfo });
-
     // Obtener parámetros de configuración de la empresa
     const [companyName, companyWhatsApp] = await Promise.all([
       ConfigParameterService.getValue('company.name'),
       ConfigParameterService.getValue('company.whatsapp.number')
     ]);
 
-    console.log('📞 [generateWhatsAppMessage] Configuración de empresa:', { companyName, companyWhatsApp });
-
     if (!companyName || !companyWhatsApp) {
-      console.warn('⚠️ [generateWhatsAppMessage] Parámetros de empresa no configurados');
       return null;
     }
 
@@ -148,18 +143,13 @@ const generateWhatsAppMessage = async (
     // Agregar información de descuento si existe
     let discountInfo = '';
     if (couponInfo && couponInfo.originalAmount !== undefined && couponInfo.discountAmount !== undefined && couponInfo.finalAmount !== undefined) {
-      console.log('💰 [generateWhatsAppMessage] Agregando información de descuento:', couponInfo);
       discountInfo = `\n\n**Detalle de Descuento:**\n• Cupón: ${couponInfo.code} - ${couponInfo.name}\n• Precio Original: $${couponInfo.originalAmount.toFixed(2)}\n• Descuento Aplicado: -$${couponInfo.discountAmount.toFixed(2)}\n• Total a Pagar: $${couponInfo.finalAmount.toFixed(2)}`;
-    } else if (couponInfo) {
-      console.warn('⚠️ [generateWhatsAppMessage] couponInfo incompleto:', couponInfo);
     }
 
     // Generar mensaje elegante
     const message = invoiceId
       ? `¡Hola ${companyName}! \n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n **Detalles de mi compra:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}${discountInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención.`
       : `¡Hola ${companyName}! \n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n **Detalles:**\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. `;
-
-    console.log('✅ [generateWhatsAppMessage] Mensaje generado exitosamente');
 
     return {
       userId,
@@ -169,7 +159,6 @@ const generateWhatsAppMessage = async (
       message
     };
   } catch (error) {
-    console.error('❌ [generateWhatsAppMessage] Error al generar mensaje:', error);
     return null;
   }
 };
@@ -315,7 +304,6 @@ async function sendProfileCreationNotification(profile: IProfile, invoice: IInvo
     // Obtener información del usuario
     const user = await UserModel.findById(profile.user).select('name email accountType');
     if (!user) {
-      console.warn('⚠️ Usuario no encontrado para el perfil:', profile._id);
       return;
     }
 
@@ -324,7 +312,6 @@ async function sendProfileCreationNotification(profile: IProfile, invoice: IInvo
     const companyName = await ConfigParameterService.getValue('company.name') || 'Administrador';
 
     if (!companyEmail) {
-      console.warn('⚠️ No se ha configurado el correo de la empresa (company.email)');
       return;
     }
 
@@ -457,10 +444,9 @@ Fecha: ${new Date().toLocaleString('es-ES')}
     });
 
     if (!result.success) {
-      console.error('❌ Error al enviar correo de notificación:', result.error);
+      throw new Error(result.error || 'Error al enviar correo de notificación');
     }
   } catch (error) {
-    console.error('❌ Error en sendProfileCreationNotification:', error);
     throw error;
   }
 }
@@ -544,9 +530,6 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
 
       // ✅ CASO 1: Plan GRATUITO (price === 0)
       if (variant.price === 0) {
-        // Plan gratuito detectado, asignando plan automáticamente
-        console.log('✅ [createProfileWithInvoice] Plan gratuito detectado, asignando inmediatamente');
-
         const startAt = new Date();
         const expiresAt = new Date(startAt.getTime() + (planDays * 24 * 60 * 60 * 1000));
 
@@ -566,26 +549,11 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
           }
         );
 
-        console.log('✅ [createProfileWithInvoice] Plan gratuito asignado correctamente:', {
-          profileId: profile._id,
-          planCode: plan.code,
-          variantDays: planDays,
-          startAt,
-          expiresAt
-        });
-
         // NO generar factura ni mensaje de WhatsApp para planes gratuitos
         // La notificación se enviará al final de la función
       }
       // ✅ CASO 2: Plan DE PAGO (price > 0) CON factura
       else if (variant.price > 0 && generateInvoice) {
-        // Plan de pago detectado y facturación solicitada, generando factura
-        console.log('💳 [createProfileWithInvoice] Plan de pago con factura:', {
-          planCode: plan.code,
-          price: variant.price,
-          days: planDays
-        });
-
         invoice = await invoiceService.generateInvoice({
           profileId: (profile._id as Types.ObjectId).toString(),
           userId: profile.user.toString(),
@@ -596,10 +564,6 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
           notes: `Factura generada para nuevo perfil ${profile.name || profile._id}`
         });
 
-        // Factura generada exitosamente
-
-        // Actualizar el historial de pagos del perfil con la nueva factura
-        // Actualizando historial de pagos del perfil
         await ProfileModel.findByIdAndUpdate(
           profile._id,
           {
@@ -608,13 +572,9 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
             visible: false         // Ocultar hasta que se pague la factura
           }
         );
-        // Historial de pagos actualizado con factura
       }
       // ✅ CASO 3: Plan DE PAGO (price > 0) SIN factura (admin)
       else if (variant.price > 0 && !generateInvoice) {
-        // Plan de pago pero sin generar factura (administrador), asignar plan directamente
-        console.log('👨‍💼 [createProfileWithInvoice] Admin asignando plan de pago sin factura');
-
         // Calcular fechas para asignación directa
         const startAt = new Date();
         const expiresAt = new Date(startAt.getTime() + (planDays * 24 * 60 * 60 * 1000));
@@ -634,18 +594,11 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
             visible: shouldBeVisible
           }
         );
-
-        // Plan asignado directamente sin factura
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      // Error al procesar plan para nuevo perfil
       // Si falla la facturación, el perfil se mantiene con plan por defecto
     }
   } else {
-    // No se especificó plan de pago (purchasedPlan vacío), mantener plan por defecto
-    // No se especificó plan de pago, manteniendo plan por defecto
-
     // Asegurar que el perfil tenga la visibilidad correcta según límites
     await ProfileModel.findByIdAndUpdate(
       profile._id,
@@ -654,18 +607,7 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
         visible: shouldBeVisible
       }
     );
-
-    // Perfil configurado con plan gratuito
   }
-
-  // Generar mensaje de WhatsApp
-  // Generando mensaje de WhatsApp
-  console.log('🔍 [createProfileWithInvoice] Datos de factura para WhatsApp:', {
-    invoiceId: invoice?._id,
-    invoiceNumber: invoice?.invoiceNumber,
-    hasCoupon: !!invoice?.coupon,
-    couponData: invoice?.coupon
-  });
 
   const whatsAppMessage = await generateWhatsAppMessage(
     profile.user.toString(),
@@ -691,19 +633,13 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
       : undefined
   );
 
-  console.log('📱 [createProfileWithInvoice] WhatsApp message resultado:', { whatsAppMessage: !!whatsAppMessage });
-
-  // Mensaje de WhatsApp procesado
-
   // Enviar correo de notificación al administrador
   try {
     await sendProfileCreationNotification(profile, invoice);
   } catch (emailError) {
-    console.error('❌ Error al enviar correo de notificación de perfil:', emailError);
     // No lanzar error - el correo es secundario, no debe interrumpir la creación del perfil
   }
 
-  // Finalizando createProfileWithInvoice
   return { profile, invoice, whatsAppMessage };
 };
 
@@ -932,26 +868,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
     return shouldShow;
   });
 
-  // Filtered profiles for home
-  console.log(`🏠 [HOME DEBUG] ============================================`);
-  console.log(`🏠 [HOME DEBUG] Perfiles filtrados para home: ${filteredProfiles.length}`);
-
-  // Mostrar muestra de perfiles antes del ordenamiento
-  console.log(`🏠 [HOME DEBUG] Primeros 5 perfiles ANTES de ordenar:`);
-  filteredProfiles.slice(0, 10).forEach((profile: any, index: number) => {
-    console.log(`   ${index + 1}. ${profile.name} - Plan: ${profile.planAssignment?.planCode || 'Sin plan'}`);
-  });
-
-  // ⭐ APLICAR NUEVO SISTEMA DE ORDENAMIENTO CON SCORING PONDERADO
-  console.log(`� [HOME DEBUG] Aplicando sistema de ordenamiento con rotación...`);
   const sortedProfiles = await sortProfiles(filteredProfiles as any, now);
-
-  // Mostrar muestra de perfiles después del ordenamiento
-  console.log(`🏠 [HOME DEBUG] Primeros 5 perfiles DESPUÉS de ordenar:`);
-  sortedProfiles.slice(0, 5).forEach((profile: any, index: number) => {
-    console.log(`   ${index + 1}. ${profile.name} - Plan: ${profile.planAssignment?.planCode || 'Sin plan'}`);
-  });
-  console.log(`🏠 [HOME DEBUG] ============================================\n`);
 
   // Aplicar paginación DESPUÉS del ordenamiento
   const paginatedProfiles = sortedProfiles.slice(skip, skip + limit);
@@ -1700,16 +1617,6 @@ export const purchaseUpgrade = async (
 
     await profile.save();
 
-    // Factura generada para upgrade
-
-    // Generar mensaje de WhatsApp similar a createProfileWithInvoice
-    console.log('🔍 [purchaseUpgrade] Datos de factura para WhatsApp:', {
-      invoiceId: invoice._id,
-      invoiceNumber: invoice.invoiceNumber,
-      hasCoupon: !!invoice.coupon,
-      couponData: invoice.coupon
-    });
-
     const whatsAppMessage = await generateWhatsAppMessage(
       profile.user.toString(),
       (profile._id as Types.ObjectId).toString(),
@@ -1733,8 +1640,6 @@ export const purchaseUpgrade = async (
         }
         : undefined
     );
-
-    console.log('📱 [purchaseUpgrade] WhatsApp message resultado:', { whatsAppMessage: !!whatsAppMessage });
 
     // Retornar información de la compra pendiente con datos de WhatsApp
     return {
