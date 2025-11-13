@@ -16,6 +16,20 @@ import { plansService } from '@/services/plans.service';
 import type { UpdateCouponInput } from '@/types/coupon.types';
 import type { IPlanDefinition } from '@/types/plans.types';
 
+// Helper para convertir fecha a zona horaria de Bogotá
+const toBogotaDateTime = (date: string | Date): string => {
+  const d = new Date(date);
+  const bogotaDate = new Date(d.toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+
+  const year = bogotaDate.getFullYear();
+  const month = String(bogotaDate.getMonth() + 1).padStart(2, '0');
+  const day = String(bogotaDate.getDate()).padStart(2, '0');
+  const hours = String(bogotaDate.getHours()).padStart(2, '0');
+  const minutes = String(bogotaDate.getMinutes()).padStart(2, '0');
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 interface EditCouponState {
   loading: boolean;
   plans: IPlanDefinition[];
@@ -52,8 +66,8 @@ export default function EditCouponPage() {
           validPlanIds: coupon.validPlanIds || [],
           validUpgradeIds: coupon.validUpgradeIds || [],
           maxUses: coupon.maxUses,
-          validFrom: coupon.validFrom ? new Date(coupon.validFrom).toISOString().split('T')[0] : '',
-          validUntil: coupon.validUntil ? new Date(coupon.validUntil).toISOString().split('T')[0] : '',
+          validFrom: coupon.validFrom ? toBogotaDateTime(coupon.validFrom) : '',
+          validUntil: coupon.validUntil ? toBogotaDateTime(coupon.validUntil) : '',
           isActive: coupon.isActive
         }
       }));
@@ -343,26 +357,46 @@ export default function EditCouponPage() {
             {coupon.type === 'plan_specific' && (
               <>
                 <div className="space-y-2">
-                  <Label>Planes Válidos</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
-                    {state.plans.map((plan) => (
-                      <div key={plan.code} className="flex items-center space-x-2">
+                  <Label>Planes y Variantes Válidas</Label>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Selecciona las variantes específicas de cada plan donde se aplicará el cupón
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto border rounded-md p-3">
+                    {state.plans.flatMap(plan =>
+                      plan.variants.map(variant => {
+                        // Crear ID único para cada variante: planId-days
+                        const variantId = `${plan._id}-${variant.days}`;
+                        return {
+                          variantId,
+                          displayId: `${plan.code}-${variant.days}`,
+                          name: `${plan.name} - ${variant.days} días - $${variant.price.toLocaleString()}`,
+                          planId: plan._id,
+                          planCode: plan.code,
+                          days: variant.days
+                        };
+                      })
+                    ).map((planVariant) => (
+                      <div key={planVariant.displayId} className="flex items-center space-x-2">
                         <input
                           type="checkbox"
-                          id={`plan-${plan.code}`}
-                          checked={state.formData.validPlanIds?.includes(plan.code) || false}
+                          id={`plan-variant-${planVariant.displayId}`}
+                          checked={state.formData.validPlanIds?.includes(planVariant.variantId) || false}
                           onChange={(e) => {
-                            const currentPlans = state.formData.validPlanIds || [];
+                            const currentVariants = state.formData.validPlanIds || [];
                             if (e.target.checked) {
-                              updateFormData('validPlanIds', [...currentPlans, plan.code]);
+                              // Agregar esta variante específica
+                              if (!currentVariants.includes(planVariant.variantId)) {
+                                updateFormData('validPlanIds', [...currentVariants, planVariant.variantId]);
+                              }
                             } else {
-                              updateFormData('validPlanIds', currentPlans.filter(id => id !== plan.code));
+                              // Remover esta variante específica
+                              updateFormData('validPlanIds', currentVariants.filter(id => id !== planVariant.variantId));
                             }
                           }}
                           className="rounded"
                         />
-                        <label htmlFor={`plan-${plan.code}`} className="text-sm font-medium">
-                          {plan.name} - ${plan.variants[0]?.price.toLocaleString() || 'N/A'}
+                        <label htmlFor={`plan-variant-${planVariant.displayId}`} className="text-sm font-medium">
+                          {planVariant.name}
                         </label>
                       </div>
                     ))}
@@ -441,7 +475,7 @@ export default function EditCouponPage() {
                 <Label htmlFor="validFrom">Válido Desde</Label>
                 <Input
                   id="validFrom"
-                  type="date"
+                  type="datetime-local"
                   value={state.formData.validFrom || ''}
                   onChange={(e) => updateFormData('validFrom', e.target.value)}
                 />
@@ -450,7 +484,7 @@ export default function EditCouponPage() {
                 <Label htmlFor="validUntil">Válido Hasta *</Label>
                 <Input
                   id="validUntil"
-                  type="date"
+                  type="datetime-local"
                   value={state.formData.validUntil || ''}
                   onChange={(e) => updateFormData('validUntil', e.target.value)}
                   className={state.errors.validUntil ? 'border-red-500' : ''}

@@ -72,6 +72,7 @@ export interface Upgrade {
 export interface CreatePlanRequest {
   code: string;
   name: string;
+  description?: string; // Descripción del plan (opcional)
   level: number;
   variants: PlanVariant[];
   features: PlanFeatures;

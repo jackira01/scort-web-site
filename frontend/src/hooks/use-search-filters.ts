@@ -174,16 +174,19 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
     [],
   );
 
-  // Limpiar filtros
+  // Limpiar filtros (pero mantener category y location de la URL para evitar redirección al home)
   const clearFilters = useCallback(() => {
-    setFilters({
+    setFilters((prev) => ({
       page: 1,
       limit: 12,
       sortBy: 'createdAt',
       sortOrder: 'desc',
       isActive: true,
+      // Mantener category y location de la URL
+      category: prev.category,
+      location: prev.location,
       // No establecer profileVerified por defecto para mostrar todos los perfiles
-    });
+    }));
   }, []);
 
   // Convertir a FilterQuery para la API
@@ -191,9 +194,9 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
     const query = {
       ...filters,
     };
-    
 
-    
+
+
     return query;
   }, [filters]);
 
@@ -203,25 +206,13 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
   const updateFilter = useCallback((key: string, value: any) => {
     setFilters((prev) => {
       const newFilters = { ...prev };
-      
-      console.log('🔍 DEBUG useSearchFilters - updateFilter called', { key, value });
-      
+
       // Manejar filtros anidados en features
       if (['gender', 'sex', 'age', 'height', 'weight', 'bodyType', 'ethnicity', 'hairColor', 'eyeColor', 'services', 'ageRange'].includes(key)) {
         newFilters.features = {
           ...prev.features,
           [key]: value,
         };
-        
-        if (key === 'ageRange') {
-          console.log('🔍 DEBUG useSearchFilters - Processing ageRange in features:', {
-            key,
-            value,
-            updatedFeatures: newFilters.features
-          });
-        }
-        
-        console.log('useSearchFilters: Updated features', newFilters.features);
       }
       // Manejar filtros de ubicación
       else if (['department', 'city'].includes(key)) {
@@ -248,7 +239,7 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
             [key === 'minAge' ? 'min' : 'max']: value,
           },
         };
-        
+
       }
       // Manejar filtros de verificación
       else if (['identityVerified', 'hasVideo', 'documentVerified'].includes(key)) {
@@ -262,14 +253,14 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
         (newFilters as any)[key] = value;
 
       }
-      
+
       const finalFilters = {
         ...newFilters,
         page: 1, // Reset page when changing filters
       };
-      
+
       console.log('useSearchFilters: Final filters after update', finalFilters);
-      
+
       return finalFilters;
     });
   }, []);

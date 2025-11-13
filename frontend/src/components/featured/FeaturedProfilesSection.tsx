@@ -72,11 +72,14 @@ export default function FeaturedProfilesSection({ className = '', filters }: Fea
   if (isLoading) {
     return (
       <div className={`${className}`}>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="flex gap-4 overflow-hidden">
           {Array.from({ length: visibleCount }).map((_, index) => (
-            <div key={index} className="animate-pulse h-72 w-48">
-              <Card className="overflow-hidden">
-                <div className="aspect-[4/3] bg-gray-200 h-72 w-48" />
+            <div key={index} className="flex-shrink-0 w-48">
+              <Card className="overflow-hidden border-2 border-yellow-400 shadow-lg">
+                {/* Banner skeleton */}
+                <div className="h-6 bg-gradient-to-r from-yellow-400 to-orange-400 animate-destacado-pulse" />
+                {/* Image skeleton */}
+                <div className="h-72 w-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
               </Card>
             </div>
           ))}
@@ -137,14 +140,12 @@ export default function FeaturedProfilesSection({ className = '', filters }: Fea
           {featuredProfiles.map((profile) => (
             <div
               key={profile._id}
-              className="flex-shrink-0 h-72 w-48"
-
+              className="flex-shrink-0 w-48"
             >
               <ProfileCard
                 profile={profile as any}
                 viewMode="grid"
                 variant="featured"
-
               />
             </div>
           ))}

@@ -133,7 +133,7 @@ export function AvailabilitySchedule({
                     {
                         start: dayStates[day].startTime,
                         end: dayStates[day].endTime,
-                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                        timezone: 'America/Bogota', // Zona horaria de Bogotá, Colombia
                     },
                 ],
             }));
@@ -297,6 +297,7 @@ export function AvailabilitySchedule({
                                                     onChange={(value) => setBulkStartTime(value)}
                                                     className="flex-1"
                                                     placeholder="Seleccionar hora de inicio"
+                                                    maxTime={bulkEndTime}
                                                 />
                                                 <span className="text-xs text-muted-foreground">
                                                     {formatTime12Hour(bulkStartTime)}
@@ -311,6 +312,7 @@ export function AvailabilitySchedule({
                                                     onChange={(value) => setBulkEndTime(value)}
                                                     className="flex-1"
                                                     placeholder="Seleccionar hora de fin"
+                                                    minTime={bulkStartTime}
                                                 />
                                                 <span className="text-xs text-muted-foreground">
                                                     {formatTime12Hour(bulkEndTime)}
@@ -414,6 +416,7 @@ export function AvailabilitySchedule({
                                             disabled={!dayStates[day].isAvailable}
                                             className="flex-1"
                                             placeholder="Seleccionar hora"
+                                            maxTime={dayStates[day].endTime} // ✅ No permitir >= hora fin
                                         />
                                         <span className="text-xs text-muted-foreground min-w-[60px]">
                                             {dayStates[day].isAvailable
@@ -426,7 +429,7 @@ export function AvailabilitySchedule({
                                 {/* Hora de fin */}
                                 <div className="flex-1 space-y-2">
                                     <Label className="text-xs text-muted-foreground">
-                                        Hora de fin
+                                        Hora de inicio
                                     </Label>
                                     <div className="flex items-center gap-2">
                                         <TimePicker
@@ -435,6 +438,7 @@ export function AvailabilitySchedule({
                                             disabled={!dayStates[day].isAvailable}
                                             className="flex-1"
                                             placeholder="Seleccionar hora"
+                                            minTime={dayStates[day].startTime} // ✅ No permitir <= hora inicio
                                         />
                                         <span className="text-xs text-muted-foreground min-w-[60px]">
                                             {dayStates[day].isAvailable

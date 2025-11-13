@@ -39,6 +39,7 @@ export interface FilterResponse {
   totalPages: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+  limit: number;
 }
 
 export interface FilterOptionItem {

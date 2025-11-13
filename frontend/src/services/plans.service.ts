@@ -28,12 +28,13 @@ export interface PlanValidationResponse {
 }
 
 export interface ProfilePlanInfo {
-  planCode: string;
-  variantDays: number;
-  startAt: string;
-  expiresAt: string;
+  planCode: string | null;
+  variantDays: number | null;
+  startAt: string | null;
+  expiresAt: string | null;
   isActive: boolean;
   daysRemaining: number;
+  hasNoPlan?: boolean; // Indica si el perfil no tiene plan asignado
 }
 
 /**
@@ -61,10 +62,12 @@ export const validatePlanOperations = async (profileId: string): Promise<PlanVal
 export const getProfilePlanInfo = async (profileId: string): Promise<ProfilePlanInfo | null> => {
   try {
     const response = await axiosInstance.get(`api/profile/${profileId}/plan`);
+    console.log('🔍 [PLAN SERVICE] Response from GET /api/profile/:id/plan:', response.data);
     return response.data;
   } catch (error: unknown) {
     if (error instanceof Error && 'response' in error) {
       const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
+      console.log('🔍 [PLAN SERVICE] Error response:', axiosError.response);
       if (axiosError.response?.status === 404) {
         return null; // No tiene plan activo
       }

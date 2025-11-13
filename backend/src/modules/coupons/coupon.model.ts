@@ -1,13 +1,31 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import type { ICoupon } from './coupon.types';
+import type { ICoupon, PlanVariantCombination } from './coupon.types';
 
-export interface ICouponDocument extends ICoupon, Document {}
+export interface ICouponDocument extends ICoupon, Document { }
 
 export interface ICouponModel extends Model<ICouponDocument> {
   findByCode(code: string): Promise<ICouponDocument | null>;
   findValidCoupons(activeOnly?: boolean): Promise<ICouponDocument[]>;
   findByType(type: string, activeOnly?: boolean): Promise<ICouponDocument[]>;
 }
+
+// Sub-schema para combinaciones plan-variante
+const PlanVariantCombinationSchema = new Schema<PlanVariantCombination>(
+  {
+    planCode: {
+      type: String,
+      required: true,
+      uppercase: true,
+      trim: true
+    },
+    variantDays: {
+      type: Number,
+      required: true,
+      min: 1
+    }
+  },
+  { _id: false }
+);
 
 const CouponSchema = new Schema<ICouponDocument>(
   {
@@ -41,7 +59,7 @@ const CouponSchema = new Schema<ICouponDocument>(
       required: true,
       min: 0,
       validate: {
-        validator: function(this: ICouponDocument, value: number) {
+        validator: function (this: ICouponDocument, value: number) {
           if (this.type === 'percentage') {
             return value >= 0 && value <= 100;
           }
@@ -59,7 +77,7 @@ const CouponSchema = new Schema<ICouponDocument>(
       uppercase: true,
       trim: true,
       validate: {
-        validator: function(this: ICouponDocument, value: string) {
+        validator: function (this: ICouponDocument, value: string) {
           // planCode es requerido solo para plan_assignment
           if (this.type === 'plan_assignment') {
             return !!value;
@@ -73,7 +91,7 @@ const CouponSchema = new Schema<ICouponDocument>(
       type: Number,
       min: 1,
       validate: {
-        validator: function(this: ICouponDocument, value: number) {
+        validator: function (this: ICouponDocument, value: number) {
           // variantDays es requerido solo para plan_assignment
           if (this.type === 'plan_assignment') {
             return !!value && value > 0;
@@ -83,11 +101,41 @@ const CouponSchema = new Schema<ICouponDocument>(
         message: 'Los días de variante son requeridos para cupones de asignación de plan'
       }
     },
+    // NUEVA ESTRUCTURA - Combinaciones exactas plan-variante (SIN AMBIGÜEDAD)
+    validPlanVariants: {
+      type: [PlanVariantCombinationSchema],
+      default: []
+    },
+    // DEPRECADOS - Mantener por retrocompatibilidad
+    validPlanCodes: {
+      type: [String],
+      default: [],
+      uppercase: true,
+      validate: {
+        validator: function (planCodes: string[]) {
+          // Validar que todos los códigos sean válidos
+          return planCodes.every(code => /^[A-Z0-9_-]+$/.test(code));
+        },
+        message: 'Los códigos de planes deben ser válidos'
+      }
+    },
+    validVariantDays: {
+      type: [Number],
+      default: [],
+      validate: {
+        validator: function (days: number[]) {
+          // Validar que todos los días sean positivos
+          return days.every(d => d > 0);
+        },
+        message: 'Los días de variantes deben ser mayores a 0'
+      }
+    },
+    // DEPRECADOS - Mantener por retrocompatibilidad
     applicablePlans: {
       type: [String],
       default: [],
       validate: {
-        validator: function(plans: string[]) {
+        validator: function (plans: string[]) {
           // Validar que todos los códigos sean válidos
           return plans.every(plan => /^[A-Z0-9_-]+$/.test(plan));
         },
@@ -96,23 +144,13 @@ const CouponSchema = new Schema<ICouponDocument>(
     },
     validPlanIds: {
       type: [String],
-      default: [],
-      validate: {
-        validator: function(this: ICouponDocument, planIds: string[]) {
-          // Solo requerido para cupones percentage y fixed_amount
-          if (this.type === 'percentage' || this.type === 'fixed_amount') {
-            return planIds && planIds.length > 0;
-          }
-          return true;
-        },
-        message: 'Los IDs de planes válidos son requeridos para cupones porcentuales y de monto fijo'
-      }
+      default: []
     },
     validUpgradeIds: {
       type: [String],
       default: [],
       validate: {
-        validator: function(upgradeIds: string[]) {
+        validator: function (upgradeIds: string[]) {
           // Validar que todos los IDs sean válidos
           return upgradeIds.every(id => /^[A-Z0-9_-]+$/.test(id));
         },
@@ -124,7 +162,7 @@ const CouponSchema = new Schema<ICouponDocument>(
       required: true,
       min: -1, // -1 para ilimitado
       validate: {
-        validator: function(value: number) {
+        validator: function (value: number) {
           return value === -1 || value > 0;
         },
         message: 'Los usos máximos deben ser -1 (ilimitado) o mayor a 0'
@@ -143,7 +181,7 @@ const CouponSchema = new Schema<ICouponDocument>(
       type: Date,
       required: true,
       validate: {
-        validator: function(this: ICouponDocument, value: Date) {
+        validator: function (this: ICouponDocument, value: Date) {
           return value > this.validFrom;
         },
         message: 'La fecha de vencimiento debe ser posterior a la fecha de inicio'
@@ -166,23 +204,23 @@ const CouponSchema = new Schema<ICouponDocument>(
 );
 
 // Virtual para verificar si el cupón está vigente
-CouponSchema.virtual('isValid').get(function() {
+CouponSchema.virtual('isValid').get(function () {
   const doc = this as any;
   const now = new Date();
-  return doc.isActive && 
-         now >= doc.validFrom && 
-         now <= doc.validUntil &&
-         (doc.maxUses === -1 || doc.currentUses < doc.maxUses);
+  return doc.isActive &&
+    now >= doc.validFrom &&
+    now <= doc.validUntil &&
+    (doc.maxUses === -1 || doc.currentUses < doc.maxUses);
 });
 
 // Virtual para verificar si el cupón está agotado
-CouponSchema.virtual('isExhausted').get(function() {
+CouponSchema.virtual('isExhausted').get(function () {
   const doc = this as any;
   return doc.maxUses !== -1 && doc.currentUses >= doc.maxUses;
 });
 
 // Virtual para obtener usos restantes
-CouponSchema.virtual('remainingUses').get(function() {
+CouponSchema.virtual('remainingUses').get(function () {
   const doc = this as any;
   if (doc.maxUses === -1) return -1; // Ilimitado
   return Math.max(0, doc.maxUses - doc.currentUses);
@@ -197,25 +235,25 @@ CouponSchema.index({ createdBy: 1 });
 CouponSchema.index({ createdAt: -1 });
 
 // Métodos estáticos
-CouponSchema.statics.findByCode = function(code: string) {
+CouponSchema.statics.findByCode = function (code: string) {
   return this.findOne({ code: code.toUpperCase() });
 };
 
-CouponSchema.statics.findValidCoupons = function(activeOnly: boolean = true) {
+CouponSchema.statics.findValidCoupons = function (activeOnly: boolean = true) {
   const now = new Date();
   const query: any = {
     validFrom: { $lte: now },
     validUntil: { $gte: now }
   };
-  
+
   if (activeOnly) {
     query.isActive = true;
   }
-  
+
   return this.find(query).sort({ createdAt: -1 });
 };
 
-CouponSchema.statics.findByType = function(type: string, activeOnly: boolean = true) {
+CouponSchema.statics.findByType = function (type: string, activeOnly: boolean = true) {
   const query: any = { type };
   if (activeOnly) {
     query.isActive = true;
@@ -224,26 +262,26 @@ CouponSchema.statics.findByType = function(type: string, activeOnly: boolean = t
 };
 
 // Middleware para validar antes de guardar
-CouponSchema.pre('save', function(next) {
+CouponSchema.pre('save', function (next) {
   const doc = this as any;
-  
+
   // Convertir código a mayúsculas
   if (doc.code) {
     doc.code = doc.code.toUpperCase();
   }
-  
+
   // Convertir planCode a mayúsculas si existe
   if (doc.planCode) {
     doc.planCode = doc.planCode.toUpperCase();
   }
-  
+
   // Convertir applicablePlans a mayúsculas
   if (doc.applicablePlans && Array.isArray(doc.applicablePlans) && doc.applicablePlans.length > 0) {
-    doc.applicablePlans = doc.applicablePlans.map((plan: any) => 
+    doc.applicablePlans = doc.applicablePlans.map((plan: any) =>
       typeof plan === 'string' ? plan.toUpperCase() : plan
     );
   }
-  
+
   next();
 });
 

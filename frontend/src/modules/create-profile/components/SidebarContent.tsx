@@ -5,11 +5,34 @@ import { TipCard } from '@/components/profile-form/TipCard';
 
 interface SidebarContentProps {
   currentStep: number;
+  isEditMode?: boolean; // ✅ Prop para diferenciar creación vs edición
 }
 
-export function SidebarContent({ currentStep }: SidebarContentProps) {
+export function SidebarContent({ currentStep, isEditMode = false }: SidebarContentProps) {
   const { getTipsForStep, hasTipsForStep, isLoading } = useProfileFormTips();
   const defaultTips = useDefaultProfileFormTips();
+
+  // ✅ Mapeo correcto SOLO para modo creación
+  // En creación: paso 4 = Plan (tips de step.5) y paso 5 = Multimedia (tips de step.4)
+  // En edición: los pasos coinciden naturalmente con el contenido (sin mapeo)
+  const getMappedStepForTips = (currentStep: number): number => {
+    // Si es modo edición, NO hacer mapeo
+    if (isEditMode) {
+      return currentStep;
+    }
+
+    // En el componente de creación:
+    // currentStep 4 muestra <Step4Plan /> → necesita tips de "profile.form.step.5" (Plan)
+    // currentStep 5 muestra <Step5Multimedia /> → necesita tips de "profile.form.step.4" (Multimedia)
+
+    if (currentStep === 4) {
+      return 5; // Obtener tips de step.5 (Plan)
+    } else if (currentStep === 5) {
+      return 4; // Obtener tips de step.4 (Multimedia)
+    }
+
+    return currentStep; // Pasos 1, 2, 3 se mantienen igual
+  };
 
   // Si está cargando, mostrar un placeholder
   if (isLoading) {
@@ -23,9 +46,12 @@ export function SidebarContent({ currentStep }: SidebarContentProps) {
     );
   }
 
+  // Obtener el paso mapeado correcto para los tips
+  const mappedStep = getMappedStepForTips(currentStep);
+
   // Obtener tips dinámicos o usar los por defecto
-  const tips = hasTipsForStep(currentStep)
-    ? getTipsForStep(currentStep)
+  const tips = hasTipsForStep(mappedStep)
+    ? getTipsForStep(mappedStep)
     : [];
 
   // Si no hay tips, no renderizar nada

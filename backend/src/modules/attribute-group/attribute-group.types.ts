@@ -8,8 +8,9 @@ export interface CreateAttributeGroupInput {
 
 export interface UpdateVariantInput {
     groupId: string;
-    variantIndex: number;
+    variantValue: string;  // Cambiado de variantIndex a variantValue
     newValue?: string;
+    newLabel?: string;
     active?: boolean;
 }
 

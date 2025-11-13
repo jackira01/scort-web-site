@@ -10,6 +10,8 @@ interface TimePickerProps {
   disabled?: boolean;
   className?: string;
   placeholder?: string;
+  minTime?: string; // ✅ Tiempo mínimo permitido (formato HH:MM)
+  maxTime?: string; // ✅ Tiempo máximo permitido (formato HH:MM)
 }
 
 export function TimePicker({
@@ -17,7 +19,9 @@ export function TimePicker({
   onChange,
   disabled = false,
   className,
-  placeholder = "Seleccionar hora"
+  placeholder = "Seleccionar hora",
+  minTime,
+  maxTime
 }: TimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedHour, setSelectedHour] = useState('');
@@ -28,6 +32,26 @@ export function TimePicker({
 
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
   const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
+
+  // ✅ Función para verificar si un tiempo es válido según min/max
+  const isTimeDisabled = (hour: string, minute: string = '00'): boolean => {
+    const currentTime = `${hour}:${minute}`;
+    const currentMinutes = parseInt(hour) * 60 + parseInt(minute);
+
+    if (minTime) {
+      const [minH, minM] = minTime.split(':').map(Number);
+      const minMinutes = minH * 60 + minM;
+      if (currentMinutes <= minMinutes) return true;
+    }
+
+    if (maxTime) {
+      const [maxH, maxM] = maxTime.split(':').map(Number);
+      const maxMinutes = maxH * 60 + maxM;
+      if (currentMinutes >= maxMinutes) return true;
+    }
+
+    return false;
+  };
 
   useEffect(() => {
     if (value) {
@@ -142,19 +166,26 @@ export function TimePicker({
                   Hora
                 </div>
                 <div className="max-h-48 sm:max-h-32 overflow-y-auto space-y-1">
-                  {hours.map((hour) => (
-                    <button
-                      key={hour}
-                      type="button"
-                      onClick={() => handleHourSelect(hour)}
-                      className={cn(
-                        "w-full px-2 py-1 text-sm rounded hover:bg-accent hover:text-accent-foreground text-left",
-                        selectedHour === hour && "bg-accent text-accent-foreground"
-                      )}
-                    >
-                      {hour}
-                    </button>
-                  ))}
+                  {hours.map((hour) => {
+                    const disabled = isTimeDisabled(hour, selectedMinute || '00');
+                    return (
+                      <button
+                        key={hour}
+                        type="button"
+                        onClick={() => !disabled && handleHourSelect(hour)}
+                        disabled={disabled}
+                        className={cn(
+                          "w-full px-2 py-1 text-sm rounded text-left transition-colors",
+                          selectedHour === hour && "bg-accent text-accent-foreground",
+                          disabled
+                            ? "opacity-30 cursor-not-allowed"
+                            : "hover:bg-accent hover:text-accent-foreground"
+                        )}
+                      >
+                        {hour}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -163,20 +194,27 @@ export function TimePicker({
                 <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
                   Minutos
                 </div>
-                <div className="max-h-56 sm:max-h-40 overflow-y-auto space-y-1">
-                  {minutes.map((minute) => (
-                    <button
-                      key={minute}
-                      type="button"
-                      onClick={() => handleMinuteSelect(minute)}
-                      className={cn(
-                        "w-full px-2 py-1 text-sm rounded hover:bg-accent hover:text-accent-foreground text-left",
-                        selectedMinute === minute && "bg-accent text-accent-foreground"
-                      )}
-                    >
-                      {minute}
-                    </button>
-                  ))}
+                <div className="max-h-48 sm:max-h-32 overflow-y-auto space-y-1">
+                  {minutes.map((minute) => {
+                    const disabled = isTimeDisabled(selectedHour || '00', minute);
+                    return (
+                      <button
+                        key={minute}
+                        type="button"
+                        onClick={() => !disabled && handleMinuteSelect(minute)}
+                        disabled={disabled}
+                        className={cn(
+                          "w-full px-2 py-1 text-sm rounded text-left transition-colors",
+                          selectedMinute === minute && "bg-accent text-accent-foreground",
+                          disabled
+                            ? "opacity-30 cursor-not-allowed"
+                            : "hover:bg-accent hover:text-accent-foreground"
+                        )}
+                      >
+                        {minute}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

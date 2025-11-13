@@ -1,3 +1,6 @@
+// ⚠️ DEPRECADO: Este archivo ya no se usa, todos los datos vienen del backend
+// Se mantiene solo para referencia histórica y compatibilidad temporal
+
 // Función para normalizar texto (quitar tildes y caracteres especiales)
 const normalizeText = (text: string): string => {
   return text
@@ -9,7 +12,12 @@ const normalizeText = (text: string): string => {
     .replace(/[^a-z0-9-]/g, ''); // Quitar otros caracteres especiales
 };
 
-// Estructura original para compatibilidad
+// ⚠️ DEPRECADO: NO USAR - Usar locationService del backend
+// @deprecated Use locationService.getDepartments() instead
+export const colombiaDepartments = {} as const;
+
+/*
+// Estructura original DESHABILITADA - Usar backend API
 export const colombiaDepartments = {
   "Bogotá": [
     "Antonio Nariño",
@@ -335,8 +343,23 @@ export const colombiaDepartments = {
     "Santa Rosalía"
   ]
 } as const;
+*/
 
-// Nueva estructura con nombres originales y normalizados
+// ⚠️ DEPRECADO: Todas las funciones siguientes están deshabilitadas
+// Usar locationService del backend en su lugar
+
+// Nueva estructura con nombres originales y normalizados - DESHABILITADA
+export const colombiaLocations = {} as Record<string, {
+  original: string;
+  normalized: string;
+  cities: Array<{
+    original: string;
+    normalized: string;
+  }>;
+}>;
+
+/*
+// Código original DESHABILITADO
 export const colombiaLocations = Object.entries(colombiaDepartments).reduce((acc, [department, cities]) => {
   const normalizedDepartment = normalizeText(department);
   acc[normalizedDepartment] = {
@@ -356,27 +379,32 @@ export const colombiaLocations = Object.entries(colombiaDepartments).reduce((acc
     normalized: string;
   }>;
 }>);
+*/
 
-// Función helper para obtener departamento por nombre normalizado
+// ⚠️ DEPRECADO: Funciones deshabilitadas - Usar locationService del backend
+
+// @deprecated Use locationService.getDepartmentByValue() instead
 export const getDepartmentByNormalized = (normalizedName: string) => {
-  return colombiaLocations[normalizedName];
+  console.warn('⚠️ getDepartmentByNormalized is deprecated. Use locationService from backend.');
+  return null;
 };
 
-// Función helper para obtener ciudad por nombre normalizado dentro de un departamento
+// @deprecated Use locationService.getCityByValue() instead
 export const getCityByNormalized = (departmentNormalized: string, cityNormalized: string) => {
-  const department = colombiaLocations[departmentNormalized];
-  return department?.cities.find(city => city.normalized === cityNormalized);
+  console.warn('⚠️ getCityByNormalized is deprecated. Use locationService from backend.');
+  return null;
 };
 
-// Función helper para validar si un departamento existe
+// @deprecated Use locationService.isValidDepartment() instead
 export const isValidDepartment = (normalizedName: string): boolean => {
-  return normalizedName in colombiaLocations;
+  console.warn('⚠️ isValidDepartment is deprecated. Use locationService from backend.');
+  return false;
 };
 
-// Función helper para validar si una ciudad existe en un departamento
+// @deprecated Use locationService.isValidCity() instead
 export const isValidCity = (departmentNormalized: string, cityNormalized: string): boolean => {
-  const department = colombiaLocations[departmentNormalized];
-  return department?.cities.some(city => city.normalized === cityNormalized) || false;
+  console.warn('⚠️ isValidCity is deprecated. Use locationService from backend.');
+  return false;
 };
 
 // Tipos para el nuevo formato de ubicación
@@ -385,48 +413,33 @@ export interface LocationValue {
   label: string; // Valor para mostrar (con tildes, formato original)
 }
 
-// Función para obtener todos los departamentos en formato LocationValue
+// ⚠️ DEPRECADO: Funciones siguientes deshabilitadas - Usar locationService del backend
+
+// @deprecated Use locationService.getDepartments() instead
 export const getAllDepartments = (): LocationValue[] => {
-  return Object.keys(colombiaDepartments).map((department) => ({
-    value: normalizeText(department),
-    label: department
-  }));
+  console.warn('⚠️ getAllDepartments is deprecated. Use locationService.getDepartments() from backend.');
+  return [];
 };
 
-// Función para obtener todas las ciudades de un departamento en formato LocationValue
+// @deprecated Use locationService.getCitiesByDepartment() instead
 export const getCitiesByDepartment = (departmentNormalized: string): LocationValue[] => {
-  const department = colombiaLocations[departmentNormalized];
-  if (!department || !department.cities) return [];
-
-  return department.cities.map(city => ({
-    value: city.normalized,
-    label: city.original
-  }));
+  console.warn('⚠️ getCitiesByDepartment is deprecated. Use locationService.getCitiesByDepartment() from backend.');
+  return [];
 };
 
-// Función para obtener un departamento específico en formato LocationValue
+// @deprecated Use locationService.getDepartmentByValue() instead
 export const getDepartmentLocationValue = (normalizedName: string): LocationValue | null => {
-  const department = colombiaLocations[normalizedName];
-  if (!department) return null;
-
-  return {
-    value: department.normalized,
-    label: department.original
-  };
+  console.warn('⚠️ getDepartmentLocationValue is deprecated. Use locationService from backend.');
+  return null;
 };
 
-// Función para obtener una ciudad específica en formato LocationValue
+// @deprecated Use locationService.getCityByValue() instead
 export const getCityLocationValue = (departmentNormalized: string, cityNormalized: string): LocationValue | null => {
-  const city = getCityByNormalized(departmentNormalized, cityNormalized);
-  if (!city) return null;
-
-  return {
-    value: city.normalized,
-    label: city.original
-  };
+  console.warn('⚠️ getCityLocationValue is deprecated. Use locationService from backend.');
+  return null;
 };
 
-// Función para obtener el país Colombia en formato LocationValue
+// @deprecated - Mantener solo por compatibilidad de tipos
 export const getCountryLocationValue = (): LocationValue => {
   return {
     value: 'colombia',
@@ -434,7 +447,16 @@ export const getCountryLocationValue = (): LocationValue => {
   };
 };
 
-export type Department = keyof typeof colombiaDepartments;
-export type City = typeof colombiaDepartments[Department][number];
-export type NormalizedDepartment = keyof typeof colombiaLocations;
-export type LocationData = typeof colombiaLocations[NormalizedDepartment];
+// ⚠️ DEPRECADO: Tipos siguientes solo para compatibilidad
+// @deprecated Use backend types instead
+export type Department = string; // Era: keyof typeof colombiaDepartments
+export type City = string; // Era: typeof colombiaDepartments[Department][number]
+export type NormalizedDepartment = string; // Era: keyof typeof colombiaLocations
+export type LocationData = {
+  original: string;
+  normalized: string;
+  cities: Array<{
+    original: string;
+    normalized: string;
+  }>;
+}; // Era: typeof colombiaLocations[NormalizedDepartment]

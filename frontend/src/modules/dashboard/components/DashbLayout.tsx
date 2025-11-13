@@ -9,6 +9,7 @@ import PlansManager from '@/components/admin/plans/PlansManager';
 import BlogsManager from '@/components/admin/blogs/BlogsManager';
 import NewsManager from '@/components/admin/news/NewsManager';
 import CouponsManager from '@/components/admin/coupons/CouponsManager';
+import LocationsManager from '@/components/admin/locations/LocationsManager';
 import EmailManager from '@/components/admin/emails/EmailManager';
 import ContentPagesManager from '@/components/admin/content/ContentPagesManager';
 import ContentEditor from '@/components/admin/content/ContentEditor';
@@ -136,6 +137,13 @@ export default function DashboardLayout() {
                 return (
                     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
                         <CouponsManager />
+                    </div>
+                );
+
+            case 'localidades':
+                return (
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                        <LocationsManager />
                     </div>
                 );
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useCentralizedSession } from '@/hooks/use-centralized-session';
 import { useRouter } from 'next/navigation';
 
 /**
@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
  * cuando el usuario necesita configurar su contraseña
  */
 export default function AuthRedirectHandler() {
-  const { data: session, status } = useSession();
+  const { session, status } = useCentralizedSession();
   const router = useRouter();
 
   useEffect(() => {

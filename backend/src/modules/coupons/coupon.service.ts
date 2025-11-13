@@ -186,12 +186,11 @@ export class CouponService {
         filter.type = type;
       }
 
-      // Si no se especifica isActive, por defecto mostrar solo activos
+      // Solo filtrar por isActive si se especifica explícitamente
       if (typeof isActive === 'boolean') {
         filter.isActive = isActive;
-      } else {
-        filter.isActive = true; // Por defecto, solo mostrar cupones activos
       }
+      // Si no se especifica, mostrar TODOS los cupones (activos e inactivos)
 
       if (validOnly) {
         const now = new Date();
@@ -453,13 +452,16 @@ export class CouponService {
 
       const coupon = validation.coupon;
 
-      // 🎯 NUEVA VALIDACIÓN: Verificar si el cupón es válido para el plan/upgrade específico
-      if (!isCouponValidForPlan(coupon, planCode, upgradeId)) {
-        console.log('❌ [COUPON SERVICE] Cupón no válido para este plan/upgrade:', {
+      // 🎯 NUEVA VALIDACIÓN: Verificar si el cupón es válido para el plan/variante/upgrade específico
+      if (!isCouponValidForPlan(coupon, planCode, variantDays, upgradeId)) {
+        console.log('❌ [COUPON SERVICE] Cupón no válido para este plan/variante/upgrade:', {
           couponCode: coupon.code,
           couponType: coupon.type,
           planCode,
+          variantDays,
           upgradeId,
+          validPlanCodes: coupon.validPlanCodes,
+          validVariantDays: coupon.validVariantDays,
           validPlanIds: coupon.validPlanIds,
           validUpgradeIds: coupon.validUpgradeIds
         });
@@ -469,7 +471,7 @@ export class CouponService {
           originalPrice,
           finalPrice: originalPrice,
           discount: 0,
-          error: 'El cupón no es válido para el plan o upgrade seleccionado'
+          error: 'El cupón no es válido para el plan, variante o upgrade seleccionado'
         };
       }
 

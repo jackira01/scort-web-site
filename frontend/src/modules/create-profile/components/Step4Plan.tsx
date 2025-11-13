@@ -181,10 +181,19 @@ export function Step4Plan() {
 
   const handlePlanChange = (planId: string) => {
     setSelectedPlanId(planId);
-    setSelectedVariantIndex(0);
 
     const plan = plans.find(p => p._id === planId);
     if (plan) {
+      // Obtener variantes filtradas si hay cupón activo
+      const availableVariants = validatedCoupon ? getFilteredVariants(plan) : plan.variants;
+
+      // Si hay variantes filtradas, seleccionar la primera permitida
+      const firstVariantIndex = availableVariants.length > 0
+        ? plan.variants.findIndex(v => v.days === availableVariants[0].days && v.price === availableVariants[0].price)
+        : 0;
+
+      setSelectedVariantIndex(firstVariantIndex);
+
       setValue('selectedPlan', {
         _id: plan._id,
         name: plan.name,
@@ -198,7 +207,7 @@ export function Step4Plan() {
         }
       });
 
-      setValue('selectedVariant', plan.variants[0]);
+      setValue('selectedVariant', plan.variants[firstVariantIndex]);
 
       // Actualizar el estado de generar factura en el formulario para administradores
       if (isAdmin) {
@@ -210,7 +219,22 @@ export function Step4Plan() {
   const handleVariantChange = (variantIndex: number) => {
     setSelectedVariantIndex(variantIndex);
     if (selectedPlan) {
-      setValue('selectedVariant', selectedPlan.variants[variantIndex]);
+      const selectedVariant = selectedPlan.variants[variantIndex];
+
+      // Validar que la variante esté permitida por el cupón
+      if (validatedCoupon) {
+        const filteredVariants = getFilteredVariants(selectedPlan);
+        const isAllowed = filteredVariants.some(
+          v => v.days === selectedVariant.days && v.price === selectedVariant.price
+        );
+
+        if (!isAllowed) {
+          toast.error(`La variante de ${selectedVariant.days} días no está permitida por el cupón "${validatedCoupon.code}"`);
+          return;
+        }
+      }
+
+      setValue('selectedVariant', selectedVariant);
 
       // Actualizar el estado de generar factura en el formulario para administradores
       if (isAdmin) {
@@ -236,11 +260,19 @@ export function Step4Plan() {
     }
 
     try {
+      // 🔄 LIMPIAR PLAN Y VARIANTE PREVIOS al canjear nuevo cupón
+      // Esto previene errores de validación con el plan/variante anterior
+      setSelectedPlanId('');
+      setSelectedVariantIndex(0);
+      setValue('selectedPlan', undefined);
+      setValue('selectedVariant', undefined);
+
       // Usar directamente el servicio de cupones para validar en el frontend
       const result = await couponService.validateCouponForFrontend(couponCode);
 
       if (result.success && result.data) {
         const data = result.data;
+
         setValidatedCoupon(data);
 
         // Guardar el código del cupón en el formulario
@@ -276,12 +308,52 @@ export function Step4Plan() {
   const filteredPlans = validatedCoupon
     ? validatedCoupon.type === 'plan_assignment'
       ? plans.filter(plan => plan.code === validatedCoupon.planCode)
-      : (validatedCoupon.validPlanIds && validatedCoupon.validPlanIds.length > 0)
-        ? plans.filter(plan => validatedCoupon.validPlanIds.includes(plan._id))
-        : (validatedCoupon.applicablePlans && validatedCoupon.applicablePlans.length > 0)
-          ? plans.filter(plan => validatedCoupon.applicablePlans.includes(plan._id))
-          : plans
+      : (() => {
+        // Si tiene validPlanVariants (nueva estructura), extraer los códigos únicos
+        if (validatedCoupon.validPlanVariants && validatedCoupon.validPlanVariants.length > 0) {
+          const validPlanCodes = [...new Set(validatedCoupon.validPlanVariants.map(pv => pv.planCode))];
+          return plans.filter(plan => validPlanCodes.includes(plan.code));
+        }
+        // Si tiene validPlanCodes (estructura antigua)
+        else if (validatedCoupon.validPlanCodes && validatedCoupon.validPlanCodes.length > 0) {
+          return plans.filter(plan => validatedCoupon.validPlanCodes!.includes(plan.code));
+        }
+        // Fallback a validPlanIds o applicablePlans
+        else if (validatedCoupon.validPlanIds && validatedCoupon.validPlanIds.length > 0) {
+          return plans.filter(plan => validatedCoupon.validPlanIds!.includes(plan._id));
+        }
+        else if (validatedCoupon.applicablePlans && validatedCoupon.applicablePlans.length > 0) {
+          return plans.filter(plan => validatedCoupon.applicablePlans!.includes(plan._id));
+        }
+        return plans;
+      })()
     : plans;
+
+  // 🎯 Filtrar variantes del plan seleccionado según el cupón
+  const getFilteredVariants = (plan: Plan): PlanVariant[] => {
+    if (!validatedCoupon || validatedCoupon.type === 'plan_assignment') {
+      return plan.variants;
+    }
+
+    // Si el cupón tiene validPlanVariants, filtrar solo las variantes permitidas
+    if (validatedCoupon.validPlanVariants && validatedCoupon.validPlanVariants.length > 0) {
+      const allowedVariantDays = validatedCoupon.validPlanVariants
+        .filter(pv => pv.planCode === plan.code)
+        .map(pv => pv.variantDays);
+
+      return plan.variants.filter(variant => allowedVariantDays.includes(variant.days));
+    }
+
+    // Si tiene validVariantDays (estructura antigua), filtrar por días
+    if (validatedCoupon.validVariantDays && validatedCoupon.validVariantDays.length > 0) {
+      return plan.variants.filter(variant =>
+        validatedCoupon.validVariantDays!.includes(variant.days)
+      );
+    }
+
+    // Sin restricciones de variante, devolver todas
+    return plan.variants;
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
@@ -424,31 +496,45 @@ export function Step4Plan() {
             <Label className="text-foreground text-lg font-semibold mb-4 block">
               Duración del Plan
             </Label>
+            {validatedCoupon && (
+              <p className="text-sm text-muted-foreground mb-2">
+                {validatedCoupon.validPlanVariants?.length
+                  ? `Mostrando solo las variantes permitidas por el cupón "${validatedCoupon.code}"`
+                  : 'Selecciona la duración de tu plan'}
+              </p>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {selectedPlan.variants.map((variant, index) => (
-                <Card
-                  key={index}
-                  className={`cursor-pointer transition-all duration-200 ${selectedVariantIndex === index
-                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
-                    : 'hover:border-purple-300'
-                    }`}
-                  onClick={() => handleVariantChange(index)}
-                >
-                  <CardContent className="p-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-foreground">
-                        ${variant.price.toLocaleString()}
+              {getFilteredVariants(selectedPlan).map((variant, index) => {
+                // Encontrar el índice real en el array original de variantes
+                const actualIndex = selectedPlan.variants.findIndex(
+                  v => v.days === variant.days && v.price === variant.price
+                );
+
+                return (
+                  <Card
+                    key={index}
+                    className={`cursor-pointer transition-all duration-200 ${selectedVariantIndex === actualIndex
+                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
+                      : 'hover:border-purple-300'
+                      }`}
+                    onClick={() => handleVariantChange(actualIndex)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-foreground">
+                          ${variant.price.toLocaleString()}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {variant.days} días
+                        </div>
+                        {selectedVariantIndex === actualIndex && (
+                          <CheckCircle className="h-5 w-5 text-purple-500 mx-auto mt-2" />
+                        )}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {variant.days} días
-                      </div>
-                      {selectedVariantIndex === index && (
-                        <CheckCircle className="h-5 w-5 text-purple-500 mx-auto mt-2" />
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         )}

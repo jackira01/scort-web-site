@@ -2,19 +2,20 @@
     "extends": "./tsconfig.json",
     "compilerOptions": {
         "noEmit": true,
-        "incremental": true
+        "incremental": true,
+        "tsBuildInfoFile": ".next/tsconfig.app.tsbuildinfo"
     },
     "include": [
         "next-env.d.ts",
-        "src",
-        "app",
+        "src/**/*",
+        "app/**/*",
         "types/**/*.d.ts",
-        "**/*.ts",
-        "**/*.tsx"
+        "middleware.ts"
     ],
     "exclude": [
         "node_modules",
         ".next",
-        "dist"
+        "dist",
+        "../backend/**/*"
     ]
 }

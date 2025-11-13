@@ -4,6 +4,8 @@ export type ConfigParameterType =
     | 'location'
     | 'text'
     | 'membership'
+    | 'system'
+    | 'app'
     | 'number'
     | 'boolean'
     | 'array'

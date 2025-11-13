@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getFilterOptions } from '@/services/filters.service';
-import { getAllDepartments, getCitiesByDepartment } from '@/utils/colombiaData';
+import { locationService } from '@/services/location.service';
 
 interface FilterOptionItem {
   label: string;
@@ -94,9 +94,9 @@ export const useDepartmentsQuery = () => {
   return useQuery({
     queryKey: ['departments'],
     queryFn: async () => {
-      // Usar datos locales de Colombia ordenados alfabéticamente
-      const departments = getAllDepartments();
-      return departments
+      // Usar datos del backend ordenados alfabéticamente
+      const departments = await locationService.getDepartments();
+      return departments;
     },
     staleTime: 10 * 60 * 1000, // 10 minutos para departamentos (cambian poco)
     gcTime: 30 * 60 * 1000, // 30 minutos
@@ -105,20 +105,19 @@ export const useDepartmentsQuery = () => {
 };
 
 // Hook específico para ciudades por departamento con React Query
-export const useCitiesByDepartmentQuery = (departmentId?: string) => {
+export const useCitiesByDepartmentQuery = (departmentValue?: string) => {
   return useQuery({
-    queryKey: ['cities', departmentId],
+    queryKey: ['cities', departmentValue],
     queryFn: async () => {
-      if (!departmentId) {
+      if (!departmentValue) {
         return [];
       }
 
-      // Usar datos locales de Colombia para obtener ciudades del departamento específico
-      const cities = getCitiesByDepartment(departmentId);
-      // Las ciudades ya vienen ordenadas alfabéticamente desde getCitiesByDepartment
+      // Usar datos del backend para obtener ciudades del departamento específico
+      const cities = await locationService.getCitiesByDepartment(departmentValue);
       return cities;
     },
-    enabled: !!departmentId, // Solo ejecutar si hay departamento seleccionado
+    enabled: !!departmentValue, // Solo ejecutar si hay departamento seleccionado
     staleTime: 5 * 60 * 1000, // 5 minutos
     gcTime: 15 * 60 * 1000, // 15 minutos
     retry: 2,

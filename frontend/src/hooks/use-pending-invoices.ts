@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useCentralizedSession } from '@/hooks/use-centralized-session';
 import { invoiceService, type Invoice } from '@/services/invoice.service';
 import toast from 'react-hot-toast';
 
@@ -14,13 +14,13 @@ export interface UsePendingInvoicesReturn {
 }
 
 export function usePendingInvoices(): UsePendingInvoicesReturn {
-  const { data: session } = useSession();
+  const { userId } = useCentralizedSession();
   const [pendingInvoices, setPendingInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchPendingInvoices = async () => {
-    if (!session?.user?._id) {
+    if (!userId) {
       setLoading(false);
       return;
     }
@@ -28,7 +28,7 @@ export function usePendingInvoices(): UsePendingInvoicesReturn {
     try {
       setLoading(true);
       setError(null);
-      const invoices = await invoiceService.getPendingInvoicesByUser(session.user._id);
+      const invoices = await invoiceService.getPendingInvoicesByUser(userId);
       setPendingInvoices(invoices);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al cargar facturas pendientes';
@@ -78,7 +78,7 @@ export function usePendingInvoices(): UsePendingInvoicesReturn {
 
   useEffect(() => {
     fetchPendingInvoices();
-  }, [session?.user?._id]);
+  }, [userId]);
 
   return {
     pendingInvoices,

@@ -34,7 +34,7 @@ export const transformProfileToCard = (profile: Profile): ProfileCardData => {
     featured: false, // Este campo se puede agregar al backend si es necesario
     online: false, // Este campo se puede agregar al backend si es necesario
     hasVideo: checkHasVideo(profile.media),
-    hasDestacadoUpgrade: hasDestacadoUpgrade(profile), // Agregar la verificación de upgrade destacado
+    hasDestacadoUpgrade: profile.hasDestacadoUpgrade, // Agregar la verificación de upgrade destacado
   };
 };
 

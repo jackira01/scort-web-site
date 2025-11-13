@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
+import { useCentralizedSession } from '@/hooks/use-centralized-session';
 import { invoiceService, Invoice } from '@/services/invoice.service';
 
 export interface UseUserInvoicesOptions {
@@ -30,8 +30,7 @@ export const useUserInvoices = ({
   profileId,
   enabled = true
 }: UseUserInvoicesOptions = {}): UseUserInvoicesReturn => {
-  const { data: session } = useSession();
-  const userId = session?.user?._id;
+  const { userId } = useCentralizedSession();
 
   const {
     data,

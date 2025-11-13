@@ -1,8 +1,8 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useCentralizedSession } from '@/hooks/use-centralized-session';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Shield, Home } from 'lucide-react';
@@ -13,24 +13,27 @@ interface AdminProtectionProps {
 }
 
 export default function AdminProtection({ children }: AdminProtectionProps) {
-  const { data: session, status } = useSession();
+  const { session, status, isAdmin } = useCentralizedSession();
   const router = useRouter();
+  const hasRedirected = useRef(false); // ✅ Prevenir múltiples redirects
 
   useEffect(() => {
-    if (status === 'loading') return; // Aún cargando
-    
+    if (status === 'loading' || hasRedirected.current) return;
+
     if (!session) {
       // No autenticado, redirigir al login
+      hasRedirected.current = true;
       router.push('/autenticacion/login');
       return;
     }
-    
-    if (session.user.role !== 'admin') {
+
+    if (!isAdmin) {
       // No es admin, redirigir al home
+      hasRedirected.current = true;
       router.push('/');
       return;
     }
-  }, [session, status, router]);
+  }, [session, status, isAdmin, router]);
 
   // Mostrar loader mientras se verifica la sesión
   if (status === 'loading') {
@@ -64,7 +67,7 @@ export default function AdminProtection({ children }: AdminProtectionProps) {
   }
 
   // Si no es admin, mostrar mensaje de acceso denegado
-  if (session.user.role !== 'admin') {
+  if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md">

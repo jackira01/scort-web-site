@@ -243,12 +243,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-    // Verificar si es una ruta de categoría válida
+    // Verificar si es una ruta de categoría válida o de departamento
     if (categoria && !VALID_CATEGORIES.includes(categoria)) {
-      // Si parece ser un departamento, redirigir a una categoría por defecto
+      // Si es un departamento válido, permitir la URL sin redirigir
       if (VALID_DEPARTMENTS.includes(categoria)) {
-        const redirectUrl = new URL(`/escort/${categoria}`, request.url);
-        return NextResponse.redirect(redirectUrl);
+        // Permitir URLs del tipo /departamento o /departamento/ciudad
+        return NextResponse.next();
       }
       // Si no es ni categoría ni departamento válido, continuar al 404
       return NextResponse.next();

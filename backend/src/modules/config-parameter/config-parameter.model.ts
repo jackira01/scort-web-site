@@ -53,6 +53,8 @@ const ConfigParameterSchema = new Schema<IConfigParameter>(
                 'location',
                 'text',
                 'membership',
+                'system',
+                'app',
                 'number',
                 'boolean',
                 'array',

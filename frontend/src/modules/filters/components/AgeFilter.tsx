@@ -26,50 +26,35 @@ const AgeFilter = ({ ageRange, onAgeRangeChange }: AgeFilterProps) => {
   }, [ageRange]);
 
   const handleMinChange = (value: string) => {
-    console.log('🔍 DEBUG AgeFilter - Min change:', { value, type: typeof value });
     const numValue = value === '' ? undefined : parseInt(value);
-    console.log('🔍 DEBUG AgeFilter - Min parsed:', { numValue, type: typeof numValue });
     setLocalAgeRange(prev => ({ ...prev, min: numValue }));
   };
 
   const handleMaxChange = (value: string) => {
-    console.log('🔍 DEBUG AgeFilter - Max change:', { value, type: typeof value });
     const numValue = value === '' ? undefined : parseInt(value);
-    console.log('🔍 DEBUG AgeFilter - Max parsed:', { numValue, type: typeof numValue });
     setLocalAgeRange(prev => ({ ...prev, max: numValue }));
   };
 
   const handleApplyFilter = () => {
-    console.log('🔍 DEBUG AgeFilter - Aplicando filtro con localAgeRange:', localAgeRange);
-    
     const filteredRange: { min?: number; max?: number } = {};
-    
-    if (localAgeRange.min !== undefined && localAgeRange.min !== null && !isNaN(localAgeRange.min)) {
+
+    // Si min está definido y es válido, usarlo. Si no, usar 1 por defecto
+    if (localAgeRange.min !== undefined && localAgeRange.min !== null && !isNaN(localAgeRange.min) && localAgeRange.min > 0) {
       filteredRange.min = localAgeRange.min;
-      console.log('✅ DEBUG AgeFilter - Min válido:', filteredRange.min);
-    } else {
-      console.log('❌ DEBUG AgeFilter - Min inválido:', { 
-        value: localAgeRange.min, 
-        isUndefined: localAgeRange.min === undefined,
-        isNull: localAgeRange.min === null,
-        isNaN: isNaN(localAgeRange.min as number)
-      });
+    } else if (localAgeRange.max !== undefined && localAgeRange.max !== null && !isNaN(localAgeRange.max)) {
+      // Si hay max pero no min, usar 1 como mínimo por defecto
+      filteredRange.min = 1;
     }
-    
-    if (localAgeRange.max !== undefined && localAgeRange.max !== null && !isNaN(localAgeRange.max)) {
+
+    // Si max está definido y es válido, usarlo. Si no, dejarlo undefined (búsqueda abierta)
+    if (localAgeRange.max !== undefined && localAgeRange.max !== null && !isNaN(localAgeRange.max) && localAgeRange.max > 0) {
       filteredRange.max = localAgeRange.max;
-      console.log('✅ DEBUG AgeFilter - Max válido:', filteredRange.max);
-    } else {
-      console.log('❌ DEBUG AgeFilter - Max inválido:', { 
-        value: localAgeRange.max, 
-        isUndefined: localAgeRange.max === undefined,
-        isNull: localAgeRange.max === null,
-        isNaN: isNaN(localAgeRange.max as number)
-      });
     }
-    
-    console.log('🚀 DEBUG AgeFilter - Enviando filteredRange:', filteredRange);
-    onAgeRangeChange(filteredRange);
+
+    // Solo enviar si hay al menos min definido
+    if (filteredRange.min !== undefined) {
+      onAgeRangeChange(filteredRange);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -82,23 +67,23 @@ const AgeFilter = ({ ageRange, onAgeRangeChange }: AgeFilterProps) => {
     <div className="space-y-3">
       <h4 className="font-medium text-foreground">Edad</h4>
       <div className="flex space-x-2">
-        <Input 
-          placeholder="Min" 
-          type="number" 
+        <Input
+          placeholder="Min"
+          type="number"
           value={localAgeRange.min || ''}
           onChange={(e) => handleMinChange(e.target.value)}
           onKeyPress={handleKeyPress}
           className="flex-1"
         />
-        <Input 
-          placeholder="Max" 
-          type="number" 
+        <Input
+          placeholder="Max"
+          type="number"
           value={localAgeRange.max || ''}
           onChange={(e) => handleMaxChange(e.target.value)}
           onKeyPress={handleKeyPress}
           className="flex-1"
         />
-        <Button 
+        <Button
           onClick={handleApplyFilter}
           size="sm"
           variant="outline"

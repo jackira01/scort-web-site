@@ -10,6 +10,7 @@ import { UpgradeDefinitionModel } from '../plans/upgrade.model';
 import { ConfigParameterService } from '../config-parameter/config-parameter.service';
 import invoiceService from '../payments/invoice.service';
 import EmailService from '../../services/email.service';
+import { sortProfiles } from '../visibility/visibility.service';
 
 // Interfaz para la configuración del plan por defecto
 interface DefaultPlanConfig {
@@ -96,13 +97,25 @@ const getDefaultPlanConfig = async (): Promise<{ planId: string | null; planCode
   }
 };
 
+// Interfaz para información del cupón
+interface CouponInfo {
+  code: string;
+  name: string;
+  type: string;
+  value: number;
+  originalAmount: number;
+  discountAmount: number;
+  finalAmount: number;
+}
+
 const generateWhatsAppMessage = async (
   userId: string,
   profileId: string,
   invoiceId?: string,
   invoiceNumber?: string,
   planCode?: string,
-  variantDays?: number
+  variantDays?: number,
+  couponInfo?: CouponInfo
 ): Promise<WhatsAppMessage | null> => {
   try {
     // Obtener parámetros de configuración de la empresa
@@ -112,7 +125,6 @@ const generateWhatsAppMessage = async (
     ]);
 
     if (!companyName || !companyWhatsApp) {
-      // Parámetros de empresa no configurados
       return null;
     }
 
@@ -128,10 +140,16 @@ const generateWhatsAppMessage = async (
       }
     }
 
+    // Agregar información de descuento si existe
+    let discountInfo = '';
+    if (couponInfo && couponInfo.originalAmount !== undefined && couponInfo.discountAmount !== undefined && couponInfo.finalAmount !== undefined) {
+      discountInfo = `\n\n**Detalle de Descuento:**\n• Cupón: ${couponInfo.code} - ${couponInfo.name}\n• Precio Original: $${couponInfo.originalAmount.toFixed(2)}\n• Descuento Aplicado: -$${couponInfo.discountAmount.toFixed(2)}\n• Total a Pagar: $${couponInfo.finalAmount.toFixed(2)}`;
+    }
+
     // Generar mensaje elegante
     const message = invoiceId
-      ? `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n📋 **Detalles de mi compra:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención. 😊`
-      : `¡Hola ${companyName}! 👋\n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n📋 **Detalles:**\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. 😊`;
+      ? `¡Hola ${companyName}! \n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n **Detalles de mi compra:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}${discountInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención.`
+      : `¡Hola ${companyName}! \n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n **Detalles:**\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. `;
 
     return {
       userId,
@@ -141,7 +159,6 @@ const generateWhatsAppMessage = async (
       message
     };
   } catch (error) {
-    // Error al generar mensaje de WhatsApp
     return null;
   }
 };
@@ -287,7 +304,6 @@ async function sendProfileCreationNotification(profile: IProfile, invoice: IInvo
     // Obtener información del usuario
     const user = await UserModel.findById(profile.user).select('name email accountType');
     if (!user) {
-      console.warn('⚠️ Usuario no encontrado para el perfil:', profile._id);
       return;
     }
 
@@ -296,7 +312,6 @@ async function sendProfileCreationNotification(profile: IProfile, invoice: IInvo
     const companyName = await ConfigParameterService.getValue('company.name') || 'Administrador';
 
     if (!companyEmail) {
-      console.warn('⚠️ No se ha configurado el correo de la empresa (company.email)');
       return;
     }
 
@@ -429,10 +444,9 @@ Fecha: ${new Date().toLocaleString('es-ES')}
     });
 
     if (!result.success) {
-      console.error('❌ Error al enviar correo de notificación:', result.error);
+      throw new Error(result.error || 'Error al enviar correo de notificación');
     }
   } catch (error) {
-    console.error('❌ Error en sendProfileCreationNotification:', error);
     throw error;
   }
 }
@@ -513,9 +527,33 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
       // LÓGICA DE FACTURACIÓN:
       // - Usuarios regulares: generateInvoice = true (siempre factura para planes de pago)
       // - Admins: generateInvoice = valor del checkbox (pueden asignar sin factura)
-      // Solo generar factura si el plan tiene costo Y se solicita generar factura
-      if (variant.price > 0 && generateInvoice) {
-        // Plan de pago detectado y facturación solicitada, generando factura
+
+      // ✅ CASO 1: Plan GRATUITO (price === 0)
+      if (variant.price === 0) {
+        const startAt = new Date();
+        const expiresAt = new Date(startAt.getTime() + (planDays * 24 * 60 * 60 * 1000));
+
+        // Asignar plan gratuito directamente con todas las fechas
+        await ProfileModel.findByIdAndUpdate(
+          profile._id,
+          {
+            planAssignment: {
+              planId: plan._id,
+              planCode: plan.code,
+              variantDays: planDays,
+              startAt,
+              expiresAt
+            },
+            isActive: true,
+            visible: shouldBeVisible
+          }
+        );
+
+        // NO generar factura ni mensaje de WhatsApp para planes gratuitos
+        // La notificación se enviará al final de la función
+      }
+      // ✅ CASO 2: Plan DE PAGO (price > 0) CON factura
+      else if (variant.price > 0 && generateInvoice) {
         invoice = await invoiceService.generateInvoice({
           profileId: (profile._id as Types.ObjectId).toString(),
           userId: profile.user.toString(),
@@ -526,10 +564,6 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
           notes: `Factura generada para nuevo perfil ${profile.name || profile._id}`
         });
 
-        // Factura generada exitosamente
-
-        // Actualizar el historial de pagos del perfil con la nueva factura
-        // Actualizando historial de pagos del perfil
         await ProfileModel.findByIdAndUpdate(
           profile._id,
           {
@@ -538,9 +572,9 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
             visible: false         // Ocultar hasta que se pague la factura
           }
         );
-        // Historial de pagos actualizado con factura
-      } else if (variant.price > 0 && !generateInvoice) {
-        // Plan de pago pero sin generar factura (administrador), asignar plan directamente
+      }
+      // ✅ CASO 3: Plan DE PAGO (price > 0) SIN factura (admin)
+      else if (variant.price > 0 && !generateInvoice) {
         // Calcular fechas para asignación directa
         const startAt = new Date();
         const expiresAt = new Date(startAt.getTime() + (planDays * 24 * 60 * 60 * 1000));
@@ -551,7 +585,7 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
           {
             planAssignment: {
               planId: plan._id,
-              planCode,
+              planCode: plan.code,
               variantDays: planDays,
               startAt,
               expiresAt
@@ -560,38 +594,11 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
             visible: shouldBeVisible
           }
         );
-
-        // Plan asignado directamente sin factura
-      } else {
-        // Plan gratuito, activar el perfil inmediatamente
-        // Plan gratuito detectado, activando perfil inmediatamente
-
-        // Activar perfil para plan gratuito
-        await ProfileModel.findByIdAndUpdate(
-          profile._id,
-          {
-            isActive: true,
-            visible: shouldBeVisible
-          }
-        );
-
-        // Generar mensaje de WhatsApp para plan gratuito
-        const whatsAppMessage = await generateWhatsAppMessage(
-          profile.user.toString(),
-          (profile._id as Types.ObjectId).toString()
-        );
-
-        return { profile, invoice: null, whatsAppMessage };
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      // Error al procesar plan para nuevo perfil
       // Si falla la facturación, el perfil se mantiene con plan por defecto
     }
   } else {
-    // No se especificó plan de pago (purchasedPlan vacío), mantener plan por defecto
-    // No se especificó plan de pago, manteniendo plan por defecto
-
     // Asegurar que el perfil tenga la visibilidad correcta según límites
     await ProfileModel.findByIdAndUpdate(
       profile._id,
@@ -600,32 +607,39 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
         visible: shouldBeVisible
       }
     );
-
-    // Perfil configurado con plan gratuito
   }
 
-  // Generar mensaje de WhatsApp
-  // Generando mensaje de WhatsApp
   const whatsAppMessage = await generateWhatsAppMessage(
     profile.user.toString(),
     (profile._id as Types.ObjectId).toString(),
     invoice?._id?.toString(),
-    invoice?.invoiceNumber,
+    invoice?.invoiceNumber?.toString(),
     planCode,
-    planDays
+    planDays,
+    invoice?.coupon &&
+      invoice.coupon.code &&
+      invoice.coupon.originalAmount !== undefined &&
+      invoice.coupon.discountAmount !== undefined &&
+      invoice.coupon.finalAmount !== undefined
+      ? {
+        code: invoice.coupon.code,
+        name: invoice.coupon.name || '',
+        type: invoice.coupon.type || '',
+        value: invoice.coupon.value || 0,
+        originalAmount: invoice.coupon.originalAmount,
+        discountAmount: invoice.coupon.discountAmount,
+        finalAmount: invoice.coupon.finalAmount
+      }
+      : undefined
   );
-
-  // Mensaje de WhatsApp procesado
 
   // Enviar correo de notificación al administrador
   try {
     await sendProfileCreationNotification(profile, invoice);
   } catch (emailError) {
-    console.error('❌ Error al enviar correo de notificación de perfil:', emailError);
     // No lanzar error - el correo es secundario, no debe interrumpir la creación del perfil
   }
 
-  // Finalizando createProfileWithInvoice
   return { profile, invoice, whatsAppMessage };
 };
 
@@ -854,150 +868,24 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
     return shouldShow;
   });
 
-  // Filtered profiles for home
+  const sortedProfiles = await sortProfiles(filteredProfiles as any, now);
 
-  const enrichedProfiles = filteredProfiles.map(profile => {
-    // Verificar upgrades activos
+  // Aplicar paginación DESPUÉS del ordenamiento
+  const paginatedProfiles = sortedProfiles.slice(skip, skip + limit);
+
+  // Mapear perfiles para incluir información de verificación
+  const cleanProfiles = paginatedProfiles.map(profile => {
+    // Verificar upgrades activos para incluir en respuesta
     const activeUpgrades = profile.upgrades?.filter(upgrade =>
       new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
     ) || [];
 
-    // Determinar el nivel del plan (1=DIAMANTE=Premium, 5=Plan por defecto=Free)
-    let planLevel = 5; // Por defecto Free (plan por defecto)
-    let planCode = 'GRATIS';
-
-    // Obtener información del plan desde planAssignment
-    if (profile.planAssignment?.planCode) {
-      planLevel = planCodeToLevel[profile.planAssignment.planCode] || 5;
-      planCode = profile.planAssignment.planCode;
-    }
-
-    // Verificar si tiene upgrades de boost o highlight
-    let hasBoostUpgrade = activeUpgrades.some(upgrade =>
-      upgrade.code === 'IMPULSO' || upgrade.code === 'BOOST'
+    const hasDestacadoUpgrade = activeUpgrades.some(u =>
+      u.code === 'DESTACADO' || u.code === 'HIGHLIGHT'
     );
-    let hasHighlightUpgrade = activeUpgrades.some(upgrade =>
-      upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT'
+    const hasImpulsoUpgrade = activeUpgrades.some(u =>
+      u.code === 'IMPULSO' || u.code === 'BOOST'
     );
-
-    // Si es plan DIAMANTE, incluye DESTACADO automáticamente
-    if (planCode === 'DIAMANTE') {
-      hasHighlightUpgrade = true;
-    }
-
-    return {
-      ...profile,
-      _hierarchyInfo: {
-        planLevel,
-        planCode,
-        activeUpgrades,
-        hasBoostUpgrade,
-        hasHighlightUpgrade,
-        lastActivity: profile.lastLogin || profile.updatedAt,
-        createdAt: profile.createdAt
-      }
-    };
-  });
-
-  // Aplicar jerarquía de orden según especificaciones
-  const sortedProfiles = enrichedProfiles.sort((a, b) => {
-    const aInfo = a._hierarchyInfo;
-    const bInfo = b._hierarchyInfo;
-
-    // 1. Perfiles con Upgrade "Destacado" o "Boost" aparecen primero
-    if (aInfo.hasHighlightUpgrade || aInfo.hasBoostUpgrade) {
-      if (!(bInfo.hasHighlightUpgrade || bInfo.hasBoostUpgrade)) {
-        return -1; // a va primero
-      }
-
-      // Ambos tienen upgrades, ordenar por nivel efectivo del plan
-      let aEffectiveLevel = aInfo.planLevel;
-      let bEffectiveLevel = bInfo.planLevel;
-
-      // Aplicar efectos de upgrades
-      if (aInfo.hasHighlightUpgrade && aInfo.planLevel > 1) {
-        aEffectiveLevel = Math.max(1, aInfo.planLevel - 1); // DESTACADO sube un nivel
-      }
-      if (bInfo.hasHighlightUpgrade && bInfo.planLevel > 1) {
-        bEffectiveLevel = Math.max(1, bInfo.planLevel - 1); // DESTACADO sube un nivel
-      }
-
-      // Si tienen IMPULSO, van a nivel 1 pero con menor prioridad que DESTACADO solo
-      if (aInfo.hasBoostUpgrade) {
-        aEffectiveLevel = 1;
-      }
-      if (bInfo.hasBoostUpgrade) {
-        bEffectiveLevel = 1;
-      }
-
-      // Ordenar por nivel efectivo
-      if (aEffectiveLevel !== bEffectiveLevel) {
-        return aEffectiveLevel - bEffectiveLevel;
-      }
-
-      // Mismo nivel efectivo: priorizar por duración del plan (durationRank mayor = mayor prioridad)
-      const aPlanDurationRank = a.planAssignment?.variantDays ?
-        planDefinitions.find(p => p.code === aInfo.planCode)?.variants.find(v => v.days === a.planAssignment?.variantDays)?.durationRank || 0 : 0;
-      const bPlanDurationRank = b.planAssignment?.variantDays ?
-        planDefinitions.find(p => p.code === bInfo.planCode)?.variants.find(v => v.days === b.planAssignment?.variantDays)?.durationRank || 0 : 0;
-
-      if (aPlanDurationRank !== bPlanDurationRank) {
-        return bPlanDurationRank - aPlanDurationRank; // Mayor durationRank = mayor prioridad
-      }
-
-      // Si tienen IMPULSO, van al final dentro de su grupo
-      if (aInfo.hasBoostUpgrade && !bInfo.hasBoostUpgrade) {
-        return 1; // a va después
-      }
-      if (bInfo.hasBoostUpgrade && !aInfo.hasBoostUpgrade) {
-        return -1; // b va después
-      }
-
-      // Empate final: por fecha de inicio del upgrade más reciente
-      const aLatestUpgrade = Math.max(...aInfo.activeUpgrades.map(u => new Date(u.startAt).getTime()));
-      const bLatestUpgrade = Math.max(...bInfo.activeUpgrades.map(u => new Date(u.startAt).getTime()));
-      return bLatestUpgrade - aLatestUpgrade;
-    }
-
-    if (bInfo.hasHighlightUpgrade || bInfo.hasBoostUpgrade) {
-      return 1; // b va primero
-    }
-
-    // 2. Sin upgrades activos, ordenar por nivel de plan (1=DIAMANTE=Premium, 5=Plan por defecto=Free)
-    if (aInfo.planLevel !== bInfo.planLevel) {
-      return aInfo.planLevel - bInfo.planLevel;
-    }
-
-    // 3. Mismo nivel de plan: ordenar por duración (durationRank mayor = mayor prioridad)
-    const aPlanDurationRank = a.planAssignment?.variantDays ?
-      planDefinitions.find(p => p.code === aInfo.planCode)?.variants.find(v => v.days === a.planAssignment?.variantDays)?.durationRank || 0 : 0;
-    const bPlanDurationRank = b.planAssignment?.variantDays ?
-      planDefinitions.find(p => p.code === bInfo.planCode)?.variants.find(v => v.days === b.planAssignment?.variantDays)?.durationRank || 0 : 0;
-
-    if (aPlanDurationRank !== bPlanDurationRank) {
-      return bPlanDurationRank - aPlanDurationRank; // Mayor durationRank = mayor prioridad
-    }
-
-    // 4. Mismo nivel y duración: aplicar criterios específicos
-    if (aInfo.planLevel <= 2) {
-      // Planes Premium (DIAMANTE/ORO): ordenar por última actividad
-      const aActivity = new Date(aInfo.lastActivity).getTime();
-      const bActivity = new Date(bInfo.lastActivity).getTime();
-      return bActivity - aActivity; // Más activos primero
-    } else {
-      // Planes Free (plan por defecto): ordenar por fecha de creación descendente
-      const aCreated = new Date(aInfo.createdAt).getTime();
-      const bCreated = new Date(bInfo.createdAt).getTime();
-      return bCreated - aCreated; // Más nuevos primero
-    }
-  });
-
-  // Aplicar paginación
-  const paginatedProfiles = sortedProfiles.slice(skip, skip + limit);
-
-  // Limpiar información de jerarquía antes de devolver y mapear hasDestacadoUpgrade
-  const cleanProfiles = paginatedProfiles.map(profile => {
-    const { _hierarchyInfo, ...cleanProfile } = profile;
 
     // Calcular estado de verificación basado en campos individuales
     let isVerified = false;
@@ -1017,9 +905,9 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
     }
 
     return {
-      ...cleanProfile,
-      hasDestacadoUpgrade: _hierarchyInfo.hasHighlightUpgrade,
-      hasImpulsoUpgrade: _hierarchyInfo.hasBoostUpgrade,
+      ...profile,
+      hasDestacadoUpgrade,
+      hasImpulsoUpgrade,
       verification: {
         ...(typeof profile.verification === 'object' && profile.verification !== null ? profile.verification : {}),
         isVerified,
@@ -1101,22 +989,26 @@ export const updateProfile = async (
   id: string,
   data: Partial<CreateProfileDTO>,
 ) => {
+  // Proteger el campo 'user' - no debe cambiar nunca (auditoría)
+  // El perfil siempre debe mantener su propietario original
+  const { user, ...safeData } = data;
+
   // Si se está actualizando el campo media, hacer merge con los datos existentes
-  if (data.media) {
+  if (safeData.media) {
     const existingProfile = await ProfileModel.findById(id);
     if (existingProfile && existingProfile.media) {
       // Hacer merge del campo media preservando los datos existentes
-      // Solo usar datos existentes si el campo no está definido en data.media
-      data.media = {
-        gallery: data.media.gallery !== undefined ? data.media.gallery : (existingProfile.media.gallery || []),
-        videos: data.media.videos !== undefined ? data.media.videos : (existingProfile.media.videos || []),
-        audios: data.media.audios !== undefined ? data.media.audios : (existingProfile.media.audios || []),
-        stories: data.media.stories !== undefined ? data.media.stories : (existingProfile.media.stories || []),
+      // Solo usar datos existentes si el campo no está definido en safeData.media
+      safeData.media = {
+        gallery: safeData.media.gallery !== undefined ? safeData.media.gallery : (existingProfile.media.gallery || []),
+        videos: safeData.media.videos !== undefined ? safeData.media.videos : (existingProfile.media.videos || []),
+        audios: safeData.media.audios !== undefined ? safeData.media.audios : (existingProfile.media.audios || []),
+        stories: safeData.media.stories !== undefined ? safeData.media.stories : (existingProfile.media.stories || []),
       };
     }
   }
 
-  return ProfileModel.findByIdAndUpdate(id, data, { new: true });
+  return ProfileModel.findByIdAndUpdate(id, safeData, { new: true });
 };
 
 export const deleteProfile = async (id: string): Promise<IProfile | null> => {
@@ -1725,15 +1617,28 @@ export const purchaseUpgrade = async (
 
     await profile.save();
 
-    // Factura generada para upgrade
-
-    // Generar mensaje de WhatsApp similar a createProfileWithInvoice
     const whatsAppMessage = await generateWhatsAppMessage(
       profile.user.toString(),
       (profile._id as Types.ObjectId).toString(),
       invoice._id?.toString(),
-      invoice.invoiceNumber,
-      upgradeCode
+      invoice.invoiceNumber?.toString(),
+      upgradeCode,
+      undefined,
+      invoice.coupon &&
+        invoice.coupon.code &&
+        invoice.coupon.originalAmount !== undefined &&
+        invoice.coupon.discountAmount !== undefined &&
+        invoice.coupon.finalAmount !== undefined
+        ? {
+          code: invoice.coupon.code,
+          name: invoice.coupon.name || '',
+          type: invoice.coupon.type || '',
+          value: invoice.coupon.value || 0,
+          originalAmount: invoice.coupon.originalAmount,
+          discountAmount: invoice.coupon.discountAmount,
+          finalAmount: invoice.coupon.finalAmount
+        }
+        : undefined
     );
 
     // Retornar información de la compra pendiente con datos de WhatsApp

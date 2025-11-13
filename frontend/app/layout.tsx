@@ -4,6 +4,7 @@ import '../src/styles/globals.css';
 import { Providers } from '@/config/providers';
 import { Poppins } from "next/font/google";
 import ConditionalHeader from '@/components/layout/ConditionalHeader';
+import { auth } from '@/auth';
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -20,15 +21,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // ✅ Obtener sesión en el servidor para eliminar petición inicial a /api/auth/session
+  const session = await auth();
+
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`${poppins.variable} font-poppins`}>
-        <Providers>
+        <Providers session={session}>
           <ConditionalHeader />
           {children}
         </Providers>

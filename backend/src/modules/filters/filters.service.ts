@@ -57,22 +57,53 @@ export const getFilteredProfiles = async (
     const now = new Date();
     query.visible = true;
     query.isDeleted = { $ne: true };
-    // Temporalmente comentado para debugging - permitir perfiles sin plan activo
-    // query['planAssignment.expiresAt'] = { $gt: now };
+
+    // CRÍTICO: Excluir perfiles sin planAssignment (perfiles en proceso, no listos para público)
+    query.planAssignment = { $exists: true, $ne: null };
+    query['planAssignment.expiresAt'] = { $gt: now };
 
     // Solo agregar filtro isActive si está definido (para activación/desactivación)
     if (isActive !== undefined) {
       query.isActive = isActive;
     }
 
-    // Filtro por categoría (se maneja como feature)
-    if (category) {
+    // ✨ CASO ESPECIAL: Categoría "perfiles" = todos los perfiles activos y visibles
+    // Validar antes que cualquier otro filtro de categoría
+    if (category && category.toLowerCase() === 'perfiles') {
+      logger.info('📋 [FILTROS] Categoría "perfiles" detectada - mostrando todos los perfiles activos y visibles');
+      // No aplicar filtro de categoría - mostrar todos los perfiles
+      // Los filtros de ubicación, precio, etc. seguirán aplicándose
+      // Simplemente no agregamos la categoría a las features
+    } else if (category) {
+      // Filtro por categoría específica (escorts, masajistas, etc.)
+      // Buscar el AttributeGroup de 'category' para validar que existe
+      let categoryFeatureId: any = null;
+      const categoryGroup = await AttributeGroup.findOne({ key: 'category' });
 
-      // Agregar la categoría a las features para procesarla junto con las demás
-      if (!features) {
-        features = {};
+      if (categoryGroup) {
+        // Si existe el grupo, agregar a features para procesarla después
+        if (!features) {
+          features = {};
+        }
+        features.category = category;
+        categoryFeatureId = categoryGroup._id;
+      } else {
+        // ⚠️ ADVERTENCIA: No existe AttributeGroup con key='category'
+        // Esto causará que no se retornen resultados cuando se filtre por categoría
+        console.warn('⚠️ [FILTROS] No existe AttributeGroup con key="category". El filtro de categoría no funcionará.');
+        console.warn('⚠️ [FILTROS] Se debe crear el grupo de atributos "category" con las variantes: escorts, masajistas, modelos, etc.');
+
+        // Retornar respuesta vacía inmediatamente
+        return {
+          profiles: [],
+          currentPage: page,
+          totalPages: 0,
+          totalCount: 0,
+          hasNextPage: false,
+          hasPrevPage: false,
+          limit,
+        };
       }
-      features.category = category;
     }
 
     // Filtro por ubicación
@@ -265,7 +296,7 @@ export const getFilteredProfiles = async (
           const groupId = groupKeyToId.get(groupKey);
 
           if (!groupId) {
-            console.warn('⚠️ WARNING - No groupId found for feature key:', groupKey);
+            console.warn('⚠️ No groupId found for feature key:', groupKey);
             continue;
           }
 
@@ -301,7 +332,12 @@ export const getFilteredProfiles = async (
         }
 
         if (featureConditions.length > 0) {
-          query.$and = featureConditions;
+          // Si ya existe $and (por ejemplo, de ageRange), agregar las condiciones en lugar de sobrescribir
+          if (query.$and) {
+            query.$and.push(...featureConditions);
+          } else {
+            query.$and = featureConditions;
+          }
         }
       }
     }
@@ -395,27 +431,6 @@ export const getFilteredProfiles = async (
 
     const startTime = Date.now();
 
-    // 🔍 DEBUG: Obtener muestra de perfiles ANTES de aplicar filtros (para comparación)
-    if (filters.category) {
-      const sampleProfiles = await Profile.find({
-        visible: true,
-        isDeleted: { $ne: true }
-      })
-        .select('_id name category features visible isActive')
-        .limit(10)
-        .lean();
-
-      sampleProfiles.forEach((profile, index) => {
-
-        if (profile.features && profile.features.length > 0) {
-          const categoryFeatures = profile.features.filter((f: any) => {
-            // Buscar features que podrían ser categoría
-            return f.value && typeof f.value === 'string';
-          });
-        }
-      });
-    }
-
     // Usar agregación para obtener todos los perfiles con información de usuario
     const aggregationPipeline: any[] = [
       {
@@ -441,8 +456,6 @@ export const getFilteredProfiles = async (
       }
     ];
 
-    // DEBUG getFilteredProfiles - Pipeline de agregación
-
     // Agregar lookup para verification si es necesario
     if (!fields || fields.includes('verification')) {
       aggregationPipeline.push({
@@ -460,18 +473,18 @@ export const getFilteredProfiles = async (
       });
     }
 
-    // Agregar lookup para planAssignment.plan
+    // Agregar lookup para planAssignment.planId (NO .plan)
     aggregationPipeline.push({
       $lookup: {
         from: 'plandefinitions',
-        localField: 'planAssignment.plan',
+        localField: 'planAssignment.planId',
         foreignField: '_id',
         as: 'planAssignmentPlan'
       }
     });
     aggregationPipeline.push({
       $addFields: {
-        'planAssignment.plan': { $arrayElemAt: ['$planAssignmentPlan', 0] }
+        'planAssignment.planId': { $arrayElemAt: ['$planAssignmentPlan', 0] }
       }
     });
     aggregationPipeline.push({
@@ -525,25 +538,7 @@ export const getFilteredProfiles = async (
     ]);
 
     const totalCount = totalCountResult[0]?.total || 0;
-    if (allProfiles.length > 0) {
-      allProfiles.forEach((profile, index) => {
 
-        // Mostrar features si existen
-        if (profile.features && profile.features.length > 0) {
-          profile.features.slice(0, 3).forEach((feature: any) => {
-          });
-          if (profile.features.length > 3) {
-          }
-        }
-
-        // Si se filtró por categoría, verificar si coincide
-        if (filters.category) {
-          const categoryMatch = profile.features?.some((f: any) =>
-            f.value?.toLowerCase() === filters.category?.toLowerCase()
-          );
-        }
-      });
-    }
     // Ordenar perfiles usando el motor de visibilidad (nivel -> score -> lastShownAt -> createdAt)
     const sortedProfiles = await sortProfiles(allProfiles as any, now);
 
@@ -625,7 +620,6 @@ export const getFilteredProfiles = async (
     await cacheService.set(cacheKey, result, CACHE_TTL.MEDIUM);
     return result;
   } catch (error) {
-    // Error in getFilteredProfiles
     throw error;
   }
 };

@@ -231,7 +231,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 
-  // Configuración de debug para desarrollo
-  debug: process.env.NODE_ENV === 'development',
+  // Configuración de debug deshabilitada para evitar logs en consola
+  debug: false,
   secret: process.env.NEXTAUTH_SECRET,
 });

@@ -23,6 +23,7 @@ import invoiceRoutes from './modules/payments/invoice.routes';
 import { couponRoutes } from './modules/coupons';
 import { sponsoredProfilesRoutes } from './modules/sponsored-profiles';
 import { contentRoutes } from './modules/content';
+import locationRoutes from './modules/location/location.routes';
 
 import userRoutes from './modules/user/user.routes';
 import adminEmailRoutes from './routes/admin/emails';
@@ -120,6 +121,7 @@ app.use('/api/invoices', invoiceRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/sponsored-profiles', publicApiRateLimit, sponsoredProfilesRoutes);
 app.use('/api/content', contentRoutes);
+app.use('/api/locations', locationRoutes);
 
 app.use('/api/user', userRoutes);
 app.use('/api/admin/emails', adminEmailRoutes);

@@ -1,4 +1,4 @@
-import { Receipt, Settings, User, Cog, CreditCard, Zap, UserCheck, FileText, Mail, Tags, Newspaper, Ticket } from "lucide-react";
+import { Receipt, Settings, User, Cog, CreditCard, Zap, UserCheck, FileText, Mail, Tags, Newspaper, Ticket, MapPin } from "lucide-react";
 
 export const userProfiles = [
     {
@@ -216,6 +216,15 @@ export const sidebarItems = [
         badge: null,
         description:
             'Gestiona cupones de descuento: crear, editar, activar y administrar códigos promocionales',
+        active: false,
+    },
+    {
+        id: 'localidades',
+        label: 'Localidades',
+        icon: MapPin,
+        badge: null,
+        description:
+            'Gestiona departamentos, ciudades y localidades del sistema',
         active: false,
     },
 ];

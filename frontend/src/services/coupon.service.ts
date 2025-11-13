@@ -170,10 +170,18 @@ class CouponService {
         type: couponData.type,
         value: couponData.value,
         planCode: couponData.planCode,
+
+        // NUEVA ESTRUCTURA - Combinaciones exactas plan-variante
+        validPlanVariants: couponData.validPlanVariants || [],
+
+        // ESTRUCTURAS ANTIGUAS (compatibilidad)
+        validPlanCodes: couponData.validPlanCodes || [],
+        validVariantDays: couponData.validVariantDays || [],
         validPlanIds: couponData.validPlanIds || [],
         validUpgradeIds: couponData.validUpgradeIds || [],
         variantDays: couponData.variantDays || 0,
         applicablePlans: couponData.applicablePlans || [],
+
         maxUses: -1, // No se devuelve en la respuesta
         currentUses: 0, // No se devuelve en la respuesta
         remainingUses: couponData.remainingUses,

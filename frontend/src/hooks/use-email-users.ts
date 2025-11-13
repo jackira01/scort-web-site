@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import axios from '@/lib/axios';
-import { useSession } from 'next-auth/react';
+import { useCentralizedSession } from '@/hooks/use-centralized-session';
 
 interface User {
   id: string;
@@ -14,20 +14,20 @@ interface User {
 
 // Hook para obtener todos los usuarios con email para envío masivo
 export const useAllEmailUsers = () => {
-  const { data: session } = useSession();
+  const { session, accessToken, userId } = useCentralizedSession();
 
   return useQuery({
     queryKey: ['allEmailUsers'],
     queryFn: async (): Promise<User[]> => {
       const headers: HeadersInit = {};
-      
+
       // Agregar header de autenticación si hay sesión
-      if (session?.accessToken) {
-        headers['Authorization'] = `Bearer ${session.accessToken}`;
-      } else if (session?.user?._id) {
-        headers['X-User-ID'] = session.user._id;
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      } else if (userId) {
+        headers['X-User-ID'] = userId;
       }
-      
+
       const response = await axios.get('/api/admin/emails/all-emails', { headers });
       return response.data;
     },
@@ -41,8 +41,6 @@ export const useAllEmailUsers = () => {
 
 // Hook para buscar usuarios manualmente (no automático)
 export const useManualSearchEmailUsers = () => {
-  const { data: session } = useSession();
-
   return useQuery({
     queryKey: ['manualSearchEmailUsers'],
     queryFn: async (): Promise<User[]> => {
@@ -59,7 +57,7 @@ export const useManualSearchEmailUsers = () => {
 
 // Función para ejecutar búsqueda manual
 export const useSearchEmailUsersAction = () => {
-  const { data: session } = useSession();
+  const { userId } = useCentralizedSession();
 
   const searchUsers = async (searchTerm: string, searchType: 'username' | 'id' | 'all' = 'all'): Promise<User[]> => {
     if (!searchTerm.trim()) {
@@ -67,17 +65,17 @@ export const useSearchEmailUsersAction = () => {
     }
 
     const headers: HeadersInit = {};
-    
+
     // Agregar header de autenticación si hay sesión
-    if (session?.user?._id) {
-      headers['X-User-ID'] = session.user._id;
+    if (userId) {
+      headers['X-User-ID'] = userId;
     }
-    
+
     const params = new URLSearchParams({
       q: searchTerm,
       type: searchType
     });
-    
+
     const response = await axios.get(
       `/api/admin/emails/users/search?${params.toString()}`,
       { headers }

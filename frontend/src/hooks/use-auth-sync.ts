@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { signOut, useSession } from 'next-auth/react';
+import { signOut } from 'next-auth/react';
+import { useCentralizedSession } from '@/hooks/use-centralized-session';
 
 /**
  * Hook para sincronizar el estado de autenticación entre pestañas usando BroadcastChannel.
@@ -17,7 +18,7 @@ import { signOut, useSession } from 'next-auth/react';
  * }
  */
 export function useAuthSync() {
-    const { data: session, status } = useSession();
+    const { session, status } = useCentralizedSession();
     const channelRef = useRef<BroadcastChannel | null>(null);
     const previousStatusRef = useRef<string>(status);
 

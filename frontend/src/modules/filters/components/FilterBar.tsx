@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { useFilterOptionsQuery, useDepartmentsQuery, useCitiesByDepartmentQuery } from '@/hooks/use-filter-options-query';
 import { useSearchFilters } from '@/hooks/use-search-filters';
@@ -36,7 +37,15 @@ export interface FilterOptions {
 // =============================
 const FilterBar = () => {
   const router = useRouter();
-  const { filters, updateCategory, updateLocation } = useSearchFilters();
+
+  // Inicializar hook con valores limpios (sin filtros previos)
+  const { filters, updateCategory, updateLocation } = useSearchFilters({
+    category: '',
+    location: {
+      department: '',
+      city: '',
+    },
+  });
 
   const categoria = filters.category || '';
   const departamento = filters.location?.department || '';
@@ -92,25 +101,55 @@ const FilterBar = () => {
   // 🔹 Manejadores
   // =============================
   const handleSearch = () => {
-    let route = '/filtros';
-    const params = new URLSearchParams();
+    // Generar URL limpia SEO-friendly
+    const parts: string[] = [];
 
-    if (categoria) route += `/${createSlug(categoria)}`;
-    if (departamento) params.append('departamento', departamento);
-    if (ciudad) params.append('ciudad', ciudad);
+    // Normalizar valores: 'all' o vacío se considera como no seleccionado
+    const hasCategoria = categoria && categoria !== 'all';
+    const hasDepartamento = departamento && departamento !== 'all';
+    const hasCiudad = ciudad && ciudad !== 'all';
 
-    const queryString = params.toString();
-    const finalRoute = queryString ? `${route}?${queryString}` : route;
-    router.push(finalRoute);
+    // Prioridad 1: Si hay categoría, usarla primero
+    if (hasCategoria) {
+      parts.push(createSlug(categoria));
+
+      if (hasDepartamento) {
+        parts.push(departamento);
+      }
+      if (hasCiudad) {
+        parts.push(ciudad);
+      }
+    }
+    // Prioridad 2: Si NO hay categoría pero SÍ hay ubicación, usar solo ubicación
+    else if (hasDepartamento) {
+      parts.push(departamento);
+
+      if (hasCiudad) {
+        parts.push(ciudad);
+      }
+    }
+
+    // Si no hay ningún filtro, ir a la página de filtros genérica
+    const route = parts.length > 0 ? `/${parts.join('/')}` : '/filtros';
+
+    router.push(route);
   };
 
-  const handleCategoryChange = (value: string) => updateCategory(value);
+  const handleCategoryChange = (value: string) => {
+    // Si selecciona 'all', limpiar la categoría
+    const newValue = value === 'all' ? '' : value;
+    updateCategory(newValue);
+  };
 
-  const handleDepartmentChange = (value: string) =>
-    updateLocation({ department: value, city: '' });
+  const handleDepartmentChange = (value: string) => {
+    // Si selecciona 'all', limpiar el departamento
+    const newDept = value === 'all' ? '' : value;
+    updateLocation({ department: newDept, city: '' });
+  };
 
-  const handleCityChange = (value: string) =>
+  const handleCityChange = (value: string) => {
     updateLocation({ department: departamento, city: value });
+  };
 
   // =============================
   // 🔹 Render
@@ -130,11 +169,12 @@ const FilterBar = () => {
                 </SelectTrigger>
               </Select>
             ) : (
-              <Select value={categoria} onValueChange={handleCategoryChange}>
+              <Select value={categoria || 'all'} onValueChange={handleCategoryChange}>
                 <SelectTrigger className="w-full hover:border-purple-500 transition-all duration-200 focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/10">
-                  <SelectValue placeholder="Seleccionar categoría" />
+                  <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">Todas las categorías</SelectItem>
                   {categories.length > 0 ? (
                     categories.map((cat, i) => (
                       <SelectItem key={`cat-${i}`} value={cat.value}>
@@ -162,11 +202,12 @@ const FilterBar = () => {
                 </SelectTrigger>
               </Select>
             ) : (
-              <Select value={departamento} onValueChange={handleDepartmentChange}>
+              <Select value={departamento || 'all'} onValueChange={handleDepartmentChange}>
                 <SelectTrigger className="w-full hover:border-purple-500 transition-all duration-200 focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/10">
-                  <SelectValue placeholder="Seleccionar departamento" />
+                  <SelectValue placeholder="Todos los departamentos" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">Todos los departamentos</SelectItem>
                   {normalizedDepartments.length > 0 ? (
                     normalizedDepartments.map((dept, i) => (
                       <SelectItem key={`dept-${i}`} value={dept.value}>
@@ -194,8 +235,8 @@ const FilterBar = () => {
                 </SelectTrigger>
               </Select>
             ) : (
-              <Select 
-                value={ciudad} 
+              <Select
+                value={ciudad}
                 onValueChange={handleCityChange}
                 disabled={!departamento}
               >
@@ -222,9 +263,8 @@ const FilterBar = () => {
           {/* Botón Buscar */}
           <div className="animate-in slide-in-from-bottom-2" style={{ animationDelay: '300ms' }}>
             <Button
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium transition-all duration-200 shadow-lg hover:shadow-xl disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed disabled:shadow-none"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
               onClick={handleSearch}
-              disabled={!categoria && !departamento}
             >
               <Search className="w-4 h-4 mr-2" />
               Buscar

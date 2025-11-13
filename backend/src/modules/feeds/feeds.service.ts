@@ -39,6 +39,7 @@ export const getHomeFeed = async (options: HomeFeedOptions = {}): Promise<HomeFe
       $match: {
         visible: true,
         isDeleted: { $ne: true },
+        planAssignment: { $exists: true, $ne: null }, // Excluir perfiles sin plan (en proceso)
         'planAssignment.expiresAt': { $gt: now }
       }
     },
@@ -192,6 +193,7 @@ export const getHomeFeedStats = async (): Promise<Record<number, number>> => {
       $match: {
         visible: true,
         isDeleted: { $ne: true },
+        planAssignment: { $exists: true, $ne: null }, // Excluir perfiles sin plan (en proceso)
         'planAssignment.expiresAt': { $gt: now }
       }
     },
