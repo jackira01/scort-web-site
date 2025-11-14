@@ -385,7 +385,7 @@ export default function AccountProfiles({
                       </TooltipProvider>
                       {/* Botones de Upgrade */}
                       {/* Solo mostrar botón de Destacado si NO es plan DIAMANTE */}
-                      {profile.planAssignment?.planCode !== 'DIAMANTE' && (
+                      {(profile.planAssignment?.planId?.code || profile.planAssignment?.planCode) !== 'DIAMANTE' && (
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -409,7 +409,7 @@ export default function AccountProfiles({
                         </TooltipProvider>
                       )}
                       {/* Mostrar indicador de Destacado incluido para DIAMANTE */}
-                      {profile.planAssignment?.planCode === 'DIAMANTE' && (
+                      {(profile.planAssignment?.planId?.code || profile.planAssignment?.planCode) === 'DIAMANTE' && (
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>

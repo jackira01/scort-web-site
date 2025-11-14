@@ -1843,9 +1843,9 @@ export const hardDeleteProfile = async (profileId: string): Promise<{ success: b
     const ProfileVerificationModel = (await import('../profile-verification/profile-verification.model')).ProfileVerification;
     await ProfileVerificationModel.deleteMany({ profile: profileId });
 
-    // Eliminar facturas relacionadas
-    const InvoiceModel = (await import('../payments/invoice.model')).default;
-    await InvoiceModel.deleteMany({ profileId: profileId });
+    // NOTA: Las facturas NO se eliminan intencionalmente
+    // Son registros financieros que deben mantenerse incluso si el perfil se elimina
+    // para auditoría, contabilidad y cumplimiento legal
 
     // Eliminar el perfil completamente (esto incluye automáticamente las historias en media.stories)
     await ProfileModel.findByIdAndDelete(profileId);
@@ -1983,6 +1983,22 @@ export const getAllProfilesForAdmin = async (
       cleaned.push('verification');
     }
 
+    // Si se incluye planAssignment completo, no agregar subcampos (evita path collision)
+    // Si solo se incluyen subcampos específicos, agregarlos todos para asegurar consistencia
+    const hasPlanAssignmentComplete = cleaned.includes('planAssignment');
+    const hasPlanAssignmentSubfields = cleaned.some(f => f.startsWith('planAssignment.'));
+
+    if (hasPlanAssignmentSubfields && !hasPlanAssignmentComplete) {
+      // Solo agregar subcampos faltantes si NO se incluyó el objeto completo
+      if (!cleaned.includes('planAssignment.planId')) cleaned.push('planAssignment.planId');
+      if (!cleaned.includes('planAssignment.variantDays')) cleaned.push('planAssignment.variantDays');
+      if (!cleaned.includes('planAssignment.startAt')) cleaned.push('planAssignment.startAt');
+      if (!cleaned.includes('planAssignment.expiresAt')) cleaned.push('planAssignment.expiresAt');
+      if (!cleaned.includes('planAssignment.purchasedAt')) cleaned.push('planAssignment.purchasedAt');
+      if (!cleaned.includes('planAssignment.planCode')) cleaned.push('planAssignment.planCode');
+    }
+    // Si se incluye planAssignment completo, no hacemos nada (se incluyen todos los campos automáticamente)
+
     const selectStr = cleaned.join(' ');
     query = query.select(selectStr) as any;
   }
@@ -2000,6 +2016,11 @@ export const getAllProfilesForAdmin = async (
     .populate({
       path: 'features.group_id',
       select: 'name label',
+    })
+    .populate({
+      path: 'planAssignment.planId',
+      model: 'PlanDefinition',
+      select: 'code name description level variants features contentLimits includedUpgrades'
     })
     .sort({ updatedAt: -1 })
     .skip(skip)

@@ -105,7 +105,7 @@ export default function AccountLayout() {
                 originalPrice = selectedPlanPrice;
             } else {
                 // Para cupones de asignación de plan, usar el plan actual del perfil
-                currentPlan = selectedProfile.planAssignment?.planCode || 'AMATISTA';
+                currentPlan = selectedProfile.planAssignment?.planId?.code || selectedProfile.planAssignment?.planCode || 'AMATISTA';
                 planDays = selectedProfile.planAssignment?.variantDays || 30;
 
                 // Buscar el precio del plan actual (esto debería venir de una API de planes)
