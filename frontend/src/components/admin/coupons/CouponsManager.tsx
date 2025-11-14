@@ -12,7 +12,7 @@ import type { ICoupon } from '@/types/coupon.types';
 
 export default function CouponsManager() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'expired' | 'exhausted'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'expired' | 'used' | 'exhausted'>('all');
   const router = useRouter();
 
   // Usar useQuery para obtener cupones y estadísticas
@@ -72,11 +72,20 @@ export default function CouponsManager() {
 
     switch (filterStatus) {
       case 'active':
-        return coupon.isActive && expiryDate >= now && coupon.currentUses < coupon.maxUses;
+        // Verificar si está activo, no expirado y tiene usos disponibles (o es ilimitado)
+        const hasUsesAvailable = coupon.maxUses === -1 || coupon.currentUses < coupon.maxUses;
+        return coupon.isActive && expiryDate >= now && hasUsesAvailable;
       case 'expired':
-        return expiryDate < now;
+        // Solo cupones expirados por fecha, excluyendo los agotados
+        const isNotExhausted = coupon.maxUses === -1 || coupon.currentUses < coupon.maxUses;
+        return expiryDate < now && isNotExhausted;
+      case 'used':
+        // Cupones que se han usado al menos 1 vez pero NO están agotados ni expirados
+        const notExhaustedYet = coupon.maxUses === -1 || coupon.currentUses < coupon.maxUses;
+        return coupon.currentUses > 0 && notExhaustedYet && expiryDate >= now;
       case 'exhausted':
-        return coupon.currentUses >= coupon.maxUses;
+        // Cupones agotados (alcanzaron el límite de usos)
+        return coupon.maxUses !== -1 && coupon.currentUses >= coupon.maxUses;
       default:
         return true;
     }
@@ -210,11 +219,18 @@ export default function CouponsManager() {
                 Expirados
               </Button>
               <Button
+                variant={filterStatus === 'used' ? 'default' : 'outline'}
+                onClick={() => setFilterStatus('used')}
+                size="sm"
+              >
+                Utilizados
+              </Button>
+              <Button
                 variant={filterStatus === 'exhausted' ? 'default' : 'outline'}
                 onClick={() => setFilterStatus('exhausted')}
                 size="sm"
               >
-                Utilizados
+                Agotados
               </Button>
             </div>
           </div>
@@ -250,7 +266,7 @@ export default function CouponsManager() {
                           Expira: {new Date(coupon.validUntil).toLocaleDateString('es-CO', { timeZone: 'UTC' })}
                         </span>
                       </div>
-                      <div className="flex items-center space-x-2 mt-2">
+                      {/* <div className="flex items-center space-x-2 mt-2">
                         <span className="text-sm text-muted-foreground">Planes aplicables:</span>
                         {coupon.applicablePlans && coupon.applicablePlans.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
@@ -265,7 +281,7 @@ export default function CouponsManager() {
                             Todos los planes
                           </Badge>
                         )}
-                      </div>
+                      </div> */}
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button

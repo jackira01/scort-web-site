@@ -5,6 +5,7 @@ import UserModel from '../user/User.model';
 import { ProfileModel } from './profile.model';
 import type { CreateProfileDTO, IProfile } from './profile.types';
 import type { IInvoice } from '../payments/invoice.model';
+import InvoiceModel from '../payments/invoice.model';
 import { PlanDefinitionModel } from '../plans/plan.model';
 import { UpgradeDefinitionModel } from '../plans/upgrade.model';
 import { ConfigParameterService } from '../config-parameter/config-parameter.service';
@@ -554,6 +555,8 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
       }
       // ✅ CASO 2: Plan DE PAGO (price > 0) CON factura
       else if (variant.price > 0 && generateInvoice) {
+        // Generar factura (puede incluir cupón que reduzca el precio a 0)
+        console.log(`🎫 Generando factura con cupón: ${couponCode || 'sin cupón'}`);
         invoice = await invoiceService.generateInvoice({
           profileId: (profile._id as Types.ObjectId).toString(),
           userId: profile.user.toString(),
@@ -564,14 +567,50 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
           notes: `Factura generada para nuevo perfil ${profile.name || profile._id}`
         });
 
-        await ProfileModel.findByIdAndUpdate(
-          profile._id,
-          {
-            $push: { paymentHistory: new Types.ObjectId(invoice._id as string) },
-            isActive: false,       // Mantener inactivo hasta que se pague la factura
-            visible: false         // Ocultar hasta que se pague la factura
-          }
-        );
+        console.log(`💰 Factura generada - ID: ${invoice._id}, Total: ${invoice.totalAmount}, Cupón aplicado: ${invoice.coupon?.code || 'ninguno'}`);
+
+        // ✅ VALIDACIÓN: Si después de aplicar cupón el monto final es 0, marcar factura como pagada
+        // y asignar el plan directamente (cupón 100% descuento)
+        if (invoice.totalAmount === 0) {
+          console.log(`✅ Total = 0 detectado, marcando factura como pagada y asignando plan directamente`);
+          // Marcar factura como pagada usando el servicio (esto incrementa el uso del cupón)
+          await invoiceService.markAsPaid(invoice._id.toString());
+          console.log(`✅ Factura marcada como pagada, uso de cupón incrementado`);
+
+          // Calcular fechas de asignación
+          const startAt = new Date();
+          const expiresAt = new Date(startAt.getTime() + (planDays * 24 * 60 * 60 * 1000));
+
+          // Asignar plan directamente y activar perfil
+          await ProfileModel.findByIdAndUpdate(
+            profile._id,
+            {
+              planAssignment: {
+                planId: plan._id,
+                planCode: plan.code,
+                variantDays: planDays,
+                startAt,
+                expiresAt
+              },
+              $push: { paymentHistory: new Types.ObjectId(invoice._id as string) },
+              isActive: true,
+              visible: shouldBeVisible
+            }
+          );
+
+          // Limpiar invoice para evitar generar mensaje de WhatsApp (no hay que pagar)
+          invoice = null;
+        } else {
+          // Monto final > 0, mantener factura pendiente y actualizar perfil
+          await ProfileModel.findByIdAndUpdate(
+            profile._id,
+            {
+              $push: { paymentHistory: new Types.ObjectId(invoice._id as string) },
+              isActive: false,       // Mantener inactivo hasta que se pague la factura
+              visible: false         // Ocultar hasta que se pague la factura
+            }
+          );
+        }
       }
       // ✅ CASO 3: Plan DE PAGO (price > 0) SIN factura (admin)
       else if (variant.price > 0 && !generateInvoice) {
