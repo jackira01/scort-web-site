@@ -163,7 +163,7 @@ export function Step3Details({
               )}
             </div>
           </div>
-          
+
           {/* Error general de contacto (cuando no se proporciona ninguno) */}
           {errors.contact && typeof errors.contact.message === 'string' && (
             <p className="text-red-500 text-sm mt-2">
