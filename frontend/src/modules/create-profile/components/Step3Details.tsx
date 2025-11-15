@@ -65,6 +65,9 @@ export function Step3Details({
         {/* Contact Details */}
         <div className="space-y-6">
           <h3 className="text-lg font-semibold text-foreground">Donde contactarme</h3>
+          <p className="text-sm text-muted-foreground -mt-2">
+            Debes proporcionar al menos un método de contacto
+          </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Número de contacto */}
@@ -101,7 +104,7 @@ export function Step3Details({
             {/* WhatsApp */}
             <div>
               <Label htmlFor="whatsapp" className="text-foreground">
-                WhatsApp (opcional)
+                WhatsApp
               </Label>
               <div className="flex mt-2">
                 <div className="flex items-center px-3 bg-muted border border-r-0 rounded-l-md">
@@ -132,7 +135,7 @@ export function Step3Details({
             {/* Telegram */}
             <div>
               <Label htmlFor="telegram" className="text-foreground">
-                Telegram (opcional)
+                Telegram
               </Label>
               <div className="flex mt-2">
                 <div className="flex items-center px-3 bg-muted border border-r-0 rounded-l-md">
@@ -160,6 +163,13 @@ export function Step3Details({
               )}
             </div>
           </div>
+          
+          {/* Error general de contacto (cuando no se proporciona ninguno) */}
+          {errors.contact && typeof errors.contact.message === 'string' && (
+            <p className="text-red-500 text-sm mt-2">
+              {errors.contact.message}
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

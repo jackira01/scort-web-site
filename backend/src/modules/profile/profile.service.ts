@@ -556,7 +556,6 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
       // ✅ CASO 2: Plan DE PAGO (price > 0) CON factura
       else if (variant.price > 0 && generateInvoice) {
         // Generar factura (puede incluir cupón que reduzca el precio a 0)
-        console.log(`🎫 Generando factura con cupón: ${couponCode || 'sin cupón'}`);
         invoice = await invoiceService.generateInvoice({
           profileId: (profile._id as Types.ObjectId).toString(),
           userId: profile.user.toString(),
@@ -567,15 +566,11 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
           notes: `Factura generada para nuevo perfil ${profile.name || profile._id}`
         });
 
-        console.log(`💰 Factura generada - ID: ${invoice._id}, Total: ${invoice.totalAmount}, Cupón aplicado: ${invoice.coupon?.code || 'ninguno'}`);
-
         // ✅ VALIDACIÓN: Si después de aplicar cupón el monto final es 0, marcar factura como pagada
         // y asignar el plan directamente (cupón 100% descuento)
         if (invoice.totalAmount === 0) {
-          console.log(`✅ Total = 0 detectado, marcando factura como pagada y asignando plan directamente`);
           // Marcar factura como pagada usando el servicio (esto incrementa el uso del cupón)
           await invoiceService.markAsPaid(invoice._id.toString());
-          console.log(`✅ Factura marcada como pagada, uso de cupón incrementado`);
 
           // Calcular fechas de asignación
           const startAt = new Date();
