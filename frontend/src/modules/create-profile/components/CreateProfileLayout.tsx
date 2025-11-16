@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { useAttributeGroups } from '@/hooks/use-attribute-groups';
 import { createProfile } from '@/services/user.service';
+import { validatePlanSelection, validateMaxProfiles } from '@/services/profile-validation.service';
 import {
   uploadMultipleAudios,
   uploadMultipleImages,
@@ -290,6 +291,28 @@ export function CreateProfileLayout() {
         return;
       }
 
+      // VALIDACIÓN B: Verificar límite de perfiles gratuitos en paso 4
+      if (currentStep === 4) {
+        const selectedPlan = form.getValues('selectedPlan');
+
+        if (selectedPlan && selectedPlan.code) {
+          // Obtener userId de la sesión
+          const userId = (session?.user as any)?._id || (session?.user as any)?.id;
+
+          if (!userId) {
+            toast.error('Debes iniciar sesión');
+            return;
+          }
+
+          const validation = await validatePlanSelection(userId, selectedPlan.code);
+
+          if (!validation.ok) {
+            toast.error(validation.message || 'No puedes seleccionar este plan');
+            return; // No avanzar al siguiente paso
+          }
+        }
+      }
+
       if (currentStep < 5) {
         setCurrentStep(currentStep + 1);
         // ✅ Scroll después de que React actualice el DOM
@@ -298,6 +321,7 @@ export function CreateProfileLayout() {
         });
       }
     } catch (error) {
+      console.error('Error en handleNext:', error);
       toast.error('Error inesperado en la validación');
     }
   };
@@ -403,11 +427,6 @@ export function CreateProfileLayout() {
     }));
 
     // ✅ SIMPLIFICADO: Ya reordenamos en handleFinalSave, así que la primera foto ES la portada
-    console.log('🖼️ === CONSTRUYENDO DATOS PARA BACKEND ===');
-    console.log('coverImageIndex (debe ser 0):', formData.coverImageIndex);
-    console.log('Primera foto (portada):', formData.photos?.[0]?.substring(0, 50) + '...');
-    console.log('Total fotos:', formData.photos?.length || 0);
-
     return {
       user: session?.user?._id,
       name: formData.profileName,
@@ -481,48 +500,30 @@ export function CreateProfileLayout() {
     try {
       setUploading(true);
 
-      // ✅ VALIDACIÓN: Verificar que haya al menos 1 foto
+      // ✅ VALIDACIÓN 1: Verificar límite de perfiles ANTES de subir archivos
+      if (session?.user?._id) {
+        try {
+          const validationResult = await validateMaxProfiles(session.user._id);
+          // Si no retorna ok: true, mostrar error y detener
+          if (!validationResult.ok) {
+            toast.error(validationResult.message || 'Has alcanzado el límite máximo de perfiles');
+            setUploading(false);
+            return;
+          }
+        } catch (validationError) {
+          console.error('Error validando límite de perfiles:', validationError);
+          toast.error('Error al validar límite de perfiles. Inténtalo de nuevo.');
+          setUploading(false);
+          return;
+        }
+      }
+
+      // ✅ VALIDACIÓN 2: Verificar que haya al menos 1 foto
       if (!data.photos || data.photos.length === 0) {
         toast.error('Debes subir al menos una foto para crear tu perfil');
         setUploading(false);
         return;
       }
-
-      // ✅ VALIDACIONES CRÍTICAS PRE-SUBMIT
-      const loadingValidation = toast.loading('Verificando límites de perfiles...');
-      try {
-        const { getUserProfiles } = await import('@/services/user.service');
-        const userProfiles = await getUserProfiles(session?.user?._id || '');
-
-        if (userProfiles.length >= 10) {
-          toast.dismiss(loadingValidation);
-          toast.error('Has alcanzado el límite máximo de perfiles permitidos.', { duration: 6000 });
-          setUploading(false);
-          return;
-        }
-        toast.dismiss(loadingValidation);
-      } catch (validationError) {
-        toast.dismiss(loadingValidation);
-        console.error('Error verificando límites:', validationError);
-        toast.error('Error al verificar límites. Contacta soporte.');
-        setUploading(false);
-        return;
-      }
-
-      console.log('🐛 DEBUG CRÍTICO:', {
-        'data.processedImages existe': !!data.processedImages,
-        'data.processedImages es array': Array.isArray(data.processedImages),
-        'data.processedImages.length': data.processedImages?.length || 0,
-        'data.processedImages contenido': data.processedImages,
-        'data.photos.length': data.photos?.length || 0,
-        'data.coverImageIndex': data.coverImageIndex
-      });
-
-      // 🎯 PASO CRÍTICO: REORDENAR IMÁGENES PROCESADAS SEGÚN coverImageIndex
-      console.log('\n🔄 ===== REORDENANDO IMÁGENES PARA SUBIDA =====');
-      console.log('coverImageIndex:', data.coverImageIndex);
-      console.log('Total processedImages:', data.processedImages?.length || 0);
-      console.log('Total photos:', data.photos?.length || 0);
 
       let orderedProcessedImages: ProcessedImageResult[] = [];
       const coverIndex = data.coverImageIndex ?? 0;
@@ -536,8 +537,6 @@ export function CreateProfileLayout() {
           }
         });
 
-        console.log('📦 Map de imágenes procesadas:', Array.from(processedMap.keys()));
-
         // Verificar que la imagen de portada exista y esté procesada
         const coverImage = processedMap.get(coverIndex);
 
@@ -550,7 +549,6 @@ export function CreateProfileLayout() {
 
         // 🎯 REORDENAR: La imagen de portada SIEMPRE va primero
         orderedProcessedImages.push(coverImage);
-        console.log('✅ Imagen de portada agregada primero:', coverImage.originalFileName);
 
         // Agregar el resto de imágenes en orden, excluyendo la de portada
         data.photos.forEach((photo, idx) => {
@@ -558,31 +556,12 @@ export function CreateProfileLayout() {
             const processedImg = processedMap.get(idx);
             if (processedImg) {
               orderedProcessedImages.push(processedImg);
-              console.log(`  ✅ [${orderedProcessedImages.length - 1}] ${processedImg.originalFileName}`);
             } else {
               console.warn(`  ⚠️ No hay imagen procesada para índice ${idx}`);
             }
           }
         });
-
-        console.log('📸 Orden final de subida:', orderedProcessedImages.map((img, i) =>
-          `[${i}] ${img.originalFileName}`
-        ));
       }
-
-      /*  // Verificar que todas las imágenes tengan marca de agua
-       const imagesWithoutWatermark = orderedProcessedImages.filter(img => {
-         // Verificar si la URL del blob contiene indicios de procesamiento
-         // (esto es aproximado, idealmente deberías tener un flag en ProcessedImageResult)
-         return !img.url || img.compressionRatio === 0;
-       });
- 
-       if (imagesWithoutWatermark.length > 0) {
-         console.warn('⚠️ Imágenes sin marca de agua detectadas:', imagesWithoutWatermark.length);
-         toast('Algunas imágenes pueden no tener marca de agua', { icon: '⚠️' });
-       } */
-
-      console.log('🔄 ===== FIN REORDENAMIENTO =====\n');
 
       // Subir archivos multimedia a Cloudinary
       let photoUrls: (string | null)[] = [];
@@ -602,8 +581,6 @@ export function CreateProfileLayout() {
           photoUrls = [...photoUrls, ...processedUrls.filter(url => url !== null)];
           toast.dismiss('upload-photos');
           toast.success(`${processedUrls.filter(url => url !== null).length} fotos procesadas subidas exitosamente`);
-
-          console.log('✅ URLs subidas:', photoUrls.map((url, i) => `[${i}] ${url?.substring(0, 50)}...`));
         } else {
           // Fallback: Si no hay imágenes procesadas, usar flujo original
           const photoFiles = data.photos.filter((photo): photo is File => photo instanceof File);
@@ -727,7 +704,11 @@ export function CreateProfileLayout() {
         toast.dismiss(loadingToast);
 
         const error = profileError as ApiError;
-        if (error?.response?.status === 409) {
+        if (error?.response?.status === 403) {
+          // Error de límite de perfiles
+          const errorMessage = error?.response?.data?.message || 'Has alcanzado el límite máximo de perfiles';
+          toast.error(errorMessage, { duration: 6000 });
+        } else if (error?.response?.status === 409) {
           const errorMessage = error?.response?.data?.message || 'Límite de perfiles excedido';
           toast.error(errorMessage, { duration: 6000 });
         } else if (profileError?.response?.status === 400) {
@@ -780,7 +761,10 @@ export function CreateProfileLayout() {
     }
   };
 
-  if (isLoading) return <Loader />;
+  if (isLoading) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Loader className="h-8 w-8 animate-spin" />
+    </div>)
 
   if (error) return <p>Error al cargar atributos</p>;
 

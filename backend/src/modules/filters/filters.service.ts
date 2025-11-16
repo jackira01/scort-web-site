@@ -586,7 +586,6 @@ export const getFilteredProfiles = async (
       }
 
       // Calcular hasDestacadoUpgrade
-      const now = new Date();
       let hasDestacadoUpgrade = false;
 
       // Verificar si tiene plan DIAMANTE
@@ -596,6 +595,8 @@ export const getFilteredProfiles = async (
         // Verificar si tiene upgrade DESTACADO/HIGHLIGHT activo
         hasDestacadoUpgrade = profile.upgrades.some((upgrade: any) =>
           ['DESTACADO', 'HIGHLIGHT'].includes(upgrade.code) &&
+          upgrade.startAt &&
+          upgrade.endAt &&
           new Date(upgrade.startAt) <= now &&
           new Date(upgrade.endAt) > now
         );

@@ -73,15 +73,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     if (processedImages.size > 0) {
       const processedArray = Array.from(processedImages.values());
 
-      console.log('🔄 Sincronizando processedImages con formulario:', {
-        mapSize: processedImages.size,
-        arrayLength: processedArray.length,
-        items: processedArray.map(p => ({
-          idx: p.originalIndex,
-          name: p.originalFileName
-        }))
-      });
-
       setValue('processedImages', processedArray, {
         shouldValidate: false,
         shouldDirty: true
@@ -91,7 +82,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
   // Sincronizar coverImageIndex (sin setValue redundante)
   useEffect(() => {
-    console.log('📍 coverImageIndex actual:', coverImageIndex);
   }, [coverImageIndex]);
 
   // ✅ DESPUÉS declarar useFileHandlers
@@ -120,13 +110,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
       // ✅ Aplicar marca de agua SOLO si la imagen NO es de URL (es File nuevo)
       const shouldApplyWatermark = !currentImageToCrop.isFromUrl;
-
-      console.log('🎨 Procesando imagen recortada:', {
-        index: currentImageToCrop.index,
-        isFromUrl: currentImageToCrop.isFromUrl,
-        shouldApplyWatermark,
-        fileName: currentImageToCrop.file.name
-      });
 
       // Solo recortar sin aplicar marca de agua
       const processedResult: ProcessedImageResult = await (async () => {
@@ -203,13 +186,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
   // Función para abrir crop modal para una imagen existente
   const handleEditImage = (file: File | string, index: number) => {
-    console.log('📸 handleEditImage llamado:', {
-      index,
-      fileType: file instanceof File ? 'File' : 'string',
-      fileName: file instanceof File ? file.name : file.substring(0, 80),
-      hasOriginalImage: originalImages.has(index),
-      isMarkedAsFromUrl: imagesFromUrl.get(index)
-    });
 
     // ✅ Primero buscar la imagen original guardada
     const originalImage = originalImages.get(index);
@@ -217,7 +193,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     // ✅ Si existe original, usarla y consultar el Map para saber si era URL
     if (originalImage) {
       const wasFromUrl = imagesFromUrl.get(index) ?? false;
-      console.log('✅ Usando imagen original guardada, wasFromUrl:', wasFromUrl);
       setCurrentImageToCrop({ file: originalImage, index, isFromUrl: wasFromUrl });
       setCropModalOpen(true);
       return;
@@ -225,7 +200,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
     // ✅ Si el file es un File, usarlo directamente (aplicar marca de agua)
     if (file instanceof File) {
-      console.log('✅ File nuevo detectado, marca de agua: SÍ');
       setCurrentImageToCrop({ file, index, isFromUrl: false });
       setCropModalOpen(true);
       return;
@@ -233,8 +207,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
     // ✅ Si es una URL (string), convertirla a File usando canvas (NO aplicar marca de agua)
     if (typeof file === 'string') {
-      console.log('🌐 URL detectada, convirtiendo a File, marca de agua: NO');
-
       const img = new Image();
       img.crossOrigin = 'anonymous'; // ✅ Importante para evitar problemas de CORS
 
@@ -271,8 +243,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
             const newFromUrlMap = new Map(imagesFromUrl);
             newFromUrlMap.set(index, true);
             setImagesFromUrl(newFromUrlMap);
-
-            console.log('✅ Imagen original guardada desde URL para foto:', index);
 
             setCurrentImageToCrop({ file: newFile, index, isFromUrl: true }); // ✅ Marcar como URL
             setCropModalOpen(true);
@@ -330,7 +300,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
       const newOriginals = new Map(originalVideoCoverImages);
       newOriginals.set(videoIndex, file);
       setOriginalVideoCoverImages(newOriginals);
-      console.log('📸 Portada original guardada para video:', videoIndex);
     }
 
     // Abrir modal de recorte para la imagen de portada del video
@@ -361,8 +330,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
     // ✅ Si es una string (URL), convertirla a File usando canvas (mejor para CORS)
     if (typeof imageToEdit === 'string') {
-      console.log('🎬 Convirtiendo portada URL a File para editar:', imageToEdit.substring(0, 80) + '...');
-
       const img = new Image();
       img.crossOrigin = 'anonymous'; // ✅ Importante para evitar problemas de CORS
 
@@ -395,7 +362,6 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
               const newOriginals = new Map(originalVideoCoverImages);
               newOriginals.set(videoIndex, file);
               setOriginalVideoCoverImages(newOriginals);
-              console.log('✅ Portada original guardada desde URL para video:', videoIndex);
             }
 
             setCurrentVideoCoverToCrop({ file, videoIndex });

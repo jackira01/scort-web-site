@@ -29,14 +29,19 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
   if (variant === 'featured') {
     return (
       <Link href={`/perfil/${profile._id}`} className="block">
-        <Card className="group hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer relative bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30">
+        <Card className={`group hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer relative ${profile.hasDestacadoUpgrade
+          ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30'
+          : 'bg-card border-border'
+          }`}>
           {/* Banner de DESTACADO */}
-          <div className="pulse-destacado absolute top-0 left-0 right-0 z-20 animate-destacado-pulse">
-            <div className="bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 text-white text-center py-1 px-2 text-xs font-bold tracking-wider shadow-md flex items-center justify-center gap-1">
-              <Star className="h-3 w-3 fill-white" />
-              DESTACADO
+          {profile.hasDestacadoUpgrade && (
+            <div className="pulse-destacado absolute top-0 left-0 right-0 z-20 animate-destacado-pulse">
+              <div className="bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 text-white text-center py-1 px-2 text-xs font-bold tracking-wider shadow-md flex items-center justify-center gap-1">
+                <Star className="h-3 w-3 fill-white" />
+                DESTACADO
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="relative h-72 w-full">
             <Image

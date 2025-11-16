@@ -186,7 +186,7 @@ class InvoiceService {
       paymentReference?: string;
     }
   ): Promise<Invoice> {
-    const response = await axios.patch(`${this.baseURL}/${invoiceId}/paid`, paymentData);
+    const response = await axios.put(`${this.baseURL}/${invoiceId}/pay`, paymentData);
     return response.data.data;
   }
 
@@ -194,7 +194,7 @@ class InvoiceService {
    * Cancelar factura
    */
   async cancelInvoice(invoiceId: string): Promise<Invoice> {
-    const response = await axios.patch(`${this.baseURL}/${invoiceId}/cancel`);
+    const response = await axios.put(`${this.baseURL}/${invoiceId}/cancel`);
     return response.data.data;
   }
 

@@ -6,16 +6,16 @@ export const step1Schema = z.object({
     .string()
     .min(1, 'El nombre del perfil es requerido')
     .min(3, 'El nombre debe tener al menos 3 caracteres')
-    .max(50, 'El nombre no puede exceder 50 caracteres'),
-  
+    .max(40, 'El nombre no puede exceder 40 caracteres'),
+
   gender: z
     .string()
     .min(1, 'Debes seleccionar un género'),
-  
+
   category: z
     .string()
     .min(1, 'Debes seleccionar una categoría'),
-  
+
   location: z.object({
     country: z.string().min(1, 'El país es requerido'),
     department: z.string().min(1, 'El departamento es requerido'),

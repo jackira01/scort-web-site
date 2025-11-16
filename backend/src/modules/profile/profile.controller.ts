@@ -18,6 +18,8 @@ import { UpgradeDefinitionModel } from '../plans/upgrade.model';
 import {
   validatePaidPlanAssignment,
   validateUpgradePurchase,
+  validatePurchaseIdempotency,
+  validateAmatistaLimit,
   getUserUsageStats,
   BusinessValidationError
 } from '../validation/business-validation.service';
@@ -75,15 +77,33 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
         ? defaultPlanConfig.value.planCode
         : 'AMATISTA'; // Fallback
 
-      // Si se especifica un plan pago, validar límites
+      // Validar límite total de perfiles (defensa en profundidad)
+      const maxProfilesValidation = await service.validateMaxProfiles(profileData.userId || profileData.user);
+      if (!maxProfilesValidation.ok) {
+        return res.status(403).json({
+          success: false,
+          message: maxProfilesValidation.message || 'Has alcanzado el límite máximo de perfiles',
+          currentCount: maxProfilesValidation.currentCount,
+          maxAllowed: maxProfilesValidation.maxAllowed
+        });
+      }
+
+      // Si se especifica un plan pago, validar límites de plan específico (ej: AMATISTA)
       if (planCode !== 'GRATIS' && planCode !== defaultPlanCode) {
         // Validando plan de pago
-        await validatePaidPlanAssignment(
-          profileData.userId || profileData.user,
-          planCode,
-          undefined,
-          purchasedPlan.orderId
-        );
+        // Solo validar idempotencia y límites específicos del plan (no límite general de 10 perfiles)
+        if (purchasedPlan.orderId) {
+          await validatePurchaseIdempotency(
+            profileData.userId || profileData.user,
+            purchasedPlan.orderId,
+            'plan'
+          );
+        }
+
+        // Validación específica para AMATISTA (límite de 3 perfiles visibles)
+        if (planCode === 'AMATISTA') {
+          await validateAmatistaLimit(profileData.userId || profileData.user, undefined);
+        }
         // Validación de plan completada
       }
     }
@@ -901,6 +921,71 @@ export const upgradePlanController = async (req: AuthRequest, res: Response) => 
     res.status(400).json({
       success: false,
       error: error.message || 'Error al hacer upgrade del plan'
+    });
+  }
+};
+
+/**
+ * VALIDACIÓN A: Verifica si el usuario puede crear un nuevo perfil (límite total)
+ * Se ejecuta ANTES de entrar al wizard de creación
+ * GET /api/profile/validate-max
+ */
+export const validateMaxProfilesController = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        ok: false,
+        message: 'Usuario no autenticado'
+      });
+    }
+
+    const result = await service.validateMaxProfiles(userId);
+
+    return res.status(result.ok ? 200 : 403).json(result);
+  } catch (error: any) {
+    console.error('Error en validateMaxProfilesController:', error);
+    return res.status(500).json({
+      ok: false,
+      message: 'Error al validar límite de perfiles'
+    });
+  }
+};
+
+/**
+ * VALIDACIÓN B: Verifica si el usuario puede seleccionar un plan gratuito
+ * Se ejecuta en el PASO 4 del wizard cuando selecciona un plan
+ * POST /api/profile/validate-plan-selection
+ * Body: { planCode: string }
+ */
+export const validatePlanSelectionController = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const { planCode } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        ok: false,
+        message: 'Usuario no autenticado'
+      });
+    }
+
+    if (!planCode) {
+      return res.status(400).json({
+        ok: false,
+        message: 'planCode es requerido'
+      });
+    }
+
+    const result = await service.validatePlanSelection(userId, planCode);
+
+    return res.status(result.ok ? 200 : 403).json(result);
+  } catch (error: any) {
+    console.error('Error en validatePlanSelectionController:', error);
+    return res.status(500).json({
+      ok: false,
+      message: 'Error al validar selección de plan'
     });
   }
 };

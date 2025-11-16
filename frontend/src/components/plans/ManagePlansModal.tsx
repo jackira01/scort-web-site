@@ -362,6 +362,9 @@ export default function ManagePlansModal({
 
     setIsProcessing(true);
 
+    // Variable para rastrear si el plan actual es gratuito
+    let isPlanFree = false;
+
     try {
       // Iniciando acción de plan
 
@@ -373,9 +376,28 @@ export default function ManagePlansModal({
           const selectedPlan = processedPlans.find((p: Plan) => p.code === planCode);
           const selectedVariant = selectedPlan ? getSelectedVariant(planCode, selectedPlan) : null;
 
-          // Considerar el checkbox de facturación para administradores
+          // Verificar si el plan es gratuito (price === 0)
+          const isFreePlan = selectedVariant?.price === 0;
+          isPlanFree = isFreePlan;
+
+          console.log('🔍 DEBUG COMPRA:', {
+            action: 'purchase',
+            planCode,
+            selectedVariant,
+            isFreePlan,
+            isAdmin,
+            generateInvoice
+          });
+
+          // LÓGICA CORREGIDA:
+          // 1. Admin sin checkbox → asignación directa
+          // 2. Admin con checkbox (incluso si es gratis) → generar factura
+          // 3. Usuario normal + plan gratis → asignación directa
+          // 4. Usuario normal + plan pago → generar factura
+
           if (isAdmin && !generateInvoice) {
             // Admin con asignación directa: compra directa sin factura
+            console.log('✅ DEBUG: Admin sin factura - asignación directa');
             const purchaseRequest: PlanPurchaseRequest = {
               profileId,
               planCode,
@@ -384,8 +406,83 @@ export default function ManagePlansModal({
             };
             result = await purchasePlan(purchaseRequest);
             message = `Plan ${processedPlans.find((p: Plan) => p.code === planCode)?.name} comprado exitosamente (asignación directa)`;
+          } else if (isAdmin && generateInvoice) {
+            // Admin con checkbox marcado: SIEMPRE generar factura (incluso si es gratis)
+            console.log('✅ DEBUG: Admin con factura - generando factura para plan', isFreePlan ? 'GRATUITO' : 'PAGO');
+
+            if (!session?.user?._id) {
+              throw new Error('Usuario no autenticado');
+            }
+
+            const invoiceData: CreateInvoiceData = {
+              profileId,
+              userId: session.user._id,
+              planCode: planCode,
+              planDays: selectedVariant?.days || 30,
+              notes: `Compra de plan ${processedPlans.find((p: Plan) => p.code === planCode)?.name} para perfil ${profileName}`
+            };
+
+            // Crear factura
+            console.log('📄 DEBUG: Creando factura...', { isFreePlan, invoiceData });
+            const invoice = await invoiceService.createInvoice(invoiceData);
+            console.log('✅ DEBUG: Factura creada:', invoice._id);
+
+            // Si es plan gratuito, marcar la factura como pagada inmediatamente
+            if (isFreePlan) {
+              console.log('💰 DEBUG: Plan gratuito detectado, marcando factura como pagada...');
+              await invoiceService.markAsPaid(invoice._id, {
+                paymentMethod: 'free_plan',
+                paymentReference: 'Plan gratuito asignado por administrador'
+              });
+              console.log('✅ DEBUG: Factura marcada como pagada y plan asignado');
+
+              message = 'Plan gratuito asignado con factura generada exitosamente';
+              toast.success(message, { duration: 4000 });
+
+              // Refrescar datos
+              await refreshPlanData();
+              queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
+              queryClient.invalidateQueries({ queryKey: ['profilePlan', profileId] });
+              onPlanChange?.();
+
+              onClose();
+              return;
+            }
+
+            // Plan de pago: obtener datos de WhatsApp
+            const whatsappData = await invoiceService.getWhatsAppData(invoice._id);
+
+            message = 'Factura generada. Completa el pago para activar tu plan.';
+            toast.success('Factura creada. El plan se activará después del pago confirmado.', {
+              duration: 4000,
+            });
+
+            // Abrir WhatsApp para plan de pago
+            window.open(whatsappData.whatsappUrl, '_blank');
+
+            result = {
+              invoice,
+              whatsappData,
+              requiresPayment: true,
+              totalAmount: selectedVariant?.price || 0
+            };
+
+            onClose();
+            return;
+          } else if (isFreePlan && !isAdmin) {
+            // Plan gratuito para usuario normal: asignar directamente sin generar factura
+            console.log('✅ DEBUG: Usuario normal + Plan gratuito - asignación directa sin factura');
+            const purchaseRequest: PlanPurchaseRequest = {
+              profileId,
+              planCode,
+              variantDays: selectedVariant?.days || 30,
+              generateInvoice: false,
+            };
+            result = await purchasePlan(purchaseRequest);
+            message = `Plan ${processedPlans.find((p: Plan) => p.code === planCode)?.name} asignado exitosamente`;
           } else {
-            // Flujo normal con facturación (tanto para usuarios normales como admins que quieren factura)
+            // Flujo normal con facturación para usuarios normales con planes pagos
+            console.log('✅ DEBUG: Usuario normal + Plan pago - generando factura');
             const purchaseRequest: PlanPurchaseRequest = {
               profileId,
               planCode,
@@ -413,21 +510,28 @@ export default function ManagePlansModal({
           const renewSelectedVariant = getSelectedVariant(planCode, currentPlanData);
           console.log('🔍 DEBUG RENOVACIÓN - Variante seleccionada:', renewSelectedVariant);
 
-          // Diferenciar entre admin y usuario normal, y considerar el checkbox de facturación
+          // Verificar si el plan es gratuito (price === 0)
+          const isFreePlanRenew = renewSelectedVariant.price === 0;
+          isPlanFree = isFreePlanRenew;
+
+          // LÓGICA CORREGIDA para renovación:
+          // 1. Admin sin checkbox → renovación directa
+          // 2. Admin con checkbox (incluso si es gratis) → generar factura
+          // 3. Usuario normal + plan gratis → renovación directa
+          // 4. Usuario normal + plan pago → generar factura
+
           if (isAdmin && !generateInvoice) {
-            console.log('🔍 DEBUG RENOVACIÓN - Flujo: Admin sin factura (renovación directa)');
+            console.log('✅ DEBUG RENOVACIÓN: Admin sin factura - renovación directa');
             // Admin con asignación directa: renovación directa sin factura
             const renewRequest: PlanRenewalRequest = {
               profileId,
               extensionDays: renewSelectedVariant.days,
             };
-            console.log('🔍 DEBUG RENOVACIÓN - Request enviado:', renewRequest);
             result = await renewPlan(renewRequest);
-            console.log('🔍 DEBUG RENOVACIÓN - Resultado:', result);
             message = `Plan ${currentPlanData.name} renovado exitosamente (asignación directa)`;
           } else if (isAdmin && generateInvoice) {
-            console.log('🔍 DEBUG RENOVACIÓN - Flujo: Admin con factura');
-            // Admin con facturación: generar factura como usuario normal
+            console.log('✅ DEBUG RENOVACIÓN: Admin con factura - generando factura para plan', isFreePlanRenew ? 'GRATUITO' : 'PAGO');
+            // Admin con checkbox marcado: SIEMPRE generar factura (incluso si es gratis)
             if (!session?.user?._id) {
               throw new Error('Usuario no autenticado');
             }
@@ -440,21 +544,42 @@ export default function ManagePlansModal({
               notes: `Renovación de plan ${currentPlanData.name} para perfil ${profileName}`
             };
 
-            // Crear SOLO la factura (el plan se renovará cuando se confirme el pago)
+            // Crear factura
+            console.log('📄 DEBUG RENOVACIÓN: Creando factura...', { isFreePlanRenew, invoiceData });
             const invoice = await invoiceService.createInvoice(invoiceData);
+            console.log('✅ DEBUG RENOVACIÓN: Factura creada:', invoice._id);
 
-            // Generar mensaje de WhatsApp para el pago
+            // Si es plan gratuito, marcar la factura como pagada inmediatamente
+            if (isFreePlanRenew) {
+              console.log('💰 DEBUG RENOVACIÓN: Plan gratuito detectado, marcando factura como pagada...');
+              await invoiceService.markAsPaid(invoice._id, {
+                paymentMethod: 'free_plan',
+                paymentReference: 'Renovación de plan gratuito por administrador'
+              });
+              console.log('✅ DEBUG RENOVACIÓN: Factura marcada como pagada y plan renovado');
+
+              message = 'Plan gratuito renovado con factura generada exitosamente';
+              toast.success(message, { duration: 4000 });
+
+              // Refrescar datos
+              await refreshPlanData();
+              queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
+              queryClient.invalidateQueries({ queryKey: ['profilePlan', profileId] });
+              onPlanChange?.();
+
+              onClose();
+              return;
+            }
+
+            // Plan de pago: obtener datos de WhatsApp
             const whatsappData = await invoiceService.getWhatsAppData(invoice._id);
 
-            // Mensaje específico para renovación con factura
-            message = `Factura de renovación generada. Completa el pago para renovar tu plan.`;
-
-            // Mostrar toast con información adicional
+            message = 'Factura de renovación generada. Completa el pago para renovar tu plan.';
             toast.success('Factura creada. El plan se renovará después del pago confirmado.', {
               duration: 4000,
             });
 
-            // Abrir WhatsApp inmediatamente
+            // Abrir WhatsApp para plan de pago
             window.open(whatsappData.whatsappUrl, '_blank');
 
             result = {
@@ -464,12 +589,20 @@ export default function ManagePlansModal({
               totalAmount: renewSelectedVariant.price
             };
 
-            // NO mostrar el toast de éxito general para usuarios normales
-            // porque el plan no se ha renovado aún
+            onClose();
             return;
+          } else if (isFreePlanRenew && !isAdmin) {
+            console.log('✅ DEBUG RENOVACIÓN: Usuario normal + Plan gratuito - renovación directa sin factura');
+            // Plan gratuito para usuario normal: renovar directamente sin factura
+            const renewRequest: PlanRenewalRequest = {
+              profileId,
+              extensionDays: renewSelectedVariant.days,
+            };
+            result = await renewPlan(renewRequest);
+            message = `Plan ${currentPlanData.name} renovado exitosamente`;
           } else {
-            console.log('🔍 DEBUG RENOVACIÓN - Flujo: Usuario normal (solo factura)');
-            // Usuario normal: SOLO generar factura (NO llamar al endpoint de renovación)
+            console.log('✅ DEBUG RENOVACIÓN: Usuario normal + Plan pago - generando factura');
+            // Usuario normal con plan pago: generar factura
             if (!session?.user?._id) {
               throw new Error('Usuario no autenticado');
             }
@@ -517,8 +650,27 @@ export default function ManagePlansModal({
           const targetUpgradePlan = processedPlans.find((p: Plan) => p.code === planCode);
           const upgradeSelectedVariant = targetUpgradePlan ? getSelectedVariant(planCode, targetUpgradePlan) : null;
 
-          // Diferenciar entre admin y usuario normal, y considerar el checkbox de facturación
+          // Verificar si el plan es gratuito (price === 0)
+          const isFreePlanUpgrade = upgradeSelectedVariant?.price === 0;
+          isPlanFree = isFreePlanUpgrade;
+
+          console.log('🔍 DEBUG UPGRADE:', {
+            action: 'upgrade',
+            planCode,
+            upgradeSelectedVariant,
+            isFreePlanUpgrade,
+            isAdmin,
+            generateInvoice
+          });
+
+          // LÓGICA CORREGIDA para upgrade:
+          // 1. Admin sin checkbox → upgrade directo
+          // 2. Admin con checkbox (incluso si es gratis) → generar factura
+          // 3. Usuario normal + plan gratis → upgrade directo
+          // 4. Usuario normal + plan pago → generar factura
+
           if (isAdmin && !generateInvoice) {
+            console.log('✅ DEBUG UPGRADE: Admin sin factura - upgrade directo');
             // Admin con asignación directa: upgrade directo sin factura
             const upgradeRequest: PlanUpgradeRequest = {
               profileId,
@@ -528,17 +680,15 @@ export default function ManagePlansModal({
             result = await upgradePlan(upgradeRequest);
             message = `Actualización directa del plan a ${targetUpgradePlan?.name} realizada exitosamente (asignación directa)`;
           } else if (isAdmin && generateInvoice) {
-            // Admin con facturación: generar factura como usuario normal
+            console.log('✅ DEBUG UPGRADE: Admin con factura - generando factura para plan', isFreePlanUpgrade ? 'GRATUITO' : 'PAGO');
+            // Admin con checkbox marcado: SIEMPRE generar factura (incluso si es gratis)
             if (!session?.user?._id) {
               throw new Error('Usuario no autenticado');
             }
 
-            // Construir detalles del plan actual
             const currentPlanDetails = currentPlan
               ? `Plan actual: ${currentPlanData?.name || currentPlan.planCode} (${currentPlan.variantDays} días)`
               : 'Sin plan activo';
-
-            // Construir detalles del nuevo plan
             const newPlanDetails = `Nuevo plan: ${targetUpgradePlan?.name || planCode} (${upgradeSelectedVariant?.days || 30} días) - $${upgradeSelectedVariant?.price || 0}`;
 
             const invoiceData: CreateInvoiceData = {
@@ -549,21 +699,42 @@ export default function ManagePlansModal({
               notes: `Cambio de plan para perfil ${profileName}\n${currentPlanDetails}\n${newPlanDetails}`
             };
 
-            // Crear factura para el nuevo plan
+            // Crear factura
+            console.log('📄 DEBUG UPGRADE: Creando factura...', { isFreePlanUpgrade, invoiceData });
             const invoice = await invoiceService.createInvoice(invoiceData);
+            console.log('✅ DEBUG UPGRADE: Factura creada:', invoice._id);
 
-            // Generar mensaje de WhatsApp para el pago
+            // Si es plan gratuito, marcar la factura como pagada inmediatamente
+            if (isFreePlanUpgrade) {
+              console.log('💰 DEBUG UPGRADE: Plan gratuito detectado, marcando factura como pagada...');
+              await invoiceService.markAsPaid(invoice._id, {
+                paymentMethod: 'free_plan',
+                paymentReference: 'Cambio a plan gratuito por administrador'
+              });
+              console.log('✅ DEBUG UPGRADE: Factura marcada como pagada y plan actualizado');
+
+              message = 'Plan gratuito actualizado con factura generada exitosamente';
+              toast.success(message, { duration: 4000 });
+
+              // Refrescar datos
+              await refreshPlanData();
+              queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
+              queryClient.invalidateQueries({ queryKey: ['profilePlan', profileId] });
+              onPlanChange?.();
+
+              onClose();
+              return;
+            }
+
+            // Plan de pago: obtener datos de WhatsApp
             const whatsappData = await invoiceService.getWhatsAppData(invoice._id);
 
-            // Mensaje específico para cambio de plan con factura
-            message = `Factura generada para cambio de plan. Completa el pago para activar tu nuevo plan ${targetUpgradePlan?.name}.`;
-
-            // Mostrar toast con información adicional
+            message = 'Factura generada para cambio de plan. Completa el pago para activar tu nuevo plan.';
             toast.success('Factura creada. El plan se actualizará después del pago confirmado.', {
               duration: 10000,
             });
 
-            // Abrir WhatsApp inmediatamente
+            // Abrir WhatsApp para plan de pago
             window.open(whatsappData.whatsappUrl, '_blank');
 
             result = {
@@ -572,21 +743,29 @@ export default function ManagePlansModal({
               requiresPayment: true,
               totalAmount: upgradeSelectedVariant?.price || 0
             };
-            // NO mostrar el toast de éxito general para usuarios normales
-            // porque el plan no se ha actualizado aún
+
+            onClose();
             return;
+          } else if (isFreePlanUpgrade && !isAdmin) {
+            console.log('✅ DEBUG UPGRADE: Usuario normal + Plan gratuito - upgrade directo sin factura');
+            // Plan gratuito para usuario normal: actualizar directamente sin factura
+            const upgradeRequest: PlanUpgradeRequest = {
+              profileId,
+              newPlanCode: planCode,
+              variantDays: upgradeSelectedVariant?.days
+            };
+            result = await upgradePlan(upgradeRequest);
+            message = `Plan actualizado a ${targetUpgradePlan?.name} exitosamente`;
           } else {
-            // Usuario normal: generar factura para compra del nuevo plan
+            console.log('✅ DEBUG UPGRADE: Usuario normal + Plan pago - generando factura');
+            // Usuario normal con plan pago: generar factura
             if (!session?.user?._id) {
               throw new Error('Usuario no autenticado');
             }
 
-            // Construir detalles del plan actual
             const currentPlanDetails = currentPlan
               ? `Plan actual: ${currentPlanData?.name || currentPlan.planCode} (${currentPlan.variantDays} días)`
               : 'Sin plan activo';
-
-            // Construir detalles del nuevo plan
             const newPlanDetails = `Nuevo plan: ${targetUpgradePlan?.name || planCode} (${upgradeSelectedVariant?.days || 30} días) - $${upgradeSelectedVariant?.price || 0}`;
 
             const invoiceData: CreateInvoiceData = {
@@ -597,11 +776,7 @@ export default function ManagePlansModal({
               notes: `Cambio de plan para perfil ${profileName}\n${currentPlanDetails}\n${newPlanDetails}`
             };
 
-            // Crear factura para el nuevo plan
             const invoice = await invoiceService.createInvoice(invoiceData);
-
-
-            // Generar mensaje de WhatsApp para el pago
             const whatsappData = await invoiceService.getWhatsAppData(invoice._id);
 
             // Mensaje específico para cambio de plan con factura
@@ -621,8 +796,8 @@ export default function ManagePlansModal({
               requiresPayment: true,
               totalAmount: upgradeSelectedVariant?.price || 0
             };
-            // NO mostrar el toast de éxito general para usuarios normales
-            // porque el plan no se ha actualizado aún
+
+            onClose();
             return;
           }
           break;
@@ -630,9 +805,22 @@ export default function ManagePlansModal({
 
       toast.success(message);
 
-      // Verificar si es admin y si se hizo asignación directa para determinar el flujo
-      if (isAdmin && !generateInvoice) {
-        // Para admins con asignación directa: cambio instantáneo, refrescar datos inmediatamente
+      console.log('🔍 DEBUG FLUJO FINAL:', {
+        isAdmin,
+        generateInvoice,
+        isPlanFree,
+        action
+      });
+
+      // Verificar si es admin SIN checkbox O si es usuario normal con plan gratuito
+      // IMPORTANTE: Si es admin CON checkbox, ya se manejó arriba con return, así que no llega aquí
+      const isDirectAssignment = (isAdmin && !generateInvoice) || (isPlanFree && !isAdmin);
+
+      console.log('✅ DEBUG: isDirectAssignment =', isDirectAssignment);
+
+      if (isDirectAssignment) {
+        console.log('✅ DEBUG: Flujo de asignación directa - refrescando datos inmediatamente');
+        // Para admins con asignación directa o usuarios con planes gratuitos: cambio instantáneo, refrescar datos inmediatamente
         await refreshPlanData();
 
         // Invalidar queries adicionales para asegurar actualización

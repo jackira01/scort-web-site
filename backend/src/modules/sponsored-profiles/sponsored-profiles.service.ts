@@ -71,13 +71,15 @@ export const getSponsoredProfiles = async (
     const limitNum = Math.min(Math.max(1, limit), 100); // Máximo 100 perfiles por página
     const skip = (pageNum - 1) * limitNum;
 
+    const now = new Date();
+
     // Construir filtros base para perfiles válidos
     const baseFilters: any = {
       isActive: true,
       visible: true,
       isDeleted: false,
       planAssignment: { $exists: true, $ne: null }, // CRÍTICO: Debe tener planAssignment (no perfiles en proceso)
-      'planAssignment.expiresAt': { $gt: new Date() }, // Plan no expirado
+      'planAssignment.expiresAt': { $gt: now }, // Plan no expirado
       'planAssignment.planId': { $exists: true, $ne: null } // Debe tener plan asignado
     };
 
@@ -196,10 +198,11 @@ export const getSponsoredProfiles = async (
       }
     }
 
+    // Obtener planes con showInSponsored: true
     const sponsoredPlans = await PlanDefinitionModel.find({
       'features.showInSponsored': true,
       active: true
-    }).select('_id code name features');
+    }).select('_id code name features includedUpgrades level');
 
     const sponsoredPlanIds = sponsoredPlans.map(plan => plan._id);
 
@@ -245,15 +248,13 @@ export const getSponsoredProfiles = async (
       'planAssignment.planId': { $exists: true, $ne: null }
     });
 
-    const now = new Date();
-
     // Obtener TODOS los perfiles que cumplen los filtros (sin paginación aún)
     // para poder aplicar sortProfiles al conjunto completo
     const [allProfiles, totalCount] = await Promise.all([
       ProfileModel
         .find(finalFilters, projection)
         .populate('user', 'email username')
-        .populate('planAssignment.planId', 'code name level features')
+        .populate('planAssignment.planId', 'code name level features includedUpgrades')
         .populate('verification', 'status verifiedAt')
         .lean(),
       ProfileModel.countDocuments(finalFilters)
@@ -266,15 +267,26 @@ export const getSponsoredProfiles = async (
     const paginatedProfiles = sortedProfiles.slice(skip, skip + limitNum);
 
     // Agregar propiedad hasDestacadoUpgrade a cada perfil
-    const profilesWithUpgradeInfo = paginatedProfiles.map(profile => {
-      const hasDestacadoUpgrade = profile.upgrades?.some(
-        (upgrade) =>
-          upgrade.code === 'DESTACADO' &&
-          upgrade.startAt &&
-          upgrade.endAt &&
-          new Date(upgrade.startAt) <= now &&
-          new Date(upgrade.endAt) > now
+    const profilesWithUpgradeInfo = paginatedProfiles.map((profile) => {
+      // Verificar si el plan incluye DESTACADO por defecto
+      const planIncludesDestacado = (profile.planAssignment?.planId as any)?.includedUpgrades?.includes('DESTACADO') || false;
+
+      // Verificar si tiene upgrade DESTACADO activo comprado
+      const hasDestacadoUpgradeActive = profile.upgrades?.some(
+        (upgrade) => {
+          const isDestacado = upgrade.code === 'DESTACADO';
+          const hasStartAt = !!upgrade.startAt;
+          const hasEndAt = !!upgrade.endAt;
+          const isActive = hasStartAt && hasEndAt &&
+            new Date(upgrade.startAt) <= now &&
+            new Date(upgrade.endAt) > now;
+
+          return isDestacado && hasStartAt && hasEndAt && isActive;
+        }
       ) || false;
+
+      // LÓGICA CORRECTA: hasDestacadoUpgrade = plan incluye DESTACADO O tiene upgrade activo
+      const hasDestacadoUpgrade = planIncludesDestacado || hasDestacadoUpgradeActive;
 
       return {
         ...profile,
@@ -309,12 +321,14 @@ export const getSponsoredProfiles = async (
  */
 export const getSponsoredProfilesCount = async (): Promise<number> => {
   try {
+    const now = new Date();
+
     // Filtros base para perfiles válidos
     const baseFilters = {
       isActive: true,
       visible: true,
       isDeleted: false,
-      'planAssignment.expiresAt': { $gt: new Date() },
+      'planAssignment.expiresAt': { $gt: now },
       'planAssignment.planId': { $exists: true, $ne: null }
     };
 

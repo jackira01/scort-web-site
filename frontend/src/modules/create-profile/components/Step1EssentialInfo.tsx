@@ -26,6 +26,7 @@ export function Step1EssentialInfo({
   const { register, control, watch, setValue, formState: { errors } } = useFormContext();
   const gender = watch('gender');
   const locationDepartment = watch('location.department');
+  const profileName = watch('profileName') || '';
 
   // Obtener departamentos y ciudades del backend
   const { data: departments = [], isLoading: loadingDepartments } = useDepartments();
@@ -49,12 +50,18 @@ export function Step1EssentialInfo({
               Cree un nombre para mostrar para su perfil.{' '}
               <span className="text-red-500">*</span>
             </Label>
-            <Input
-              id="profileName"
-              placeholder="Sexy Jane"
-              className={`mt-2 ${errors.profileName ? 'border-red-500' : ''}`}
-              {...register('profileName')}
-            />
+            <div className="relative">
+              <Input
+                id="profileName"
+                placeholder="Sexy Jane"
+                className={`mt-2 ${errors.profileName ? 'border-red-500' : ''}`}
+                {...register('profileName')}
+                maxLength={40}
+              />
+              <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">
+                {profileName.length}/40
+              </div>
+            </div>
             {errors.profileName && (
               <p className="text-red-500 text-sm mt-1">{errors.profileName.message}</p>
             )}

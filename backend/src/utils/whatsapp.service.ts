@@ -40,7 +40,7 @@ export class WhatsAppService {
     user: IUser
   ): InvoiceWhatsAppData {
     // Generando datos para WhatsApp
-    
+
     const whatsappData = {
       invoiceId: (invoice._id as Types.ObjectId).toString(),
       profileName: profile.name,
@@ -58,9 +58,9 @@ export class WhatsAppService {
       })),
       expiresAt: invoice.expiresAt
     };
-    
+
     // Datos de WhatsApp generados
-    
+
     return whatsappData;
   }
 
@@ -76,7 +76,7 @@ export class WhatsAppService {
     const planItem = data.items.find(item => item.type === 'plan');
     let planInfo = '';
     if (planItem && planItem.days) {
-      planInfo = `\n• Plan: ${planItem.code} (${planItem.days} días)`;
+      planInfo = `\n• Plan: ${planItem.name} (${planItem.days} días)`;
     }
 
     const expirationDate = new Date(data.expiresAt).toLocaleDateString('es-CO', {
@@ -88,15 +88,15 @@ export class WhatsAppService {
     });
 
     return `🛒 *Quiero hacer una compra*\n\n` +
-           `📋 *Detalles de la compra:*\n` +
-           `• ID Factura: ${data.invoiceId}\n` +
-           `• Perfil: ${data.profileName}\n` +
-           `• Cliente: ${data.userName}\n` +
-           `• Email: ${data.userEmail}${planInfo}\n\n` +
-           `💰 *Productos/Servicios:*\n${itemsText}\n\n` +
-           `💵 *Total a pagar: $${data.totalAmount.toLocaleString()}*\n\n` +
-           `⏰ *Vence el:* ${expirationDate}\n\n` +
-           `Por favor, confirma el pago para activar mi perfil. ¡Gracias! 😊`;
+      `📋 *Detalles de la compra:*\n` +
+      `• ID Factura: ${data.invoiceId}\n` +
+      `• Perfil: ${data.profileName}\n` +
+      `• Cliente: ${data.userName}\n` +
+      `• Email: ${data.userEmail}${planInfo}\n\n` +
+      `💰 *Productos/Servicios:*\n${itemsText}\n\n` +
+      `💵 *Total a pagar: $${data.totalAmount.toLocaleString()}*\n\n` +
+      `⏰ *Vence el:* ${expirationDate}\n\n` +
+      `Por favor, confirma el pago para activar mi perfil. ¡Gracias! 😊`;
   }
 
   /**
@@ -118,7 +118,7 @@ export class WhatsAppService {
     phoneNumber?: string
   ): WhatsAppMessageData {
     // Generando mensaje completo de WhatsApp
-    
+
     const invoiceData = this.generateInvoiceWhatsAppData(invoice, profile, user);
     // Generando mensaje de compra
     const message = this.generatePurchaseMessage(invoiceData);
@@ -130,7 +130,7 @@ export class WhatsAppService {
       phoneNumber: phoneNumber || this.WHATSAPP_BUSINESS_NUMBER,
       url
     };
-    
+
     // Mensaje de WhatsApp completo generado
 
     return result;
@@ -154,11 +154,11 @@ export class WhatsAppService {
     });
 
     return `⏰ *Recordatorio de pago pendiente*\n\n` +
-           `Hola! Tienes una factura pendiente para el perfil "${profileName}"\n\n` +
-           `• ID Factura: ${invoiceId}\n` +
-           `• Monto: $${totalAmount.toLocaleString()}\n` +
-           `• Vence: ${expirationDate}\n\n` +
-           `¿Te gustaría proceder con el pago? 💳`;
+      `Hola! Tienes una factura pendiente para el perfil "${profileName}"\n\n` +
+      `• ID Factura: ${invoiceId}\n` +
+      `• Monto: $${totalAmount.toLocaleString()}\n` +
+      `• Vence: ${expirationDate}\n\n` +
+      `¿Te gustaría proceder con el pago? 💳`;
   }
 
   /**
