@@ -314,7 +314,7 @@ export const DashbProfileCard = ({
           setUpgradeModalOpen(false);
           setSelectedUpgradeCode(null);
         }}
-        profileId={profile.id}
+        profileId={profile._id}
         profile={profile}
         upgradeCode={selectedUpgradeCode}
       />

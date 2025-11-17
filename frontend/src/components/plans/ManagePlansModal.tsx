@@ -278,12 +278,6 @@ export default function ManagePlansModal({
 
   // Verificar si no tiene plan asignado
   const hasNoPlanAssigned = () => {
-    console.log('🔍 [PLAN DEBUG] Verificando si tiene plan asignado:', {
-      profilePlanInfo,
-      currentPlan,
-      hasNoPlan: profilePlanInfo?.hasNoPlan
-    });
-
     // Si profilePlanInfo tiene hasNoPlan: true, entonces no tiene plan
     if (profilePlanInfo?.hasNoPlan) {
       return true;
@@ -380,15 +374,6 @@ export default function ManagePlansModal({
           const isFreePlan = selectedVariant?.price === 0;
           isPlanFree = isFreePlan;
 
-          console.log('🔍 DEBUG COMPRA:', {
-            action: 'purchase',
-            planCode,
-            selectedVariant,
-            isFreePlan,
-            isAdmin,
-            generateInvoice
-          });
-
           // LÓGICA CORREGIDA:
           // 1. Admin sin checkbox → asignación directa
           // 2. Admin con checkbox (incluso si es gratis) → generar factura
@@ -397,7 +382,6 @@ export default function ManagePlansModal({
 
           if (isAdmin && !generateInvoice) {
             // Admin con asignación directa: compra directa sin factura
-            console.log('✅ DEBUG: Admin sin factura - asignación directa');
             const purchaseRequest: PlanPurchaseRequest = {
               profileId,
               planCode,
@@ -408,8 +392,6 @@ export default function ManagePlansModal({
             message = `Plan ${processedPlans.find((p: Plan) => p.code === planCode)?.name} comprado exitosamente (asignación directa)`;
           } else if (isAdmin && generateInvoice) {
             // Admin con checkbox marcado: SIEMPRE generar factura (incluso si es gratis)
-            console.log('✅ DEBUG: Admin con factura - generando factura para plan', isFreePlan ? 'GRATUITO' : 'PAGO');
-
             if (!session?.user?._id) {
               throw new Error('Usuario no autenticado');
             }
@@ -423,18 +405,14 @@ export default function ManagePlansModal({
             };
 
             // Crear factura
-            console.log('📄 DEBUG: Creando factura...', { isFreePlan, invoiceData });
             const invoice = await invoiceService.createInvoice(invoiceData);
-            console.log('✅ DEBUG: Factura creada:', invoice._id);
 
             // Si es plan gratuito, marcar la factura como pagada inmediatamente
             if (isFreePlan) {
-              console.log('💰 DEBUG: Plan gratuito detectado, marcando factura como pagada...');
               await invoiceService.markAsPaid(invoice._id, {
                 paymentMethod: 'free_plan',
                 paymentReference: 'Plan gratuito asignado por administrador'
               });
-              console.log('✅ DEBUG: Factura marcada como pagada y plan asignado');
 
               message = 'Plan gratuito asignado con factura generada exitosamente';
               toast.success(message, { duration: 4000 });
@@ -471,7 +449,6 @@ export default function ManagePlansModal({
             return;
           } else if (isFreePlan && !isAdmin) {
             // Plan gratuito para usuario normal: asignar directamente sin generar factura
-            console.log('✅ DEBUG: Usuario normal + Plan gratuito - asignación directa sin factura');
             const purchaseRequest: PlanPurchaseRequest = {
               profileId,
               planCode,
@@ -482,7 +459,6 @@ export default function ManagePlansModal({
             message = `Plan ${processedPlans.find((p: Plan) => p.code === planCode)?.name} asignado exitosamente`;
           } else {
             // Flujo normal con facturación para usuarios normales con planes pagos
-            console.log('✅ DEBUG: Usuario normal + Plan pago - generando factura');
             const purchaseRequest: PlanPurchaseRequest = {
               profileId,
               planCode,
@@ -495,20 +471,8 @@ export default function ManagePlansModal({
           break;
 
         case 'renew':
-          // Debug: Verificar estado del plan antes de renovar
           const planToUse = profilePlanInfo || currentPlan;
-          console.log('🔍 DEBUG RENOVACIÓN - Estado inicial:', {
-            isAdmin,
-            generateInvoice,
-            profileId,
-            currentPlanData: currentPlanData?.code,
-            planToUse
-          });
-
-          // Intentando renovar plan
-
           const renewSelectedVariant = getSelectedVariant(planCode, currentPlanData);
-          console.log('🔍 DEBUG RENOVACIÓN - Variante seleccionada:', renewSelectedVariant);
 
           // Verificar si el plan es gratuito (price === 0)
           const isFreePlanRenew = renewSelectedVariant.price === 0;
@@ -521,7 +485,6 @@ export default function ManagePlansModal({
           // 4. Usuario normal + plan pago → generar factura
 
           if (isAdmin && !generateInvoice) {
-            console.log('✅ DEBUG RENOVACIÓN: Admin sin factura - renovación directa');
             // Admin con asignación directa: renovación directa sin factura
             const renewRequest: PlanRenewalRequest = {
               profileId,
@@ -530,7 +493,6 @@ export default function ManagePlansModal({
             result = await renewPlan(renewRequest);
             message = `Plan ${currentPlanData.name} renovado exitosamente (asignación directa)`;
           } else if (isAdmin && generateInvoice) {
-            console.log('✅ DEBUG RENOVACIÓN: Admin con factura - generando factura para plan', isFreePlanRenew ? 'GRATUITO' : 'PAGO');
             // Admin con checkbox marcado: SIEMPRE generar factura (incluso si es gratis)
             if (!session?.user?._id) {
               throw new Error('Usuario no autenticado');
@@ -545,18 +507,14 @@ export default function ManagePlansModal({
             };
 
             // Crear factura
-            console.log('📄 DEBUG RENOVACIÓN: Creando factura...', { isFreePlanRenew, invoiceData });
             const invoice = await invoiceService.createInvoice(invoiceData);
-            console.log('✅ DEBUG RENOVACIÓN: Factura creada:', invoice._id);
 
             // Si es plan gratuito, marcar la factura como pagada inmediatamente
             if (isFreePlanRenew) {
-              console.log('💰 DEBUG RENOVACIÓN: Plan gratuito detectado, marcando factura como pagada...');
               await invoiceService.markAsPaid(invoice._id, {
                 paymentMethod: 'free_plan',
                 paymentReference: 'Renovación de plan gratuito por administrador'
               });
-              console.log('✅ DEBUG RENOVACIÓN: Factura marcada como pagada y plan renovado');
 
               message = 'Plan gratuito renovado con factura generada exitosamente';
               toast.success(message, { duration: 4000 });
@@ -592,7 +550,6 @@ export default function ManagePlansModal({
             onClose();
             return;
           } else if (isFreePlanRenew && !isAdmin) {
-            console.log('✅ DEBUG RENOVACIÓN: Usuario normal + Plan gratuito - renovación directa sin factura');
             // Plan gratuito para usuario normal: renovar directamente sin factura
             const renewRequest: PlanRenewalRequest = {
               profileId,
@@ -601,7 +558,6 @@ export default function ManagePlansModal({
             result = await renewPlan(renewRequest);
             message = `Plan ${currentPlanData.name} renovado exitosamente`;
           } else {
-            console.log('✅ DEBUG RENOVACIÓN: Usuario normal + Plan pago - generando factura');
             // Usuario normal con plan pago: generar factura
             if (!session?.user?._id) {
               throw new Error('Usuario no autenticado');
@@ -654,15 +610,6 @@ export default function ManagePlansModal({
           const isFreePlanUpgrade = upgradeSelectedVariant?.price === 0;
           isPlanFree = isFreePlanUpgrade;
 
-          console.log('🔍 DEBUG UPGRADE:', {
-            action: 'upgrade',
-            planCode,
-            upgradeSelectedVariant,
-            isFreePlanUpgrade,
-            isAdmin,
-            generateInvoice
-          });
-
           // LÓGICA CORREGIDA para upgrade:
           // 1. Admin sin checkbox → upgrade directo
           // 2. Admin con checkbox (incluso si es gratis) → generar factura
@@ -670,7 +617,6 @@ export default function ManagePlansModal({
           // 4. Usuario normal + plan pago → generar factura
 
           if (isAdmin && !generateInvoice) {
-            console.log('✅ DEBUG UPGRADE: Admin sin factura - upgrade directo');
             // Admin con asignación directa: upgrade directo sin factura
             const upgradeRequest: PlanUpgradeRequest = {
               profileId,
@@ -680,7 +626,6 @@ export default function ManagePlansModal({
             result = await upgradePlan(upgradeRequest);
             message = `Actualización directa del plan a ${targetUpgradePlan?.name} realizada exitosamente (asignación directa)`;
           } else if (isAdmin && generateInvoice) {
-            console.log('✅ DEBUG UPGRADE: Admin con factura - generando factura para plan', isFreePlanUpgrade ? 'GRATUITO' : 'PAGO');
             // Admin con checkbox marcado: SIEMPRE generar factura (incluso si es gratis)
             if (!session?.user?._id) {
               throw new Error('Usuario no autenticado');
@@ -700,18 +645,14 @@ export default function ManagePlansModal({
             };
 
             // Crear factura
-            console.log('📄 DEBUG UPGRADE: Creando factura...', { isFreePlanUpgrade, invoiceData });
             const invoice = await invoiceService.createInvoice(invoiceData);
-            console.log('✅ DEBUG UPGRADE: Factura creada:', invoice._id);
 
             // Si es plan gratuito, marcar la factura como pagada inmediatamente
             if (isFreePlanUpgrade) {
-              console.log('💰 DEBUG UPGRADE: Plan gratuito detectado, marcando factura como pagada...');
               await invoiceService.markAsPaid(invoice._id, {
                 paymentMethod: 'free_plan',
                 paymentReference: 'Cambio a plan gratuito por administrador'
               });
-              console.log('✅ DEBUG UPGRADE: Factura marcada como pagada y plan actualizado');
 
               message = 'Plan gratuito actualizado con factura generada exitosamente';
               toast.success(message, { duration: 4000 });
@@ -747,7 +688,6 @@ export default function ManagePlansModal({
             onClose();
             return;
           } else if (isFreePlanUpgrade && !isAdmin) {
-            console.log('✅ DEBUG UPGRADE: Usuario normal + Plan gratuito - upgrade directo sin factura');
             // Plan gratuito para usuario normal: actualizar directamente sin factura
             const upgradeRequest: PlanUpgradeRequest = {
               profileId,
@@ -757,7 +697,6 @@ export default function ManagePlansModal({
             result = await upgradePlan(upgradeRequest);
             message = `Plan actualizado a ${targetUpgradePlan?.name} exitosamente`;
           } else {
-            console.log('✅ DEBUG UPGRADE: Usuario normal + Plan pago - generando factura');
             // Usuario normal con plan pago: generar factura
             if (!session?.user?._id) {
               throw new Error('Usuario no autenticado');
@@ -805,21 +744,11 @@ export default function ManagePlansModal({
 
       toast.success(message);
 
-      console.log('🔍 DEBUG FLUJO FINAL:', {
-        isAdmin,
-        generateInvoice,
-        isPlanFree,
-        action
-      });
-
       // Verificar si es admin SIN checkbox O si es usuario normal con plan gratuito
       // IMPORTANTE: Si es admin CON checkbox, ya se manejó arriba con return, así que no llega aquí
       const isDirectAssignment = (isAdmin && !generateInvoice) || (isPlanFree && !isAdmin);
 
-      console.log('✅ DEBUG: isDirectAssignment =', isDirectAssignment);
-
       if (isDirectAssignment) {
-        console.log('✅ DEBUG: Flujo de asignación directa - refrescando datos inmediatamente');
         // Para admins con asignación directa o usuarios con planes gratuitos: cambio instantáneo, refrescar datos inmediatamente
         await refreshPlanData();
 

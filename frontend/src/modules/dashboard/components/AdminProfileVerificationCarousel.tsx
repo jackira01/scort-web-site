@@ -12,6 +12,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,7 @@ const AdminProfileVerificationCarousel: React.FC<
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isActiveLocal, setIsActiveLocal] = useState<boolean>(true);
+  const queryClient = useQueryClient();
 
   // Fetch verification data using the hook
   const {
@@ -134,6 +136,10 @@ const AdminProfileVerificationCarousel: React.FC<
       if (hasChanges) {
         await handleSaveChanges();
       }
+
+      // Invalidar queries para refrescar el estado en el dashboard
+      await queryClient.invalidateQueries({ queryKey: ['adminProfiles'] });
+      await queryClient.invalidateQueries({ queryKey: ['profileDetails', profileId] });
 
       toast.success('Todos los cambios han sido guardados exitosamente');
     } catch (error) {

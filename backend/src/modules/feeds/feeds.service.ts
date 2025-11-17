@@ -159,14 +159,35 @@ export const updateLastShownAt = async (profileIds: string[]): Promise<void> => 
   if (profileIds.length === 0) return;
 
   const now = new Date();
+
+  // Importar ConfigParameterService para obtener el intervalo de rotación
+  const { ConfigParameterService } = await import('../config-parameter/config-parameter.service');
+
+  // Obtener intervalo desde config-parameters (valor en minutos)
+  const intervalMinutes = await ConfigParameterService.getValue('profile.rotation.interval.minutes') as number;
+
+  // Si no se encuentra o es inválido, usar 15 minutos por defecto
+  const minutes = (intervalMinutes && intervalMinutes > 0) ? intervalMinutes : 15;
+  const rotationIntervalMs = minutes * 60 * 1000; // Convertir a milisegundos
+
+  // Solo actualizar perfiles cuyo lastShownAt sea null o haya pasado el intervalo de rotación
+  const minTimestamp = new Date(now.getTime() - rotationIntervalMs);
+
   await ProfileModel.updateMany(
-    { _id: { $in: profileIds } },
+    {
+      _id: { $in: profileIds },
+      $or: [
+        { lastShownAt: null },
+        { lastShownAt: { $lt: minTimestamp } }
+      ]
+    },
     { $set: { lastShownAt: now } }
   ).exec();
 };
 
 /**
  * Actualiza lastShownAt en lote para optimizar rendimiento
+ * Solo actualiza perfiles cuyo lastShownAt sea null o haya pasado el intervalo de rotación
  * @param profileIds - IDs de los perfiles a actualizar
  */
 export const batchUpdateLastShownAt = async (profileIds: string[]): Promise<void> => {
@@ -175,10 +196,29 @@ export const batchUpdateLastShownAt = async (profileIds: string[]): Promise<void
   const batchSize = 100; // Procesar en lotes de 100
   const now = new Date();
 
+  // Importar ConfigParameterService para obtener el intervalo de rotación
+  const { ConfigParameterService } = await import('../config-parameter/config-parameter.service');
+
+  // Obtener intervalo desde config-parameters (valor en minutos)
+  const intervalMinutes = await ConfigParameterService.getValue('profile.rotation.interval.minutes') as number;
+
+  // Si no se encuentra o es inválido, usar 15 minutos por defecto
+  const minutes = (intervalMinutes && intervalMinutes > 0) ? intervalMinutes : 15;
+  const rotationIntervalMs = minutes * 60 * 1000; // Convertir a milisegundos
+
+  // Solo actualizar perfiles cuyo lastShownAt sea null o haya pasado el intervalo de rotación
+  const minTimestamp = new Date(now.getTime() - rotationIntervalMs);
+
   for (let i = 0; i < profileIds.length; i += batchSize) {
     const batch = profileIds.slice(i, i + batchSize);
     await ProfileModel.updateMany(
-      { _id: { $in: batch } },
+      {
+        _id: { $in: batch },
+        $or: [
+          { lastShownAt: null },
+          { lastShownAt: { $lt: minTimestamp } }
+        ]
+      },
       { $set: { lastShownAt: now } }
     ).exec();
   }

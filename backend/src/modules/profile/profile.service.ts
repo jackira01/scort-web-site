@@ -114,7 +114,7 @@ const generateWhatsAppMessage = async (
   profileId: string,
   invoiceId?: string,
   invoiceNumber?: string,
-  planCode?: string,
+  upgradeCode?: string,
   variantDays?: number,
   couponInfo?: CouponInfo
 ): Promise<WhatsAppMessage | null> => {
@@ -129,20 +129,26 @@ const generateWhatsAppMessage = async (
       return null;
     }
 
-    // Obtener información del plan si no se proporciona
+    // Obtener información del upgrade si se proporciona upgradeCode
+    let upgradeInfo = '';
+    if (upgradeCode) {
+      const upgrade = await UpgradeDefinitionModel.findOne({ code: upgradeCode });
+      if (upgrade) {
+        upgradeInfo = `\n• Upgrade: ${upgrade.name} - $${upgrade.price.toFixed(2)} (${upgrade.durationHours}h)`;
+      } else {
+        upgradeInfo = `\n• Upgrade: ${upgradeCode}`;
+      }
+    }
+
+    // Obtener información del plan si no es un upgrade
     let planInfo = '';
-    if (planCode && variantDays) {
-      // Obtener el nombre del plan desde la base de datos
-      const plan = await PlanDefinitionModel.findOne({ code: planCode });
-      const planName = plan?.name || planCode;
-      planInfo = `\n• Plan: ${planName} (${variantDays} días)`;
-    } else {
+    if (!upgradeCode && variantDays) {
       // Intentar obtener información del plan desde el perfil
       const profile = await ProfileModel.findById(profileId);
-      if (profile?.planAssignment?.planCode && profile?.planAssignment?.variantDays) {
+      if (profile?.planAssignment?.planCode) {
         const plan = await PlanDefinitionModel.findOne({ code: profile.planAssignment.planCode });
         const planName = plan?.name || profile.planAssignment.planCode;
-        planInfo = `\n• Plan: ${planName} (${profile.planAssignment.variantDays} días)`;
+        planInfo = `\n• Plan: ${planName} (${variantDays} días)`;
       }
     }
 
@@ -154,8 +160,8 @@ const generateWhatsAppMessage = async (
 
     // Generar mensaje elegante
     const message = invoiceId
-      ? `¡Hola ${companyName}! \n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n **Detalles de mi compra:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}${discountInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención.`
-      : `¡Hola ${companyName}! \n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n **Detalles:**\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. `;
+      ? `¡Hola ${companyName}! \n\nEspero que estén muy bien. Acabo de adquirir un ${upgradeCode ? 'upgrade' : 'paquete'} en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n **Detalles de mi compra:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${upgradeInfo}${planInfo}${discountInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención.`
+      : `¡Hola ${companyName}! \n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n **Detalles:**\n• ID de Perfil: ${profileId}${upgradeInfo}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. `;
 
     return {
       userId,
@@ -1958,8 +1964,8 @@ export const purchaseUpgrade = async (
     // Agregar factura al historial de pagos del perfil
     profile.paymentHistory.push(new Types.ObjectId(invoice._id as string));
 
-    // Mantener perfil inactivo hasta que se pague la factura
-    profile.isActive = false;
+    // No modificar isActive ni visible - el perfil mantiene su estado actual
+    // El upgrade no debe afectar la visibilidad o activación del perfil
 
     await profile.save();
 

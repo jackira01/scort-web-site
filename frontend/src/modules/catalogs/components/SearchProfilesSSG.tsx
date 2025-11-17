@@ -29,7 +29,7 @@ export default function SearchProfilesSSG({
   // Sincronizar con los datos que vienen de props cuando cambien
   // Esto evita hacer peticiones duplicadas
   useEffect(() => {
-    console.log('📊 SearchProfilesSSG: Actualizando datos desde props');
+
     setProfilesData(initialData);
   }, [initialData]);
 

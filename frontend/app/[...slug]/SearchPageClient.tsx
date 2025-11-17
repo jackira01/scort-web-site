@@ -59,6 +59,8 @@ export default function SearchPageClient({
       department: departamentoFromUrl,
       city: ciudadFromUrl,
     },
+    page: 1,
+    limit: 12, // CRÍTICO: Establecer límite por defecto
   };
 
   const {
@@ -110,10 +112,10 @@ export default function SearchPageClient({
   const normalizeFiltersForQuery = (): any => {
     const normalized: any = {
       isActive: true,
-      sortBy: 'createdAt',
-      sortOrder: 'desc' as const,
-      page: 1,
-      limit: 20
+      sortBy: filters.sortBy || 'createdAt',
+      sortOrder: filters.sortOrder || 'desc',
+      page: filters.page || 1,  // CORREGIDO: Usar valor de filters
+      limit: filters.limit || 12  // CORREGIDO: Usar valor de filters, default 12
     };
 
     // Categoría - solo incluir si existe y no es undefined
@@ -193,7 +195,24 @@ export default function SearchPageClient({
     return normalized;
   };
 
-  const queryFilters = normalizeFiltersForQuery();
+  // CRÍTICO: Memoizar queryFilters para que se recalcule cuando cambian page, limit, etc.
+  const queryFilters = useMemo(() => normalizeFiltersForQuery(), [
+    filters.category,
+    filters.location?.department,
+    filters.location?.city,
+    filters.features?.ageRange,
+    filters.features?.gender,
+    filters.features?.sex,
+    filters.priceRange?.min,
+    filters.priceRange?.max,
+    filters.verification?.identityVerified,
+    filters.verification?.hasVideo,
+    filters.verification?.documentVerified,
+    filters.page,  // CRÍTICO: Agregar page
+    filters.limit, // CRÍTICO: Agregar limit
+    filters.sortBy,
+    filters.sortOrder,
+  ]);
 
   // Memoizar los filtros para FeaturedProfilesSection para evitar re-renders innecesarios
   const featuredFilters = useMemo(() => ({
@@ -242,9 +261,26 @@ export default function SearchPageClient({
   );
 
   // OPTIMIZACIÓN: Solo hacer fetch del cliente si:
-  // 1. Ya hubo un fetch inicial Y (hay filtros adicionales O cambió ubicación/categoría)
+  // 1. Ya hubo un fetch inicial Y (hay filtros adicionales O cambió ubicación/categoría O cambió página)
   // En el primer montaje, usar SOLO los datos del servidor (profilesData)
-  const shouldFetchClientSide = hasInitialFetch && (hasAdditionalFilters || hasLocationOrCategoryChanged);
+  // EXCEPCIÓN: Si los filtros tienen limit diferente al servidor, hacer fetch inmediato
+  const serverHasDifferentLimit = profilesData.profiles.length > 12; // El servidor retorna más de 12
+
+  const shouldFetchClientSide = serverHasDifferentLimit || (hasInitialFetch && (
+    hasAdditionalFilters ||
+    hasLocationOrCategoryChanged ||
+    (filters.page && filters.page > 1) // CRÍTICO: Habilitar fetch cuando page > 1
+  ));
+
+  console.log('🔍 [PAGINATION DEBUG] shouldFetchClientSide calculation:', {
+    hasInitialFetch,
+    hasAdditionalFilters,
+    hasLocationOrCategoryChanged,
+    currentPage: filters.page,
+    serverHasDifferentLimit,
+    serverProfileCount: profilesData.profiles.length,
+    result: shouldFetchClientSide
+  });
 
   // Usar useQuery para manejar los datos filtrados
   const {
@@ -255,10 +291,11 @@ export default function SearchPageClient({
   } = useFilteredProfiles(
     queryFilters,
     {
-      initialData: profilesData,
-      staleTime: shouldFetchClientSide ? 0 : Infinity, // Infinity para mantener datos del servidor
+      // NO usar initialData si el servidor tiene límite incorrecto para evitar flash
+      initialData: serverHasDifferentLimit ? undefined : profilesData,
+      staleTime: 0, // Siempre validar datos para evitar cache con limit incorrecto
       enabled: shouldFetchClientSide,
-      refetchOnMount: false // NO refetch automático, usar datos del servidor
+      refetchOnMount: true // Refetch al montar para usar filtros correctos
     }
   );
 
@@ -269,13 +306,32 @@ export default function SearchPageClient({
     }
   }, [isLoadingProfiles, hasInitialFetch]);
 
-  // Refetch automático cuando cambian filtros adicionales (edad, verificación, etc.)
+  // Refetch automático cuando cambian filtros adicionales (edad, verificación, etc.) o la página
   useEffect(() => {
-    // Solo refetch si ya hubo un fetch inicial y hay filtros adicionales
-    if (hasInitialFetch && hasAdditionalFilters) {
+    console.log('🔄 [PAGINATION DEBUG] Filters changed:', {
+      page: filters.page,
+      limit: filters.limit,
+      hasInitialFetch,
+      hasAdditionalFilters,
+      shouldFetchClientSide
+    });
+
+    // Refetch si hay filtros adicionales O si cambió la página
+    if (hasInitialFetch && (hasAdditionalFilters || filters.page !== 1)) {
+      console.log('✅ [PAGINATION DEBUG] Triggering refetch...');
       refetch();
     }
-  }, [filters.features?.ageRange, filters.verification?.identityVerified, filters.verification?.hasVideo, filters.verification?.documentVerified]);
+  }, [
+    filters.page,
+    filters.limit,
+    filters.features?.ageRange,
+    filters.verification?.identityVerified,
+    filters.verification?.hasVideo,
+    filters.verification?.documentVerified,
+    hasInitialFetch,
+    hasAdditionalFilters,
+    refetch
+  ]);
 
   // Función wrapper para actualizar filtros (usada por AgeFilter y otros)
   const handleUpdateFilter = (key: string, value: any) => {
@@ -626,7 +682,11 @@ export default function SearchPageClient({
               profilesData={currentProfilesData}
               filters={normalizedFiltersForDisplay}
               onPageChange={(page) => {
-                // Implementar navegación con parámetros de página si es necesario
+                console.log('📄 [PAGINATION DEBUG] onPageChange called with page:', page);
+                console.log('📄 [PAGINATION DEBUG] Current filters.page:', filters.page);
+                // Actualizar el número de página en los filtros
+                updateFilter('page', page);
+                console.log('📄 [PAGINATION DEBUG] After updateFilter called');
               }}
             />
           </div>

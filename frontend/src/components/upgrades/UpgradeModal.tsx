@@ -82,6 +82,12 @@ export default function UpgradeModal({
       { profileId, upgradeCode, generateInvoice: shouldGenerateInvoice },
       {
         onSuccess: (data) => {
+          // Verificar si hubo un error en la respuesta
+          if (!data.success) {
+            toast.error(data.message || 'Error al procesar el upgrade');
+            return;
+          }
+
           // Si requiere pago y hay datos de WhatsApp, redirigir
           if (data.paymentRequired && data.whatsAppMessage) {
             toast.success('Factura generada. Serás redirigido a WhatsApp para completar el pago.');
