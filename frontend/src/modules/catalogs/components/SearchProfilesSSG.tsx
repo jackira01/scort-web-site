@@ -10,7 +10,7 @@ import { transformProfilesToCards } from '@/utils/profile.utils';
 
 interface SearchProfilesSSGProps {
   viewMode: 'grid' | 'list';
-  profilesData: ProfilesResponse;
+  profilesData: ProfilesResponse | null;
   filters: FilterQuery;
   onPageChange: (page: number) => void;
 }
@@ -23,7 +23,7 @@ export default function SearchProfilesSSG({
 }: SearchProfilesSSGProps) {
   // OPTIMIZACIÓN: Usar directamente los datos que vienen de props
   // El componente padre (SearchPageClient) ya maneja las peticiones con useFilteredProfiles
-  const [profilesData, setProfilesData] = useState<ProfilesResponse>(initialData);
+  const [profilesData, setProfilesData] = useState<ProfilesResponse | null>(initialData);
   const [isLoading, setIsLoading] = useState(false);
 
   // Sincronizar con los datos que vienen de props cuando cambien
@@ -40,7 +40,8 @@ export default function SearchProfilesSSG({
     setTimeout(() => setIsLoading(false), 500);
   };
 
-  if (isLoading) {
+  // Mostrar loading si no hay datos o está cargando
+  if (isLoading || !profilesData) {
     return (
       <div className="space-y-6">
         <div className={`grid gap-4 ${viewMode === 'grid'

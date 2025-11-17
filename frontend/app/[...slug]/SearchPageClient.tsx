@@ -284,7 +284,7 @@ export default function SearchPageClient({
 
   // Usar useQuery para manejar los datos filtrados
   const {
-    data: currentProfilesData = profilesData,
+    data: currentProfilesData,
     isLoading: isLoadingProfiles,
     error,
     refetch
@@ -299,12 +299,24 @@ export default function SearchPageClient({
     }
   );
 
+  // Determinar los datos a mostrar: si el servidor tiene límite diferente y aún no hay datos del cliente, mostrar loading
+  const displayData = serverHasDifferentLimit && !currentProfilesData ? null : (currentProfilesData || profilesData);
+  const isActuallyLoading = isLoadingProfiles || (serverHasDifferentLimit && !currentProfilesData);
+
+  console.log('🎯 [RENDER DEBUG] Display state:', {
+    serverHasDifferentLimit,
+    hasCurrentProfilesData: !!currentProfilesData,
+    displayDataIsNull: displayData === null,
+    isActuallyLoading,
+    displayProfileCount: displayData?.profiles?.length || 0
+  });
+
   // Marcar que ya se hizo el fetch inicial después de la primera carga
   useEffect(() => {
-    if (!isLoadingProfiles && !hasInitialFetch) {
+    if (!isActuallyLoading && !hasInitialFetch) {
       setHasInitialFetch(true);
     }
-  }, [isLoadingProfiles, hasInitialFetch]);
+  }, [isActuallyLoading, hasInitialFetch]);
 
   // Refetch automático cuando cambian filtros adicionales (edad, verificación, etc.) o la página
   useEffect(() => {
@@ -679,7 +691,7 @@ export default function SearchPageClient({
             {/* Componente de perfiles */}
             <SearchProfilesSSG
               viewMode={viewMode}
-              profilesData={currentProfilesData}
+              profilesData={displayData}
               filters={normalizedFiltersForDisplay}
               onPageChange={(page) => {
                 console.log('📄 [PAGINATION DEBUG] onPageChange called with page:', page);
