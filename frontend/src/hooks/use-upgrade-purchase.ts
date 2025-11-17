@@ -58,9 +58,19 @@ export const useUpgradeValidation = () => {
       };
     }
 
+    // Obtener el código del plan - soporta tanto la nueva estructura (planId.code) como la antigua (planCode)
+    const planCode = profile.planAssignment.planId?.code || profile.planAssignment.planCode;
+
+    // Verificar que el plan exista
+    if (!planCode) {
+      return {
+        canPurchase: false,
+        reason: 'No se pudo determinar el plan asignado'
+      };
+    }
+
     // Verificar que no sea el plan gratuito (AMATISTA u otro plan por defecto)
-    const planCode = profile.planAssignment.planCode;
-    if (planCode === 'AMATISTA' || !planCode || planCode === 'FREE') {
+    if (planCode === 'AMATISTA' || planCode === 'FREE') {
       return {
         canPurchase: false,
         reason: 'No puedes comprar upgrades con el plan gratuito. Por favor adquiere un plan de pago primero'
@@ -78,7 +88,7 @@ export const useUpgradeValidation = () => {
       let hasDestacadoActive = false;
 
       // Si es plan DIAMANTE, incluye DESTACADO automáticamente
-      if (profile.planAssignment?.planCode === 'DIAMANTE') {
+      if (planCode === 'DIAMANTE') {
         hasDestacadoActive = true;
       } else {
         // Verificar upgrades activos
@@ -100,7 +110,7 @@ export const useUpgradeValidation = () => {
     }
 
     // Verificar si es plan DIAMANTE y el upgrade es DESTACADO
-    if (upgradeCode === 'DESTACADO' && profile.planAssignment?.planCode === 'DIAMANTE') {
+    if (upgradeCode === 'DESTACADO' && planCode === 'DIAMANTE') {
       return {
         canPurchase: false,
         reason: 'El plan Diamante ya incluye "Destacado" permanente'

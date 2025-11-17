@@ -119,7 +119,7 @@ const PublicContentPage: React.FC<PublicContentPageProps> = ({
               )}
             </CardHeader>
 
-            <CardContent className="prose prose-lg max-w-none dark:prose-invert">
+            <CardContent className="prose prose-lg max-w-none dark:prose-invert text-foreground [&_*]:text-foreground">
               <ContentRenderer page={page} showTitle={false} />
             </CardContent>
           </Card>

@@ -17,7 +17,7 @@ const processHtmlToJsx = (html: string): JSX.Element => {
     .replace(/<i>(.*?)<\/i>/g, '<em>$1</em>')
     .replace(/<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>/g, '<a href="$1" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">$2</a>');
 
-  return <span dangerouslySetInnerHTML={{ __html: processedHtml }} />;
+  return <span className="text-foreground [&_*]:text-foreground" dangerouslySetInnerHTML={{ __html: processedHtml }} />;
 };
 
 type BlogRendererProps = {
@@ -170,7 +170,7 @@ const BlogRenderer: React.FC<BlogRendererProps> = ({ content, className = "" }) 
 
   try {
     return (
-      <div className={`prose prose-lg max-w-none ${className}`}>
+      <div className={`prose prose-lg max-w-none text-foreground [&_*]:text-foreground ${className}`}>
         <div className="space-y-1">
           <Renderer
             data={content}

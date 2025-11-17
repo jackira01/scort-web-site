@@ -55,20 +55,20 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
     const currentAdditional = getValues('additionalServices') || [];
 
     if (type === 'basic') {
+      // Si ya está en básicos, no hacer nada (no permitir desclickear)
+      if (currentBasic.includes(serviceValue)) {
+        return;
+      }
       // Agregar a básicos y remover de adicionales
-      const updatedBasic = currentBasic.includes(serviceValue)
-        ? currentBasic.filter((s: string) => s !== serviceValue)
-        : [...currentBasic.filter((s: string) => s !== serviceValue), serviceValue];
-
-      setValue('basicServices', updatedBasic);
+      setValue('basicServices', [...currentBasic, serviceValue]);
       setValue('additionalServices', currentAdditional.filter((s: string) => s !== serviceValue));
     } else {
+      // Si ya está en adicionales, no hacer nada (no permitir desclickear)
+      if (currentAdditional.includes(serviceValue)) {
+        return;
+      }
       // Agregar a adicionales y remover de básicos
-      const updatedAdditional = currentAdditional.includes(serviceValue)
-        ? currentAdditional.filter((s: string) => s !== serviceValue)
-        : [...currentAdditional.filter((s: string) => s !== serviceValue), serviceValue];
-
-      setValue('additionalServices', updatedAdditional);
+      setValue('additionalServices', [...currentAdditional, serviceValue]);
       setValue('basicServices', currentBasic.filter((s: string) => s !== serviceValue));
     }
   };

@@ -62,9 +62,13 @@ export const getFilteredProfiles = async (
     query.planAssignment = { $exists: true, $ne: null };
     query['planAssignment.expiresAt'] = { $gt: now };
 
-    // Solo agregar filtro isActive si está definido (para activación/desactivación)
+    // Por defecto, solo mostrar perfiles activos (isActive: true)
+    // El frontend puede sobrescribir esto enviando isActive: false explícitamente
     if (isActive !== undefined) {
       query.isActive = isActive;
+    } else {
+      // Si no se especifica, filtrar solo perfiles activos por defecto
+      query.isActive = true;
     }
 
     // ✨ CASO ESPECIAL: Categoría "perfiles" = todos los perfiles activos y visibles
@@ -493,6 +497,14 @@ export const getFilteredProfiles = async (
       }
     });
 
+    // CRÍTICO: Filtrar solo perfiles con planes que permitan aparecer en filtros
+    // Esto asegura que solo perfiles con features.showInFilters = true se muestren
+    aggregationPipeline.push({
+      $match: {
+        'planAssignment.planId.features.showInFilters': true
+      }
+    });
+
     // Agregar lookup para features si es necesario
     if (fields && fields.includes('features')) {
       aggregationPipeline.push({
@@ -586,7 +598,6 @@ export const getFilteredProfiles = async (
       }
 
       // Calcular hasDestacadoUpgrade
-      const now = new Date();
       let hasDestacadoUpgrade = false;
 
       // Verificar si tiene plan DIAMANTE
@@ -596,6 +607,8 @@ export const getFilteredProfiles = async (
         // Verificar si tiene upgrade DESTACADO/HIGHLIGHT activo
         hasDestacadoUpgrade = profile.upgrades.some((upgrade: any) =>
           ['DESTACADO', 'HIGHLIGHT'].includes(upgrade.code) &&
+          upgrade.startAt &&
+          upgrade.endAt &&
           new Date(upgrade.startAt) <= now &&
           new Date(upgrade.endAt) > now
         );

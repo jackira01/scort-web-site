@@ -43,6 +43,15 @@ router.get('/user/:userId/profiles-summary', controller.getUserProfilesSummaryCo
 router.get('/user/:userId/debug-profiles', debugController.debugUserProfilesController);
 
 /* ===========================
+   📌 Validaciones de creación de perfiles (nuevas validaciones separadas)
+=========================== */
+// VALIDACIÓN A: Máximo total de perfiles (antes de entrar al wizard)
+router.get('/validate-max', authMiddleware, controller.validateMaxProfilesController);
+
+// VALIDACIÓN B: Validación de selección de plan (paso 4 del wizard)
+router.post('/validate-plan-selection', authMiddleware, controller.validatePlanSelectionController);
+
+/* ===========================
    📌 Rutas de eliminación y restauración
 =========================== */
 // Para usuarios normales: ocultar/mostrar perfiles y eliminación lógica

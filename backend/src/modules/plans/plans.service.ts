@@ -65,7 +65,7 @@ export interface QueryOptions {
     limit?: number;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
-    activeOnly?: boolean;
+    isActive?: boolean;
     search?: string;
 }
 
@@ -201,15 +201,15 @@ export class PlansService {
             limit = 10,
             sortBy = 'level',
             sortOrder = 'asc',
-            activeOnly = true,
+            isActive,
             search
         } = options;
 
         const query: any = {};
 
-        // Filtro por estado activo solo si activeOnly es true
-        if (activeOnly) {
-            query.active = true;
+        // Filtro por estado activo: si isActive está definido, filtrar; si no, mostrar todos
+        if (isActive !== undefined) {
+            query.active = isActive;
         }
 
         // Filtro de búsqueda
@@ -320,10 +320,16 @@ export class PlansService {
             limit = 10,
             sortBy = 'code',
             sortOrder = 'asc',
-            activeOnly = true
+            isActive
         } = options;
 
-        const query = activeOnly ? { active: true } : {};
+        const query: any = {};
+
+        // Filtro por estado activo: si isActive está definido, filtrar; si no, mostrar todos
+        if (isActive !== undefined) {
+            query.active = isActive;
+        }
+
         const sort: any = {};
         sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 

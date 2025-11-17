@@ -42,12 +42,15 @@ export function AdminSidebar({
                 variant="outline"
                 size="icon"
                 className={cn(
-                    "fixed top-20 right-2 z-50 bg-white dark:bg-slate-800 border-2 shadow-lg transition-all duration-300 hover:scale-105",
-                    isOpen ? "opacity-0 pointer-events-none scale-95" : "opacity-100 pointer-events-auto scale-100 border-gray-200 dark:border-slate-600"
+                    "fixed top-1/2 -translate-y-1/2 left-2 z-50 bg-white dark:bg-slate-800 border-2 shadow-lg transition-all duration-300 hover:scale-105 rounded-full",
+                    isOpen
+                        ? "opacity-0 pointer-events-none scale-95"
+                        : "opacity-100 pointer-events-auto scale-100 border-gray-200 dark:border-slate-600"
                 )}
             >
-                <Menu className="h-5 w-5" />
+                <ChevronRight className="h-5 w-5" />
             </Button>
+
 
             {/* Sidebar superpuesto - posicionado debajo del header */}
             <div

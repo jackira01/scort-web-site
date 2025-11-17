@@ -69,7 +69,18 @@ export const step3Schema = z.object({
           });
         }
       }),
-  }),
+  }).refine(
+    (data) => {
+      // Al menos uno de los tres campos debe estar presente y no vacío
+      const hasNumber = data.number && data.number.trim().length > 0;
+      const hasWhatsapp = data.whatsapp && data.whatsapp.trim().length > 0;
+      const hasTelegram = data.telegram && data.telegram.trim().length > 0;
+      return hasNumber || hasWhatsapp || hasTelegram;
+    },
+    {
+      message: 'Debes proporcionar al menos un método de contacto (número, WhatsApp o Telegram)',
+    }
+  ),
 
   age: z
     .string({

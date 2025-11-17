@@ -409,19 +409,9 @@ export class CouponService {
    * Aplicar cupón y calcular descuento
    */
   async applyCoupon(code: string, originalPrice: number, planCode?: string, variantDays?: number, upgradeId?: string): Promise<CouponApplicationResult> {
-    console.log('🎫 [COUPON SERVICE] Iniciando aplicación de cupón:', {
-      code,
-      originalPrice,
-      planCode,
-      variantDays,
-      upgradeId,
-      timestamp: new Date().toISOString()
-    });
-
     try {
       // 🚫 REGLA DE NEGOCIO: No se pueden aplicar cupones a planes gratuitos
       if (originalPrice <= 0) {
-        console.log('❌ [COUPON SERVICE] No se puede aplicar cupón a plan gratuito');
         return {
           success: false,
           originalPrice,
@@ -433,14 +423,7 @@ export class CouponService {
 
       const validation = await this.validateCoupon(code, planCode);
 
-      console.log('🔍 [COUPON SERVICE] Resultado de validación:', {
-        isValid: validation.isValid,
-        error: validation.error,
-        couponFound: !!validation.coupon
-      });
-
       if (!validation.isValid || !validation.coupon) {
-        console.log('❌ [COUPON SERVICE] Cupón no válido');
         return {
           success: false,
           originalPrice,
@@ -454,18 +437,6 @@ export class CouponService {
 
       // 🎯 NUEVA VALIDACIÓN: Verificar si el cupón es válido para el plan/variante/upgrade específico
       if (!isCouponValidForPlan(coupon, planCode, variantDays, upgradeId)) {
-        console.log('❌ [COUPON SERVICE] Cupón no válido para este plan/variante/upgrade:', {
-          couponCode: coupon.code,
-          couponType: coupon.type,
-          planCode,
-          variantDays,
-          upgradeId,
-          validPlanCodes: coupon.validPlanCodes,
-          validVariantDays: coupon.validVariantDays,
-          validPlanIds: coupon.validPlanIds,
-          validUpgradeIds: coupon.validUpgradeIds
-        });
-
         return {
           success: false,
           originalPrice,
@@ -479,22 +450,10 @@ export class CouponService {
       let discount = 0;
       let assignedPlanCode: string | undefined;
 
-      console.log('💰 [COUPON SERVICE] Iniciando cálculo de descuento:', {
-        couponType: coupon.type,
-        couponValue: coupon.value,
-        originalPrice,
-        planCode: coupon.planCode
-      });
-
       switch (coupon.type) {
         case 'percentage':
           discount = (originalPrice * coupon.value) / 100;
           finalPrice = originalPrice - discount;
-          console.log('📊 [COUPON SERVICE] Cálculo porcentual:', {
-            percentage: coupon.value,
-            calculatedDiscount: discount,
-            finalPrice
-          });
 
           // Si se especifica un planCode, usar la variante seleccionada o la más económica
           if (planCode) {
@@ -506,10 +465,6 @@ export class CouponService {
                 // Usar la variante específica seleccionada por el usuario
                 selectedVariant = plan.variants.find(v => v.days === variantDays);
                 if (!selectedVariant) {
-                  console.log('⚠️ [COUPON SERVICE] Variante especificada no encontrada, usando la más económica:', {
-                    requestedVariantDays: variantDays,
-                    availableVariants: plan.variants.map(v => ({ days: v.days, price: v.price }))
-                  });
                   selectedVariant = plan.variants.reduce((min, variant) =>
                     variant.price < min.price ? variant : min
                   );
@@ -522,12 +477,6 @@ export class CouponService {
               }
 
               assignedPlanCode = planCode;
-              console.log('💰 [COUPON SERVICE] Aplicando variante para cupón porcentual:', {
-                planCode,
-                selectedVariantDays: selectedVariant.days,
-                selectedVariantPrice: selectedVariant.price,
-                wasUserSelected: !!variantDays
-              });
             }
           }
           break;
@@ -535,11 +484,6 @@ export class CouponService {
         case 'fixed_amount':
           discount = coupon.value;
           finalPrice = originalPrice - discount;
-          console.log('💵 [COUPON SERVICE] Cálculo monto fijo:', {
-            fixedAmount: coupon.value,
-            discount,
-            finalPrice
-          });
 
           // Si se especifica un planCode, usar la variante seleccionada o la más económica
           if (planCode) {
@@ -551,10 +495,6 @@ export class CouponService {
                 // Usar la variante específica seleccionada por el usuario
                 selectedVariant = plan.variants.find(v => v.days === variantDays);
                 if (!selectedVariant) {
-                  console.log('⚠️ [COUPON SERVICE] Variante especificada no encontrada, usando la más económica:', {
-                    requestedVariantDays: variantDays,
-                    availableVariants: plan.variants.map(v => ({ days: v.days, price: v.price }))
-                  });
                   selectedVariant = plan.variants.reduce((min, variant) =>
                     variant.price < min.price ? variant : min
                   );
@@ -567,60 +507,27 @@ export class CouponService {
               }
 
               assignedPlanCode = planCode;
-              console.log('💰 [COUPON SERVICE] Aplicando variante para cupón de monto fijo:', {
-                planCode,
-                selectedVariantDays: selectedVariant.days,
-                selectedVariantPrice: selectedVariant.price,
-                wasUserSelected: !!variantDays
-              });
             }
           }
           break;
 
         case 'plan_assignment':
-          console.log('📋 [COUPON SERVICE] Procesando asignación de plan:', {
-            assignedPlanCode: coupon.planCode,
-            variantDays: coupon.variantDays
-          });
           // Para asignación de plan, el descuento es del 100% (gratis)
           if (coupon.planCode) {
             const assignedPlan = await PlanDefinitionModel.findByCode(coupon.planCode);
-            console.log('🔍 [COUPON SERVICE] Plan asignado encontrado:', {
-              planFound: !!assignedPlan,
-              planCode: coupon.planCode,
-              variants: assignedPlan?.variants?.length || 0,
-              variantDays: coupon.variantDays
-            });
             if (assignedPlan && assignedPlan.variants.length > 0) {
               // Para cupones de asignación de plan, el precio final es 0 (gratis)
               finalPrice = 0;
               discount = originalPrice; // El descuento es el precio completo
               assignedPlanCode = coupon.planCode;
-              console.log('💰 [COUPON SERVICE] Precio de plan asignado (100% descuento):', {
-                originalPrice,
-                finalPrice: 0,
-                discount: originalPrice,
-                assignedPlanCode,
-                variantDays: coupon.variantDays
-              });
             }
           }
           break;
       }
 
       // 🛡️ REGLA DE NEGOCIO: Asegurar que el precio final no sea negativo
-      const originalFinalPrice = finalPrice;
       finalPrice = Math.max(0, finalPrice);
       discount = originalPrice - finalPrice;
-
-      if (originalFinalPrice !== finalPrice) {
-        console.log('⚠️ [COUPON SERVICE] Precio final ajustado (era negativo):', {
-          calculatedFinalPrice: originalFinalPrice,
-          adjustedFinalPrice: finalPrice,
-          adjustedDiscount: discount,
-          message: 'El descuento no puede exceder el valor del plan'
-        });
-      }
 
       const result = {
         success: true,
@@ -632,22 +539,8 @@ export class CouponService {
           (assignedPlanCode && planCode ? (variantDays || await this.getCheapestVariantDays(assignedPlanCode)) : undefined)
       };
 
-      console.log('✅ [COUPON SERVICE] Aplicación de cupón exitosa:', {
-        result,
-        savings: originalPrice - finalPrice,
-        discountPercentage: originalPrice > 0 ? ((discount / originalPrice) * 100).toFixed(2) + '%' : '0%'
-      });
-
       return result;
     } catch (error) {
-      console.log('💥 [COUPON SERVICE] Error en aplicación de cupón:', {
-        error: error instanceof Error ? error.message : String(error),
-        code,
-        originalPrice,
-        planCode,
-        stack: error instanceof Error ? error.stack : undefined
-      });
-
       logger.error('Error al aplicar cupón:', error);
       return {
         success: false,

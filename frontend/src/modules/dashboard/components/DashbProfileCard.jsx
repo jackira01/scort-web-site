@@ -93,16 +93,26 @@ export const DashbProfileCard = ({
           <h3 className="font-semibold text-lg text-foreground group-hover:text-purple-600 transition-colors duration-300">
             {profile.profileName || profile.name || 'Sin nombre'}
           </h3>
-          <Badge
-            variant={profile.isActive ? 'default' : 'secondary'}
-            className={`mt-1 ${
-              profile.isActive
-                ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
-                : ''
-            }`}
-          >
-            {profile.isActive ? 'Activo' : 'Inactivo'}
-          </Badge>
+          <div className="flex flex-wrap gap-1 mt-1">
+            <Badge
+              variant={profile.isActive ? 'default' : 'secondary'}
+              className={`${
+                profile.isActive
+                  ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
+                  : ''
+              }`}
+            >
+              {profile.isActive ? 'Activo' : 'Inactivo'}
+            </Badge>
+            {profile.isDeleted && (
+              <Badge
+                variant="destructive"
+                className="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100"
+              >
+                Eliminado
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Ícono de verificación */}
@@ -314,7 +324,7 @@ export const DashbProfileCard = ({
           setUpgradeModalOpen(false);
           setSelectedUpgradeCode(null);
         }}
-        profileId={profile.id}
+        profileId={profile._id}
         profile={profile}
         upgradeCode={selectedUpgradeCode}
       />

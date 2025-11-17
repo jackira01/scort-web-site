@@ -16,8 +16,10 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,7 @@ import UploadStoryModal from './UploadStoryModal';
 import DeleteProfileModal from './DeleteProfileModal';
 import ManagePlansModal from '@/components/plans/ManagePlansModal';
 import { deleteProfile, updateProfile, getProfileById } from '@/services/user.service';
+import { validateMaxProfiles } from '@/services/profile-validation.service';
 import { useUpgradePurchase, useUpgradeValidation } from '@/hooks/use-upgrade-purchase';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { hasDestacadoUpgrade } from '@/utils/profile.utils';
@@ -106,6 +109,9 @@ export default function AccountProfiles({
   const [currentPage, setCurrentPage] = useState(1);
   const profilesPerPage = 6;
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const [isValidating, setIsValidating] = useState(false);
+  const { data: session } = useSession();
 
   // Calcular perfiles paginados
   const paginatedProfiles = useMemo(() => {
@@ -226,18 +232,63 @@ export default function AccountProfiles({
     setSelectedProfileForDelete(null);
   };
 
+  /**
+   * VALIDACIÓN A: Verificar límite total antes de redirigir al wizard
+   */
+  const handleCreateProfile = async (e: React.MouseEvent) => {
+    console.log('🔴 [CUENTA] Botón "Nuevo Perfil" clickeado');
+    e.preventDefault();
+
+    // Obtener userId de la sesión
+    const userId = (session?.user as any)?._id || (session?.user as any)?.id;
+
+    if (!userId) {
+      console.error('❌ [CUENTA] No hay sesión activa');
+      toast.error('Debes iniciar sesión para crear un perfil');
+      return;
+    }
+
+    console.log('🔴 [CUENTA] Iniciando validación con userId:', userId);
+    setIsValidating(true);
+
+    try {
+      console.log('🔴 [CUENTA] Llamando a validateMaxProfiles()...');
+      const validation = await validateMaxProfiles(userId);
+      console.log('🔴 [CUENTA] Resultado de validación:', validation);
+
+      if (!validation.ok) {
+        console.warn('⚠️ [CUENTA] Validación falló:', validation.message);
+        toast.error(validation.message || 'Has alcanzado el límite de perfiles');
+        return;
+      }
+
+      console.log('✅ [CUENTA] Validación exitosa, redirigiendo a wizard...');
+      // Validación pasó, redirigir al wizard
+      router.push('/cuenta/crear-perfil');
+
+    } catch (error) {
+      console.error('❌ [CUENTA] Error al validar perfiles:', error);
+      toast.error('Error al validar. Intenta nuevamente.');
+    } finally {
+      console.log('🔴 [CUENTA] Finalizando validación, isValidating = false');
+      setIsValidating(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
           Mis Perfiles
         </h1>
-        <Link href="/cuenta/crear-perfil">
-          <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Perfil
-          </Button>
-        </Link>
+        <Button
+          onClick={handleCreateProfile}
+          disabled={isValidating}
+          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          {isValidating ? 'Validando...' : 'Nuevo Perfil'}
+        </Button>
       </div>
       {profiles.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 px-4 text-center animate-in fade-in-50 slide-in-from-bottom-4 duration-500">
@@ -251,12 +302,14 @@ export default function AccountProfiles({
             Crea tu primer perfil para comenzar a conectar con personas
             increíbles
           </p>
-          <Link href="/cuenta/crear-perfil">
-            <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25">
-              <Plus className="h-4 w-4 mr-2" />
-              Crear mi primer perfil
-            </Button>
-          </Link>
+          <Button
+            onClick={handleCreateProfile}
+            disabled={isValidating}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {isValidating ? 'Validando...' : 'Crear mi primer perfil'}
+          </Button>
         </div>
       ) : (
         <>

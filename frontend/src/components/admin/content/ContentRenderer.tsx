@@ -24,7 +24,7 @@ const ContentRenderer = ({
       case ContentBlockType.PARAGRAPH:
         return (
           <div
-            className="prose prose-sm max-w-none text-foreground"
+            className="prose prose-sm max-w-none text-foreground [&_*]:text-foreground"
             dangerouslySetInnerHTML={{
               __html: typeof block.value === 'string' ? block.value : ''
             }}

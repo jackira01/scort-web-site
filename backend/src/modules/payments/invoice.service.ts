@@ -375,17 +375,33 @@ class InvoiceService {
       invoice.paymentMethod = paymentMethod;
     }
 
+    // Guardar la factura actualizada
+    const updatedInvoice = await invoice.save();
+
+    // Procesar el planAssignment del perfil después de marcar como pagada
+    try {
+      console.log('💳 Factura marcada como pagada, procesando planAssignment del perfil...');
+      const PaymentProcessorService = await import('./payment-processor.service');
+      await PaymentProcessorService.PaymentProcessorService.processInvoicePayment(invoiceId);
+      console.log('✅ PlanAssignment procesado exitosamente');
+    } catch (error) {
+      console.error('❌ Error procesando planAssignment:', error);
+      // No lanzar error para no afectar el proceso de pago
+      // El administrador puede intentar nuevamente o procesar manualmente
+    }
+
     // Si la factura tiene un cupón aplicado, incrementar su uso
-    if (invoice.coupon && invoice.coupon.code) {
+    if (updatedInvoice.coupon && updatedInvoice.coupon.code) {
       try {
-        await couponService.incrementCouponUsage(invoice.coupon.code);
+        await couponService.incrementCouponUsage(updatedInvoice.coupon.code);
+        console.log(`✅ Uso del cupón ${updatedInvoice.coupon.code} incrementado`);
       } catch (error) {
         // Log el error pero no fallar el pago
-        console.error(`Error al incrementar uso del cupón ${invoice.coupon.code}:`, error);
+        console.error(`❌ Error al incrementar uso del cupón ${updatedInvoice.coupon.code}:`, error);
       }
     }
 
-    return await invoice.save();
+    return updatedInvoice;
   }
 
   /**

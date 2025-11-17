@@ -93,7 +93,7 @@ export function TextManager() {
                 await deleteMutation.mutateAsync(text._id);
                 refetch();
             } catch (error) {
-          
+
             }
         }
     };
@@ -130,7 +130,7 @@ export function TextManager() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!validateForm()) {
             return;
         }
@@ -180,7 +180,7 @@ export function TextManager() {
             setEditingText(null);
             refetch();
         } catch (error) {
-      
+
         }
     };
 
@@ -200,7 +200,7 @@ export function TextManager() {
                 [language]: content
             }
         }));
-        
+
         // Limpiar error específico del idioma
         if (errors[`content_${language}`]) {
             setErrors(prev => {
@@ -289,9 +289,8 @@ export function TextManager() {
                                 type="text"
                                 value={formData.key}
                                 onChange={(e) => setFormData(prev => ({ ...prev, key: e.target.value }))}
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    errors.key ? 'border-red-300' : 'border-gray-300'
-                                }`}
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.key ? 'border-red-300' : 'border-gray-300'
+                                    }`}
                                 placeholder="ej: ui.welcome_message"
                                 disabled={!!editingText}
                             />
@@ -306,9 +305,8 @@ export function TextManager() {
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    errors.name ? 'border-red-300' : 'border-gray-300'
-                                }`}
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.name ? 'border-red-300' : 'border-gray-300'
+                                    }`}
                                 placeholder="Mensaje de bienvenida"
                             />
                             {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
@@ -372,9 +370,9 @@ export function TextManager() {
                             <input
                                 type="number"
                                 value={formData.maxLength || ''}
-                                onChange={(e) => setFormData(prev => ({ 
-                                    ...prev, 
-                                    maxLength: e.target.value ? parseInt(e.target.value) : undefined 
+                                onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    maxLength: e.target.value ? parseInt(e.target.value) : undefined
                                 }))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 placeholder="Sin límite"
@@ -413,21 +411,20 @@ export function TextManager() {
                                 <Globe className="w-5 h-5 mr-2" />
                                 Contenido Multiidioma
                             </h3>
-                            
+
                             <div className="flex items-center space-x-2">
                                 <button
                                     type="button"
                                     onClick={() => setPreviewMode(!previewMode)}
-                                    className={`flex items-center space-x-2 px-3 py-1 rounded-lg text-sm transition-colors ${
-                                        previewMode
+                                    className={`flex items-center space-x-2 px-3 py-1 rounded-lg text-sm transition-colors ${previewMode
                                             ? 'bg-blue-100 text-blue-700'
                                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                    }`}
+                                        }`}
                                 >
                                     {previewMode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                     <span>{previewMode ? 'Editar' : 'Vista previa'}</span>
                                 </button>
-                                
+
                                 <select
                                     value=""
                                     onChange={(e) => e.target.value && addLanguage(e.target.value)}
@@ -449,17 +446,16 @@ export function TextManager() {
                                 const language = LANGUAGES.find(l => l.code === langCode);
                                 const isDefault = langCode === formData.defaultLanguage;
                                 const hasContent = formData.content[langCode]?.trim();
-                                
+
                                 return (
                                     <button
                                         key={langCode}
                                         type="button"
                                         onClick={() => setActiveLanguage(langCode)}
-                                        className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                            activeLanguage === langCode
+                                        className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeLanguage === langCode
                                                 ? 'bg-blue-100 text-blue-700 border border-blue-200'
                                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                        }`}
+                                            }`}
                                     >
                                         <span>{language?.flag || '🌐'}</span>
                                         <span>{language?.name || langCode}</span>
@@ -492,11 +488,11 @@ export function TextManager() {
                         <div className="space-y-4">
                             {Object.keys(formData.content).map(langCode => {
                                 if (langCode !== activeLanguage) return null;
-                                
+
                                 const language = LANGUAGES.find(l => l.code === langCode);
                                 const content = formData.content[langCode] || '';
                                 const hasError = errors[`content_${langCode}`] || (langCode === formData.defaultLanguage && errors.defaultContent);
-                                
+
                                 return (
                                     <div key={langCode}>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -508,11 +504,10 @@ export function TextManager() {
                                                 </span>
                                             )}
                                         </label>
-                                        
+
                                         {previewMode ? (
-                                            <div className={`w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 min-h-[100px] ${
-                                                formData.isRichText ? 'prose' : 'whitespace-pre-wrap'
-                                            }`}>
+                                            <div className={`w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 min-h-[100px] ${formData.isRichText ? 'prose text-foreground [&_*]:text-foreground' : 'whitespace-pre-wrap'
+                                                }`}>
                                                 {formData.isRichText ? (
                                                     <div dangerouslySetInnerHTML={{ __html: content }} />
                                                 ) : (
@@ -524,14 +519,13 @@ export function TextManager() {
                                                 value={content}
                                                 onChange={(e) => handleContentChange(langCode, e.target.value)}
                                                 rows={formData.isRichText ? 8 : 4}
-                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                                    hasError ? 'border-red-300' : 'border-gray-300'
-                                                }`}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${hasError ? 'border-red-300' : 'border-gray-300'
+                                                    }`}
                                                 placeholder={`Contenido en ${language?.name || langCode}...`}
                                                 maxLength={formData.maxLength}
                                             />
                                         )}
-                                        
+
                                         {hasError && (
                                             <p className="mt-1 text-sm text-red-600">
                                                 {errors[`content_${langCode}`] || errors.defaultContent}
@@ -609,7 +603,7 @@ export function TextManager() {
                             const content = textValue.content as Record<string, string>;
                             const defaultContent = content[textValue.defaultLanguage] || '';
                             const availableLanguages = Object.keys(content).filter(lang => content[lang]);
-                            
+
                             return (
                                 <div key={text._id} className="p-6 hover:bg-gray-50">
                                     <div className="flex items-start justify-between">
@@ -624,31 +618,29 @@ export function TextManager() {
                                                         {text.key}
                                                     </code>
                                                 </div>
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                    TEXT_CATEGORIES.find(c => c.value === textValue.category)?.value === textValue.category
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${TEXT_CATEGORIES.find(c => c.value === textValue.category)?.value === textValue.category
                                                         ? 'bg-purple-100 text-purple-800'
                                                         : 'bg-gray-100 text-gray-800'
-                                                }`}>
+                                                    }`}>
                                                     {TEXT_CATEGORIES.find(c => c.value === textValue.category)?.label || String(textValue.category)}
                                                 </span>
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                    text.isActive
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${text.isActive
                                                         ? 'bg-green-100 text-green-800'
                                                         : 'bg-red-100 text-red-800'
-                                                }`}>
+                                                    }`}>
                                                     {text.isActive ? 'Activo' : 'Inactivo'}
                                                 </span>
                                             </div>
-                                            
+
                                             <div className="text-sm text-gray-600 mb-2">
                                                 <p className="line-clamp-2">
-                                                    {defaultContent.length > 100 
-                                                        ? defaultContent.substring(0, 100) + '...' 
+                                                    {defaultContent.length > 100
+                                                        ? defaultContent.substring(0, 100) + '...'
                                                         : defaultContent || 'Sin contenido'
                                                     }
                                                 </p>
                                             </div>
-                                            
+
                                             <div className="flex items-center space-x-4 text-xs text-gray-500">
                                                 <span>Idiomas: {availableLanguages.map(lang => {
                                                     const language = LANGUAGES.find(l => l.code === lang);
@@ -662,7 +654,7 @@ export function TextManager() {
                                                 )}
                                             </div>
                                         </div>
-                                        
+
                                         <div className="flex items-center space-x-2">
                                             <button
                                                 onClick={() => handleEdit(text)}

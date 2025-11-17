@@ -5,6 +5,7 @@ import UserModel from '../user/User.model';
 import { ProfileModel } from './profile.model';
 import type { CreateProfileDTO, IProfile } from './profile.types';
 import type { IInvoice } from '../payments/invoice.model';
+import InvoiceModel from '../payments/invoice.model';
 import { PlanDefinitionModel } from '../plans/plan.model';
 import { UpgradeDefinitionModel } from '../plans/upgrade.model';
 import { ConfigParameterService } from '../config-parameter/config-parameter.service';
@@ -113,7 +114,7 @@ const generateWhatsAppMessage = async (
   profileId: string,
   invoiceId?: string,
   invoiceNumber?: string,
-  planCode?: string,
+  upgradeCode?: string,
   variantDays?: number,
   couponInfo?: CouponInfo
 ): Promise<WhatsAppMessage | null> => {
@@ -128,15 +129,26 @@ const generateWhatsAppMessage = async (
       return null;
     }
 
-    // Obtener información del plan si no se proporciona
+    // Obtener información del upgrade si se proporciona upgradeCode
+    let upgradeInfo = '';
+    if (upgradeCode) {
+      const upgrade = await UpgradeDefinitionModel.findOne({ code: upgradeCode });
+      if (upgrade) {
+        upgradeInfo = `\n• Upgrade: ${upgrade.name} - $${upgrade.price.toFixed(2)} (${upgrade.durationHours}h)`;
+      } else {
+        upgradeInfo = `\n• Upgrade: ${upgradeCode}`;
+      }
+    }
+
+    // Obtener información del plan si no es un upgrade
     let planInfo = '';
-    if (planCode && variantDays) {
-      planInfo = `\n• Plan: ${planCode} (${variantDays} días)`;
-    } else {
+    if (!upgradeCode && variantDays) {
       // Intentar obtener información del plan desde el perfil
       const profile = await ProfileModel.findById(profileId);
-      if (profile?.planAssignment?.planCode && profile?.planAssignment?.variantDays) {
-        planInfo = `\n• Plan: ${profile.planAssignment.planCode} (${profile.planAssignment.variantDays} días)`;
+      if (profile?.planAssignment?.planCode) {
+        const plan = await PlanDefinitionModel.findOne({ code: profile.planAssignment.planCode });
+        const planName = plan?.name || profile.planAssignment.planCode;
+        planInfo = `\n• Plan: ${planName} (${variantDays} días)`;
       }
     }
 
@@ -148,8 +160,8 @@ const generateWhatsAppMessage = async (
 
     // Generar mensaje elegante
     const message = invoiceId
-      ? `¡Hola ${companyName}! \n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n **Detalles de mi compra:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${planInfo}${discountInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención.`
-      : `¡Hola ${companyName}! \n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n **Detalles:**\n• ID de Perfil: ${profileId}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. `;
+      ? `¡Hola ${companyName}! \n\nEspero que estén muy bien. Acabo de adquirir un ${upgradeCode ? 'upgrade' : 'paquete'} en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago.\n\n **Detalles de mi compra:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• ID de Perfil: ${profileId}${upgradeInfo}${planInfo}${discountInfo}\n\n¿Podrían orientarme sobre los métodos de pago disponibles y los pasos a seguir?\n\nMuchas gracias por su atención.`
+      : `¡Hola ${companyName}! \n\nEspero que estén muy bien. He creado un nuevo perfil en su plataforma y me gustaría obtener más información sobre sus servicios.\n\n **Detalles:**\n• ID de Perfil: ${profileId}${upgradeInfo}${planInfo}\n\n¿Podrían brindarme más información sobre las opciones disponibles?\n\nMuchas gracias por su atención. `;
 
     return {
       userId,
@@ -179,15 +191,17 @@ export const checkProfileNameExists = async (name: string): Promise<{ user: any;
   };
 };
 
-export const createProfile = async (data: CreateProfileDTO): Promise<IProfile> => {
+export const createProfile = async (data: CreateProfileDTO, skipLimitsValidation = false): Promise<IProfile> => {
   // Profile creation debug removed
 
   await validateProfileFeatures(data.features);
 
-  // Validar límites de perfiles por usuario antes de crear
-  const profileLimitsValidation = await validateUserProfileLimits(data.user.toString());
-  if (!profileLimitsValidation.canCreate) {
-    throw new Error(profileLimitsValidation.reason || 'No se puede crear el perfil debido a límites de usuario');
+  // Validar límites de perfiles por usuario antes de crear (si no se omite la validación)
+  if (!skipLimitsValidation) {
+    const profileLimitsValidation = await validateUserProfileLimits(data.user.toString());
+    if (!profileLimitsValidation.canCreate) {
+      throw new Error(profileLimitsValidation.reason || 'No se puede crear el perfil debido a límites de usuario');
+    }
   }
 
   // profile name can exist
@@ -461,17 +475,22 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
 }> => {
   const { planId, planCode, planDays, generateInvoice = false, couponCode, ...profileData } = data;
 
-  // Crear el perfil primero (con plan por defecto configurado)
-
-  const profile = await createProfile(profileData);
-
-  // Validar límites de perfiles gratuitos para determinar visibilidad
-  const limitsValidation = await validateUserProfileLimits(profileData.user.toString(), planCode);
-  let shouldBeVisible = true;
-
-  // Obtener configuración del plan por defecto para validaciones
+  // Obtener configuración del plan por defecto antes de crear el perfil
   const defaultPlanConfig = await getDefaultPlanConfig();
   const defaultPlanCode = defaultPlanConfig.enabled ? defaultPlanConfig.planCode : null;
+
+  // Validar límites ANTES de crear el perfil, pasando el planCode para una validación correcta
+  const limitsValidation = await validateUserProfileLimits(profileData.user.toString(), planCode);
+
+  // Si el usuario está intentando crear un perfil gratuito y ha superado el límite, denegar la creación
+  if (!limitsValidation.canCreate && (!planCode || planCode === defaultPlanCode)) {
+    throw new Error(limitsValidation.reason || 'No se puede crear más perfiles gratuitos. Debe adquirir un plan de pago.');
+  }
+
+  // Crear el perfil (con plan por defecto configurado), omitiendo validación de límites ya que se hizo arriba
+  const profile = await createProfile(profileData, true);
+
+  let shouldBeVisible = true;
 
   // Si el usuario superó el límite de perfiles gratuitos y no compró un plan, ocultar el perfil
   if (!limitsValidation.canCreate && (!planCode || planCode === defaultPlanCode)) {
@@ -554,6 +573,7 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
       }
       // ✅ CASO 2: Plan DE PAGO (price > 0) CON factura
       else if (variant.price > 0 && generateInvoice) {
+        // Generar factura (puede incluir cupón que reduzca el precio a 0)
         invoice = await invoiceService.generateInvoice({
           profileId: (profile._id as Types.ObjectId).toString(),
           userId: profile.user.toString(),
@@ -564,14 +584,46 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
           notes: `Factura generada para nuevo perfil ${profile.name || profile._id}`
         });
 
-        await ProfileModel.findByIdAndUpdate(
-          profile._id,
-          {
-            $push: { paymentHistory: new Types.ObjectId(invoice._id as string) },
-            isActive: false,       // Mantener inactivo hasta que se pague la factura
-            visible: false         // Ocultar hasta que se pague la factura
-          }
-        );
+        // ✅ VALIDACIÓN: Si después de aplicar cupón el monto final es 0, marcar factura como pagada
+        // y asignar el plan directamente (cupón 100% descuento)
+        if (invoice.totalAmount === 0) {
+          // Marcar factura como pagada usando el servicio (esto incrementa el uso del cupón)
+          await invoiceService.markAsPaid(invoice._id.toString());
+
+          // Calcular fechas de asignación
+          const startAt = new Date();
+          const expiresAt = new Date(startAt.getTime() + (planDays * 24 * 60 * 60 * 1000));
+
+          // Asignar plan directamente y activar perfil
+          await ProfileModel.findByIdAndUpdate(
+            profile._id,
+            {
+              planAssignment: {
+                planId: plan._id,
+                planCode: plan.code,
+                variantDays: planDays,
+                startAt,
+                expiresAt
+              },
+              $push: { paymentHistory: new Types.ObjectId(invoice._id as string) },
+              isActive: true,
+              visible: shouldBeVisible
+            }
+          );
+
+          // Limpiar invoice para evitar generar mensaje de WhatsApp (no hay que pagar)
+          invoice = null;
+        } else {
+          // Monto final > 0, mantener factura pendiente y actualizar perfil
+          await ProfileModel.findByIdAndUpdate(
+            profile._id,
+            {
+              $push: { paymentHistory: new Types.ObjectId(invoice._id as string) },
+              isActive: false,       // Mantener inactivo hasta que se pague la factura
+              visible: false         // Ocultar hasta que se pague la factura
+            }
+          );
+        }
       }
       // ✅ CASO 3: Plan DE PAGO (price > 0) SIN factura (admin)
       else if (variant.price > 0 && !generateInvoice) {
@@ -1206,9 +1258,19 @@ export const subscribeProfile = async (profileId: string, planCode: string, vari
  */
 export const validateUserProfileLimits = async (userId: string, planCode?: string): Promise<{ canCreate: boolean; reason?: string; limits?: any; currentCounts?: any; accountType?: string; requiresIndependentVerification?: boolean }> => {
   try {
+    console.log('\n🔍 [DEBUG PROFILE LIMITS] ===== INICIO VALIDACIÓN DE LÍMITES =====');
+    console.log('userId:', userId);
+    console.log('planCode recibido:', planCode);
+
     // Obtener configuración del plan por defecto
     const defaultPlanConfig = await getDefaultPlanConfig();
     const defaultPlanCode = defaultPlanConfig.enabled ? defaultPlanConfig.planCode : 'AMATISTA'; // Fallback
+
+    console.log('Plan por defecto (gratuito):', {
+      planId: defaultPlanConfig.planId,
+      planCode: defaultPlanCode,
+      enabled: defaultPlanConfig.enabled
+    });
 
     // Obtener información del usuario para determinar el tipo de cuenta
     const user = await UserModel.findById(userId).lean();
@@ -1217,6 +1279,7 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
     }
 
     const accountType = user.accountType || 'common';
+    console.log('Tipo de cuenta:', accountType);
 
     // Obtener configuraciones de límites según el tipo de cuenta
     let freeProfilesMax, paidProfilesMax, totalVisibleMax, requiresIndependentVerification;
@@ -1257,44 +1320,112 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
       requiresIndependentVerification: requiresIndependentVerification || false
     };
 
-    // Obtener perfiles activos del usuario (excluyendo eliminados lógicamente)
+    console.log('Límites configurados:', limits);
+
+    // Obtener perfiles del usuario (excluyendo solo los eliminados lógicamente)
+    // Incluimos perfiles activos e inactivos, visibles e invisibles para validar el límite correctamente
     const userProfiles = await ProfileModel.find({
       user: userId,
-      isActive: true,
-      visible: true,
       isDeleted: { $ne: true }
-    }).lean();
+    }).populate('planAssignment.planId', 'code name variants').lean();
+
+    console.log('Total perfiles encontrados (no eliminados):', userProfiles.length);
+    console.log('IDs de perfiles:', userProfiles.map(p => p._id));
 
     const now = new Date();
 
-    // Clasificar perfiles por tipo
+    // Clasificar perfiles por tipo basándose en el PRECIO del plan (más confiable)
     let freeProfilesCount = 0;
     let paidProfilesCount = 0;
 
     for (const profile of userProfiles) {
-      const hasActivePaidPlan = profile.planAssignment &&
-        profile.planAssignment.expiresAt > now &&
-        (
-          (profile.planAssignment.planId && profile.planAssignment.planId.toString() !== defaultPlanConfig.planId) ||
-          (profile.planAssignment.planCode && profile.planAssignment.planCode !== defaultPlanCode)
-        );
+      console.log(`\n  Perfil ${profile._id}:`, {
+        name: profile.name,
+        planAssignment: profile.planAssignment,
+        hasplanAssignment: !!profile.planAssignment,
+        expiresAt: profile.planAssignment?.expiresAt,
+        planId: profile.planAssignment?.planId,
+        planCode: profile.planAssignment?.planCode,
+        variantDays: profile.planAssignment?.variantDays
+      });
 
-      if (hasActivePaidPlan) {
+      // Verificar si el plan está activo
+      const hasPlanActive = profile.planAssignment && profile.planAssignment.expiresAt > now;
+
+      if (!hasPlanActive) {
+        // Si no tiene plan activo o expiró, cuenta como gratuito
+        freeProfilesCount++;
+        console.log(`    Plan expirado o sin plan -> Clasificado como: GRATUITO (total gratuitos: ${freeProfilesCount})`);
+        continue;
+      }
+
+      // Obtener el plan poblado para verificar el precio
+      const plan = profile.planAssignment.planId as any;
+
+      if (!plan || !plan.variants) {
+        console.log(`    Sin información de plan o variants -> Clasificado como: GRATUITO (total gratuitos: ${freeProfilesCount})`);
+        freeProfilesCount++;
+        continue;
+      }
+
+      // Buscar la variante correspondiente a los días del perfil
+      const variant = plan.variants.find((v: any) => v.days === profile.planAssignment.variantDays);
+      const variantPrice = variant?.price ?? null;
+
+      console.log(`    Plan: ${plan.code} (${plan.name})`);
+      console.log(`    Variante: ${profile.planAssignment.variantDays} días, precio: ${variantPrice}`);
+
+      // LÓGICA CORRECTA: Si el precio es 0, es gratuito. Si es > 0, es de pago
+      const isPaidPlan = variantPrice !== null && variantPrice > 0;
+
+      console.log(`    ¿Es plan de pago? ${isPaidPlan} (precio ${variantPrice} ${variantPrice === 0 ? '= 0 (gratuito)' : '> 0 (pago)'})`);
+
+      if (isPaidPlan) {
         paidProfilesCount++;
+        console.log(`    -> Clasificado como: PAGO (total pagos: ${paidProfilesCount})`);
       } else {
         freeProfilesCount++;
+        console.log(`    -> Clasificado como: GRATUITO (total gratuitos: ${freeProfilesCount})`);
       }
     }
 
     const totalProfiles = freeProfilesCount + paidProfilesCount;
 
-    // Determinar si el nuevo perfil será gratuito o de pago
-    const isNewProfilePaid = planCode && planCode !== defaultPlanCode;
+    console.log('\n📊 Resumen de conteo:');
+    console.log('  - Perfiles gratuitos:', freeProfilesCount, '/', limits.freeProfilesMax);
+    console.log('  - Perfiles de pago:', paidProfilesCount, '/', limits.paidProfilesMax);
+    console.log('  - Total perfiles:', totalProfiles, '/', limits.totalVisibleMax);
+
+    // Determinar si el nuevo perfil será gratuito o de pago basándose en el precio del plan
+    let isNewProfilePaid = false;
+
+    if (planCode) {
+      // Buscar el plan en la BD para verificar su precio
+      const newPlan = await PlanDefinitionModel.findOne({ code: planCode, active: true }).select('code name variants').lean();
+
+      console.log('\n🔎 Verificando plan para nuevo perfil:', planCode);
+
+      if (newPlan && newPlan.variants && newPlan.variants.length > 0) {
+        // Verificar si alguna variante tiene precio > 0
+        const hasPaidVariant = newPlan.variants.some((v: any) => v.price > 0);
+        isNewProfilePaid = hasPaidVariant;
+
+        console.log('  Variantes del plan:', newPlan.variants.map((v: any) => ({ days: v.days, price: v.price })));
+        console.log('  ¿Tiene variantes con precio > 0?', hasPaidVariant);
+      } else {
+        console.log('  Plan no encontrado o sin variantes, se asume gratuito');
+      }
+    }
+
+    console.log('\n¿El nuevo perfil será de pago?', isNewProfilePaid);
+    console.log('  Razón: ' + (isNewProfilePaid ? 'Plan tiene variantes con precio > 0' : 'Plan gratuito (precio = 0) o sin plan'));
 
     // Validar límites
     if (isNewProfilePaid) {
       // Validar límite de perfiles de pago
       if (paidProfilesCount >= limits.paidProfilesMax) {
+        console.log('❌ VALIDACIÓN RECHAZADA: Límite de perfiles de pago alcanzado');
+        console.log('🔍 [DEBUG PROFILE LIMITS] ===== FIN VALIDACIÓN =====\n');
         return {
           canCreate: false,
           reason: `Máximo de perfiles de pago alcanzado (${limits.paidProfilesMax})`,
@@ -1305,6 +1436,9 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
     } else {
       // Validar límite de perfiles gratuitos
       if (freeProfilesCount >= limits.freeProfilesMax) {
+        console.log('❌ VALIDACIÓN RECHAZADA: Límite de perfiles gratuitos alcanzado');
+        console.log(`   Actual: ${freeProfilesCount} >= Máximo: ${limits.freeProfilesMax}`);
+        console.log('🔍 [DEBUG PROFILE LIMITS] ===== FIN VALIDACIÓN =====\n');
         return {
           canCreate: false,
           reason: `Máximo de perfiles gratuitos alcanzado (${limits.freeProfilesMax})`,
@@ -1316,6 +1450,8 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
 
     // Validar límite total
     if (totalProfiles >= limits.totalVisibleMax) {
+      console.log('❌ VALIDACIÓN RECHAZADA: Límite total de perfiles alcanzado');
+      console.log('🔍 [DEBUG PROFILE LIMITS] ===== FIN VALIDACIÓN =====\n');
       return {
         canCreate: false,
         reason: `Máximo total de perfiles visibles alcanzado (${limits.totalVisibleMax})`,
@@ -1328,6 +1464,8 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
     if (accountType === 'agency') {
       const agencyInfo = user.agencyInfo;
       if (!agencyInfo || agencyInfo.conversionStatus !== 'approved') {
+        console.log('❌ VALIDACIÓN RECHAZADA: Conversión a agencia no aprobada');
+        console.log('🔍 [DEBUG PROFILE LIMITS] ===== FIN VALIDACIÓN =====\n');
         return {
           canCreate: false,
           reason: 'La conversión a cuenta de agencia debe estar aprobada para crear perfiles adicionales',
@@ -1336,6 +1474,9 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
         };
       }
     }
+
+    console.log('✅ VALIDACIÓN APROBADA: El usuario puede crear un nuevo perfil');
+    console.log('🔍 [DEBUG PROFILE LIMITS] ===== FIN VALIDACIÓN =====\n');
 
     return {
       canCreate: true,
@@ -1348,6 +1489,217 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
   } catch (error) {
     // Error al validar límites de perfiles
     throw new Error('Error interno al validar límites de perfiles');
+  }
+};
+
+/**
+ * VALIDACIÓN A: Verifica si el usuario puede crear un nuevo perfil (límite total de perfiles)
+ * Esta validación se ejecuta ANTES de entrar al wizard de creación
+ * @param userId - ID del usuario
+ * @returns Promise con el resultado de la validación
+ */
+export const validateMaxProfiles = async (userId: string): Promise<{ ok: boolean; message?: string; currentCount?: number; maxAllowed?: number }> => {
+  try {
+    console.log('\n🔍 [VALIDACIÓN A - MAX TOTAL] Verificando límite total de perfiles');
+    console.log('userId:', userId);
+
+    // Obtener información del usuario para determinar el tipo de cuenta
+    const user = await UserModel.findById(userId).lean();
+    if (!user) {
+      return {
+        ok: false,
+        message: 'Usuario no encontrado'
+      };
+    }
+
+    const accountType = user.accountType || 'common';
+    console.log('Tipo de cuenta:', accountType);
+
+    // Obtener el límite total de perfiles según el tipo de cuenta
+    let totalVisibleMax: number;
+
+    if (accountType === 'agency') {
+      // Verificar que la conversión esté aprobada
+      if (user.agencyInfo?.conversionStatus !== 'approved') {
+        console.log('❌ Conversión a agencia no aprobada');
+        return {
+          ok: false,
+          message: 'La conversión a agencia debe estar aprobada para crear perfiles'
+        };
+      }
+
+      totalVisibleMax = await ConfigParameterService.getValue('profiles.limits.agency.total_visible_max') || 55;
+    } else {
+      totalVisibleMax = await ConfigParameterService.getValue('profiles.limits.total_visible_max') || 13;
+    }
+
+    console.log('Límite total de perfiles permitidos:', totalVisibleMax);
+
+    // Contar perfiles actuales del usuario (excluyendo eliminados)
+    const currentProfileCount = await ProfileModel.countDocuments({
+      user: userId,
+      isDeleted: { $ne: true }
+    });
+
+    console.log('Perfiles actuales:', currentProfileCount, '/', totalVisibleMax);
+
+    // Verificar si ya alcanzó el límite
+    if (currentProfileCount >= totalVisibleMax) {
+      console.log('❌ LÍMITE ALCANZADO');
+      return {
+        ok: false,
+        message: 'Has alcanzado el número máximo de perfiles permitidos.',
+        currentCount: currentProfileCount,
+        maxAllowed: totalVisibleMax
+      };
+    }
+
+    console.log('✅ Puede crear más perfiles');
+    return {
+      ok: true,
+      currentCount: currentProfileCount,
+      maxAllowed: totalVisibleMax
+    };
+
+  } catch (error) {
+    console.error('Error en validateMaxProfiles:', error);
+    return {
+      ok: false,
+      message: 'Error al validar límite de perfiles'
+    };
+  }
+};
+
+/**
+ * VALIDACIÓN B: Verifica si el usuario puede seleccionar un plan gratuito (límite de perfiles gratuitos)
+ * Esta validación se ejecuta en el PASO 4 del wizard cuando el usuario selecciona un plan
+ * @param userId - ID del usuario
+ * @param planCode - Código del plan seleccionado
+ * @returns Promise con el resultado de la validación
+ */
+export const validatePlanSelection = async (userId: string, planCode: string): Promise<{ ok: boolean; message?: string; isPaid?: boolean; currentFreeCount?: number; maxFree?: number }> => {
+  try {
+    console.log('\n🔍 [VALIDACIÓN B - FREE PLANS] Verificando selección de plan');
+    console.log('userId:', userId);
+    console.log('planCode:', planCode);
+
+    // Buscar el plan en la base de datos
+    const plan = await PlanDefinitionModel.findOne({ code: planCode, active: true }).select('code name variants').lean();
+
+    if (!plan) {
+      return {
+        ok: false,
+        message: 'Plan no encontrado'
+      };
+    }
+
+    console.log('Plan encontrado:', plan.code, '-', plan.name);
+    console.log('Variantes:', plan.variants?.map((v: any) => ({ days: v.days, price: v.price })));
+
+    // Verificar si el plan es gratuito (todas las variantes tienen precio = 0)
+    const isPaidPlan = plan.variants?.some((v: any) => v.price > 0) || false;
+
+    console.log('¿Es plan de pago?', isPaidPlan);
+
+    // Si el plan es de pago, no necesitamos validar límites de gratuitos
+    if (isPaidPlan) {
+      console.log('✅ Plan de pago, sin restricción de límite gratuito');
+      return {
+        ok: true,
+        isPaid: true
+      };
+    }
+
+    // El plan es gratuito, verificar límite de perfiles gratuitos
+    console.log('⚠️ Plan gratuito detectado, verificando límite...');
+
+    // Obtener información del usuario para determinar el tipo de cuenta
+    const user = await UserModel.findById(userId).lean();
+    if (!user) {
+      return {
+        ok: false,
+        message: 'Usuario no encontrado'
+      };
+    }
+
+    const accountType = user.accountType || 'common';
+
+    // Obtener el límite de perfiles gratuitos según el tipo de cuenta
+    let freeProfilesMax: number;
+
+    if (accountType === 'agency') {
+      freeProfilesMax = await ConfigParameterService.getValue('profiles.limits.agency.free_profiles_max') || 5;
+    } else {
+      freeProfilesMax = await ConfigParameterService.getValue('profiles.limits.free_profiles_max') || 3;
+    }
+
+    console.log('Límite de perfiles gratuitos:', freeProfilesMax);
+
+    // Contar perfiles gratuitos actuales
+    const userProfiles = await ProfileModel.find({
+      user: userId,
+      isDeleted: { $ne: true }
+    }).populate('planAssignment.planId', 'code name variants').lean();
+
+    const now = new Date();
+    let freeProfilesCount = 0;
+
+    for (const profile of userProfiles) {
+      // Verificar si el plan está activo
+      const hasPlanActive = profile.planAssignment && profile.planAssignment.expiresAt > now;
+
+      if (!hasPlanActive) {
+        // Sin plan activo = gratuito
+        freeProfilesCount++;
+        continue;
+      }
+
+      // Obtener el plan poblado para verificar el precio
+      const profilePlan = profile.planAssignment.planId as any;
+
+      if (!profilePlan || !profilePlan.variants) {
+        freeProfilesCount++;
+        continue;
+      }
+
+      // Buscar la variante correspondiente
+      const variant = profilePlan.variants.find((v: any) => v.days === profile.planAssignment.variantDays);
+      const variantPrice = variant?.price ?? 0;
+
+      // Si el precio es 0, es gratuito
+      if (variantPrice === 0) {
+        freeProfilesCount++;
+      }
+    }
+
+    console.log('Perfiles gratuitos actuales:', freeProfilesCount, '/', freeProfilesMax);
+
+    // Verificar si ya alcanzó el límite
+    if (freeProfilesCount >= freeProfilesMax) {
+      console.log('❌ LÍMITE DE PERFILES GRATUITOS ALCANZADO');
+      return {
+        ok: false,
+        message: 'Has superado el límite de perfiles gratuitos.',
+        isPaid: false,
+        currentFreeCount: freeProfilesCount,
+        maxFree: freeProfilesMax
+      };
+    }
+
+    console.log('✅ Puede crear perfil gratuito');
+    return {
+      ok: true,
+      isPaid: false,
+      currentFreeCount: freeProfilesCount,
+      maxFree: freeProfilesMax
+    };
+
+  } catch (error) {
+    console.error('Error en validatePlanSelection:', error);
+    return {
+      ok: false,
+      message: 'Error al validar selección de plan'
+    };
   }
 };
 
@@ -1396,11 +1748,11 @@ export const getUserProfilesSummary = async (userId: string): Promise<{ freeProf
       accountType
     };
 
-    // Obtener perfiles activos del usuario
+    // Obtener perfiles del usuario (excluyendo solo los eliminados)
+    // Incluimos perfiles activos e inactivos para dar un resumen completo
     const userProfiles = await ProfileModel.find({
       user: userId,
-      isActive: true,
-      visible: true
+      isDeleted: { $ne: true }
     }).lean();
 
     const now = new Date();
@@ -1612,8 +1964,8 @@ export const purchaseUpgrade = async (
     // Agregar factura al historial de pagos del perfil
     profile.paymentHistory.push(new Types.ObjectId(invoice._id as string));
 
-    // Mantener perfil inactivo hasta que se pague la factura
-    profile.isActive = false;
+    // No modificar isActive ni visible - el perfil mantiene su estado actual
+    // El upgrade no debe afectar la visibilidad o activación del perfil
 
     await profile.save();
 
@@ -1843,9 +2195,9 @@ export const hardDeleteProfile = async (profileId: string): Promise<{ success: b
     const ProfileVerificationModel = (await import('../profile-verification/profile-verification.model')).ProfileVerification;
     await ProfileVerificationModel.deleteMany({ profile: profileId });
 
-    // Eliminar facturas relacionadas
-    const InvoiceModel = (await import('../payments/invoice.model')).default;
-    await InvoiceModel.deleteMany({ profileId: profileId });
+    // NOTA: Las facturas NO se eliminan intencionalmente
+    // Son registros financieros que deben mantenerse incluso si el perfil se elimina
+    // para auditoría, contabilidad y cumplimiento legal
 
     // Eliminar el perfil completamente (esto incluye automáticamente las historias en media.stories)
     await ProfileModel.findByIdAndDelete(profileId);
@@ -1983,6 +2335,27 @@ export const getAllProfilesForAdmin = async (
       cleaned.push('verification');
     }
 
+    // Siempre incluir isDeleted para que el adminboard pueda mostrar el badge
+    if (!cleaned.includes('isDeleted')) {
+      cleaned.push('isDeleted');
+    }
+
+    // Si se incluye planAssignment completo, no agregar subcampos (evita path collision)
+    // Si solo se incluyen subcampos específicos, agregarlos todos para asegurar consistencia
+    const hasPlanAssignmentComplete = cleaned.includes('planAssignment');
+    const hasPlanAssignmentSubfields = cleaned.some(f => f.startsWith('planAssignment.'));
+
+    if (hasPlanAssignmentSubfields && !hasPlanAssignmentComplete) {
+      // Solo agregar subcampos faltantes si NO se incluyó el objeto completo
+      if (!cleaned.includes('planAssignment.planId')) cleaned.push('planAssignment.planId');
+      if (!cleaned.includes('planAssignment.variantDays')) cleaned.push('planAssignment.variantDays');
+      if (!cleaned.includes('planAssignment.startAt')) cleaned.push('planAssignment.startAt');
+      if (!cleaned.includes('planAssignment.expiresAt')) cleaned.push('planAssignment.expiresAt');
+      if (!cleaned.includes('planAssignment.purchasedAt')) cleaned.push('planAssignment.purchasedAt');
+      if (!cleaned.includes('planAssignment.planCode')) cleaned.push('planAssignment.planCode');
+    }
+    // Si se incluye planAssignment completo, no hacemos nada (se incluyen todos los campos automáticamente)
+
     const selectStr = cleaned.join(' ');
     query = query.select(selectStr) as any;
   }
@@ -2000,6 +2373,11 @@ export const getAllProfilesForAdmin = async (
     .populate({
       path: 'features.group_id',
       select: 'name label',
+    })
+    .populate({
+      path: 'planAssignment.planId',
+      model: 'PlanDefinition',
+      select: 'code name description level variants features contentLimits includedUpgrades'
     })
     .sort({ updatedAt: -1 })
     .skip(skip)

@@ -204,7 +204,11 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
 
   // Método genérico para actualizar filtros
   const updateFilter = useCallback((key: string, value: any) => {
+    console.log('🔧 [FILTER UPDATE] Updating filter:', { key, value });
+
     setFilters((prev) => {
+      console.log('🔧 [FILTER UPDATE] Previous filters:', prev);
+
       const newFilters = { ...prev };
 
       // Manejar filtros anidados en features
@@ -254,12 +258,16 @@ export const useSearchFilters = (initialFilters?: Partial<SearchFilters>) => {
 
       }
 
+      // Reset page cuando cambian filtros, EXCEPTO cuando se actualiza explícitamente la página
+      const shouldResetPage = key !== 'page' && key !== 'limit' && key !== 'sortBy' && key !== 'sortOrder';
+
       const finalFilters = {
         ...newFilters,
-        page: 1, // Reset page when changing filters
+        ...(shouldResetPage && { page: 1 }), // Solo resetear si no es cambio de paginación/ordenamiento
       };
 
-      console.log('useSearchFilters: Final filters after update', finalFilters);
+      console.log('🔧 [FILTER UPDATE] Final filters after update:', finalFilters);
+      console.log('🔧 [FILTER UPDATE] shouldResetPage:', shouldResetPage);
 
       return finalFilters;
     });

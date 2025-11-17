@@ -3,13 +3,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { 
-  Bold, 
-  Italic, 
-  Underline, 
-  List, 
-  ListOrdered, 
-  Link, 
+import {
+  Bold,
+  Italic,
+  Underline,
+  List,
+  ListOrdered,
+  Link,
   Quote,
   Code,
   Undo,
@@ -24,11 +24,11 @@ interface WysiwygEditorProps {
   className?: string;
 }
 
-const WysiwygEditor = ({ 
-  value, 
-  onChange, 
+const WysiwygEditor = ({
+  value,
+  onChange,
   placeholder = "Escribe tu contenido aquí...",
-  className 
+  className
 }: WysiwygEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [isEditorFocused, setIsEditorFocused] = useState(false);
@@ -187,6 +187,7 @@ const WysiwygEditor = ({
           className={cn(
             "min-h-[200px] p-4 outline-none prose prose-sm max-w-none",
             "focus:ring-2 focus:ring-ring focus:ring-offset-2",
+            "[&]:text-foreground [&_*]:text-foreground",
             !value && "text-muted-foreground",
             className
           )}
@@ -200,7 +201,7 @@ const WysiwygEditor = ({
 
         {/* Placeholder */}
         {!value && !isEditorFocused && (
-          <div 
+          <div
             className="absolute top-[60px] left-4 text-muted-foreground pointer-events-none select-none"
             style={{ zIndex: 1 }}
           >

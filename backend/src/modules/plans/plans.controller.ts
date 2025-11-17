@@ -45,15 +45,15 @@ export class PlansController {
                 search
             } = req.query;
 
-            // Si isActive está definido, usarlo; si no, mostrar todos los planes (no filtrar por defecto)
-            const activeOnly = isActive !== undefined ? isActive === 'true' : false;
+            // Si isActive está definido, convertirlo a booleano; si no, undefined para mostrar todos
+            const isActiveValue = isActive !== undefined ? isActive === 'true' : undefined;
 
             const options = {
                 page: parseInt(page as string),
                 limit: parseInt(limit as string),
                 sortBy: sortBy as string,
                 sortOrder: sortOrder as 'asc' | 'desc',
-                activeOnly,
+                isActive: isActiveValue,
                 search: search as string
             };
 

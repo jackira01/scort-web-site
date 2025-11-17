@@ -229,11 +229,11 @@ const PlansPage = () => {
                       {/* Included Upgrades */}
                       {plan.includedUpgrades && plan.includedUpgrades.length > 0 && (
                         <div className="space-y-2">
-                          <h5 className="font-medium text-gray-800">Upgrades incluidos:</h5>
+                          <h5 className="font-medium text-gray-800 dark:text-gray-200">Upgrades incluidos:</h5>
                           {plan.includedUpgrades.map((upgrade, index) => (
                             <div key={index} className="flex items-center space-x-2">
                               <Check className="h-4 w-4 text-green-500" />
-                              <span className="text-sm text-gray-700">{upgrade}</span>
+                              <span className="text-sm text-gray-700 dark:text-gray-200">{upgrade}</span>
                             </div>
                           ))}
                         </div>
@@ -283,15 +283,15 @@ const PlansPage = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="lg"
                   onClick={() => router.push('/contactanos')}
                 >
                   Contactar Soporte
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="lg"
                   onClick={() => router.push('/faq')}
                 >

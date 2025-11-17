@@ -35,7 +35,7 @@ export const DashProfilePanel = () => {
     data: profilesResponse,
     isLoading,
     error,
-  } = useAdminProfiles(currentPage, limit, '_id,name,profileName,age,isActive,media,featured,location,verification,isVerified', userId);
+  } = useAdminProfiles(currentPage, limit, '_id,name,profileName,age,isActive,isDeleted,media,featured,location,verification,isVerified,planAssignment,upgrades', userId);
 
   // Extraer los datos de la respuesta del nuevo endpoint
   const profilesData = profilesResponse?.success ? profilesResponse.data : null;

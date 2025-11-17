@@ -39,7 +39,8 @@ export default function CouponModal({
 
     return userProfiles.filter(profile => {
       // Si el perfil no tiene plan asignado, no es elegible
-      if (!profile.planAssignment?.planCode) {
+      const planCode = profile.planAssignment?.planId?.code || profile.planAssignment?.planCode;
+      if (!planCode) {
         return false;
       }
 
@@ -123,7 +124,7 @@ export default function CouponModal({
                   <span className="font-semibold text-gray-600 dark:text-gray-400">Descuento:</span>
                   <p className="text-gray-800 dark:text-gray-200">{getDiscountDescription(coupon)}</p>
                 </div>
-                
+
                 <div>
                   <span className="font-semibold text-gray-600 dark:text-gray-400">Válido hasta:</span>
                   <p className="text-gray-800 dark:text-gray-200">
@@ -176,11 +177,10 @@ export default function CouponModal({
                   {currentProfiles.map((profile) => (
                     <Card
                       key={profile._id}
-                      className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                        selectedProfileId === profile._id
+                      className={`cursor-pointer transition-all duration-200 hover:shadow-md ${selectedProfileId === profile._id
                           ? 'ring-2 ring-purple-500 bg-purple-50 dark:bg-purple-950/20'
                           : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                      }`}
+                        }`}
                       onClick={() => setSelectedProfileId(profile._id)}
                     >
                       <CardContent className="p-4">
@@ -206,16 +206,16 @@ export default function CouponModal({
                               {profile.name}
                             </h5>
                             <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                              {profile.age} años • {typeof profile.location?.city === 'object' && profile.location?.city !== null && 'label' in profile.location.city 
-                                ? (profile.location.city as any).label 
-                                : typeof profile.location?.city === 'object' && profile.location?.city !== null 
+                              {profile.age} años • {typeof profile.location?.city === 'object' && profile.location?.city !== null && 'label' in profile.location.city
+                                ? (profile.location.city as any).label
+                                : typeof profile.location?.city === 'object' && profile.location?.city !== null
                                   ? JSON.stringify(profile.location.city)
                                   : profile.location?.city || 'Ciudad no especificada'
                               }
                             </p>
                             {profile.planAssignment && (
                               <Badge variant="outline" className="mt-1 text-xs">
-                                Plan {profile.planAssignment.planCode}
+                                Plan {profile.planAssignment.planId?.code || profile.planAssignment.planCode}
                               </Badge>
                             )}
                           </div>
@@ -241,7 +241,7 @@ export default function CouponModal({
                       <ChevronLeft className="h-4 w-4" />
                       <span>Anterior</span>
                     </Button>
-                    
+
                     <div className="flex space-x-1">
                       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                         <Button
