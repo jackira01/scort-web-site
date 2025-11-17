@@ -2335,6 +2335,11 @@ export const getAllProfilesForAdmin = async (
       cleaned.push('verification');
     }
 
+    // Siempre incluir isDeleted para que el adminboard pueda mostrar el badge
+    if (!cleaned.includes('isDeleted')) {
+      cleaned.push('isDeleted');
+    }
+
     // Si se incluye planAssignment completo, no agregar subcampos (evita path collision)
     // Si solo se incluyen subcampos específicos, agregarlos todos para asegurar consistencia
     const hasPlanAssignmentComplete = cleaned.includes('planAssignment');
