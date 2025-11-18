@@ -754,6 +754,7 @@ export default function ManagePlansModal({
 
         // Invalidar queries adicionales para asegurar actualización
         queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
+        queryClient.invalidateQueries({ queryKey: ['adminProfiles'] });
         queryClient.invalidateQueries({ queryKey: ['profilePlan', profileId] });
 
         // Llamar onPlanChange para actualizar el componente padre
@@ -784,6 +785,7 @@ export default function ManagePlansModal({
 
           // Invalidar queries adicionales para asegurar actualización
           queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
+          queryClient.invalidateQueries({ queryKey: ['adminProfiles'] });
           queryClient.invalidateQueries({ queryKey: ['profilePlan', profileId] });
 
           // Llamar onPlanChange para actualizar el componente padre

@@ -551,11 +551,15 @@ export const getFilteredProfiles = async (
 
     const totalCount = totalCountResult[0]?.total || 0;
 
+    console.log(`\n📊 [FILTROS] Ordenando ${allProfiles.length} perfiles encontrados (página ${page}, límite ${limit})`);
+
     // Ordenar perfiles usando el motor de visibilidad (nivel -> score -> lastShownAt -> createdAt)
     const sortedProfiles = await sortProfiles(allProfiles as any, now);
 
     // Aplicar paginación después del ordenamiento
     const paginatedProfiles = sortedProfiles.slice(skip, skip + limit);
+
+    console.log(`\n📄 [FILTROS] Mostrando perfiles ${skip + 1} a ${skip + paginatedProfiles.length} de ${totalCount} totales`);
 
     // Actualizar lastShownAt para los perfiles servidos (rotación justa)
     if (paginatedProfiles.length > 0) {

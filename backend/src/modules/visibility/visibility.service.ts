@@ -129,17 +129,25 @@ export const calculateEffectiveLevelAndVariant = async (
 
   if (destacadoUpgrade) {
     hasDestacado = true;
-    // DESTACADO: NO cambia el nivel, solo mejora la posición dentro del mismo nivel
-    // El bonus se aplicará en el cálculo del score
+    // DESTACADO: Sube 1 nivel temporalmente (excepto si ya está en nivel 1)
+    if (effectiveLevel > 1) {
+      effectiveLevel = effectiveLevel - 1;
+      console.log(`🌟 [DESTACADO] Perfil ${profile._id} sube de nivel ${originalLevel} → ${effectiveLevel}`);
+    } else {
+      console.log(`🌟 [DESTACADO] Perfil ${profile._id} ya está en nivel 1, no puede subir más`);
+    }
   }
 
-  // Buscar upgrade IMPULSO (funciona independientemente)
+  // Buscar upgrade IMPULSO (solo funciona si tiene DESTACADO)
   const impulsoUpgrade = activeUpgrades.find(
     (u) => u.code === 'IMPULSO'
   );
 
-  if (impulsoUpgrade) {
+  if (impulsoUpgrade && hasDestacado) {
     hasImpulso = true;
+    console.log(`⚡ [IMPULSO] Perfil ${profile._id} tiene IMPULSO activo (reposiciona al inicio)`);
+  } else if (impulsoUpgrade && !hasDestacado) {
+    console.log(`⚠️ [IMPULSO] Perfil ${profile._id} tiene IMPULSO pero NO tiene DESTACADO - se ignora`);
   }
 
   return {
@@ -192,38 +200,50 @@ export const calculateVisibilityScore = async (profile: IProfile, now: Date = ne
     originalVariantDays
   } = await calculateEffectiveLevelAndVariant(profile, now);
 
-  // 2. NIVEL EFECTIVO (peso: 1,000,000)
-  // Nivel 999 = sin plan válido, darle score muy bajo (-1,000,000,000) para que aparezca al final
-  // Nivel 1 = 5,000,000, Nivel 2 = 4,000,000, ..., Nivel 5 = 1,000,000
-  // Este peso garantiza que NUNCA un nivel inferior supere a uno superior
+  // 2. NIVEL BASE
   if (effectiveLevel === 999) {
-    // Perfiles sin plan válido van al final
     score = -1000000000;
+    console.log(`❌ [SCORE] Perfil ${profile._id} sin plan válido - Score: ${score}`);
     return score;
   }
 
-  const levelScore = (6 - effectiveLevel) * 1000000;
-  score += levelScore;
+  // ESTRATEGIA MEJORADA CON 4 SUBCATEGORÍAS:
+  // Cada nivel tiene 1,000,000 de rango dividido en:
+  // 1. Nativos con IMPULSO: 750,000 - 999,999 (MÁXIMA PRIORIDAD)
+  // 2. Nativos sin upgrades o solo DESTACADO: 500,000 - 749,999
+  // 3. Destacados (subidos) con IMPULSO: 250,000 - 499,999
+  // 4. Destacados (subidos) sin IMPULSO: 0 - 249,999
 
-  // 3. DURACIÓN DEL PLAN (peso: hasta 999,000)
-  // Usar la duración exacta en días para ordenar dentro del nivel
-  // Máximo 999 días para no superar el millón (no interferir con niveles)
-  const planDurationScore = Math.min(effectiveVariantDays, 999) * 1000;
+  const baseLevelScore = (6 - effectiveLevel) * 1000000;
+  const isNative = (originalLevel === effectiveLevel);
+
+  if (isNative && hasImpulso) {
+    // SUBCATEGORÍA 1: NATIVOS CON IMPULSO - Máxima prioridad
+    score = baseLevelScore + 750000;
+    console.log(`⚡📊 [SCORE] Perfil ${profile._id} NATIVO nivel ${effectiveLevel} con IMPULSO - Base: ${score} (MÁXIMA PRIORIDAD)`);
+  } else if (isNative) {
+    // SUBCATEGORÍA 2: NATIVOS sin upgrades o solo con DESTACADO
+    score = baseLevelScore + 500000;
+    console.log(`📊 [SCORE] Perfil ${profile._id} NATIVO nivel ${effectiveLevel} - Base: ${score}`);
+  } else if (hasDestacado && hasImpulso) {
+    // SUBCATEGORÍA 3: DESTACADO + IMPULSO (subidos de nivel inferior)
+    score = baseLevelScore + 250000;
+    console.log(`🌟⚡ [SCORE] Perfil ${profile._id} DESTACADO+IMPULSO (de nivel ${originalLevel} → ${effectiveLevel}) - Base: ${score}`);
+  } else if (hasDestacado) {
+    // SUBCATEGORÍA 4: DESTACADO SOLO (subidos de nivel inferior)
+    score = baseLevelScore;
+    console.log(`🌟 [SCORE] Perfil ${profile._id} DESTACADO solo (de nivel ${originalLevel} → ${effectiveLevel}) - Base: ${score}`);
+  } else {
+    // Caso fallback (no debería ocurrir)
+    score = baseLevelScore + 500000;
+    console.log(`⚠️ [SCORE] Perfil ${profile._id} caso inesperado - Base: ${score}`);
+  }
+
+  // 3. DURACIÓN DEL PLAN (peso: hasta 249,999)
+  // Mantiene separación entre subcategorías
+  const planDurationScore = Math.min(effectiveVariantDays, 249) * 1000;
   score += planDurationScore;
-
-  // 4. BONUS POR UPGRADE DESTACADO (peso: 500,000)
-  // Suficiente para destacar dentro del nivel, pero sin superar a otro nivel
-  if (hasDestacado) {
-    const destacadoBonus = 500000;
-    score += destacadoBonus;
-  }
-
-  // 5. BONUS POR UPGRADE IMPULSO (peso: 250,000)
-  // Bonus adicional que se suma al de DESTACADO si ambos están activos
-  if (hasImpulso) {
-    const impulsoBonus = 250000;
-    score += impulsoBonus;
-  }
+  console.log(`📊 [SCORE] Perfil ${profile._id} - Días plan: ${effectiveVariantDays} - Duration Score: ${planDurationScore}`);
 
   // 6. OTROS UPGRADES (peso: 10,000-50,000)
   if (profile.upgrades && profile.upgrades.length > 0) {
@@ -261,6 +281,8 @@ export const calculateVisibilityScore = async (profile: IProfile, now: Date = ne
     score += recencyPenalty;
   }
 
+  console.log(`🎯 [SCORE FINAL] Perfil ${profile._id} - Score total: ${score} (Nivel: ${effectiveLevel}, Original: ${originalLevel}, Destacado: ${hasDestacado}, Impulso: ${hasImpulso})`);
+
   return Math.max(0, score); // Nunca negativo
 };
 
@@ -295,10 +317,12 @@ export const sortProfilesWithinLevel = async (profiles: IProfile[]): Promise<IPr
     profilesByScore[score].push(profile);
   });
 
-  // Ordenar scores de mayor a menor (DESC)
+  // Ordenar scores de mayor a menor (DESC) - mayor score = mayor prioridad = aparece primero
   const sortedScores = Object.keys(profilesByScore)
     .map(Number)
     .sort((a, b) => b - a);
+
+  console.log(`   📊 Scores encontrados (ordenados DESC): ${sortedScores.join(', ')}`);
 
   // Para cada grupo de score, aplicar rotación aleatoria y luego ordenar por lastShownAt
   const result: IProfile[] = [];
@@ -336,11 +360,18 @@ export const sortProfilesWithinLevel = async (profiles: IProfile[]): Promise<IPr
  * @returns Lista de perfiles ordenados por nivel efectivo y prioridad
  */
 export const sortProfiles = async (profiles: IProfile[], now: Date = new Date()): Promise<IProfile[]> => {
+  console.log(`\n🔄 ========== INICIANDO ORDENAMIENTO DE ${profiles.length} PERFILES ==========`);
+
   // Calcular nivel efectivo y score de visibilidad para cada perfil
   const profilesWithMetadata = await Promise.all(
     profiles.map(async (profile) => {
-      const effectiveLevel = await getEffectiveLevel(profile, now);
+      const { effectiveLevel, hasDestacado, hasImpulso, originalLevel } = await calculateEffectiveLevelAndVariant(profile, now);
       const priorityScore = await calculateVisibilityScore(profile, now);
+
+      console.log(`📋 Perfil ${profile._id} (${profile.name || 'Sin nombre'})`);
+      console.log(`   - Nivel original: ${originalLevel}, Nivel efectivo: ${effectiveLevel}`);
+      console.log(`   - Destacado: ${hasDestacado ? '✅' : '❌'}, Impulso: ${hasImpulso ? '✅' : '❌'}`);
+      console.log(`   - Score final: ${priorityScore}`);
 
       return {
         ...profile,
@@ -376,9 +407,17 @@ export const sortProfiles = async (profiles: IProfile[], now: Date = new Date())
 
   // Iterar sobre TODOS los niveles encontrados, no solo 1-5
   for (const level of levelsFound) {
+    console.log(`\n📊 Ordenando nivel ${level} - ${profilesByLevel[level].length} perfiles`);
     const sortedLevelProfiles = await sortProfilesWithinLevel(profilesByLevel[level]);
+
+    sortedLevelProfiles.forEach((p, idx) => {
+      console.log(`   ${idx + 1}. Perfil ${p._id} - Score: ${(p as any).priorityScore}`);
+    });
+
     sortedProfiles.push(...sortedLevelProfiles);
   }
+
+  console.log(`\n✅ ========== ORDENAMIENTO COMPLETADO - ${sortedProfiles.length} PERFILES ==========\n`);
 
   return sortedProfiles;
 };

@@ -12,7 +12,7 @@ const router = Router();
 router.post('/', controller.createProfile);
 router.get('/', controller.getProfiles);
 router.get('/home', controller.getProfilesForHome);
-router.get('/admin/all', authMiddleware, adminMiddleware, controller.getAllProfilesForAdmin);
+router.post('/admin/all', authMiddleware, adminMiddleware, controller.getAllProfilesForAdmin);
 router.post('/list', controller.getProfilesPost);
 router.get('/stories', controller.getProfilesWithStories);
 router.get('/verify-profile-name', controller.verifyProfileName);

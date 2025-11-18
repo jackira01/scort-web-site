@@ -412,11 +412,10 @@ export const getAllProfilesForAdmin = async (req: AuthRequest, res: Response) =>
       });
     }
 
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const fields = req.query.fields as string;
-    const userId = req.query.userId as string;
+    // Recibir parámetros del body en lugar de query params
+    const { page = 1, limit = 10, fields, userId } = req.body;
 
+    console.log('📋 [ADMIN] Solicitando perfiles:', { page, limit, userId, fieldsCount: fields?.length || 0 });
 
     const result = await service.getAllProfilesForAdmin(page, limit, fields, userId);
 

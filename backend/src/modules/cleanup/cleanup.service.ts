@@ -51,11 +51,15 @@ export const cleanupExpiredUpgrades = async (
   keepHistory: boolean = true
 ): Promise<number> => {
   try {
+    console.log(`[Cleanup] Starting upgrade cleanup at ${now.toISOString()}`);
+
     if (keepHistory) {
       // Opción 1: Mover upgrades expirados a un campo de historial
       const profilesWithExpiredUpgrades = await ProfileModel.find({
         'upgrades.endAt': { $lte: now }
       });
+
+      console.log(`[Cleanup] Found ${profilesWithExpiredUpgrades.length} profiles with expired upgrades`);
 
       let updatedCount = 0;
       for (const profile of profilesWithExpiredUpgrades) {
@@ -63,6 +67,11 @@ export const cleanupExpiredUpgrades = async (
         const expiredUpgrades = profile.upgrades.filter(upgrade => upgrade.endAt <= now);
 
         if (expiredUpgrades.length > 0) {
+          console.log(`[Cleanup] Profile ${profile._id}: Removing ${expiredUpgrades.length} expired upgrades`);
+          expiredUpgrades.forEach(u => {
+            console.log(`  - Upgrade ${u.code} expired at ${u.endAt}`);
+          });
+
           // Mantener solo upgrades activos
           profile.upgrades = activeUpgrades;
 
@@ -83,6 +92,7 @@ export const cleanupExpiredUpgrades = async (
       }
 
       logger.info(`Moved expired upgrades to history for ${updatedCount} profiles`, { timestamp: now.toISOString() });
+      console.log(`[Cleanup] Upgrade cleanup completed: ${updatedCount} profiles updated`);
       return updatedCount;
     } else {
       // Opción 2: Eliminar completamente los upgrades expirados
