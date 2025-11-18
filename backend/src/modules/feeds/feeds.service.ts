@@ -78,6 +78,8 @@ export const getHomeFeed = async (options: HomeFeedOptions = {}): Promise<HomeFe
     new ProfileModel(profile)
   );
 
+  console.log(`\n🏠 [HOME FEED] Ordenando ${profileDocuments.length} perfiles para home (página ${page}, tamaño ${pageSize})`);
+
   // Ordenar perfiles usando el motor de visibilidad
   const sortedProfiles = await sortProfiles(profileDocuments, now);
 
@@ -110,6 +112,8 @@ export const getHomeFeed = async (options: HomeFeedOptions = {}): Promise<HomeFe
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedProfiles = sortedProfiles.slice(startIndex, endIndex);
+
+  console.log(`\n🏠 [HOME FEED] Mostrando perfiles ${startIndex + 1} a ${startIndex + paginatedProfiles.length} de ${total} totales`);
 
   // Actualizar lastShownAt para los perfiles servidos (fairness rotation)
   if (paginatedProfiles.length > 0) {

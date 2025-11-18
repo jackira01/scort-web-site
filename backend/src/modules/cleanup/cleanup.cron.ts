@@ -18,7 +18,7 @@ const scheduleNextCleanup = (): void => {
     } catch (error) {
       console.error('[Cleanup Cron] Error during scheduled cleanup:', error);
     }
-    
+
     // Programar la siguiente ejecución si el cron sigue activo
     if (isRunning) {
       scheduleNextCleanup();
@@ -36,8 +36,21 @@ export const startCleanupCron = (): void => {
   }
 
   isRunning = true;
-  scheduleNextCleanup();
   console.log('[Cleanup Cron] Started - running every 5 minutes');
+
+  // Ejecutar limpieza inmediatamente al iniciar
+  console.log('[Cleanup Cron] Running initial cleanup...');
+  runCleanupTasks()
+    .then(() => {
+      console.log('[Cleanup Cron] Initial cleanup completed');
+      // Programar la siguiente ejecución
+      scheduleNextCleanup();
+    })
+    .catch((error) => {
+      console.error('[Cleanup Cron] Error in initial cleanup:', error);
+      // Aún así, programar la siguiente ejecución
+      scheduleNextCleanup();
+    });
 };
 
 /**
@@ -48,7 +61,7 @@ export const stopCleanupCron = (): void => {
     clearTimeout(cleanupInterval);
     cleanupInterval = null;
   }
-  
+
   isRunning = false;
   console.log('[Cleanup Cron] Stopped');
 };

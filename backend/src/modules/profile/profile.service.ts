@@ -2056,16 +2056,22 @@ export const upgradePlan = async (profileId: string, newPlanCode: string, varian
   // Determinar la variante a usar
   let selectedVariant;
   if (variantDays) {
+    // Buscar la variante específica solicitada
     selectedVariant = newPlan.variants.find(v => v.days === variantDays);
     if (!selectedVariant) {
       throw new Error(`Variante de ${variantDays} días no encontrada para el plan ${normalizedPlanCode}`);
     }
+    console.log(`📌 [UPGRADE PLAN] Usando variante especificada: ${variantDays} días`);
   } else {
-    // Usar la variante más barata (menor precio)
-    selectedVariant = newPlan.variants.reduce((cheapest, current) =>
-      current.price < cheapest.price ? current : cheapest
-    );
+    // Usar la primera variante disponible (variante principal/por defecto)
+    if (!newPlan.variants || newPlan.variants.length === 0) {
+      throw new Error(`El plan ${normalizedPlanCode} no tiene variantes disponibles`);
+    }
+    selectedVariant = newPlan.variants[0];
+    console.log(`📌 [UPGRADE PLAN] Usando variante por defecto (primera): ${selectedVariant.days} días`);
   }
+
+  console.log(`📊 [UPGRADE PLAN] Variante seleccionada: ${selectedVariant.days} días, Precio: ${selectedVariant.price}`);
 
   // Validar límites de perfiles
   const upgradeValidation = await validateProfilePlanUpgrade(profileId, normalizedPlanCode);
@@ -2299,8 +2305,8 @@ export const getDeletedProfiles = async (page: number = 1, limit: number = 10): 
 export const getAllProfilesForAdmin = async (
   page: number = 1,
   limit: number = 10,
-  fields?: string,
-  userId?: string // 👈 Nuevo parámetro
+  fields?: string | string[],
+  userId?: string
 ): Promise<{
   docs: IProfile[];
   totalDocs: number;
@@ -2315,14 +2321,19 @@ export const getAllProfilesForAdmin = async (
 }> => {
   const skip = (page - 1) * limit;
 
-  // 👇 Si se envía userId, filtramos por él
+  console.log('🔍 [ADMIN SERVICE] Obteniendo perfiles - página:', page, 'límite:', limit, 'userId:', userId);
+
+  // Filtro básico
   const filter: any = {};
   if (userId) filter.user = userId;
 
-  let query = ProfileModel.find(filter); // 👈 aquí aplicamos el filtro
+  let query = ProfileModel.find(filter);
 
+  // Procesar campos si se envían (pueden venir como string separado por comas o array)
   if (fields) {
-    const cleaned = fields.split(',').map(f => f.trim()).filter(Boolean);
+    const cleaned = Array.isArray(fields)
+      ? fields
+      : fields.split(',').map(f => f.trim()).filter(Boolean);
 
     const needsFeatured = cleaned.includes('featured');
     const hasUpgrades = cleaned.includes('upgrades') || cleaned.some(f => f.startsWith('upgrades'));
@@ -2379,10 +2390,21 @@ export const getAllProfilesForAdmin = async (
       model: 'PlanDefinition',
       select: 'code name description level variants features contentLimits includedUpgrades'
     })
-    .sort({ updatedAt: -1 })
+    .sort({ updatedAt: -1, _id: -1 }) // Orden estable: updatedAt + _id para evitar duplicados en paginación
     .skip(skip)
     .limit(limit)
     .lean();
+
+  console.log('✅ [ADMIN SERVICE] Perfiles obtenidos:', rawProfiles.length);
+
+  // Debug: Verificar IDs únicos
+  const profileIds = rawProfiles.map(p => p._id.toString());
+  const uniqueIds = new Set(profileIds);
+  if (profileIds.length !== uniqueIds.size) {
+    console.error('⚠️ [ADMIN SERVICE] ¡DUPLICADOS DETECTADOS EN QUERY!');
+  } else {
+    console.log('✅ [ADMIN SERVICE] Sin duplicados - IDs únicos:', uniqueIds.size);
+  }
 
   const now = new Date();
   const profiles = rawProfiles.map(profile => {

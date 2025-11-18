@@ -8,7 +8,7 @@ export const getAllProfiles = async (page: number = 1, limit: number = 10, field
     limit,
     ...(fields && { fields })
   };
-  
+
   const response = await axios.post(`${API_URL}/api/profile/list`, body);
   return response.data;
 };
@@ -28,22 +28,21 @@ export const getProfilesWithStories = async (page: number = 1, limit: number = 1
   return response.data;
 };
 
-export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 10, fields?: string, userId?: string) => {
-  const params: Record<string, string | number> = {
+export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 10, fields?: string | string[], userId?: string) => {
+  // Convertir fields a array si es string
+  const fieldsArray = typeof fields === 'string'
+    ? fields.split(',').map(f => f.trim()).filter(Boolean)
+    : fields;
+
+  const payload = {
     page,
-    limit
+    limit,
+    ...(fieldsArray && { fields: fieldsArray }),
+    ...(userId && { userId })
   };
-  
-  if (fields) {
-    params.fields = fields;
-  }
-  
-  if (userId) {
-    params.userId = userId;
-  }
-  
-  const response = await axios.get(`${API_URL}/api/profile/admin/all`, {
-    params
-  });
+
+  console.log('📡 [ADMIN API] Solicitando perfiles:', payload);
+
+  const response = await axios.post(`${API_URL}/api/profile/admin/all`, payload);
   return response.data;
 };
