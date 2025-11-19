@@ -429,7 +429,7 @@ export function AvailabilitySchedule({
                                 {/* Hora de fin */}
                                 <div className="flex-1 space-y-2">
                                     <Label className="text-xs text-muted-foreground">
-                                        Hora de inicio
+                                        Hora de fin
                                     </Label>
                                     <div className="flex items-center gap-2">
                                         <TimePicker

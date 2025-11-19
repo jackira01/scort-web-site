@@ -263,7 +263,7 @@ const FilterBar = () => {
           {/* Botón Buscar */}
           <div className="animate-in slide-in-from-bottom-2" style={{ animationDelay: '300ms' }}>
             <Button
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="w-full bg-red-600 hover:bg-pink-800 text-white font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
               onClick={handleSearch}
             >
               <Search className="w-4 h-4 mr-2" />

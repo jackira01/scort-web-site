@@ -75,9 +75,9 @@ export class WhatsAppService {
     // Obtener información del plan desde los items
     const planItem = data.items.find(item => item.type === 'plan');
     let planInfo = '';
-    if (planItem && planItem.days) {
+    /* if (planItem && planItem.days) {
       planInfo = `\n• Plan: ${planItem.name} (${planItem.days} días)`;
-    }
+    } */
 
     const expirationDate = new Date(data.expiresAt).toLocaleDateString('es-CO', {
       year: 'numeric',
@@ -87,15 +87,15 @@ export class WhatsAppService {
       minute: '2-digit'
     });
 
-    return ` *Quiero hacer una compra*\n\n` +
-      `📋 *Detalles de la compra:*\n` +
+    return ` ¡Hola prepagoYA.com! \n\n Espero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago. \n\n` +
+      ` *Detalles de la compra:*\n` +
       `• Perfil: ${data.profileName}\n` +
       `• Cliente: ${data.userName}\n` +
       `• Email: ${data.userEmail}${planInfo}\n\n` +
-      `💰 *Productos/Servicios:*\n${itemsText}\n\n` +
-      `💵 *Total a pagar: $${data.totalAmount.toLocaleString()}*\n\n` +
-      `⏰ *Vence el:* ${expirationDate}\n\n` +
-      `Por favor, confirma el pago para activar mi perfil. ¡Gracias! 😊`;
+      ` *Productos/Servicios:*\n${itemsText}\n\n` +
+      ` *Total a pagar: $${data.totalAmount.toLocaleString()}*\n\n` +
+      ` *Vence el:* ${expirationDate}\n\n` +
+      `Por favor, confirma el pago para activar mi perfil. ¡Gracias!`;
   }
 
   /**

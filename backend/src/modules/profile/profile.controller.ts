@@ -555,21 +555,35 @@ export const purchaseUpgradeController = async (req: AuthRequest, res: Response)
       console.log(`   - Fecha fin: ${endAt.toISOString()}`);
       console.log(`   - Diferencia en horas: ${(endAt.getTime() - now.getTime()) / (1000 * 60 * 60)}`);
 
-      // Agregar upgrade directamente al perfil
+      // Limpiar upgrades expirados y duplicados antes de agregar
+      const upgradeMap = new Map<string, any>();
+      for (const existingUpgrade of profileDoc.upgrades) {
+        // Saltar upgrades expirados
+        if (existingUpgrade.endAt <= now) {
+          continue;
+        }
+        const existing = upgradeMap.get(existingUpgrade.code);
+        // Mantener solo el más reciente de cada tipo
+        if (!existing || existingUpgrade.purchaseAt > existing.purchaseAt) {
+          upgradeMap.set(existingUpgrade.code, existingUpgrade);
+        }
+      }
+      profileDoc.upgrades = Array.from(upgradeMap.values());
+
+      // Buscar si ya existe upgrade del mismo tipo (después de limpiar)
       const existingUpgradeIndex = profileDoc.upgrades.findIndex(
-        u => u.code === code && u.endAt > now
+        u => u.code === code
       );
 
       if (existingUpgradeIndex !== -1) {
-        // Si ya existe, extender o reemplazar según stackingPolicy
-        if (upgrade.stackingPolicy === 'extend') {
-          profileDoc.upgrades[existingUpgradeIndex].endAt = new Date(
-            Math.max(profileDoc.upgrades[existingUpgradeIndex].endAt.getTime(), endAt.getTime())
-          );
-        } else if (upgrade.stackingPolicy === 'replace') {
-          profileDoc.upgrades[existingUpgradeIndex].endAt = endAt;
-          profileDoc.upgrades[existingUpgradeIndex].startAt = now;
-        }
+        // Reemplazar el upgrade existente
+        profileDoc.upgrades[existingUpgradeIndex] = {
+          code,
+          startAt: now,
+          endAt,
+          purchaseAt: now
+        } as any;
+        console.log(`🔄 Upgrade ${code} reemplazado en purchaseUpgrade`);
       } else {
         // Agregar nuevo upgrade
         profileDoc.upgrades.push({
@@ -578,6 +592,7 @@ export const purchaseUpgradeController = async (req: AuthRequest, res: Response)
           endAt,
           purchaseAt: now
         } as any);
+        console.log(`➕ Upgrade ${code} agregado en purchaseUpgrade`);
       }
 
       await profileDoc.save();

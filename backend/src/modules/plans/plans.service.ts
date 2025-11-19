@@ -6,6 +6,33 @@ import { ConfigParameterService } from '../config-parameter/config-parameter.ser
 import InvoiceService from '../payments/invoice.service';
 import { Types } from 'mongoose';
 
+/**
+ * Limpia upgrades expirados y elimina duplicados del mismo tipo
+ * Mantiene solo el upgrade más reciente de cada tipo
+ */
+const cleanProfileUpgrades = (profile: any): void => {
+    const now = new Date();
+    const upgradeMap = new Map<string, any>();
+
+    // Filtrar upgrades expirados y mantener solo el más reciente de cada tipo
+    for (const upgrade of profile.upgrades) {
+        // Saltar upgrades expirados
+        if (upgrade.endAt <= now) {
+            continue;
+        }
+
+        const existing = upgradeMap.get(upgrade.code);
+
+        // Si no existe o el actual es más reciente, guardarlo
+        if (!existing || upgrade.purchaseAt > existing.purchaseAt) {
+            upgradeMap.set(upgrade.code, upgrade);
+        }
+    }
+
+    // Reemplazar el array de upgrades con los upgrades limpios
+    profile.upgrades = Array.from(upgradeMap.values());
+};
+
 // Interfaz para el mensaje de WhatsApp
 export interface WhatsAppMessage {
     userId: string;
@@ -540,24 +567,42 @@ export class PlansService {
             // Activar el perfil inmediatamente para admins con asignación directa o planes gratuitos
             profile.isActive = true;
 
+            // Limpiar upgrades expirados y duplicados antes de agregar nuevos
+            cleanProfileUpgrades(profile);
+
             // Agregar automáticamente los upgrades incluidos en el plan
             if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
                 for (const upgradeCode of plan.includedUpgrades) {
-                    // Verificar si el upgrade ya existe y está activo
-                    const existingUpgrade = profile.upgrades.find(
-                        upgrade => upgrade.code === upgradeCode && upgrade.endAt > now
+                    // Buscar si ya existe un upgrade del mismo tipo (sin importar si está activo)
+                    const existingUpgradeIndex = profile.upgrades.findIndex(
+                        upgrade => upgrade.code === upgradeCode
                     );
 
-                    if (!existingUpgrade) {
+                    // Obtener definición del upgrade para usar su duración correcta
+                    const upgradeDefinition = await UpgradeDefinitionModel.findOne({ code: upgradeCode });
+                    const upgradeEndAt = upgradeDefinition && upgradeDefinition.durationHours
+                        ? new Date(now.getTime() + (upgradeDefinition.durationHours * 60 * 60 * 1000))
+                        : expiresAt;
+
+                    if (existingUpgradeIndex !== -1) {
+                        // Reemplazar el upgrade existente
+                        profile.upgrades[existingUpgradeIndex] = {
+                            code: upgradeCode,
+                            startAt: now,
+                            endAt: upgradeEndAt,
+                            purchaseAt: now
+                        };
+                        console.log(`🔄 Upgrade ${upgradeCode} reemplazado en purchasePlan`);
+                    } else {
                         // Agregar el upgrade incluido en el plan
                         const newUpgrade = {
                             code: upgradeCode,
                             startAt: now,
-                            endAt: expiresAt, // Los upgrades del plan duran lo mismo que el plan
+                            endAt: upgradeEndAt,
                             purchaseAt: now
                         };
-
                         profile.upgrades.push(newUpgrade);
+                        console.log(`➕ Upgrade ${upgradeCode} agregado en purchasePlan`);
                     }
                 }
             }
@@ -688,24 +733,42 @@ export class PlansService {
             // Activar el perfil inmediatamente para admins o planes gratuitos
             profile.isActive = true;
 
+            // Limpiar upgrades expirados y duplicados antes de agregar nuevos
+            cleanProfileUpgrades(profile);
+
             // Agregar automáticamente los upgrades incluidos en el plan
             if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
                 for (const upgradeCode of plan.includedUpgrades) {
-                    // Verificar si el upgrade ya existe y está activo
-                    const existingUpgrade = profile.upgrades.find(
-                        upgrade => upgrade.code === upgradeCode && upgrade.endAt > newExpiresAt
+                    // Buscar si ya existe un upgrade del mismo tipo (sin importar si está activo)
+                    const existingUpgradeIndex = profile.upgrades.findIndex(
+                        upgrade => upgrade.code === upgradeCode
                     );
 
-                    if (!existingUpgrade) {
+                    // Obtener definición del upgrade para usar su duración correcta
+                    const upgradeDefinition = await UpgradeDefinitionModel.findOne({ code: upgradeCode });
+                    const upgradeEndAt = upgradeDefinition && upgradeDefinition.durationHours
+                        ? new Date(now.getTime() + (upgradeDefinition.durationHours * 60 * 60 * 1000))
+                        : newExpiresAt;
+
+                    if (existingUpgradeIndex !== -1) {
+                        // Reemplazar el upgrade existente
+                        profile.upgrades[existingUpgradeIndex] = {
+                            code: upgradeCode,
+                            startAt: now,
+                            endAt: upgradeEndAt,
+                            purchaseAt: now
+                        };
+                        console.log(`🔄 Upgrade ${upgradeCode} reemplazado en purchasePlan (renovación)`);
+                    } else {
                         // Agregar el upgrade incluido en el plan
                         const newUpgrade = {
                             code: upgradeCode,
                             startAt: now,
-                            endAt: newExpiresAt, // Los upgrades del plan duran lo mismo que el plan
+                            endAt: upgradeEndAt,
                             purchaseAt: now
                         };
-
                         profile.upgrades.push(newUpgrade);
+                        console.log(`➕ Upgrade ${upgradeCode} agregado en purchasePlan (renovación)`);
                     }
                 }
             }

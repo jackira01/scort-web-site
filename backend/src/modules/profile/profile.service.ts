@@ -20,6 +20,33 @@ interface DefaultPlanConfig {
   planCode: string | null;
 }
 
+/**
+ * Limpia upgrades expirados y elimina duplicados del mismo tipo
+ * Mantiene solo el upgrade más reciente de cada tipo
+ */
+const cleanProfileUpgrades = (profile: IProfile): void => {
+  const now = new Date();
+  const upgradeMap = new Map<string, any>();
+
+  // Filtrar upgrades expirados y mantener solo el más reciente de cada tipo
+  for (const upgrade of profile.upgrades) {
+    // Saltar upgrades expirados
+    if (upgrade.endAt <= now) {
+      continue;
+    }
+
+    const existing = upgradeMap.get(upgrade.code);
+
+    // Si no existe o el actual es más reciente, guardarlo
+    if (!existing || upgrade.purchaseAt > existing.purchaseAt) {
+      upgradeMap.set(upgrade.code, upgrade);
+    }
+  }
+
+  // Reemplazar el array de upgrades con los upgrades limpios
+  profile.upgrades = Array.from(upgradeMap.values());
+}
+
 // Interfaz para el objeto WhatsApp message
 interface WhatsAppMessage {
   userId: string;
@@ -2010,7 +2037,8 @@ export const upgradePlan = async (profileId: string, newPlanCode: string, varian
   }
 
   // Procesar upgrades incluidos en el nuevo plan
-  const upgradesArray = profile.upgrades || [];
+  // Primero limpiar upgrades expirados y duplicados
+  cleanProfileUpgrades(profile);
 
   if (newPlan.includedUpgrades && newPlan.includedUpgrades.length > 0) {
     for (const upgradeCode of newPlan.includedUpgrades) {
@@ -2018,6 +2046,7 @@ export const upgradePlan = async (profileId: string, newPlanCode: string, varian
       const upgradeDefinition = await UpgradeDefinitionModel.findOne({ code: upgradeCode });
 
       if (!upgradeDefinition) {
+        console.warn(`⚠️ Upgrade ${upgradeCode} no encontrado en upgradePlan`);
         continue;
       }
 
@@ -2025,29 +2054,29 @@ export const upgradePlan = async (profileId: string, newPlanCode: string, varian
       const upgradeStartAt = now;
       const upgradeEndAt = new Date(now.getTime() + (upgradeDefinition.durationHours * 60 * 60 * 1000));
 
-      // Verificar si ya existe un upgrade activo del mismo tipo
-      const existingUpgradeIndex = upgradesArray.findIndex(
-        u => u.code === upgradeCode && u.endAt > now
+      // Buscar si ya existe un upgrade del mismo tipo (sin importar si está activo)
+      const existingUpgradeIndex = profile.upgrades.findIndex(
+        u => u.code === upgradeCode
       );
 
       if (existingUpgradeIndex !== -1) {
-        // Si existe y está activo, extender su duración
-        if (upgradeDefinition.stackingPolicy === 'extend') {
-          upgradesArray[existingUpgradeIndex].endAt = new Date(
-            Math.max(upgradesArray[existingUpgradeIndex].endAt.getTime(), upgradeEndAt.getTime())
-          );
-        } else if (upgradeDefinition.stackingPolicy === 'replace') {
-          upgradesArray[existingUpgradeIndex].startAt = upgradeStartAt;
-          upgradesArray[existingUpgradeIndex].endAt = upgradeEndAt;
-        }
+        // Reemplazar el upgrade existente con el nuevo
+        profile.upgrades[existingUpgradeIndex] = {
+          code: upgradeCode,
+          startAt: upgradeStartAt,
+          endAt: upgradeEndAt,
+          purchaseAt: now
+        } as any;
+        console.log(`🔄 Upgrade ${upgradeCode} reemplazado en upgradePlan`);
       } else {
         // Agregar nuevo upgrade
-        upgradesArray.push({
+        profile.upgrades.push({
           code: upgradeCode,
           startAt: upgradeStartAt,
           endAt: upgradeEndAt,
           purchaseAt: now
         } as any);
+        console.log(`➕ Upgrade ${upgradeCode} agregado en upgradePlan`);
       }
     }
   }
@@ -2063,7 +2092,7 @@ export const upgradePlan = async (profileId: string, newPlanCode: string, varian
         startAt: profile.planAssignment.startAt, // Mantener fecha de inicio original
         expiresAt: newExpiresAt
       },
-      upgrades: upgradesArray
+      upgrades: profile.upgrades // Usar el array limpio y actualizado
     },
     { new: true }
   );
