@@ -342,8 +342,10 @@ export const sortProfilesWithinLevel = async (profiles: IProfile[]): Promise<IPr
         return lastShownA - lastShownB; // ASC - menos mostrados primero
       }
 
-      // Empate final: mantener orden aleatorio del shuffle
-      return 0;
+      // Empate final: ordenar por _id para garantizar consistencia en paginación
+      const idA = a._id?.toString() || '';
+      const idB = b._id?.toString() || '';
+      return idA.localeCompare(idB);
     });
 
     result.push(...sortedGroup);

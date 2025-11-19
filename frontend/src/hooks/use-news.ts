@@ -57,6 +57,8 @@ export const useLatestNews = (limit: number = 5) => {
     queryKey: newsKeys.latest(limit),
     queryFn: () => newsService.getLatestNews(limit),
     staleTime: 2 * 60 * 1000, // 2 minutos
+    refetchOnWindowFocus: false, // No refetch al enfocar ventana
+    refetchOnMount: false, // No refetch al montar si hay datos en caché
   });
 };
 
@@ -131,10 +133,10 @@ export const useCreateNews = () => {
       queryClient.invalidateQueries({ queryKey: newsKeys.lists() });
       queryClient.invalidateQueries({ queryKey: newsKeys.latest(5) });
       queryClient.invalidateQueries({ queryKey: newsKeys.admin.all() });
-      
+
       // Agregar la nueva noticia al cache
       queryClient.setQueryData(newsKeys.detail(newNews._id), newNews);
-      
+
       toast.success('Noticia creada exitosamente');
     },
     onError: (error: Error) => {
@@ -150,17 +152,17 @@ export const useUpdateNews = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateNewsRequest }) => 
+    mutationFn: ({ id, data }: { id: string; data: UpdateNewsRequest }) =>
       newsService.updateNews(id, data),
     onSuccess: (updatedNews) => {
       // Invalidar listas
       queryClient.invalidateQueries({ queryKey: newsKeys.lists() });
       queryClient.invalidateQueries({ queryKey: newsKeys.latest(5) });
       queryClient.invalidateQueries({ queryKey: newsKeys.admin.all() });
-      
+
       // Actualizar el cache de la noticia específica
       queryClient.setQueryData(newsKeys.detail(updatedNews._id), updatedNews);
-      
+
       toast.success('Noticia actualizada exitosamente');
     },
     onError: (error: Error) => {
@@ -182,10 +184,10 @@ export const useToggleNewsStatus = () => {
       queryClient.invalidateQueries({ queryKey: newsKeys.lists() });
       queryClient.invalidateQueries({ queryKey: newsKeys.latest(5) });
       queryClient.invalidateQueries({ queryKey: newsKeys.admin.all() });
-      
+
       // Actualizar el cache
       queryClient.setQueryData(newsKeys.detail(updatedNews._id), updatedNews);
-      
+
       toast.success(`Noticia ${updatedNews.published ? 'publicada' : 'despublicada'} exitosamente`);
     },
     onError: (error: Error) => {
@@ -207,10 +209,10 @@ export const useDeleteNews = () => {
       queryClient.invalidateQueries({ queryKey: newsKeys.lists() });
       queryClient.invalidateQueries({ queryKey: newsKeys.latest(5) });
       queryClient.invalidateQueries({ queryKey: newsKeys.admin.all() });
-      
+
       // Remover del cache
       queryClient.removeQueries({ queryKey: newsKeys.detail(deletedId) });
-      
+
       toast.success('Noticia eliminada exitosamente');
     },
     onError: (error: Error) => {

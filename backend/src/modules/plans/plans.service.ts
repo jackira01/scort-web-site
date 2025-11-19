@@ -1,6 +1,7 @@
 import { PlanDefinitionModel, IPlanDefinition, PlanVariant, PlanFeatures, ContentLimits } from './plan.model';
 import { UpgradeDefinitionModel, IUpgradeDefinition, StackingPolicy, UpgradeEffect } from './upgrade.model';
 import { ProfileModel } from '../profile/profile.model';
+import UserModel from '../user/User.model';
 import { ConfigParameterService } from '../config-parameter/config-parameter.service';
 import InvoiceService from '../payments/invoice.service';
 import { Types } from 'mongoose';
@@ -94,63 +95,45 @@ const generateWhatsAppMessage = async (
     couponInfo?: CouponInfo
 ): Promise<WhatsAppMessage | null> => {
     try {
-        const [companyName, companyWhatsApp] = await Promise.all([
+        const [companyName, companyWhatsApp, user, fullProfile] = await Promise.all([
             ConfigParameterService.getValue('company.name'),
-            ConfigParameterService.getValue('company.whatsapp.number')
+            ConfigParameterService.getValue('company.whatsapp.number'),
+            UserModel.findById(userId).select('name'),
+            ProfileModel.findById(profileId).select('name planAssignment').populate('planAssignment.planId')
         ]);
 
         if (!companyName || !companyWhatsApp) {
-            // Configuración de empresa incompleta para WhatsApp
             return null;
         }
 
-        // Agregar información de descuento si existe
-        let discountInfo = '';
-        if (couponInfo && couponInfo.originalAmount !== undefined && couponInfo.discountAmount !== undefined && couponInfo.finalAmount !== undefined) {
-            discountInfo = `\n\n**Detalle de Descuento:**\n• Cupón: ${couponInfo.code} - ${couponInfo.name}\n• Precio Original: $${couponInfo.originalAmount.toFixed(2)}\n• Descuento Aplicado: -$${couponInfo.discountAmount.toFixed(2)}\n• Total a Pagar: $${couponInfo.finalAmount.toFixed(2)}`;
+        // Obtener plan actual del perfil
+        let currentPlanInfo = 'Sin plan';
+        if (fullProfile?.planAssignment?.planId) {
+            const currentPlan = fullProfile.planAssignment.planId as any;
+            currentPlanInfo = currentPlan.name || currentPlan.code || 'Plan desconocido';
+        } else if (fullProfile?.planAssignment?.planCode) {
+            currentPlanInfo = fullProfile.planAssignment.planCode;
         }
 
-        let message: string;
-        if (isRenewal) {
-            // Mensaje específico para renovaciones
-            if (invoiceId) {
-                const planInfo = planCode && variantDays
-                    ? `\n• Plan: ${planCode} (${variantDays} días)`
-                    : '';
-
-                const totalPrice = (price || 0) * (variantDays || 1);
-                const expirationDate = expiresAt ? new Date(expiresAt).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }) : 'No disponible';
-
-                message = `¡Hola! 👋\n\n🔄 **Quiero renovar mi plan** 🔄\n\nTu solicitud de renovación ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}\n• Total a pagar: $${(price || 0).toLocaleString()} x${variantDays || 0}\n\n💰 **"Total a pagar: $${totalPrice.toLocaleString()}"**\n\n📅 **"Vence el:"** ${expirationDate} 📅${discountInfo}\n\nPor favor, confirma el pago para activar tu perfil. ¡Gracias! 💎`;
-            } else {
-                const planInfo = planCode && variantDays
-                    ? `\n• Plan: ${planCode} (${variantDays} días)`
-                    : '';
-
-                message = `¡Hola! 👋\n\n🔄 **Quiero renovar mi plan** 🔄\n\nTu plan gratuito ha sido renovado exitosamente. ✅\n\n📋 **Detalles:**\n• Perfil: ${profileId}${planInfo}\n\n¡Bienvenido de nuevo a ${companyName}! 🎉\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
-            }
-        } else {
-            // Mensaje para compras normales
-            if (invoiceId) {
-                const planInfo = planCode && variantDays
-                    ? `\n• Plan: ${planCode} (${variantDays} días)`
-                    : '';
-
-                message = `¡Hola! 👋\n\nTu compra ha sido procesada exitosamente. ✅\n\n📋 **Detalles:**${invoiceNumber ? `\n• Número de Factura: ${invoiceNumber}` : ''}\n• ID de Factura: ${invoiceId}\n• Perfil: ${profileId}${planInfo}${discountInfo}\n\n¡Gracias por confiar en ${companyName}! 🙏\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
-            } else {
-                const planInfo = planCode && variantDays
-                    ? `\n• Plan: ${planCode} (${variantDays} días)`
-                    : '';
-
-                message = `¡Hola! 👋\n\nTu plan gratuito ha sido activado exitosamente. ✅\n\n📋 **Detalles:**\n• Perfil: ${profileId}${planInfo}\n\n¡Bienvenido a ${companyName}! 🎉\n\nSi tienes alguna pregunta, no dudes en contactarnos.`;
-            }
+        // Información del producto/servicio a adquirir
+        let productInfo = '';
+        if (planCode && variantDays) {
+            const plan = await PlanDefinitionModel.findOne({ code: planCode });
+            const planName = plan?.name || planCode;
+            productInfo = `${planName} (${variantDays} días)`;
         }
+
+        // Información de cupón si existe
+        let couponLine = '';
+        if (couponInfo) {
+            couponLine = `\n• Cupón: ${couponInfo.code} - Descuento: $${(couponInfo.discountAmount || 0).toFixed(2)}`;
+        }
+
+        // Generar mensaje con nueva estructura
+        const userName = user?.name || 'Cliente';
+        const profileName = fullProfile?.name || profileId;
+
+        const message = `¡Hola prepagoYA.com! \n\nEspero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago. \n\n *Detalles de Compra:*\n• Usuario: ${userName}\n• Perfil: ${profileName}\n• Plan Actual: ${currentPlanInfo}${invoiceNumber ? `\n• Factura: ${invoiceNumber}` : ''}${productInfo ? `\n• Productos/Servicios: ${productInfo}` : ''}${couponLine}\n\nGracias por tu compra.`;
 
         return {
             userId,
@@ -160,7 +143,6 @@ const generateWhatsAppMessage = async (
             message
         };
     } catch (error) {
-        // Error generando mensaje de WhatsApp
         return null;
     }
 };

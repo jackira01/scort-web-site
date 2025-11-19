@@ -21,9 +21,9 @@ router.post('/create-missing-verifications', controller.createMissingVerificatio
 /* ===========================
    📌 Rutas específicas con ID (deben ir antes de /:id genérico)
 =========================== */
-router.post('/:id/subscribe', controller.subscribeProfileController);
-router.post('/:id/purchase-upgrade', controller.purchaseUpgradeController);
-router.post('/:id/upgrade-plan', controller.upgradePlanController);
+router.post('/:id/subscribe', authMiddleware, controller.subscribeProfileController);
+router.post('/:id/purchase-upgrade', authMiddleware, controller.purchaseUpgradeController);
+router.post('/:id/upgrade-plan', authMiddleware, controller.upgradePlanController);
 
 // Información de plan y validaciones
 router.get('/:profileId/plan', controller.getProfilePlanInfoController);

@@ -15,6 +15,7 @@ import {
 } from './profile.service';
 import { ConfigParameterService } from '../config-parameter/config-parameter.service';
 import { UpgradeDefinitionModel } from '../plans/upgrade.model';
+import { ProfileModel } from './profile.model';
 import {
   validatePaidPlanAssignment,
   validateUpgradePurchase,
@@ -502,7 +503,7 @@ export const subscribeProfileController = async (req: AuthRequest, res: Response
 export const purchaseUpgradeController = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { code, orderId, generateInvoice = true } = req.body;
+    const { code, orderId, generateInvoice } = req.body;
 
     if (!code) {
       return res.status(400).json({ error: 'code es requerido' });
@@ -518,8 +519,27 @@ export const purchaseUpgradeController = async (req: AuthRequest, res: Response)
     const user = req.user;
     const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
+    // Determinar si debe generar factura (por defecto true, excepto si admin envía false explícitamente)
+    const shouldGenerateInvoice = generateInvoice !== false;
+
+    console.log(`🔍 [PURCHASE UPGRADE] Debugging:`);
+    console.log(`   - user.role: ${user?.role}`);
+    console.log(`   - isAdmin: ${isAdmin}`);
+    console.log(`   - generateInvoice (raw): ${generateInvoice}`);
+    console.log(`   - shouldGenerateInvoice: ${shouldGenerateInvoice}`);
+    console.log(`   - !shouldGenerateInvoice: ${!shouldGenerateInvoice}`);
+    console.log(`   - Condición (isAdmin && !shouldGenerateInvoice): ${isAdmin && !shouldGenerateInvoice}`);
+
     // Si es admin y no quiere generar factura, activar directamente el upgrade
-    if (isAdmin && !generateInvoice) {
+    if (isAdmin && !shouldGenerateInvoice) {
+      console.log(`✅ [PURCHASE UPGRADE] Entrando en modo sin factura (admin)`);
+
+      // Obtener el perfil como documento de Mongoose para poder usar .save()
+      const profileDoc = await ProfileModel.findById(id);
+      if (!profileDoc) {
+        return res.status(404).json({ error: 'Perfil no encontrado' });
+      }
+
       // Activar upgrade directamente sin factura (lógica para admin)
       const upgrade = await UpgradeDefinitionModel.findOne({ code });
       if (!upgrade) {
@@ -529,24 +549,30 @@ export const purchaseUpgradeController = async (req: AuthRequest, res: Response)
       const now = new Date();
       const endAt = new Date(now.getTime() + (upgrade.durationHours * 60 * 60 * 1000));
 
+      console.log(`📊 [PURCHASE UPGRADE] Upgrade ${code}:`);
+      console.log(`   - durationHours: ${upgrade.durationHours}`);
+      console.log(`   - Fecha inicio: ${now.toISOString()}`);
+      console.log(`   - Fecha fin: ${endAt.toISOString()}`);
+      console.log(`   - Diferencia en horas: ${(endAt.getTime() - now.getTime()) / (1000 * 60 * 60)}`);
+
       // Agregar upgrade directamente al perfil
-      const existingUpgradeIndex = profile.upgrades.findIndex(
+      const existingUpgradeIndex = profileDoc.upgrades.findIndex(
         u => u.code === code && u.endAt > now
       );
 
       if (existingUpgradeIndex !== -1) {
         // Si ya existe, extender o reemplazar según stackingPolicy
         if (upgrade.stackingPolicy === 'extend') {
-          profile.upgrades[existingUpgradeIndex].endAt = new Date(
-            Math.max(profile.upgrades[existingUpgradeIndex].endAt.getTime(), endAt.getTime())
+          profileDoc.upgrades[existingUpgradeIndex].endAt = new Date(
+            Math.max(profileDoc.upgrades[existingUpgradeIndex].endAt.getTime(), endAt.getTime())
           );
         } else if (upgrade.stackingPolicy === 'replace') {
-          profile.upgrades[existingUpgradeIndex].endAt = endAt;
-          profile.upgrades[existingUpgradeIndex].startAt = now;
+          profileDoc.upgrades[existingUpgradeIndex].endAt = endAt;
+          profileDoc.upgrades[existingUpgradeIndex].startAt = now;
         }
       } else {
         // Agregar nuevo upgrade
-        profile.upgrades.push({
+        profileDoc.upgrades.push({
           code,
           startAt: now,
           endAt,
@@ -554,17 +580,18 @@ export const purchaseUpgradeController = async (req: AuthRequest, res: Response)
         } as any);
       }
 
-      await profile.save();
+      await profileDoc.save();
 
       return res.status(200).json({
         success: true,
         message: `Upgrade ${code} activado exitosamente`,
-        profile,
+        profile: profileDoc,
         paymentRequired: false
       });
     }
 
     // Flujo normal: generar factura
+    console.log(`💳 [PURCHASE UPGRADE] Entrando en modo con factura`);
     // Validaciones de negocio
     await validateUpgradePurchase(
       profile.user._id.toString(),

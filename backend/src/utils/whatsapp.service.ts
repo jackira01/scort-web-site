@@ -1,6 +1,7 @@
 import { IInvoice } from '../modules/payments/invoice.model';
 import { IProfile } from '../modules/profile/profile.types';
 import { IUser } from '../modules/user/User.model';
+import { ConfigParameterService } from '../modules/config-parameter/config-parameter.service';
 import { Types } from 'mongoose';
 
 export interface WhatsAppMessageData {
@@ -28,7 +29,6 @@ export interface InvoiceWhatsAppData {
 }
 
 export class WhatsAppService {
-  private static readonly WHATSAPP_BUSINESS_NUMBER = '+573001234567'; // Número de WhatsApp del negocio
   private static readonly WHATSAPP_BASE_URL = 'https://wa.me';
 
   /**
@@ -87,9 +87,8 @@ export class WhatsAppService {
       minute: '2-digit'
     });
 
-    return `🛒 *Quiero hacer una compra*\n\n` +
+    return ` *Quiero hacer una compra*\n\n` +
       `📋 *Detalles de la compra:*\n` +
-      `• ID Factura: ${data.invoiceId}\n` +
       `• Perfil: ${data.profileName}\n` +
       `• Cliente: ${data.userName}\n` +
       `• Email: ${data.userEmail}${planInfo}\n\n` +
@@ -102,8 +101,9 @@ export class WhatsAppService {
   /**
    * Genera la URL completa de WhatsApp con el mensaje
    */
-  static generateWhatsAppURL(message: string, phoneNumber?: string): string {
-    const targetNumber = phoneNumber || this.WHATSAPP_BUSINESS_NUMBER;
+  static async generateWhatsAppURL(message: string, phoneNumber?: string): Promise<string> {
+    const companyWhatsApp = await ConfigParameterService.getValue('company.whatsapp.number');
+    const targetNumber = phoneNumber || companyWhatsApp || '+573001234567'; // Fallback por seguridad
     const encodedMessage = encodeURIComponent(message);
     return `${this.WHATSAPP_BASE_URL}/${targetNumber}?text=${encodedMessage}`;
   }
@@ -111,23 +111,26 @@ export class WhatsAppService {
   /**
    * Genera todos los datos necesarios para WhatsApp (mensaje y URL)
    */
-  static generateWhatsAppMessageData(
+  static async generateWhatsAppMessageData(
     invoice: IInvoice,
     profile: IProfile,
     user: IUser,
     phoneNumber?: string
-  ): WhatsAppMessageData {
+  ): Promise<WhatsAppMessageData> {
     // Generando mensaje completo de WhatsApp
+
+    const companyWhatsApp = await ConfigParameterService.getValue('company.whatsapp.number');
+    const targetNumber = phoneNumber || companyWhatsApp || '+573001234567';
 
     const invoiceData = this.generateInvoiceWhatsAppData(invoice, profile, user);
     // Generando mensaje de compra
     const message = this.generatePurchaseMessage(invoiceData);
     // Generando URL de WhatsApp
-    const url = this.generateWhatsAppURL(message, phoneNumber);
+    const url = await this.generateWhatsAppURL(message, phoneNumber);
 
     const result = {
       message,
-      phoneNumber: phoneNumber || this.WHATSAPP_BUSINESS_NUMBER,
+      phoneNumber: targetNumber,
       url
     };
 

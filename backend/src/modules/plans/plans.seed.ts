@@ -127,7 +127,7 @@ const UPGRADES_DATA = [
         code: 'DESTACADO',
         name: 'Upgrade Destacado',
         price: 15000,
-        durationHours: 24,
+        durationHours: 1, // 1 hora
         requires: [],
         stackingPolicy: 'extend' as const,
         effect: {
@@ -141,7 +141,7 @@ const UPGRADES_DATA = [
         code: 'IMPULSO',
         name: 'Upgrade Impulso',
         price: 25000,
-        durationHours: 12,
+        durationHours: 1, // 1 hora
         requires: ['DESTACADO'],
         stackingPolicy: 'replace' as const,
         effect: {

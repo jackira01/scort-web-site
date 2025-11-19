@@ -105,7 +105,7 @@ class InvoiceController {
       });
     } catch (error: any) {
       console.error('Error getting invoices:', error);
-      
+
       // Manejar error específico de ID inválido
       if (error.message === 'ID de factura inválido') {
         res.status(400).json({
@@ -114,7 +114,7 @@ class InvoiceController {
         });
         return;
       }
-      
+
       res.status(500).json({
         success: false,
         message: error.message || 'Error interno del servidor'
@@ -372,7 +372,7 @@ class InvoiceController {
       const user = populatedInvoice.userId as unknown as IUser;
 
       // Generar datos de WhatsApp usando el servicio
-      const whatsappData = WhatsAppService.generateWhatsAppMessageData(
+      const whatsappData = await WhatsAppService.generateWhatsAppMessageData(
         populatedInvoice,
         profile,
         user,
