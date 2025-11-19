@@ -1039,7 +1039,7 @@ export default function ManagePlansModal({
           <Alert className="border-amber-200 bg-amber-50">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
-              <strong>Importante:</strong> Al realizar una compra, renovacion, mejora de plan, etc. El nuevo plan reemplazará inmediatamente el plan activo actual, independientemente de los días restantes de vigencia.
+              <strong>Importante:</strong> Al realizar una compra, renovacion, mejora de plan, etc. El nuevo plan reemplazará inmediatamente el plan activo actual (incluyendo mejoras o upgrades relacionadas al plan), independientemente de los días restantes de vigencia.
             </AlertDescription>
           </Alert>
 

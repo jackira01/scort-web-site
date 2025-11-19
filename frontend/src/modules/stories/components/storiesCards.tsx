@@ -49,7 +49,7 @@ const StoriesCards = () => {
   if (error || profilesWithStories.length === 0) {
     return (
       <div className="animate-in fade-in-50 slide-in-from-bottom-4 duration-500">
-        <h2 className="text-2xl lg:text-3xl font-bold text-gray-700 dark:text-gray-200 m-0 mb-4">
+        <h2 className="text-2xl lg:text-3xl font-bold m-0 mb-4">
           Últimas historias
         </h2>
         <p className="text-muted-foreground">
@@ -61,7 +61,7 @@ const StoriesCards = () => {
 
   return (
     <div className="animate-in fade-in-50 slide-in-from-bottom-4 duration-500">
-      <h2 className="text-2xl lg:text-3xl font-bold title-gradient bg-clip-text text-transparent m-0 mb-4">
+      <h2 className="text-2xl lg:text-3xl font-bold text-gray-700 dark:text-gray-200 bg-clip-text m-0 mb-4">
         Últimas historias
       </h2>
       <div className="flex h-48 space-x-4 overflow-x-auto overflow-y-visible pb-4 scrollbar-hide items-center">
