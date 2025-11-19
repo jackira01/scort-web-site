@@ -13,6 +13,7 @@ import {
   Trash2,
   Upload,
   Zap,
+  Rocket,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -28,12 +29,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import UploadStoryModal from './UploadStoryModal';
 import DeleteProfileModal from './DeleteProfileModal';
 import ManagePlansModal from '@/components/plans/ManagePlansModal';
+import UnifiedUpgradesModal from '@/components/upgrades/UnifiedUpgradesModal';
 import { deleteProfile, updateProfile, getProfileById } from '@/services/user.service';
 import { validateMaxProfiles } from '@/services/profile-validation.service';
 import { useUpgradePurchase, useUpgradeValidation } from '@/hooks/use-upgrade-purchase';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { hasDestacadoUpgrade } from '@/utils/profile.utils';
-import UpgradeModal from '@/components/upgrades/UpgradeModal';
 
 interface ProfileResponse {
   _id: string;
@@ -103,9 +104,8 @@ export default function AccountProfiles({
     useState<ProfileResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [managePlansProfileId, setManagePlansProfileId] = useState<string | null>(null);
-  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [upgradesModalOpen, setUpgradesModalOpen] = useState(false);
   const [selectedUpgradeProfile, setSelectedUpgradeProfile] = useState<ProfileResponse | null>(null);
-  const [selectedUpgradeCode, setSelectedUpgradeCode] = useState<'DESTACADO' | 'IMPULSO' | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const profilesPerPage = 6;
   const queryClient = useQueryClient();
@@ -126,36 +126,9 @@ export default function AccountProfiles({
   const { mutate: purchaseUpgrade, isPending: isPurchasing } = useUpgradePurchase();
   const { validateUpgrade } = useUpgradeValidation();
 
-  const handleUpgradeClick = (profile: ProfileResponse, upgradeCode: 'DESTACADO' | 'IMPULSO') => {
+  const handleUpgradesClick = (profile: ProfileResponse) => {
     setSelectedUpgradeProfile(profile);
-    setSelectedUpgradeCode(upgradeCode);
-    setUpgradeModalOpen(true);
-  };
-
-  const handleUpgradePurchase = async (profileId: string, upgradeCode: 'DESTACADO' | 'IMPULSO') => {
-    const profile = profiles.find(p => p._id === profileId);
-    if (!profile) return;
-
-    const validation = validateUpgrade(profile, upgradeCode);
-
-    if (!validation.canPurchase) {
-      toast.error(validation.reason || 'No se puede comprar este upgrade');
-      return;
-    }
-
-    purchaseUpgrade(
-      { profileId, upgradeCode },
-      {
-        onSuccess: () => {
-          toast.success(`Upgrade ${upgradeCode} activado correctamente`);
-          // Recargar para mostrar cambios
-          setTimeout(() => window.location.reload(), 1000);
-        },
-        onError: (error: any) => {
-          toast.error(error.response?.data?.message || 'Error al activar el upgrade');
-        }
-      }
-    );
+    setUpgradesModalOpen(true);
   };
 
 
@@ -346,15 +319,21 @@ export default function AccountProfiles({
                   )}
                 </div>
 
-                {/* Badge de Destacado siempre visible */}
-                {hasDestacadoUpgrade(profile as any) && (
-                  <div className="absolute top-3 left-3 z-10">
+                {/* Badges de Destacado e Impulso siempre visibles */}
+                <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
+                  {hasDestacadoUpgrade(profile as any) && (
                     <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white">
                       <Star className="h-3 w-3 mr-1" />
                       Destacado
                     </Badge>
-                  </div>
-                )}
+                  )}
+                  {profile.hasImpulsoUpgrade && (
+                    <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                      <Zap className="h-3 w-3 mr-1" />
+                      Impulso
+                    </Badge>
+                  )}
+                </div>
 
                 {/* Contenido con animación - aparece en hover y pulsa periódicamente */}
                 <CardContent className="pulse-content absolute inset-0 p-4 flex flex-col justify-end z-10 pointer-events-none group-hover:pointer-events-auto">                  <div className="space-y-3 bg-black/60 backdrop-blur-sm rounded-lg p-4">
@@ -437,68 +416,21 @@ export default function AccountProfiles({
                         </Tooltip>
                       </TooltipProvider>
                       {/* Botones de Upgrade */}
-                      {/* Solo mostrar botón de Destacado si NO es plan DIAMANTE */}
-                      {profile.planAssignment?.planCode !== 'DIAMANTE' && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant={hasDestacadoUpgrade(profile as any) ? "default" : "outline"}
-                                className={`p-2 ${hasDestacadoUpgrade(profile as any)
-                                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white'
-                                  : 'bg-white/90 hover:bg-white hover:border-yellow-500'
-                                  } transition-all duration-200`}
-                                onClick={() => handleUpgradeClick(profile, 'DESTACADO')}
-                                disabled={hasDestacadoUpgrade(profile as any)}
-                              >
-                                <Star className="h-3 w-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{hasDestacadoUpgrade(profile as any) ? 'Destacado Activo' : 'Activar Destacado'}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                      {/* Mostrar indicador de Destacado incluido para DIAMANTE */}
-                      {profile.planAssignment?.planCode === 'DIAMANTE' && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                className="p-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white cursor-default"
-                                disabled
-                              >
-                                <Star className="h-3 w-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Destacado incluido en plan Diamante</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
+                      {/* Botón unificado de Mejoras (Upgrades) */}
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
                               size="sm"
-                              variant={profile.hasImpulsoUpgrade ? "default" : "outline"}
-                              className={`p-2 ${profile.hasImpulsoUpgrade
-                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
-                                : 'bg-white/90 hover:bg-white hover:border-purple-500'
-                                } transition-all duration-200`}
-                              onClick={() => handleUpgradeClick(profile, 'IMPULSO')}
-                              disabled={profile.hasImpulsoUpgrade}
+                              variant="outline"
+                              className="p-2 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-950/40 dark:to-pink-950/40 hover:from-purple-200 hover:to-pink-200 border-purple-300 transition-all duration-200"
+                              onClick={() => handleUpgradesClick(profile)}
                             >
-                              <Zap className="h-3 w-3" />
+                              <Rocket className="h-4 w-4 text-purple-600" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>{profile.hasImpulsoUpgrade ? 'Impulso Activo' : 'Activar Impulso'}</p>
+                            <p>Mejoras del perfil</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -709,18 +641,17 @@ export default function AccountProfiles({
         }}
       />
 
-      {/* Modal para upgrades */}
-      {selectedUpgradeProfile && selectedUpgradeCode && (
-        <UpgradeModal
-          isOpen={upgradeModalOpen}
+      {/* Modal unificado de mejoras/upgrades */}
+      {selectedUpgradeProfile && (
+        <UnifiedUpgradesModal
+          isOpen={upgradesModalOpen}
           onClose={() => {
-            setUpgradeModalOpen(false);
+            setUpgradesModalOpen(false);
             setSelectedUpgradeProfile(null);
-            setSelectedUpgradeCode(null);
+            // Refrescar datos
+            queryClient.invalidateQueries({ queryKey: ['userProfiles'] });
           }}
-          profileId={selectedUpgradeProfile._id}
           profile={selectedUpgradeProfile}
-          upgradeCode={selectedUpgradeCode}
         />
       )}
     </div>

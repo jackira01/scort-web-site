@@ -47,7 +47,8 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
     req.user = {
       ...user.toObject(),
       _id: (user._id as string).toString(),
-      id: (user._id as string).toString()
+      id: (user._id as string).toString(),
+      role: user.role // Asegurar que role se pase explícitamente
     };
 
     next();

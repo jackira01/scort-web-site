@@ -24,7 +24,7 @@ export const DashProfilePanel = () => {
   const [selectedProfileForStory, setSelectedProfileForStory] = useState<any | null>(null);
   const [uploadStoryModalOpen, setUploadStoryModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit] = useState(8);
+  const [limit] = useState(10);
   const [userId, setUserId] = useState<string | undefined>(undefined);
   const [userIdInput, setUserIdInput] = useState('');
 
@@ -141,7 +141,7 @@ export const DashProfilePanel = () => {
 
       {/* Perfiles */}
       {profilesData?.docs?.length ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {profilesData.docs.map((profile: any, index: number) => (
             <DashbProfileCard
               key={profile._id}

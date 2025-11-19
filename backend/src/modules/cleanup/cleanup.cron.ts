@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { runCleanupTasks } from './cleanup.service';
 
 /**
@@ -27,6 +28,24 @@ const scheduleNextCleanup = (): void => {
 };
 
 /**
+ * Espera a que MongoDB esté conectado antes de ejecutar tareas
+ */
+const waitForMongoConnection = async (): Promise<void> => {
+  return new Promise((resolve) => {
+    if (mongoose.connection.readyState === 1) {
+      // Ya conectado
+      resolve();
+      return;
+    }
+
+    // Esperar al evento de conexión
+    mongoose.connection.once('connected', () => {
+      resolve();
+    });
+  });
+};
+
+/**
  * Inicia el cron job de limpieza automática
  */
 export const startCleanupCron = (): void => {
@@ -38,16 +57,21 @@ export const startCleanupCron = (): void => {
   isRunning = true;
   console.log('[Cleanup Cron] Started - running every 5 minutes');
 
-  // Ejecutar limpieza inmediatamente al iniciar
-  console.log('[Cleanup Cron] Running initial cleanup...');
-  runCleanupTasks()
-    .then(() => {
-      console.log('[Cleanup Cron] Initial cleanup completed');
+  // Esperar a que MongoDB esté conectado antes de ejecutar la limpieza inicial
+  waitForMongoConnection()
+    .then(async () => {
+      console.log('[Cleanup Cron] MongoDB connected, running initial cleanup...');
+      try {
+        await runCleanupTasks();
+        console.log('[Cleanup Cron] Initial cleanup completed');
+      } catch (error) {
+        console.error('[Cleanup Cron] Error in initial cleanup:', error);
+      }
       // Programar la siguiente ejecución
       scheduleNextCleanup();
     })
     .catch((error) => {
-      console.error('[Cleanup Cron] Error in initial cleanup:', error);
+      console.error('[Cleanup Cron] Error waiting for MongoDB connection:', error);
       // Aún así, programar la siguiente ejecución
       scheduleNextCleanup();
     });

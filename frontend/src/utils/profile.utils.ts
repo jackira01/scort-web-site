@@ -97,3 +97,16 @@ export const hasDestacadoUpgrade = (profile: Profile): boolean => {
   // Verificar si 'DESTACADO' está en los upgrades activos
   return profile.activeUpgrades.some((upgrade: { code: string; startAt: Date; endAt: Date }) => upgrade.code === 'DESTACADO');
 };
+
+/**
+ * Verifica si un perfil tiene el upgrade "IMPULSO" activo
+ */
+export const hasImpulsoUpgrade = (profile: Profile): boolean => {
+  // Verificar si el perfil tiene upgrades activos
+  if (!profile.activeUpgrades || !Array.isArray(profile.activeUpgrades)) {
+    return false;
+  }
+
+  // Verificar si 'IMPULSO' está en los upgrades activos
+  return profile.activeUpgrades.some((upgrade: { code: string; startAt: Date; endAt: Date }) => upgrade.code === 'IMPULSO');
+};
