@@ -5,16 +5,17 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Eye, EyeOff, Lock, Mail, AlertCircle, CheckCircle, Shield } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+import { Eye, EyeOff, Lock, Mail, AlertCircle, CheckCircle, Shield, User, Building2 } from 'lucide-react';
+import { useSession, signOut, signIn } from 'next-auth/react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  setPasswordAfterGoogleRegister, 
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  setPasswordAfterGoogleRegister,
   postRegisterPasswordSchema
 } from '@/lib/account-linking';
 
@@ -36,79 +37,165 @@ export default function PostRegister() {
       email: '',
       password: '',
       confirmPassword: '',
+      accountType: 'common', // Valor por defecto
     }
   });
 
   useEffect(() => {
-    if (status === 'loading') return;
+    console.log('🔵 [POST-REGISTER] useEffect 1 - Estado de carga');
+    console.log('   Status:', status);
+    console.log('   Session:', session);
+
+    if (status === 'loading') {
+      console.log('   ⏳ Cargando sesión...');
+      return;
+    }
 
     if (status === 'unauthenticated') {
+      console.log('   ❌ Usuario no autenticado, redirigiendo...');
       router.push('/autenticacion/iniciar-sesion');
       return;
     }
 
     if (session?.user?.email) {
+      console.log('   ✅ Email encontrado, configurando formulario:', session.user.email);
       form.setValue('email', session.user.email);
     }
   }, [status, session, router, form]);
 
   useEffect(() => {
-    if (status === 'loading') return;
-    if (!session?.user?.id) return;
+    console.log('\n🟢 [POST-REGISTER] useEffect 2 - Verificación hasPassword');
+    console.log('   Status:', status);
+    console.log('   Session completa:', JSON.stringify(session, null, 2));
+    console.log('   User ID:', session?.user?.id);
+    console.log('   Has Password:', session?.user?.hasPassword);
+
+    if (status === 'loading') {
+      console.log('   ⏳ Status loading, esperando...');
+      return;
+    }
+
+    if (!session?.user?.id) {
+      console.log('   ⚠️ No hay user ID, esperando...');
+      return;
+    }
 
     const hasPassword = session.user.hasPassword;
+    console.log('   📋 Valor de hasPassword extraído:', hasPassword, 'Tipo:', typeof hasPassword);
 
     if (hasPassword === true) {
-      router.push('/');
+      console.log('   ✅ Usuario ya tiene contraseña, REDIRIGIENDO A HOME...');
+      router.replace('/');
       return;
     }
 
     if (hasPassword !== false) {
       // Valor inesperado, mantener en la página
+      console.warn('   ⚠️ Valor inesperado de hasPassword:', hasPassword, 'Tipo:', typeof hasPassword);
+      console.warn('   Manteniendo en página post-register');
       return;
     }
-  }, [status, session, router]);
+
+    console.log('   ℹ️ hasPassword es false, usuario debe configurar contraseña');
+  }, [status, session?.user?.hasPassword, session?.user?.id, router]);
 
   const handleSubmit = async (data: PostRegisterFormData) => {
-    if (!session?.user?.id) return;
+    console.log('\n🚀 [POST-REGISTER] handleSubmit - INICIO');
+    console.log('   User ID:', session?.user?.id);
+    console.log('   Data:', data);
+
+    if (!session?.user?.id) {
+      console.error('   ❌ No hay user ID, abortando');
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
-    
+
     try {
+      console.log('   📤 Enviando datos al backend...');
+
       const response = await setPasswordAfterGoogleRegister({
         email: data.email,
-        password: data.password
-      } as any);
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+        accountType: data.accountType
+      });
+
+      console.log('   📥 Respuesta del backend:', response);
 
       if (response.success) {
-        setSuccess('Contraseña configurada exitosamente. Redirigiendo...');
-        
-        // Una sola actualización de sesión después del éxito
-        await update();
-        
-        // Redirigir después de un breve delay
-        setTimeout(() => {
-          router.push('/');
-        }, 1500);
+        console.log('   ✅ Contraseña configurada exitosamente');
+        setSuccess('Contraseña configurada exitosamente. Cerrando sesión para actualizar...');
+
+        // Guardar email y provider para re-login automático
+        const userEmail = session?.user?.email;
+        const userProvider = session?.user?.provider;
+
+        console.log('   💾 Guardando datos para re-login:', { userEmail, userProvider });
+
+        // ESTRATEGIA: Hacer signOut y luego signIn para forzar recreación del token
+        try {
+          console.log('   🚪 Cerrando sesión...');
+          await signOut({ redirect: false });
+
+          console.log('   ⏳ Esperando 500ms...');
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          if (userProvider === 'google') {
+            console.log('   🔑 Usuario de Google - redirigiendo a home (auto-login en siguiente visita)');
+            window.location.href = '/';
+          } else {
+            console.log('   🔑 Re-autenticando con credenciales...');
+            // Para usuarios con credenciales, hacer signIn automático
+            const signInResult = await signIn('credentials', {
+              email: userEmail,
+              password: data.password,
+              redirect: false
+            });
+
+            console.log('   📋 Resultado de signIn:', signInResult);
+
+            if (signInResult?.ok) {
+              console.log('   ✅ Re-autenticación exitosa, redirigiendo...');
+              window.location.href = '/';
+            } else {
+              console.error('   ❌ Error en re-autenticación');
+              setError('Por favor inicia sesión nuevamente');
+              setTimeout(() => {
+                window.location.href = '/autenticacion/iniciar-sesion';
+              }, 2000);
+            }
+          }
+        } catch (error) {
+          console.error('   💥 Error en proceso de re-login:', error);
+          window.location.href = '/';
+        }
       } else {
+        console.error('   ❌ Error en respuesta del backend:', response.message);
         setError(response.message || 'Error al configurar la contraseña');
       }
     } catch (error) {
-      console.error('Error al crear la contraseña:', error);
+      console.error('   💥 Excepción en handleSubmit:', error);
       setError('Error al crear la contraseña. Por favor, intenta de nuevo.');
     } finally {
+      console.log('   🏁 handleSubmit - FIN (isLoading = false)');
       setIsLoading(false);
     }
   };
 
   if (status === 'loading') {
+    console.log('⏳ [POST-REGISTER] Renderizando loading state...');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
       </div>
     );
   }
+
+  console.log('🎨 [POST-REGISTER] Renderizando formulario principal');
+  console.log('   Status:', status);
+  console.log('   HasPassword actual:', session?.user?.hasPassword);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 p-4">
@@ -132,7 +219,7 @@ export default function PostRegister() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             {success && (
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
@@ -152,6 +239,45 @@ export default function PostRegister() {
                   {...form.register('email')}
                 />
               </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label>Tipo de cuenta</Label>
+              <RadioGroup
+                value={form.watch('accountType')}
+                onValueChange={(value) => form.setValue('accountType', value as 'common' | 'agency')}
+                className="space-y-3"
+              >
+                <div className="flex items-center space-x-3 border rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors">
+                  <RadioGroupItem value="common" id="common" />
+                  <Label htmlFor="common" className="flex items-center gap-3 cursor-pointer flex-1">
+                    <div className="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-full">
+                      <User className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">Cuenta Individual</p>
+                      <p className="text-sm text-gray-500">Para uso personal</p>
+                    </div>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 border rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors">
+                  <RadioGroupItem value="agency" id="agency" />
+                  <Label htmlFor="agency" className="flex items-center gap-3 cursor-pointer flex-1">
+                    <div className="flex items-center justify-center w-10 h-10 bg-pink-100 rounded-full">
+                      <Building2 className="w-5 h-5 text-pink-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">Cuenta de Agencia</p>
+                      <p className="text-sm text-gray-500">Para gestionar múltiples perfiles</p>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+              {form.formState.errors.accountType && (
+                <p className="text-sm text-red-600">
+                  {form.formState.errors.accountType.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -222,8 +348,8 @@ export default function PostRegister() {
               </p>
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full bg-pink-600 hover:bg-pink-700"
               disabled={isLoading}
             >

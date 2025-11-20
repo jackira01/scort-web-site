@@ -22,6 +22,12 @@ interface UnifiedUpgradesModalProps {
             endAt: string | Date;
             purchaseAt?: string | Date;
         }>;
+        upgrades?: Array<{
+            code: string;
+            startAt: string | Date;
+            endAt: string | Date;
+            purchaseAt?: string | Date;
+        }>;
         planAssignment?: {
             planCode: string;
         };
@@ -41,13 +47,22 @@ export default function UnifiedUpgradesModal({
     const destacadoDefinition = upgradesData?.upgrades?.find(u => u.code === 'DESTACADO');
     const impulsoDefinition = upgradesData?.upgrades?.find(u => u.code === 'IMPULSO');
 
+    // Usar activeUpgrades si existe, sino usar upgrades (para compatibilidad con adminboard)
+    const profileUpgrades = profile.activeUpgrades || profile.upgrades || [];
+
+    // Filtrar solo upgrades activos (que no hayan expirado)
+    const now = new Date();
+    const activeUpgrades = profileUpgrades.filter(u => {
+        const endDate = new Date(u.endAt);
+        return endDate > now;
+    });
     // Obtener upgrade activo de DESTACADO
-    const destacadoUpgrade = profile.activeUpgrades?.find(
+    const destacadoUpgrade = activeUpgrades.find(
         u => u.code === 'DESTACADO' || u.code === 'HIGHLIGHT'
     );
 
     // Obtener upgrade activo de IMPULSO
-    const impulsoUpgrade = profile.activeUpgrades?.find(
+    const impulsoUpgrade = activeUpgrades.find(
         u => u.code === 'IMPULSO' || u.code === 'BOOST'
     );
 
@@ -85,15 +100,46 @@ export default function UnifiedUpgradesModal({
     const formatDate = (date: string | Date) => {
         try {
             const d = new Date(date);
-            return d.toLocaleDateString('es-ES', {
+
+            if (isNaN(d.getTime())) {
+                console.error('❌ Fecha inválida:', date);
+                return 'Fecha no disponible';
+            }
+
+            // Usar el formato del navegador local (simple y directo)
+            return d.toLocaleDateString('es-CO', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
                 hour: '2-digit',
-                minute: '2-digit'
+                minute: '2-digit',
+                hour12: false
             });
-        } catch {
+        } catch (error) {
+            console.error('❌ Error al formatear fecha:', error);
             return 'Fecha no disponible';
+        }
+    };
+
+    // Función para calcular la duración en horas y minutos
+    const calculateDuration = (startAt: string | Date, endAt: string | Date) => {
+        try {
+            const start = new Date(startAt);
+            const end = new Date(endAt);
+            const diffMs = end.getTime() - start.getTime();
+            const diffMinutes = Math.floor(diffMs / (1000 * 60));
+            const hours = Math.floor(diffMinutes / 60);
+            const minutes = diffMinutes % 60;
+
+            if (hours > 0 && minutes > 0) {
+                return `${hours} hora${hours > 1 ? 's' : ''} y ${minutes} minuto${minutes > 1 ? 's' : ''}`;
+            } else if (hours > 0) {
+                return `${hours} hora${hours > 1 ? 's' : ''}`;
+            } else {
+                return `${minutes} minuto${minutes > 1 ? 's' : ''}`;
+            }
+        } catch {
+            return 'N/A';
         }
     };
 
@@ -147,6 +193,14 @@ export default function UnifiedUpgradesModal({
                                 {/* Fechas si está activo */}
                                 {destacadoUpgrade && (
                                     <div className="space-y-2 mt-4 p-3 bg-muted rounded-lg">
+                                        <div className="flex items-center gap-2 mb-3 p-2 bg-blue-50 dark:bg-blue-950/20 rounded">
+                                            <Clock className="h-4 w-4 text-blue-600" />
+                                            <div>
+                                                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                                                    Duración: {calculateDuration(destacadoUpgrade.startAt, destacadoUpgrade.endAt)}
+                                                </p>
+                                            </div>
+                                        </div>
                                         <div className="flex items-start gap-2">
                                             <Calendar className="h-4 w-4 mt-0.5 text-green-600" />
                                             <div>
@@ -224,6 +278,14 @@ export default function UnifiedUpgradesModal({
                                 {/* Fechas si está activo */}
                                 {impulsoUpgrade && (
                                     <div className="space-y-2 mt-4 p-3 bg-muted rounded-lg">
+                                        <div className="flex items-center gap-2 mb-3 p-2 bg-blue-50 dark:bg-blue-950/20 rounded">
+                                            <Clock className="h-4 w-4 text-blue-600" />
+                                            <div>
+                                                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                                                    Duración: {calculateDuration(impulsoUpgrade.startAt, impulsoUpgrade.endAt)}
+                                                </p>
+                                            </div>
+                                        </div>
                                         <div className="flex items-start gap-2">
                                             <Calendar className="h-4 w-4 mt-0.5 text-green-600" />
                                             <div>

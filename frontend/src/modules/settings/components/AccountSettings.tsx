@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSession } from 'next-auth/react';
 import { Gem, Star, Zap, Crown, Shield, CheckCircle, Clock, XCircle } from 'lucide-react';
-import AgencyConversionCard from './AgencyConversionCard';
 import { useUser } from '@/hooks/use-user';
 import ChangePasswordCard from './ChangePasswordCard';
 import { useState } from 'react';
@@ -130,7 +129,7 @@ const AccountSettings = () => {
         </Card>
 
         {/* Componente de conversión a agencia */}
-        {user && <AgencyConversionCard user={user} />}
+        {/* user && <AgencyConversionCard user={user} /> */}
 
         {/* Componente de cambiar contraseña */}
         <ChangePasswordCard />

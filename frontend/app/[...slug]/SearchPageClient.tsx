@@ -271,17 +271,6 @@ export default function SearchPageClient({
     hasLocationOrCategoryChanged ||
     (filters.page && filters.page > 1) // CRÍTICO: Habilitar fetch cuando page > 1
   ));
-
-  console.log('🔍 [PAGINATION DEBUG] shouldFetchClientSide calculation:', {
-    hasInitialFetch,
-    hasAdditionalFilters,
-    hasLocationOrCategoryChanged,
-    currentPage: filters.page,
-    serverHasDifferentLimit,
-    serverProfileCount: profilesData.profiles.length,
-    result: shouldFetchClientSide
-  });
-
   // Usar useQuery para manejar los datos filtrados
   const {
     data: currentProfilesData,
@@ -303,14 +292,6 @@ export default function SearchPageClient({
   const displayData = serverHasDifferentLimit && !currentProfilesData ? null : (currentProfilesData || profilesData);
   const isActuallyLoading = isLoadingProfiles || (serverHasDifferentLimit && !currentProfilesData);
 
-  console.log('🎯 [RENDER DEBUG] Display state:', {
-    serverHasDifferentLimit,
-    hasCurrentProfilesData: !!currentProfilesData,
-    displayDataIsNull: displayData === null,
-    isActuallyLoading,
-    displayProfileCount: displayData?.profiles?.length || 0
-  });
-
   // Marcar que ya se hizo el fetch inicial después de la primera carga
   useEffect(() => {
     if (!isActuallyLoading && !hasInitialFetch) {
@@ -320,17 +301,8 @@ export default function SearchPageClient({
 
   // Refetch automático cuando cambian filtros adicionales (edad, verificación, etc.) o la página
   useEffect(() => {
-    console.log('🔄 [PAGINATION DEBUG] Filters changed:', {
-      page: filters.page,
-      limit: filters.limit,
-      hasInitialFetch,
-      hasAdditionalFilters,
-      shouldFetchClientSide
-    });
-
     // Refetch si hay filtros adicionales O si cambió la página
     if (hasInitialFetch && (hasAdditionalFilters || filters.page !== 1)) {
-      console.log('✅ [PAGINATION DEBUG] Triggering refetch...');
       refetch();
     }
   }, [
@@ -458,8 +430,6 @@ export default function SearchPageClient({
 
   // Manejar cambio de ubicación - mantener filtros
   const handleLocationChange = (newDepartment?: string, newCity?: string) => {
-    console.log('🔄 handleLocationChange:', { newDepartment, newCity });
-
     // Marcar que estamos actualizando la URL para evitar sincronización circular
     isUpdatingUrlRef.current = true;
 
@@ -487,8 +457,6 @@ export default function SearchPageClient({
 
   // Manejar cambio de categoría - mantener filtros
   const handleCategoryChange = (newCategory: string) => {
-    console.log('🔄 handleCategoryChange:', { newCategory });
-
     // Marcar que estamos actualizando la URL
     isUpdatingUrlRef.current = true;
 
@@ -694,11 +662,8 @@ export default function SearchPageClient({
               profilesData={displayData}
               filters={normalizedFiltersForDisplay}
               onPageChange={(page) => {
-                console.log('📄 [PAGINATION DEBUG] onPageChange called with page:', page);
-                console.log('📄 [PAGINATION DEBUG] Current filters.page:', filters.page);
                 // Actualizar el número de página en los filtros
                 updateFilter('page', page);
-                console.log('📄 [PAGINATION DEBUG] After updateFilter called');
               }}
             />
           </div>

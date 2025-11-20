@@ -177,12 +177,20 @@ const generateWhatsAppMessage = async (
         productInfo = upgradeCode;
       }
     } else if (variantDays) {
-      // Si es un plan, obtener el nombre del plan que se está comprando
-      const planCode = fullProfile?.planAssignment?.planCode;
-      if (planCode) {
-        const plan = await PlanDefinitionModel.findOne({ code: planCode });
-        const planName = plan?.name || planCode;
-        productInfo = `${planName} (${variantDays} días)`;
+      // Si es un plan, obtener el nombre del plan que se está comprando desde invoiceId
+      // En lugar de usar el plan actual del perfil
+      if (invoiceId) {
+        try {
+          const invoice = await InvoiceModel.findById(invoiceId).select('items');
+          const planItem = invoice?.items.find((item: any) => item.type === 'plan');
+          if (planItem) {
+            productInfo = `${planItem.name} (${variantDays} días)`;
+          } else {
+            productInfo = `Plan (${variantDays} días)`;
+          }
+        } catch (error) {
+          productInfo = `Plan (${variantDays} días)`;
+        }
       } else {
         productInfo = `Plan (${variantDays} días)`;
       }
@@ -1310,7 +1318,7 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
     // Obtener configuraciones de límites según el tipo de cuenta
     let freeProfilesMax, paidProfilesMax, totalVisibleMax, requiresIndependentVerification;
 
-    if (accountType === 'agency') {
+    /* if (accountType === 'agency') {
       // Para agencias, verificar que la conversión esté aprobada
       if (user.agencyInfo?.conversionStatus !== 'approved') {
         return {
@@ -1336,7 +1344,7 @@ export const validateUserProfileLimits = async (userId: string, planCode?: strin
         ConfigParameterService.getValue('profiles.limits.total_visible_max')
       ]);
       requiresIndependentVerification = false;
-    }
+    } */
 
     const limits = {
       freeProfilesMax: freeProfilesMax || (accountType === 'agency' ? 5 : 3),
@@ -1489,7 +1497,7 @@ export const validateMaxProfiles = async (userId: string): Promise<{ ok: boolean
     // Obtener el límite total de perfiles según el tipo de cuenta
     let totalVisibleMax: number;
 
-    if (accountType === 'agency') {
+    /* if (accountType === 'agency') {
       // Verificar que la conversión esté aprobada
       if (user.agencyInfo?.conversionStatus !== 'approved') {
         return {
@@ -1501,7 +1509,9 @@ export const validateMaxProfiles = async (userId: string): Promise<{ ok: boolean
       totalVisibleMax = await ConfigParameterService.getValue('profiles.limits.agency.total_visible_max') || 55;
     } else {
       totalVisibleMax = await ConfigParameterService.getValue('profiles.limits.total_visible_max') || 13;
-    }
+    } */
+
+    totalVisibleMax = await ConfigParameterService.getValue('profiles.limits.total_visible_max') || 13;
 
     // Contar perfiles actuales del usuario (excluyendo eliminados)
     const currentProfileCount = await ProfileModel.countDocuments({
