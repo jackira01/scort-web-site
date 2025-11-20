@@ -210,9 +210,17 @@ export const calculateVisibilityScore = async (profile: IProfile, now: Date = ne
   // ESTRATEGIA MEJORADA CON 4 SUBCATEGORÍAS:
   // Cada nivel tiene 1,000,000 de rango dividido en:
   // 1. Nativos con IMPULSO: 750,000 - 999,999 (MÁXIMA PRIORIDAD)
+  //    - NO se reordenan con shuffle
+  //    - Solo otro perfil con IMPULSO más reciente puede superarlos
+  //    - Ordenados por fecha de compra de IMPULSO (más reciente primero)
   // 2. Nativos sin upgrades o solo DESTACADO: 500,000 - 749,999
+  //    - Se reordenan con shuffle normal
   // 3. Destacados (subidos) con IMPULSO: 250,000 - 499,999
+  //    - NO se reordenan con shuffle
+  //    - Ejemplo: Nivel 2 + DESTACADO (sube a nivel 1) + IMPULSO (posición 1)
+  //    - Pueden superar a nativos del nivel superior si tienen IMPULSO
   // 4. Destacados (subidos) sin IMPULSO: 0 - 249,999
+  //    - Se reordenan con shuffle normal
 
   const baseLevelScore = (6 - effectiveLevel) * 1000000;
   const isNative = (originalLevel === effectiveLevel);
@@ -302,14 +310,56 @@ export const getPriorityScore = async (profile: IProfile, now: Date = new Date()
 /**
  * Ordena una lista de perfiles dentro del mismo nivel
  * Agrupa por score exacto y aplica rotación aleatoria dentro de cada grupo
+ * EXCEPCIÓN: Perfiles con IMPULSO activo NO se reordenan aleatoriamente,
+ * se ordenan por fecha de compra del IMPULSO (más reciente primero)
  * @param profiles - Lista de perfiles con metadata (effectiveLevel, priorityScore)
- * @returns Lista ordenada por prioridad con rotación aleatoria
+ * @param now - Fecha actual para determinar upgrades activos
+ * @returns Lista ordenada por prioridad con rotación aleatoria (excepto IMPULSO)
  */
-export const sortProfilesWithinLevel = async (profiles: IProfile[]): Promise<IProfile[]> => {
-  // Agrupar perfiles por score exacto
+export const sortProfilesWithinLevel = async (profiles: IProfile[], now: Date = new Date()): Promise<IProfile[]> => {
+  // Separar perfiles con IMPULSO activo de los demás
+  const profilesWithImpulso: Array<{ profile: IProfile, impulsoPurchaseDate: Date, score: number }> = [];
+  const profilesWithoutImpulso: IProfile[] = [];
+
+  for (const profile of profiles) {
+    const score = (profile as any).priorityScore || 0;
+
+    // Verificar si tiene IMPULSO activo
+    const impulsoUpgrade = profile.upgrades?.find(
+      (upgrade) =>
+        upgrade.code === 'IMPULSO' &&
+        upgrade.startAt &&
+        upgrade.endAt &&
+        new Date(upgrade.startAt) <= now &&
+        new Date(upgrade.endAt) > now
+    );
+
+    if (impulsoUpgrade && impulsoUpgrade.purchaseAt) {
+      profilesWithImpulso.push({
+        profile,
+        impulsoPurchaseDate: new Date(impulsoUpgrade.purchaseAt),
+        score
+      });
+    } else {
+      profilesWithoutImpulso.push(profile);
+    }
+  }
+
+  // Ordenar perfiles CON IMPULSO ÚNICAMENTE por fecha de compra (DESC - más reciente primero)
+  // IMPORTANTE: El score NO importa para perfiles con IMPULSO, solo la fecha de compra
+  profilesWithImpulso.sort((a, b) => {
+    return b.impulsoPurchaseDate.getTime() - a.impulsoPurchaseDate.getTime();
+  });
+
+  console.log(`   🎯 Perfiles con IMPULSO: ${profilesWithImpulso.length} (ordenados SOLO por fecha de compra - más reciente primero)`);
+  profilesWithImpulso.forEach((item, idx) => {
+    console.log(`      ${idx + 1}. Perfil ${item.profile._id} - Score: ${item.score} - Comprado: ${item.impulsoPurchaseDate.toISOString()}`);
+  });
+
+  // Agrupar perfiles SIN IMPULSO por score exacto
   const profilesByScore: { [score: number]: IProfile[] } = {};
 
-  profiles.forEach(profile => {
+  profilesWithoutImpulso.forEach(profile => {
     const score = (profile as any).priorityScore || 0;
     if (!profilesByScore[score]) {
       profilesByScore[score] = [];
@@ -317,15 +367,15 @@ export const sortProfilesWithinLevel = async (profiles: IProfile[]): Promise<IPr
     profilesByScore[score].push(profile);
   });
 
-  // Ordenar scores de mayor a menor (DESC) - mayor score = mayor prioridad = aparece primero
+  // Ordenar scores de mayor a menor (DESC)
   const sortedScores = Object.keys(profilesByScore)
     .map(Number)
     .sort((a, b) => b - a);
 
-  console.log(`   📊 Scores encontrados (ordenados DESC): ${sortedScores.join(', ')}`);
+  console.log(`   📊 Scores SIN IMPULSO encontrados (ordenados DESC): ${sortedScores.join(', ')}`);
 
-  // Para cada grupo de score, aplicar rotación aleatoria y luego ordenar por lastShownAt
-  const result: IProfile[] = [];
+  // Para cada grupo de score SIN IMPULSO, aplicar rotación aleatoria y luego ordenar por lastShownAt
+  const profilesWithoutImpulsoSorted: IProfile[] = [];
 
   for (const score of sortedScores) {
     const groupProfiles = profilesByScore[score];
@@ -348,8 +398,16 @@ export const sortProfilesWithinLevel = async (profiles: IProfile[]): Promise<IPr
       return idA.localeCompare(idB);
     });
 
-    result.push(...sortedGroup);
+    profilesWithoutImpulsoSorted.push(...sortedGroup);
   }
+
+  // COMBINAR: Perfiles con IMPULSO van PRIMERO (ya ordenados), luego el resto
+  const result: IProfile[] = [
+    ...profilesWithImpulso.map(item => item.profile),
+    ...profilesWithoutImpulsoSorted
+  ];
+
+  console.log(`   ✅ Total ordenado: ${result.length} perfiles (${profilesWithImpulso.length} con IMPULSO, ${profilesWithoutImpulsoSorted.length} sin IMPULSO)`);
 
   return result;
 };
@@ -410,7 +468,7 @@ export const sortProfiles = async (profiles: IProfile[], now: Date = new Date())
   // Iterar sobre TODOS los niveles encontrados, no solo 1-5
   for (const level of levelsFound) {
     console.log(`\n📊 Ordenando nivel ${level} - ${profilesByLevel[level].length} perfiles`);
-    const sortedLevelProfiles = await sortProfilesWithinLevel(profilesByLevel[level]);
+    const sortedLevelProfiles = await sortProfilesWithinLevel(profilesByLevel[level], now);
 
     sortedLevelProfiles.forEach((p, idx) => {
       console.log(`   ${idx + 1}. Perfil ${p._id} - Score: ${(p as any).priorityScore}`);

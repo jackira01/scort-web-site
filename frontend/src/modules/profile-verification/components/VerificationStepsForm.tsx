@@ -39,9 +39,11 @@ interface VerificationStepsFormProps {
   verificationId: string;
   initialData: any;
   onSuccess: () => void;
+  profileName?: string;
+  userName?: string;
 }
 
-export function VerificationStepsForm({ profileId, verificationId, initialData, onSuccess }: VerificationStepsFormProps) {
+export function VerificationStepsForm({ profileId, verificationId, initialData, onSuccess, profileName, userName }: VerificationStepsFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<{ [key: string]: boolean }>({});
   const [currentStep, setCurrentStep] = useState(1);
@@ -592,7 +594,11 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   variant="outline"
                   className="w-full border-green-500 text-green-700 hover:bg-green-100 dark:hover:bg-green-900"
                   onClick={() => {
-                    const message = `Hola, me gustaría solicitar una cita para verificación por videollamada de 1 minuto para mi perfil (ID: ${profileId})`;
+                    const userInfo = userName ? `Usuario: ${userName}` : '';
+                    const profileInfo = profileName ? `Perfil: ${profileName}` : '';
+                    const profileIdInfo = `ID del perfil: ${profileId}`;
+                    const parts = [userInfo, profileInfo, profileIdInfo].filter(Boolean);
+                    const message = `Hola, me gustaría solicitar una cita para verificación por videollamada de 1 minuto.\n\n${parts.join('\n')}`;
                     const whatsappUrl = `https://wa.me/${companyWhatsApp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
                     window.open(whatsappUrl, '_blank');
                   }}

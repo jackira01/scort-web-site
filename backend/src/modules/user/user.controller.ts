@@ -187,6 +187,7 @@ export const resetPasswordController = async (req: Request, res: Response) => {
 export const getUserById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    console.log('🔍 [GET USER BY ID] Request para user:', id);
 
     // Validar que el ID sea válido
     if (!id) {
@@ -196,10 +197,11 @@ export const getUserById = async (req: Request, res: Response) => {
     const user = await userService.getUserById(id);
 
     if (!user) {
+      console.log('❌ [GET USER BY ID] Usuario no encontrado:', id);
       return res.status(404).json({ mensaje: 'Usuario no encontrado' });
     }
 
-    res.json({
+    const responseData = {
       _id: user._id,
       email: user.email,
       name: user.name,
@@ -211,8 +213,18 @@ export const getUserById = async (req: Request, res: Response) => {
       agencyInfo: user.agencyInfo,
       hasPassword: user.hasPassword, // Agregar hasPassword para el callback JWT
       emailVerified: user.emailVerified,
+    };
+
+    console.log('✅ [GET USER BY ID] Usuario encontrado:', {
+      _id: user._id,
+      email: user.email,
+      hasPassword: user.hasPassword,
+      accountType: user.accountType
     });
+
+    res.json(responseData);
   } catch (error) {
+    console.error('💥 [GET USER BY ID] Error:', error);
     // Error al obtener usuario por ID
     res.status(500).json({
       mensaje: 'Error interno del servidor al obtener usuario',
@@ -687,13 +699,22 @@ export const updateUserLastLogin = async (req: Request, res: Response) => {
 // Configurar contraseña después del registro con Google (post-register)
 export const setPasswordAfterGoogleRegisterController = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, accountType } = req.body;
+    console.log('🔍 POST-REGISTER - Datos recibidos:', { email, accountType });
 
     // Validar datos requeridos
     if (!email || !password) {
       return res.status(400).json({
         success: false,
         message: 'Email y contraseña son requeridos'
+      });
+    }
+
+    // Validar accountType si se proporciona
+    if (accountType && !['common', 'agency'].includes(accountType)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tipo de cuenta inválido'
       });
     }
 
@@ -718,23 +739,41 @@ export const setPasswordAfterGoogleRegisterController = async (req: Request, res
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Actualizar el usuario con la nueva contraseña
-    const updatedUser = await userService.updateUser(user._id?.toString() || '', {
+    // Preparar datos de actualización
+    const updateData: any = {
       password: hashedPassword,
       hasPassword: true,
       providers: user.providers.includes('credentials')
         ? user.providers
         : [...user.providers, 'credentials']
-    });
+    };
+
+    // Agregar accountType si se proporcionó
+    if (accountType) {
+      updateData.accountType = accountType;
+    }
+
+    console.log('📦 POST-REGISTER - updateData antes de guardar:', updateData);
+
+    // Actualizar el usuario con la nueva contraseña y accountType
+    const updatedUser = await userService.updateUser(user._id?.toString() || '', updateData);
+
+    console.log('✅ POST-REGISTER - Usuario actualizado exitosamente');
+    console.log('   _id:', updatedUser?._id);
+    console.log('   email:', updatedUser?.email);
+    console.log('   hasPassword:', updatedUser?.hasPassword);
+    console.log('   accountType:', updatedUser?.accountType);
+    console.log('   providers:', updatedUser?.providers);
 
     if (!updatedUser) {
+      console.error('❌ POST-REGISTER - updatedUser es null/undefined');
       return res.status(500).json({
         success: false,
         message: 'Error al actualizar usuario'
       });
     }
 
-    res.json({
+    const responseData = {
       success: true,
       message: 'Contraseña configurada exitosamente',
       user: {
@@ -745,8 +784,13 @@ export const setPasswordAfterGoogleRegisterController = async (req: Request, res
         verification_in_progress: updatedUser.verification_in_progress,
         role: updatedUser.role,
         hasPassword: updatedUser.hasPassword,
+        accountType: updatedUser.accountType
       }
-    });
+    };
+
+    console.log('📤 POST-REGISTER - Enviando respuesta al frontend:', responseData);
+
+    res.json(responseData);
   } catch (error) {
     console.error('Error in setPasswordAfterGoogleRegisterController:', error);
     res.status(500).json({

@@ -141,7 +141,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     async jwt({ token, user, account, trigger }) {
-
       // Solo mantener logs críticos para debugging de producción
       if (user) {
         token.id = user.id || '';
@@ -166,16 +165,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         try {
           const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
-          const response = await fetch(`${apiUrl}/api/users/${token.id}`, {
+          const fetchUrl = `${apiUrl}/api/users/${token.id}`;
+
+          const response = await fetch(fetchUrl, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
             },
           });
 
+
           if (response.ok) {
             const userData = await response.json();
-
+            // Actualizar token con nuevos valores
+            const oldHasPassword = token.hasPassword;
             token.hasPassword = userData.hasPassword;
             token.isVerified = userData.isVerified;
             token.verification_in_progress = userData.verification_in_progress;
@@ -186,8 +189,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             token.profileVerificationStatus = userData.profileVerificationStatus;
             token.isHighlighted = userData.isHighlighted;
             token.highlightedUntil = userData.highlightedUntil;
+
           } else {
             console.error('❌ [NEXTAUTH JWT] Failed to fetch user data:', response.status);
+            const errorText = await response.text();
+            console.error('❌ [NEXTAUTH JWT] Error response:', errorText);
           }
         } catch (error) {
           console.error('❌ [NEXTAUTH JWT] Error fetching user data:', error);
@@ -221,7 +227,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.isHighlighted = token.isHighlighted as boolean;
         session.user.highlightedUntil = token.highlightedUntil as string;
       }
-
       return session;
     },
 

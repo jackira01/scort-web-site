@@ -78,23 +78,12 @@ export const NewsModal: React.FC<NewsModalProps> = ({
         )}
 
         <div className="p-6">
-          {/* Header sin imagen */}
-          {!currentNews.imageUrl && (
-            <DialogHeader className="mb-4">
-              <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
-                {currentNews.title}
-              </DialogTitle>
-            </DialogHeader>
-          )}
-
-          {/* Título cuando hay imagen */}
-          {currentNews.imageUrl && (
-            <div className="mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                {currentNews.title}
-              </h2>
-            </div>
-          )}
+          {/* Header - siempre usar DialogHeader para accesibilidad */}
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
+              {currentNews.title}
+            </DialogTitle>
+          </DialogHeader>
 
           {/* Metadatos */}
           <div className="flex items-center gap-4 mb-6 text-sm text-gray-600 dark:text-gray-400">

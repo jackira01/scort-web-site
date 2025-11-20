@@ -266,7 +266,9 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         location: {
           country: profileDetails.location?.country?.label || profileDetails.location?.country || 'Colombia',
           department: profileDetails.location?.department?.label || profileDetails.location?.department || '',
+          departmentValue: profileDetails.location?.department?.value || '', // Agregar value para el Select
           city: profileDetails.location?.city?.label || profileDetails.location?.city || '',
+          cityValue: profileDetails.location?.city?.value || '', // Agregar value para el Select
         },
         description: profileDetails.description || '',
         selectedServices: getSelectedServices(),
@@ -304,7 +306,9 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       form.setValue('category', formData.category);
       form.setValue('location.country', formData.location.country);
       form.setValue('location.department', formData.location.department);
+      form.setValue('location.departmentValue', formData.location.departmentValue);
       form.setValue('location.city', formData.location.city);
+      form.setValue('location.cityValue', formData.location.cityValue);
 
       // Step 2 - Descripción y servicios
       form.setValue('description', formData.description);

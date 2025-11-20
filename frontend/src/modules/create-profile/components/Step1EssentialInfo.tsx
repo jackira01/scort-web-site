@@ -26,11 +26,14 @@ export function Step1EssentialInfo({
   const { register, control, watch, setValue, formState: { errors } } = useFormContext();
   const gender = watch('gender');
   const locationDepartment = watch('location.department');
+  const locationDepartmentValue = watch('location.departmentValue'); // Valor normalizado para queries
+  const locationCityValue = watch('location.cityValue'); // Valor normalizado para queries
   const profileName = watch('profileName') || '';
 
   // Obtener departamentos y ciudades del backend
   const { data: departments = [], isLoading: loadingDepartments } = useDepartments();
-  const { data: cities = [], isLoading: loadingCities } = useCitiesByDepartment(locationDepartment || '');
+  // Usar el value normalizado para obtener las ciudades
+  const { data: cities = [], isLoading: loadingCities } = useCitiesByDepartment(locationDepartmentValue || '');
 
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
@@ -195,14 +198,25 @@ export function Step1EssentialInfo({
                 name="location.department"
                 control={control}
                 render={({ field }) => {
+                  // Obtener el value del departamento almacenado
+                  const storedDeptValue = watch('location.departmentValue');
+
                   return (
                     <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
+                      onValueChange={(selectedValue) => {
+                        // Encontrar el departamento seleccionado para obtener tanto value como label
+                        const selectedDept = departments.find(d => d.value === selectedValue);
+                        if (selectedDept) {
+                          field.onChange(selectedDept.label); // Guardar el label para el backend
+                          setValue('location.departmentValue', selectedDept.value); // Guardar el value para queries
+                        } else {
+                          field.onChange(selectedValue);
+                        }
                         setValue('location.city', ''); // Reset city when department changes
+                        setValue('location.cityValue', ''); // Reset city value
                       }}
-                      value={field.value || ''}
-                      key={`department-${field.value}`}
+                      value={storedDeptValue || ''}
+                      key={`department-${storedDeptValue}`}
                       disabled={loadingDepartments}
                     >
                       <SelectTrigger className={errors.location?.department ? 'border-red-500' : ''}>
@@ -233,17 +247,29 @@ export function Step1EssentialInfo({
                 name="location.city"
                 control={control}
                 render={({ field }) => {
+                  // Obtener el value de la ciudad almacenado
+                  const storedCityValue = watch('location.cityValue');
+
                   return (
                     <Select
-                      onValueChange={field.onChange}
-                      value={field.value || ''}
-                      key={`city-${field.value}`}
-                      disabled={!locationDepartment || loadingCities}
+                      onValueChange={(selectedValue) => {
+                        // Encontrar la ciudad seleccionada para obtener el label
+                        const selectedCity = cities.find(c => c.value === selectedValue);
+                        if (selectedCity) {
+                          field.onChange(selectedCity.label); // Guardar el label (nombre) para el backend
+                          setValue('location.cityValue', selectedCity.value); // Guardar el value para el Select
+                        } else {
+                          field.onChange(selectedValue);
+                        }
+                      }}
+                      value={storedCityValue || ''}
+                      key={`city-${storedCityValue}`}
+                      disabled={!locationDepartmentValue || loadingCities}
                     >
                       <SelectTrigger className={errors.location?.city ? 'border-red-500' : ''}>
                         <SelectValue
                           placeholder={
-                            !locationDepartment
+                            !locationDepartmentValue
                               ? "Primero selecciona departamento"
                               : loadingCities
                                 ? "Cargando..."

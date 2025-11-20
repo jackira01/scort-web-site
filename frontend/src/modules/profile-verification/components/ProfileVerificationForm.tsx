@@ -186,6 +186,8 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
           verificationId={verification._id}
           initialData={verification.steps}
           onSuccess={() => setShowForm(false)}
+          profileName={verification.profile?.name}
+          userName={verification.profile?.user?.name}
         />
       )}
     </div>

@@ -73,7 +73,7 @@ export const purchaseUpgrade = async (
  */
 export const getAvailableUpgrades = async () => {
   try {
-    const response = await axios.get(`${API_URL}/api/upgrades`);
+    const response = await axios.get(`${API_URL}/api/plans/upgrades`);
     return response.data;
   } catch (error) {
     throw error;

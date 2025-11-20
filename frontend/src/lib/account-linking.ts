@@ -46,6 +46,9 @@ const postRegisterPasswordSchema = z.object({
     .min(8, 'La contraseña debe tener al menos 8 caracteres')
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Debe contener al menos una mayúscula, una minúscula y un número'),
   confirmPassword: z.string(),
+  accountType: z.enum(['common', 'agency'], {
+    required_error: 'Debes seleccionar un tipo de cuenta',
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Las contraseñas no coinciden',
   path: ['confirmPassword'],
@@ -74,7 +77,7 @@ export async function createUser(userData: Partial<UserAccount>): Promise<UserAc
     createdAt: new Date(),
     updatedAt: new Date(),
   };
-  
+
   mockUsers.set(user.email, user);
   return user;
 }
@@ -83,53 +86,53 @@ export async function createUser(userData: Partial<UserAccount>): Promise<UserAc
 export async function updateUser(email: string, updates: Partial<UserAccount>): Promise<UserAccount | null> {
   const user = mockUsers.get(email.toLowerCase());
   if (!user) return null;
-  
+
   const updatedUser = {
     ...user,
     ...updates,
     updatedAt: new Date(),
   };
-  
+
   mockUsers.set(email.toLowerCase(), updatedUser);
   return updatedUser;
 }
 
 // Generar token de verificación
 export async function generateVerificationToken(
-  email: string, 
+  email: string,
   type: 'email' | 'password'
 ): Promise<string> {
   const token = crypto.randomUUID();
   const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
-  
+
   verificationTokens.set(token, { email: email.toLowerCase(), expires, type });
-  
+
   // En producción: enviar email con el token
   console.log(`Verification token for ${email}: ${token}`);
-  
+
   return token;
 }
 
 // Verificar token
 export async function verifyToken(token: string): Promise<{ email: string; type: 'email' | 'password' } | null> {
   const tokenData = verificationTokens.get(token);
-  
+
   if (!tokenData || tokenData.expires < new Date()) {
     verificationTokens.delete(token);
     return null;
   }
-  
+
   return { email: tokenData.email, type: tokenData.type };
 }
 
 // Función principal para manejar login con credenciales
 export async function handleCredentialsLogin(
-  email: string, 
+  email: string,
   password: string
 ): Promise<AccountLinkingResult> {
   try {
     const user = await findUserByEmail(email);
-    
+
     if (!user) {
       return {
         success: false,
@@ -137,12 +140,12 @@ export async function handleCredentialsLogin(
         message: 'Usuario no encontrado. ¿Deseas registrarte?',
       };
     }
-    
+
     // Caso 1: Usuario tiene contraseña - login normal
     if (user.hasPassword) {
       // En producción: verificar hash de contraseña con bcrypt
       const passwordValid = await verifyPassword(password, user.email);
-      
+
       if (passwordValid) {
         return {
           success: true,
@@ -158,7 +161,7 @@ export async function handleCredentialsLogin(
         };
       }
     }
-    
+
     // Caso 2: Usuario existe pero sin contraseña (registrado con Google)
     if (user.providers.includes('google') && !user.hasPassword) {
       return {
@@ -169,13 +172,13 @@ export async function handleCredentialsLogin(
         requiresVerification: !user.emailVerified,
       };
     }
-    
+
     return {
       success: false,
       action: 'error',
       message: 'Error en la configuración de la cuenta',
     };
-    
+
   } catch (error) {
     console.error('Error in handleCredentialsLogin:', error);
     return {
@@ -199,7 +202,7 @@ export async function createPasswordForExistingAccount(
         message: validation.error.errors[0].message,
       };
     }
-    
+
     // Verificar token
     const tokenData = await verifyToken(data.verificationToken);
     if (!tokenData || tokenData.email !== data.email.toLowerCase()) {
@@ -209,7 +212,7 @@ export async function createPasswordForExistingAccount(
         message: 'Token de verificación inválido o expirado',
       };
     }
-    
+
     const user = await findUserByEmail(data.email);
     if (!user) {
       return {
@@ -218,7 +221,7 @@ export async function createPasswordForExistingAccount(
         message: 'Usuario no encontrado',
       };
     }
-    
+
     // Actualizar usuario con contraseña
     const hashedPassword = await hashPassword(data.password);
     const updatedUser = await updateUser(user.email, {
@@ -226,20 +229,20 @@ export async function createPasswordForExistingAccount(
       providers: [...new Set([...user.providers, 'credentials'])] as ('credentials' | 'google')[],
       emailVerified: new Date(),
     });
-    
+
     // Guardar contraseña (en producción usar tabla separada)
     await savePasswordHash(user.email, hashedPassword);
-    
+
     // Limpiar token usado
     verificationTokens.delete(data.verificationToken);
-    
+
     return {
       success: true,
       action: 'login',
       message: 'Contraseña creada exitosamente. Ya puedes iniciar sesión.',
       user: updatedUser!,
     };
-    
+
   } catch (error) {
     console.error('Error in createPasswordForExistingAccount:', error);
     return {
@@ -260,21 +263,21 @@ export async function initiatePasswordCreation(email: string): Promise<{ success
         message: 'Usuario no encontrado',
       };
     }
-    
+
     if (user.hasPassword) {
       return {
         success: false,
         message: 'Esta cuenta ya tiene contraseña configurada',
       };
     }
-    
+
     const token = await generateVerificationToken(email, 'password');
-    
+
     return {
       success: true,
       message: 'Se ha enviado un enlace de verificación a tu email',
     };
-    
+
   } catch (error) {
     console.error('Error in initiatePasswordCreation:', error);
     return {
@@ -340,7 +343,7 @@ async function verifyPassword(password: string, email: string): Promise<boolean>
   // En producción: usar bcrypt.compare
   const hash = passwordHashes.get(email.toLowerCase());
   if (!hash) return false;
-  
+
   // Mock: extraer la contraseña original del hash mock
   const hashPrefix = 'hashed_';
   if (hash.startsWith(hashPrefix)) {
@@ -351,7 +354,7 @@ async function verifyPassword(password: string, email: string): Promise<boolean>
       return originalPassword === password;
     }
   }
-  
+
   return false;
 }
 
@@ -361,13 +364,13 @@ async function savePasswordHash(email: string, hash: string): Promise<void> {
 
 // Función para manejar login con Google (callback)
 export async function handleGoogleLogin(
-  email: string, 
-  name: string, 
+  email: string,
+  name: string,
   image?: string
 ): Promise<AccountLinkingResult> {
   try {
     let user = await findUserByEmail(email);
-    
+
     if (!user) {
       // Crear nuevo usuario con Google - REQUIERE configurar contraseña
       user = await createUser({
@@ -378,7 +381,7 @@ export async function handleGoogleLogin(
         providers: ['google'],
         emailVerified: new Date(), // Google ya verificó el email
       });
-      
+
       return {
         success: true,
         action: 'post_register',
@@ -398,7 +401,7 @@ export async function handleGoogleLogin(
             image: user.image || image,
           });
         }
-        
+
         return {
           success: true,
           action: 'post_register',
@@ -416,7 +419,7 @@ export async function handleGoogleLogin(
             image: user.image || image,
           });
         }
-        
+
         return {
           success: true,
           action: 'login',
@@ -425,7 +428,7 @@ export async function handleGoogleLogin(
         };
       }
     }
-    
+
   } catch (error) {
     console.error('Error in handleGoogleLogin:', error);
     return {
@@ -441,8 +444,8 @@ export async function setPasswordAfterGoogleRegister(
   data: z.infer<typeof postRegisterPasswordSchema>
 ): Promise<AccountLinkingResult> {
   try {
-    const { email, password } = data;
-    
+    const { email, password, accountType } = data;
+
     // Hacer petición al endpoint del backend
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/set-password-after-google-register`, {
       method: 'POST',
@@ -452,6 +455,7 @@ export async function setPasswordAfterGoogleRegister(
       body: JSON.stringify({
         email,
         password,
+        accountType,
       }),
     });
 
@@ -471,7 +475,7 @@ export async function setPasswordAfterGoogleRegister(
       message: result.message || 'Contraseña configurada exitosamente. Ya puedes acceder a tu cuenta.',
       user: result.user || undefined,
     };
-    
+
   } catch (error) {
     console.error('Error in setPasswordAfterGoogleRegister:', error);
     return {
