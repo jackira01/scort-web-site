@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { VerificationBar } from '@/components/VerificationBar/VerificationBar';
+import { createProfileSlug } from '@/utils/slug';
 import type { ProfileCardData } from '@/types/profile.types';
 
 interface CardComponentProps {
@@ -22,7 +23,7 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {profiles.map((profile, index) => (
-        <Link href={`/perfil/${profile._id}`} key={profile._id}>
+        <Link href={`/perfil/${createProfileSlug(profile.name, profile._id)}`} key={profile._id}>
           <Card
             className={`group hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer md:w-60 lg:w-64 ${profile.hasDestacadoUpgrade
               ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50'

@@ -83,16 +83,16 @@ export const SocialMediaProfile = ({
     <Card className="bg-card border-border animate-in fade-in-50 slide-in-from-right-6 duration-700">
       <CardContent className="p-4 space-y-3">
         {/* Mostrar número de teléfono siempre */}
-        <div className="text-center p-3 bg-muted/50 rounded-lg">
-          {contact.number ? (
-            <div className="flex items-center justify-center space-x-2 mb-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <div className="flex items-center space-x-1">
-                <span className="font-medium text-lg text-muted-foreground">+57</span>
-                <span className="font-medium text-lg">{contact.number}</span>
-              </div>
+        {contact.number && <div className="text-center p-3 bg-muted/50 rounded-lg">
+
+          <div className="flex items-center justify-center space-x-2 mb-2">
+            <Phone className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center space-x-1">
+              <span className="font-medium text-lg text-muted-foreground">+57</span>
+              <span className="font-medium text-lg">{contact.number}</span>
             </div>
-          ) : <></>}
+          </div>
+
           {/* <div className="flex items-center justify-center space-x-4 text-sm text-muted-foreground">
             {isValidContactMethod(contact.whatsapp) && (
               <div className="flex items-center space-x-1">
@@ -111,7 +111,8 @@ export const SocialMediaProfile = ({
               </div>
             )}
           </div> */}
-        </div>
+        </div>}
+
 
         {/* Botones de contacto condicionales */}
         {isValidContactMethod(contact.number) && (

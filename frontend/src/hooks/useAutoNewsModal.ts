@@ -30,18 +30,21 @@ export const useAutoNewsModal = (
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentNews, setCurrentNews] = useState<News | null>(null);
-  const [hasShownInitialNews, setHasShownInitialNews] = useState(false);
+  const [hasCheckedInitialNews, setHasCheckedInitialNews] = useState(false);
+  const [shownInSessionNews, setShownInSessionNews] = useState<Set<string>>(new Set());
 
-  const { 
-    data: latestNewsResponse, 
+  const {
+    data: latestNewsResponse,
     isLoading,
-    refetch 
+    refetch
   } = useLatestNews(10); // Obtener las últimas 10 noticias
 
-  const { 
-    getLatestUnviewedNews, 
+  const {
+    getLatestUnviewedNews,
     markNewsAsViewed,
-    cleanOldViewedNews 
+    cleanOldViewedNews,
+    hasNewsBeenViewed,
+    filterUnviewedNews
   } = useNewsLocalStorage();
 
   // Obtener la última noticia no vista usando localStorage
@@ -55,17 +58,37 @@ export const useAutoNewsModal = (
     if (newsToShow) {
       setCurrentNews(newsToShow);
       setIsModalOpen(true);
+      // Marcar como mostrada en esta sesión
+      setShownInSessionNews(prev => new Set(prev).add(newsToShow._id));
     }
   };
 
   // Función para cerrar el modal
   const closeModal = () => {
-    // Marcar la noticia como vista al cerrar el modal
-    if (currentNews) {
-      markNewsAsViewed(currentNews._id);
-    }
+    // Ya NO marcamos como vista automáticamente al cerrar
+    // Esto solo se hará si el usuario marca el checkbox "No volver a mostrar"
     setIsModalOpen(false);
     setCurrentNews(null);
+
+    // Buscar la siguiente noticia no vista después de un pequeño delay
+    setTimeout(() => {
+      // Filtrar noticias que no han sido vistas permanentemente y no mostradas en esta sesión
+      const unviewedNews = latestNews.filter(news =>
+        !shownInSessionNews.has(news._id) &&
+        !hasNewsBeenViewed(news._id)
+      );
+
+      if (unviewedNews.length > 0) {
+        // Ordenar por fecha y tomar la más reciente no mostrada
+        const nextNews = unviewedNews.sort((a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )[0];
+
+        if (nextNews) {
+          openModal(nextNews);
+        }
+      }
+    }, 500);
   };
 
   // Limpiar noticias vistas antiguas al inicializar
@@ -75,19 +98,22 @@ export const useAutoNewsModal = (
 
   // Efecto para mostrar automáticamente la noticia no leída
   useEffect(() => {
-    if (!enabled || isLoading || hasShownInitialNews) {
+    if (!enabled || isLoading || hasCheckedInitialNews) {
       return;
     }
 
     if (latestUnreadNews) {
       const timer = setTimeout(() => {
         openModal(latestUnreadNews);
-        setHasShownInitialNews(true);
+        setHasCheckedInitialNews(true);
       }, delay);
 
       return () => clearTimeout(timer);
+    } else {
+      // Si no hay noticias no leídas, marcar como chequeado de todas formas
+      setHasCheckedInitialNews(true);
     }
-  }, [enabled, isLoading, latestUnreadNews, hasShownInitialNews, delay]);
+  }, [enabled, isLoading, latestUnreadNews, hasCheckedInitialNews, delay]);
 
   // Efecto para verificar periódicamente nuevas noticias
   useEffect(() => {
@@ -104,18 +130,18 @@ export const useAutoNewsModal = (
 
   // Efecto para mostrar nuevas noticias que aparezcan después de la inicial
   useEffect(() => {
-    if (!enabled || !hasShownInitialNews || isLoading) {
+    if (!enabled || !hasCheckedInitialNews || isLoading) {
       return;
     }
 
     // Si hay una nueva noticia no leída y el modal no está abierto
     if (latestUnreadNews && !isModalOpen) {
-      // Verificar si es una noticia diferente a la que ya se mostró
-      if (!currentNews || currentNews._id !== latestUnreadNews._id) {
+      // Solo mostrar si NO se ha mostrado ya en esta sesión
+      if (!shownInSessionNews.has(latestUnreadNews._id)) {
         openModal(latestUnreadNews);
       }
     }
-  }, [enabled, hasShownInitialNews, isLoading, latestUnreadNews, isModalOpen, currentNews]);
+  }, [enabled, hasCheckedInitialNews, isLoading, latestUnreadNews, isModalOpen, shownInSessionNews]);
 
   return {
     isModalOpen,
