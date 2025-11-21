@@ -24,6 +24,7 @@ export const NewsModal: React.FC<NewsModalProps> = ({
   news: propNews
 }) => {
   const [currentNews, setCurrentNews] = useState<News | null>(propNews || null);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
   const { data: latestNewsResponse } = useLatestNews(10);
   const { getLatestUnviewedNews, markNewsAsViewed } = useNewsLocalStorage();
 
@@ -38,11 +39,12 @@ export const NewsModal: React.FC<NewsModalProps> = ({
   }, [propNews, latestNewsResponse, getLatestUnviewedNews]);
 
   const handleClose = () => {
-    if (currentNews?._id) {
-      // Marcar como vista al cerrar usando localStorage
+    if (currentNews?._id && dontShowAgain) {
+      // Marcar como vista permanentemente si el checkbox está marcado
       markNewsAsViewed(currentNews._id);
     }
     setCurrentNews(null);
+    setDontShowAgain(false);
     onClose();
   };
 
@@ -112,7 +114,22 @@ export const NewsModal: React.FC<NewsModalProps> = ({
           </ScrollArea>
 
           {/* Footer */}
-          <div className="flex justify-end mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="dont-show-again"
+                checked={dontShowAgain}
+                onChange={(e) => setDontShowAgain(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-600 focus:ring-offset-0 dark:border-gray-600 dark:bg-gray-800 cursor-pointer"
+              />
+              <label
+                htmlFor="dont-show-again"
+                className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none"
+              >
+                No volver a mostrar
+              </label>
+            </div>
             <Button
               onClick={handleClose}
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"

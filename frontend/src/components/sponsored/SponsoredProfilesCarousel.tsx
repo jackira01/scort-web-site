@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
+import { createProfileSlug } from '@/utils/slug';
 import type { Profile } from '@/types/profile.types';
 import { getProfilesForCards } from '@/services/filters.service';
 
@@ -164,7 +165,7 @@ export default function SponsoredProfilesCarousel({ className = '' }: SponsoredP
               className="flex-shrink-0"
               style={{ width: `${100 / visibleCount}%` }}
             >
-              <Link href={`/perfil/${profile._id}`}>
+              <Link href={`/perfil/${createProfileSlug(profile.name, profile._id)}`}>
                 <Card className="hover:shadow-md transition-shadow cursor-pointer bg-white/90 backdrop-blur-sm border-purple-200 hover:border-purple-300">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">

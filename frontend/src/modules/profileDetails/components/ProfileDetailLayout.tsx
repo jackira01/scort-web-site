@@ -5,6 +5,7 @@ import { useProfile } from '@/hooks/use-profile';
 import { ProfileGallery } from '@/modules/profileDetails/components/GaleryProfile';
 import { useProfileVerification } from '@/hooks/use-profile-verification';
 import { useSession } from 'next-auth/react';
+import { createProfileSlug } from '@/utils/slug';
 
 import AudioPlayer from './AudioPlayer';
 import AvailabilityProfile from './AvailabilityProfile';
@@ -12,6 +13,7 @@ import { DescriptionProfile } from './DescriptionProfile';
 import PhysicalTraitsProfile from './PhysicalTraitsProfile';
 import ProfielHeader from './ProfileHeader';
 import RatesProfile from './RatesProfile';
+import { ShareProfile } from './ShareProfile';
 import { SocialMediaProfile } from './SocialMediaProfile';
 import { VerificationStatus } from './VerificationStatus';
 import VideoPlayer from './VideoPlayer';
@@ -167,6 +169,12 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
                 contact={adaptedProfileData.contact}
                 socialMedia={adaptedProfileData.socialMedia}
               />
+
+              {/* Compartir perfil en móvil */}
+              <ShareProfile
+                profileName={adaptedProfileData.name}
+                profileUrl={typeof window !== 'undefined' ? `${window.location.origin}/perfil/${createProfileSlug(adaptedProfileData.name, adaptedProfileData.id)}` : ''}
+              />
             </div>
 
             <DescriptionProfile
@@ -195,6 +203,12 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
               <SocialMediaProfile
                 contact={adaptedProfileData.contact}
                 socialMedia={adaptedProfileData.socialMedia}
+              />
+
+              {/* Compartir perfil */}
+              <ShareProfile
+                profileName={adaptedProfileData.name}
+                profileUrl={typeof window !== 'undefined' ? `${window.location.origin}/perfil/${createProfileSlug(adaptedProfileData.name, adaptedProfileData.id)}` : ''}
               />
             </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { ZoomIn, ZoomOut, RotateCw, Download } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Button } from './button';
@@ -81,23 +81,6 @@ export const ImageModal = ({
         setPosition({ x: 0, y: 0 });
     };
 
-    const handleDownload = async () => {
-        try {
-            const response = await fetch(images[currentIndex]);
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `imagen-${currentIndex + 1}.jpg`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        } catch (error) {
-            // Error downloading image
-        }
-    };
-
     const handleMouseDown = (e: React.MouseEvent) => {
         if (zoom > 1) {
             setIsDragging(true);
@@ -169,14 +152,6 @@ export const ImageModal = ({
                             className="bg-black/50 hover:bg-black/70 text-white border-none"
                         >
                             <RotateCw className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleDownload}
-                            className="bg-black/50 hover:bg-black/70 text-white border-none"
-                        >
-                            <Download className="h-4 w-4" />
                         </Button>
                         <Button
                             variant="ghost"

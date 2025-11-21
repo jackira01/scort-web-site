@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Eye, Trash2, ToggleLeft, ToggleRight, Upload } from 'lucide-react';
-import { useBlog, useUpdateBlog, useDeleteBlog, useToggleBlog } from '../../../../../src/hooks/use-blogs';
+import { useUpdateBlog, useDeleteBlog, useToggleBlog } from '../../../../../src/hooks/use-blogs';
 import { blogService } from '../../../../../src/services/blog.service';
 import { useDeferredUpload } from '../../../../../src/hooks/use-deferred-upload';
 import { Button } from '../../../../../src/components/ui/button';
 import { Input } from '../../../../../src/components/ui/input';
 import { Label } from '../../../../../src/components/ui/label';
 import dynamic from 'next/dynamic';
+import { useQuery } from '@tanstack/react-query';
 
 const BlogEditor = dynamic(() => import('../../../../../src/components/blog/BlogEditor'), {
   ssr: false,
@@ -84,7 +85,13 @@ export default function EditBlogPage() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
 
-  const { data: blog, isLoading, error } = useBlog(blogId);
+  // Usar useQuery con el método de admin para obtener blogs no publicados también
+  const { data: blog, isLoading, error } = useQuery({
+    queryKey: ['blog-admin', blogId],
+    queryFn: () => blogService.getBlogForAdmin(blogId),
+    enabled: !!blogId,
+  });
+
   const updateBlogMutation = useUpdateBlog();
   const deleteBlogMutation = useDeleteBlog();
   const toggleBlogMutation = useToggleBlog();

@@ -18,6 +18,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { createProfileSlug } from '@/utils/slug';
 import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
@@ -477,7 +478,7 @@ export default function AccountProfiles({
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Link href={`/perfil/${profile._id}`}>
+                            <Link href={`/perfil/${createProfileSlug(profile.name, profile._id)}`}>
                               <Button
                                 size="sm"
                                 className="p-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
