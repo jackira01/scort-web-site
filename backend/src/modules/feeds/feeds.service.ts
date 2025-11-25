@@ -18,11 +18,12 @@ export interface HomeFeedResponse {
   metadata: {
     levelSeparators: Array<{
       level: number;
-      startIndex: number;sponsored - profiles
-count: number;
+      startIndex: number;
+      count: number;
     }>;
   };
 }
+
 /**
  * Actualiza lastShownAt para los perfiles servidos (sistema de rotación justa)
  * @param profileIds - IDs de los perfiles que fueron servidos
