@@ -1198,6 +1198,51 @@ Content-Type: application/json
 
 ---
 
+
+## Cambios recientes en visibilidad y upgrades (Noviembre 2025)
+
+### 1. Nuevo ordenamiento de perfiles con IMPULSO
+
+Los perfiles que tienen el upgrade IMPULSO activo ya no se ordenan por score, sino exclusivamente por la fecha de compra del IMPULSO:
+
+- **Perfiles con IMPULSO**: Se agrupan y se ordenan por `impulsoPurchaseDate` (más reciente primero).
+- Solo un nuevo IMPULSO puede mover la posición de otro perfil con IMPULSO. El score y el shuffle no afectan el orden de estos perfiles mientras el upgrade esté activo.
+- Cuando expira el IMPULSO, el perfil vuelve a la lógica de score y rotación normal.
+
+### 2. Lógica de upgrades y reglas
+
+- **DESTACADO**: Sube el perfil 1 nivel y le asigna variante de 7 días durante 24h.
+- **IMPULSO**: Requiere DESTACADO activo. El perfil se posiciona en el primer lugar de su grupo, pero solo puede ser desplazado por un IMPULSO más reciente.
+- La combinación DESTACADO + IMPULSO otorga máxima prioridad temporal, pero el orden entre perfiles con ambos upgrades depende únicamente de la fecha de compra del IMPULSO.
+
+### 3. Cambios en la API de upgrades
+
+- El endpoint para obtener upgrades disponibles ahora es `/api/plans/upgrades`.
+- El frontend debe consumir este endpoint para mostrar los upgrades en el modal de compra y administración.
+
+### 4. Visualización y rotación
+
+- Los perfiles sin upgrades siguen la lógica de score ponderado y rotación por intervalos de 15 minutos (Fisher-Yates shuffle con seed).
+- Los upgrades no afectan la rotación de los perfiles con IMPULSO activo, solo la fecha de compra.
+
+### 5. Ejemplo de ordenamiento actualizado
+
+```
+// Perfiles con IMPULSO activo:
+1. Perfil A (IMPULSO comprado 25/11/2025 10:00)
+2. Perfil B (IMPULSO comprado 25/11/2025 09:00)
+3. Perfil C (IMPULSO comprado 24/11/2025 22:00)
+
+// Perfiles sin IMPULSO:
+... (ordenados por score y rotación)
+```
+
+### 6. Consideraciones adicionales
+
+- El sistema garantiza que ningún perfil de nivel inferior supere a uno de nivel superior, salvo por upgrades activos.
+- La lógica de upgrades y ordenamiento se encuentra en `backend/src/modules/visibility/visibility.service.ts`.
+
+---
 ## Monitoreo y Logs
 
 ### Logs de Consola

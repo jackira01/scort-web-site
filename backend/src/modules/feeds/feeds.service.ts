@@ -18,143 +18,11 @@ export interface HomeFeedResponse {
   metadata: {
     levelSeparators: Array<{
       level: number;
-      startIndex: number;
-      count: number;
+      startIndex: number;sponsored - profiles
+count: number;
     }>;
   };
 }
-
-/**
- * Obtiene el feed principal con perfiles ordenados por nivel y prioridad
- * @param options - Opciones de paginación
- * @returns Feed ordenado con metadata
- */
-export const getHomeFeed = async (options: HomeFeedOptions = {}): Promise<HomeFeedResponse> => {
-  const { page = 1, pageSize = 20 } = options;
-  const now = new Date();
-
-  // Usar agregación para obtener todos los perfiles con información de usuario
-  const verifiedUserProfiles = await ProfileModel.aggregate([
-    {
-      $match: {
-        visible: true,
-        isDeleted: { $ne: true },
-        planAssignment: { $exists: true, $ne: null }, // Excluir perfiles sin plan (en proceso)
-        'planAssignment.expiresAt': { $gt: now }
-      }
-    },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'user',
-        foreignField: '_id',
-        as: 'userInfo'
-      }
-    },
-    {
-      $lookup: {
-        from: 'plandefinitions',
-        localField: 'planAssignment.planId',
-        foreignField: '_id',
-        as: 'planAssignmentPlan'
-      }
-    },
-    {
-      $addFields: {
-        user: { $arrayElemAt: ['$userInfo', 0] },
-        'planAssignment.plan': { $arrayElemAt: ['$planAssignmentPlan', 0] }
-      }
-    },
-    {
-      $project: {
-        userInfo: 0,
-        planAssignmentPlan: 0
-      }
-    }
-  ]);
-
-  // Convertir los resultados de agregación a documentos de Mongoose
-  const profileDocuments = verifiedUserProfiles.map(profile =>
-    new ProfileModel(profile)
-  );
-
-  console.log(`\n🏠 [HOME FEED] Ordenando ${profileDocuments.length} perfiles para home (página ${page}, tamaño ${pageSize})`);
-
-  // Ordenar perfiles usando el motor de visibilidad
-  const sortedProfiles = await sortProfiles(profileDocuments, now);
-
-  // Calcular metadata de separadores por nivel
-  const levelSeparators: Array<{ level: number; startIndex: number; count: number }> = [];
-  const profilesWithLevels = await Promise.all(
-    sortedProfiles.map(async (profile) => ({
-      profile,
-      level: await getEffectiveLevel(profile, now)
-    }))
-  );
-
-  // Agrupar por nivel para generar separadores
-  let currentIndex = 0;
-  for (let level = 1; level <= 5; level++) {
-    const levelProfiles = profilesWithLevels.filter(p => p.level === level);
-    if (levelProfiles.length > 0) {
-      levelSeparators.push({
-        level,
-        startIndex: currentIndex,
-        count: levelProfiles.length
-      });
-      currentIndex += levelProfiles.length;
-    }
-  }
-
-  // Aplicar paginación
-  const total = sortedProfiles.length;
-  const totalPages = Math.ceil(total / pageSize);
-  const startIndex = (page - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedProfiles = sortedProfiles.slice(startIndex, endIndex);
-
-  console.log(`\n🏠 [HOME FEED] Mostrando perfiles ${startIndex + 1} a ${startIndex + paginatedProfiles.length} de ${total} totales`);
-
-  // Actualizar lastShownAt para los perfiles servidos (fairness rotation)
-  if (paginatedProfiles.length > 0) {
-    await updateLastShownAt(paginatedProfiles.map(p => (p._id as any).toString()));
-  }
-
-  // Ajustar índices de separadores para la página actual
-  const adjustedSeparators = levelSeparators
-    .map(separator => ({
-      ...separator,
-      startIndex: Math.max(0, separator.startIndex - startIndex),
-      endIndex: separator.startIndex + separator.count - startIndex
-    }))
-    .filter(separator =>
-      separator.endIndex > 0 && separator.startIndex < pageSize
-    )
-    .map(separator => ({
-      level: separator.level,
-      startIndex: Math.max(0, separator.startIndex),
-      count: Math.min(separator.endIndex, pageSize) - Math.max(0, separator.startIndex)
-    }))
-    .filter(separator => separator.count > 0);
-
-  return {
-    profiles: paginatedProfiles,
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages
-    },
-    metadata: {
-      levelSeparators: adjustedSeparators
-    }
-  };
-};
-
-/**
- * Obtiene estadísticas del feed para debugging
- * @returns Estadísticas por nivel
- */
 /**
  * Actualiza lastShownAt para los perfiles servidos (sistema de rotación justa)
  * @param profileIds - IDs de los perfiles que fueron servidos
@@ -226,6 +94,123 @@ export const batchUpdateLastShownAt = async (profileIds: string[]): Promise<void
       { $set: { lastShownAt: now } }
     ).exec();
   }
+};
+
+/**
+ * Obtiene el feed principal paginado y ordenado
+ * @param options Opciones de paginación
+ */
+export const getHomeFeed = async (options: HomeFeedOptions): Promise<HomeFeedResponse> => {
+  const page = options.page || 1;
+  const pageSize = options.pageSize || 20;
+  const now = new Date();
+
+  // 1. Obtener candidatos (Misma lógica de filtrado que getHomeFeedStats)
+  // Filtramos: Activos, Visibles, Plan válido, Usuario Verificado
+  const aggregationPipeline = [
+    {
+      $match: {
+        visible: true,
+        isActive: true,
+        isDeleted: { $ne: true },
+        planAssignment: { $exists: true, $ne: null },
+        'planAssignment.expiresAt': { $gt: now }
+      }
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'userInfo'
+      }
+    },
+    {
+      $match: { 'userInfo.isVerified': true }
+    },
+    {
+      $addFields: { user: { $arrayElemAt: ['$userInfo', 0] } }
+    },
+    {
+      $project: { userInfo: 0 }
+    }
+  ];
+
+  const rawProfiles = await ProfileModel.aggregate(aggregationPipeline);
+
+  // Hidratamos los documentos para asegurar compatibilidad con sortProfiles
+  const profiles = rawProfiles.map(p => new ProfileModel(p));
+
+  // 2. Ordenar usando el servicio de visibilidad (VisibilityService)
+  // Esto aplica la lógica de niveles, destacados, impulsos y randomización
+  const sortedProfiles = await sortProfiles(profiles, now, 'HOME_FEED');
+
+  // 3. Calcular metadatos de separadores de nivel (para el frontend)
+  // Esto permite saber cuántos perfiles hay de cada nivel en el total ordenado
+  const levelSeparators: Array<{ level: number; startIndex: number; count: number }> = [];
+
+  // Nota: sortProfiles devuelve IProfile, pero en tiempo de ejecución tienen effectiveLevel
+  // gracias al arreglo anterior. Casteamos a 'any' para leer esa propiedad sin error de TS.
+  let currentLevel = -1;
+  let currentCount = 0;
+  let currentStartIndex = 0;
+
+  sortedProfiles.forEach((profile, index) => {
+    const p = profile as any;
+    const level = p.effectiveLevel || 999;
+
+    if (level !== currentLevel) {
+      if (currentLevel !== -1) {
+        levelSeparators.push({
+          level: currentLevel,
+          startIndex: currentStartIndex,
+          count: currentCount
+        });
+      }
+      currentLevel = level;
+      currentStartIndex = index;
+      currentCount = 0;
+    }
+    currentCount++;
+  });
+
+  // Agregar el último grupo
+  if (currentCount > 0) {
+    levelSeparators.push({
+      level: currentLevel,
+      startIndex: currentStartIndex,
+      count: currentCount
+    });
+  }
+
+  // 4. Paginación en memoria
+  const total = sortedProfiles.length;
+  const totalPages = Math.ceil(total / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedProfiles = sortedProfiles.slice(startIndex, endIndex);
+
+  // 5. Actualizar lastShownAt (Efecto secundario asíncrono - Fire & Forget)
+  // Esto asegura que la próxima vez que alguien cargue el feed, la rotación aleatoria cambie
+  if (paginatedProfiles.length > 0) {
+    const profileIds = paginatedProfiles.map(p => p._id.toString());
+    batchUpdateLastShownAt(profileIds).catch(err =>
+      console.error('Error actualizando lastShownAt en background:', err)
+    );
+  }
+
+  return {
+    profiles: paginatedProfiles,
+    pagination: {
+      page,
+      pageSize,
+      total,
+      totalPages
+    },
+    metadata: {
+      levelSeparators
+    }
+  };
 };
 
 export const getHomeFeedStats = async (): Promise<Record<number, number>> => {

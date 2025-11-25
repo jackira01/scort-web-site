@@ -515,6 +515,18 @@ export const purchaseUpgradeController = async (req: AuthRequest, res: Response)
       return res.status(404).json({ error: 'Perfil no encontrado' });
     }
 
+    // Validar que el perfil tenga un plan asignado y vigente
+    const now = new Date();
+    if (!profile.planAssignment) {
+      return res.status(400).json({ error: 'Debes tener un plan activo para comprar mejoras.' });
+    }
+
+    // Check if plan is expired
+    const expiresAt = new Date(profile.planAssignment.expiresAt);
+    if (expiresAt <= now) {
+      return res.status(400).json({ error: 'Tu plan ha expirado. Renueva para comprar mejoras.' });
+    }
+
     // Verificar si el usuario es admin
     const user = req.user;
     const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
@@ -522,18 +534,8 @@ export const purchaseUpgradeController = async (req: AuthRequest, res: Response)
     // Determinar si debe generar factura (por defecto true, excepto si admin envía false explícitamente)
     const shouldGenerateInvoice = generateInvoice !== false;
 
-    console.log(`🔍 [PURCHASE UPGRADE] Debugging:`);
-    console.log(`   - user.role: ${user?.role}`);
-    console.log(`   - isAdmin: ${isAdmin}`);
-    console.log(`   - generateInvoice (raw): ${generateInvoice}`);
-    console.log(`   - shouldGenerateInvoice: ${shouldGenerateInvoice}`);
-    console.log(`   - !shouldGenerateInvoice: ${!shouldGenerateInvoice}`);
-    console.log(`   - Condición (isAdmin && !shouldGenerateInvoice): ${isAdmin && !shouldGenerateInvoice}`);
-
     // Si es admin y no quiere generar factura, activar directamente el upgrade
     if (isAdmin && !shouldGenerateInvoice) {
-      console.log(`✅ [PURCHASE UPGRADE] Entrando en modo sin factura (admin)`);
-
       // Obtener el perfil como documento de Mongoose para poder usar .save()
       const profileDoc = await ProfileModel.findById(id);
       if (!profileDoc) {
@@ -546,14 +548,7 @@ export const purchaseUpgradeController = async (req: AuthRequest, res: Response)
         return res.status(404).json({ error: `Upgrade ${code} no encontrado` });
       }
 
-      const now = new Date();
       const endAt = new Date(now.getTime() + (upgrade.durationHours * 60 * 60 * 1000));
-
-      console.log(`📊 [PURCHASE UPGRADE] Upgrade ${code}:`);
-      console.log(`   - durationHours: ${upgrade.durationHours}`);
-      console.log(`   - Fecha inicio: ${now.toISOString()}`);
-      console.log(`   - Fecha fin: ${endAt.toISOString()}`);
-      console.log(`   - Diferencia en horas: ${(endAt.getTime() - now.getTime()) / (1000 * 60 * 60)}`);
 
       // Limpiar upgrades expirados y duplicados antes de agregar
       const upgradeMap = new Map<string, any>();
@@ -583,7 +578,6 @@ export const purchaseUpgradeController = async (req: AuthRequest, res: Response)
           endAt,
           purchaseAt: now
         } as any;
-        console.log(`🔄 Upgrade ${code} reemplazado en purchaseUpgrade`);
       } else {
         // Agregar nuevo upgrade
         profileDoc.upgrades.push({
@@ -592,7 +586,6 @@ export const purchaseUpgradeController = async (req: AuthRequest, res: Response)
           endAt,
           purchaseAt: now
         } as any);
-        console.log(`➕ Upgrade ${code} agregado en purchaseUpgrade`);
       }
 
       await profileDoc.save();
@@ -606,7 +599,6 @@ export const purchaseUpgradeController = async (req: AuthRequest, res: Response)
     }
 
     // Flujo normal: generar factura
-    console.log(`💳 [PURCHASE UPGRADE] Entrando en modo con factura`);
     // Validaciones de negocio
     await validateUpgradePurchase(
       profile.user._id.toString(),

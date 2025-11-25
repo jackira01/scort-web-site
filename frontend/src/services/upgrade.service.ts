@@ -43,34 +43,18 @@ export const purchaseUpgrade = async (
     return {
       success: true,
       message: response.data.message || 'Upgrade procesado exitosamente',
-      profile: response.data.profile,
-      invoice: response.data.invoice,
-      whatsAppMessage: response.data.whatsAppMessage,
-      paymentRequired: response.data.paymentRequired,
-      status: response.data.status
+      ...response.data
     };
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'response' in error) {
       const axiosError = error as { response?: { data?: { message?: string, error?: string } } };
-      if (axiosError.response?.data?.message || axiosError.response?.data?.error) {
-        return {
-          success: false,
-          message: axiosError.response.data.message || axiosError.response.data.error || 'Error al procesar la compra'
-        };
-      }
+      const errorMessage = axiosError.response?.data?.message || axiosError.response?.data?.error || 'Error al procesar la compra';
+      throw new Error(errorMessage);
     }
-
-    return {
-      success: false,
-      message: 'Error al procesar la compra del upgrade'
-    };
+    throw new Error('Error al procesar la compra del upgrade');
   }
 };
 
-/**
- * Obtiene los upgrades disponibles
- * @returns Promise con la lista de upgrades disponibles
- */
 export const getAvailableUpgrades = async () => {
   try {
     const response = await axios.get(`${API_URL}/api/plans/upgrades`);
