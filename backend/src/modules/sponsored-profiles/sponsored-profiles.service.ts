@@ -52,7 +52,6 @@ export const getSponsoredProfiles = async (
   query: SponsoredProfilesQuery = {}
 ): Promise<SponsoredProfilesResponse> => {
   try {
-
     const {
       page = 1,
       limit = 20,
@@ -78,7 +77,7 @@ export const getSponsoredProfiles = async (
       isActive: true,
       visible: true,
       isDeleted: false,
-      planAssignment: { $exists: true, $ne: null }, // CRÍTICO: Debe tener planAssignment (no perfiles en proceso)
+      planAssignment: { $exists: true, $ne: null }, // CRÍTICO: Debe tener planAssignment
       'planAssignment.expiresAt': { $gt: now }, // Plan no expirado
       'planAssignment.planId': { $exists: true, $ne: null } // Debe tener plan asignado
     };
@@ -207,7 +206,6 @@ export const getSponsoredProfiles = async (
     const sponsoredPlanIds = sponsoredPlans.map(plan => plan._id);
 
     if (sponsoredPlanIds.length === 0) {
-      // No hay planes patrocinados activos
       return {
         profiles: [],
         pagination: {
@@ -226,27 +224,17 @@ export const getSponsoredProfiles = async (
       'planAssignment.planId': { $in: sponsoredPlanIds }
     };
 
-    // Construir proyección de campos si se especifica
-    // Siempre incluir campos requeridos por el motor de visibilidad
+    // Construir proyección de campos
     const requiredFields = ['planAssignment', 'upgrades', 'lastShownAt', 'createdAt', 'name'];
+    let projection: Record<string, number> = {};
 
-    let projection = {};
     if (fields.length > 0) {
-      // Combinar campos solicitados con campos requeridos
       const allFields = Array.from(new Set([...fields, ...requiredFields]));
       projection = allFields.reduce((acc, field) => {
         acc[field] = 1;
         return acc;
       }, {} as Record<string, number>);
     }
-
-    // Primero, verificar cuántos perfiles cumplen solo los filtros base
-    const baseProfilesCount = await ProfileModel.countDocuments(baseFilters);
-    // Verificar cuántos perfiles tienen planAssignment
-    const profilesWithPlan = await ProfileModel.countDocuments({
-      ...baseFilters,
-      'planAssignment.planId': { $exists: true, $ne: null }
-    });
 
     // Obtener TODOS los perfiles que cumplen los filtros (sin paginación aún)
     // para poder aplicar sortProfiles al conjunto completo
@@ -261,7 +249,8 @@ export const getSponsoredProfiles = async (
     ]);
 
     // Aplicar ordenamiento usando el motor de visibilidad
-    const sortedProfiles = await sortProfiles(allProfiles as any, now);
+    // Pasamos 'SPONSORED' como contexto para diferenciar logs
+    const sortedProfiles = await sortProfiles(allProfiles as unknown as IProfile[], now, 'SPONSORED');
 
     // Aplicar paginación DESPUÉS del ordenamiento
     const paginatedProfiles = sortedProfiles.slice(skip, skip + limitNum);
@@ -269,7 +258,8 @@ export const getSponsoredProfiles = async (
     // Agregar propiedad hasDestacadoUpgrade a cada perfil
     const profilesWithUpgradeInfo = paginatedProfiles.map((profile) => {
       // Verificar si el plan incluye DESTACADO por defecto
-      const planIncludesDestacado = (profile.planAssignment?.planId as any)?.includedUpgrades?.includes('DESTACADO') || false;
+      const planAssignment: any = profile.planAssignment || {};
+      const planIncludesDestacado = planAssignment.planId?.includedUpgrades?.includes('DESTACADO') || false;
 
       // Verificar si tiene upgrade DESTACADO activo comprado
       const hasDestacadoUpgradeActive = profile.upgrades?.some(
@@ -285,7 +275,6 @@ export const getSponsoredProfiles = async (
         }
       ) || false;
 
-      // LÓGICA CORRECTA: hasDestacadoUpgrade = plan incluye DESTACADO O tiene upgrade activo
       const hasDestacadoUpgrade = planIncludesDestacado || hasDestacadoUpgradeActive;
 
       return {

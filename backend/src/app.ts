@@ -30,7 +30,6 @@ import adminEmailRoutes from './routes/admin/emails';
 import { enforceVisibilityForFeeds } from './middlewares/visibility.middleware';
 
 dotenv.config();
-connectDB();
 
 const { ORIGIN_ALLOWED, ENVIROMENT } = process.env;
 

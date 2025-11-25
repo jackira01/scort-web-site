@@ -498,12 +498,15 @@ export const getFilteredProfiles = async (
     });
 
     // CRÍTICO: Filtrar solo perfiles con planes que permitan aparecer en filtros
-    // Esto asegura que solo perfiles con features.showInFilters = true se muestren
+    // ELIMINADO: Se ha decidido mostrar todos los perfiles válidos independientemente de esta flag
+    // para evitar que perfiles pagados sean ocultados incorrectamente.
+    /*
     aggregationPipeline.push({
       $match: {
         'planAssignment.planId.features.showInFilters': true
       }
     });
+    */
 
     // Agregar lookup para features si es necesario
     if (fields && fields.includes('features')) {
@@ -551,12 +554,17 @@ export const getFilteredProfiles = async (
 
     const totalCount = totalCountResult[0]?.total || 0;
 
+    console.log(`📊 [FILTROS DEBUG] Perfiles después de agregación: ${allProfiles.length}`);
+    console.log(`📊 [FILTROS DEBUG] Total count: ${totalCount}`);
+    console.log(`📊 [FILTROS DEBUG] Perfiles con plan válido: ${allProfiles.filter((p: any) => p.planAssignment?.planId).length}`);
+
     console.log(`\n📊 [FILTROS] Ordenando ${allProfiles.length} perfiles encontrados (página ${page}, límite ${limit})`);
 
-    // Ordenar perfiles usando el motor de visibilidad (nivel -> score -> lastShownAt -> createdAt)
-    const sortedProfiles = await sortProfiles(allProfiles as any, now);
+    // Ordenar perfiles usando el servicio de visibilidad
+    // Pasamos 'FILTERS' como contexto para diferenciar logs
+    const sortedProfiles = await sortProfiles(allProfiles as any, now, 'FILTERS');
 
-    // Aplicar paginación después del ordenamiento
+    // Aplicar paginación sobre los resultados ordenados
     const paginatedProfiles = sortedProfiles.slice(skip, skip + limit);
 
     console.log(`\n📄 [FILTROS] Mostrando perfiles ${skip + 1} a ${skip + paginatedProfiles.length} de ${totalCount} totales`);
