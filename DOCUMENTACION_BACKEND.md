@@ -530,9 +530,9 @@ interface ICoupon {
 - Aplicación de efectos de upgrades (DESTACADO, IMPULSO)
 - Integración con planes y upgrades
 
-**Sistema de Ordenamiento con Scoring Ponderado**:
+**Sistema de Ordenamiento con Scoring Ponderado y Rotación Aleatoria**:
 
-El motor de visibilidad asigna un **score numérico** a cada perfil basado en múltiples factores con pesos específicos que garantizan la jerarquía de niveles:
+El motor de visibilidad asigna un **score numérico entero** a cada perfil basado en múltiples factores con pesos específicos que garantizan la jerarquía de niveles. Los perfiles se agrupan por nivel efectivo y dentro de cada nivel se aplica una lógica de ordenamiento especial.
 
 #### **Componentes del Score (en orden de importancia)**:
 
@@ -545,61 +545,68 @@ El motor de visibilidad asigna un **score numérico** a cada perfil basado en m�
    
    Este peso garantiza que **matemáticamente** un perfil de nivel inferior NUNCA supere a uno de nivel superior.
 
-2. **Variante de Duración: 10,000 - 30,000 puntos**
-   - 30 días: +30,000 puntos
-   - 15 días: +20,000 puntos
-   - 7 días: +10,000 puntos
+2. **Subcategorías (Saltos de 250,000 puntos)**:
+   - **Nativo (sin upgrades)**: +500,000 puntos
+   - **DESTACADO + IMPULSO**: +250,000 puntos
+   - **DESTACADO solo**: +0 puntos
    
-   Peso suficiente para diferenciar variantes dentro del mismo nivel, pero insuficiente para cruzar niveles.
-
-3. **Upgrades Especiales: +100 a +200 puntos**
-   - **DESTACADO + IMPULSO activos**: +200 puntos
-   - **DESTACADO solo**: +100 puntos
-   - **Otros upgrades**: priorityBonus × 10 (típicamente 10-50 puntos)
+   **⚠️ Nota**: No puede existir "Nativo + IMPULSO" porque IMPULSO requiere DESTACADO activo, y DESTACADO hace que el perfil deje de ser nativo del nivel (lo sube 1 nivel). Por lo tanto, solo existen estas tres combinaciones posibles.
    
-   Ventaja visible pero que no rompe la jerarquía de niveles.
+   Estas subcategorías permiten diferenciar perfiles dentro del mismo nivel efectivo.
 
-4. **Penalización por Visualizaciones Recientes: -1 a -50 puntos**
-   - Basado en vistas recientes (últimas 24 horas)
-   - Evita que los mismos perfiles aparezcan siempre primero
+3. **Duración del Plan: 0 - 249,000 puntos**
+   - Máximo 249 días × 1,000 puntos
+   - Ejemplo: 30 días = +30,000 puntos, 15 días = +15,000 puntos, 7 días = +7,000 puntos
+   
+   La duración se multiplica por 1,000 para dar peso suficiente dentro del mismo nivel, pero insuficiente para superar las subcategorías o cruzar niveles.
+
+
+4. **Otros Upgrades: Variable**
+   - Cada upgrade con `priorityBonus` suma: priorityBonus × 10,000 puntos
+   - Típicamente entre 10,000 y 50,000 puntos adicionales
+
+**⚠️ IMPORTANTE**: El cálculo del score **NO incluye penalización por recency** (visualizaciones recientes). Esto fue eliminado para evitar decimales que fragmentaban los grupos de shuffle, permitiendo grupos más grandes y estables para la rotación aleatoria.
 
 **Ejemplo de Cálculo**:
 ```typescript
 // Perfil: ESMERALDA 30 días + DESTACADO activo
 effectiveLevel = 3 - 1 = 2  // DESTACADO sube 1 nivel
-effectiveVariant = 7         // DESTACADO asigna 7 días por 24h
+effectiveVariantDays = 30   // Mantiene duración original
+isNative = false            // No es nativo del nivel 2
+hasDestacado = true
+hasImpulso = false
 
 score = (6 - 2) * 1_000_000  // Nivel: 4,000,000
-      + (7 === 7 ? 10_000 : 0)  // Variante 7 días: +10,000
-      + 100                    // DESTACADO: +100
-      - 0                      // Sin penalización
-      = 4,010,100 puntos
+      + 0                    // DESTACADO solo: +0
+      + (30 * 1_000)         // Duración: +30,000
+      = 4,030,000 puntos
 
-// Perfil: ORO 15 días sin upgrades
+// Perfil: ORO 15 días sin upgrades (nativo)
 effectiveLevel = 2
-effectiveVariant = 15
+effectiveVariantDays = 15
+isNative = true
+hasImpulso = false
 
 score = (6 - 2) * 1_000_000  // Nivel: 4,000,000
-      + (15 === 15 ? 20_000 : 0)  // Variante 15 días: +20,000
-      + 0                      // Sin upgrades
-      - 0                      // Sin penalización
-      = 4,020,000 puntos
+      + 500_000              // Nativo sin IMPULSO: +500,000
+      + (15 * 1_000)         // Duración: +15,000
+      = 4,515,000 puntos
 
-// RESULTADO: ORO 15 aparece ANTES que ESMERALDA+DESTACADO
-// Ambos están en nivel 2, pero ORO 15 tiene mejor variante (+20K vs +10K)
+// RESULTADO: ORO 15 nativo aparece ANTES que ESMERALDA+DESTACADO
+// Los perfiles nativos tienen prioridad sobre los promovidos con DESTACADO
 ```
 
 #### **Efecto de Upgrades en Nivel y Variante**:
 
 **DESTACADO**:
 - Sube el perfil **1 nivel** durante 24 horas desde activación
-- Asigna variante de **7 días** en el nuevo nivel
-- Ejemplo: ESMERALDA 30 (nivel 3) → ORO 7 (nivel 2)
+- **NO modifica** la variante de días (mantiene la duración original del plan)
+- Ejemplo: ESMERALDA 30 (nivel 3, 30 días) → nivel 2, 30 días
 
 **IMPULSO**:
 - Requiere **DESTACADO activo** simultáneamente
-- Mejora variante de **7 días a 15 días**
-- Ejemplo: ORO 7 + IMPULSO → ORO 15
+- **NO modifica** el nivel ni la variante de días
+- Su efecto principal es el **ordenamiento especial** (ver sección siguiente)
 
 **Combinación DESTACADO + IMPULSO**:
 ```typescript
@@ -608,30 +615,67 @@ Plan: ESMERALDA (nivel 3)
 Variante: 30 días
 
 // Usuario activa DESTACADO
-effectiveLevel = 3 - 1 = 2  // Sube a nivel 2 (ORO)
-effectiveVariant = 7         // Se asigna 7 días
-// Resultado temporal: ORO 7
+effectiveLevel = 3 - 1 = 2  // Sube a nivel 2
+effectiveVariantDays = 30   // Mantiene 30 días
+isNative = false
 
 // Usuario activa IMPULSO (requiere DESTACADO)
-effectiveLevel = 2           // Mantiene nivel 2
-effectiveVariant = 15        // Mejora de 7 a 15 días
-// Resultado temporal: ORO 15
+effectiveLevel = 2          // Mantiene nivel 2
+effectiveVariantDays = 30   // Mantiene 30 días
+hasImpulso = true
 
 score = 4,000,000 (nivel 2)
-      + 20,000 (variante 15)
-      + 200 (DESTACADO + IMPULSO)
-      = 4,020,200 puntos
+      + 250,000 (DESTACADO + IMPULSO)
+      + 30,000 (30 días)
+      = 4,280,000 puntos
+```
+
+#### **Sistema de Ordenamiento Especial para IMPULSO**:
+
+Los perfiles con **IMPULSO activo** tienen un tratamiento especial en el ordenamiento:
+
+**1. Separación de Perfiles**:
+- Los perfiles se separan en dos grupos: **con IMPULSO** y **sin IMPULSO**
+
+**2. Ordenamiento de Perfiles con IMPULSO**:
+- Se aplica **shuffle aleatorio** (Fisher-Yates con seed)
+- **NO se ordenan por fecha de compra** ni por score
+- La rotación cambia cada 15 minutos usando un seed determinístico
+- Todos los perfiles con IMPULSO rotan de forma equitativa
+
+**3. Ordenamiento de Perfiles sin IMPULSO**:
+- Se agrupan por **score exacto**
+- Dentro de cada grupo de score, se aplica **shuffle aleatorio** con el mismo seed
+- Los grupos se ordenan por score (mayor a menor)
+
+**4. Combinación Final**:
+- Los perfiles con IMPULSO aparecen **primero**
+- Seguidos por los perfiles sin IMPULSO ordenados por score
+
+```typescript
+// Ejemplo de ordenamiento dentro de un nivel:
+
+// Perfiles con IMPULSO (shuffled aleatoriamente):
+1. Perfil A (IMPULSO) - Score: 4,280,000
+2. Perfil C (IMPULSO) - Score: 4,250,000
+3. Perfil B (IMPULSO) - Score: 4,280,000
+
+// Perfiles sin IMPULSO (agrupados por score y shuffled):
+4. Perfil D (Score: 4,515,000) ← Grupo score alto
+5. Perfil E (Score: 4,515,000) ← Mismo grupo, shuffled
+6. Perfil F (Score: 4,030,000) ← Grupo score medio
+7. Perfil G (Score: 4,030,000) ← Mismo grupo, shuffled
 ```
 
 #### **Sistema de Rotación con Intervalos de 15 Minutos**:
 
-Los perfiles con **el mismo score** se agrupan y rotan usando **Fisher-Yates shuffle con seed**:
+El shuffle aleatorio usa **Fisher-Yates con seed determinístico**:
 
 ```typescript
 // Seed basado en timestamp redondeado a intervalos de 15 minutos
 seed = Math.floor(Date.now() / (15 * 60 * 1000))
 
-// Ejemplo: 3 perfiles con score 4,020,000
+// Ejemplo: 3 perfiles con IMPULSO
 Intervalo 09:00-09:14: [María, Juan, Ana]
 Intervalo 09:15-09:29: [Ana, María, Juan]  ← Cambio de orden
 Intervalo 09:30-09:44: [Juan, Ana, María]  ← Nuevo cambio
@@ -643,6 +687,7 @@ Intervalo 09:30-09:44: [Juan, Ana, María]  ← Nuevo cambio
 - ✅ Evita cambios aleatorios en cada request
 - ✅ No requiere Redis ni caché externa (usa seed determinístico)
 - ✅ Rotación justa que previene perfiles "estancados"
+- ✅ Los perfiles con IMPULSO rotan equitativamente sin depender de fechas
 
 #### **Algoritmo Completo**:
 
@@ -651,21 +696,23 @@ Intervalo 09:30-09:44: [Juan, Ana, María]  ← Nuevo cambio
 
 2. Para cada perfil:
    a. Calcular nivel y variante efectivos con upgrades
-   b. Calcular score ponderado total
+   b. Calcular score ponderado total (SIN recency penalty)
 
-3. Agrupar perfiles por score exacto
+3. Agrupar perfiles por nivel efectivo
 
-4. Para cada grupo:
-   a. Aplicar shuffle con seed basado en intervalo de 15 min
-   b. Ordenar por lastShownAt (ASC) para favorecer no mostrados
+4. Para cada nivel:
+   a. Separar perfiles con IMPULSO de los sin IMPULSO
+   b. Shuffle perfiles con IMPULSO (seed de 15 min)
+   c. Agrupar perfiles sin IMPULSO por score exacto
+   d. Shuffle cada grupo de score (seed de 15 min)
+   e. Ordenar grupos por score (DESC)
+   f. Combinar: [IMPULSO shuffled] + [Sin IMPULSO por score]
 
-5. Ordenar grupos por score (DESC)
+5. Concatenar todos los niveles (nivel 1 primero, nivel 5 último)
 
-6. Concatenar todos los perfiles respetando jerarquía
+6. Aplicar paginación
 
-7. Aplicar paginación
-
-8. Actualizar lastShownAt de perfiles servidos
+7. Actualizar lastShownAt de perfiles servidos
 ```
 
 **Ejemplo Visual Completo**:
@@ -674,54 +721,56 @@ Entrada: 12 perfiles con diferentes planes y upgrades
 
 Después del scoring y rotación:
 
-┌─ SCORE: 5,030,200 ─────────────────────────────┐
-│ 1. Ana       (DIAMANTE 30d)    ← Aleatorio    │
+┌─ NIVEL 1 (DIAMANTE) ───────────────────────────┐
+│ 1. Ana       (DIAMANTE 30d)    ← Shuffled     │
 │ 2. Juan      (DIAMANTE 30d)    seed 15min     │
-└────────────────────────────────────────────────┘
-
-┌─ SCORE: 5,020,000 ─────────────────────────────┐
 │ 3. María     (DIAMANTE 15d)                    │
 └────────────────────────────────────────────────┘
 
-┌─ SCORE: 4,020,200 ─────────────────────────────┐
-│ 4. Elena     (ESMERALDA 30d + DESTACADO+IMPULSO) │
-│              → ORO 15 (nivel 2, 15 días)       │
+┌─ NIVEL 2 (ORO) ────────────────────────────────┐
+│ === CON IMPULSO (Shuffled) ===                │
+│ 4. Elena     (ESMERALDA+DESTACADO+IMPULSO)    │
+│              Score: 4,280,000                  │
+│                                                 │
+│ === SIN IMPULSO (Por Score) ===               │
+│ ┌─ Score: 4,515,000 ─────────────────────┐   │
+│ │ 5. Diego   (ORO 15d nativo) ← Shuffled │   │
+│ │ 6. Laura   (ORO 15d nativo)            │   │
+│ └────────────────────────────────────────┘   │
+│ ┌─ Score: 4,030,000 ─────────────────────┐   │
+│ │ 7. Pedro   (ESMERALDA 30d+DESTACADO)   │   │
+│ └────────────────────────────────────────┘   │
 └────────────────────────────────────────────────┘
 
-┌─ SCORE: 4,020,000 ─────────────────────────────┐
-│ 5. Diego     (ORO 15d)         ← Aleatorio     │
-│ 6. Laura     (ORO 15d)         seed 15min      │
+┌─ NIVEL 3 (ESMERALDA) ──────────────────────────┐
+│ ┌─ Score: 3,530,000 ─────────────────────┐   │
+│ │ 8. Ricardo   (ESMERALDA 30d) ← Shuffled│   │
+│ │ 9. Valentina (ESMERALDA 30d)           │   │
+│ └────────────────────────────────────────┘   │
 └────────────────────────────────────────────────┘
 
-┌─ SCORE: 4,010,100 ─────────────────────────────┐
-│ 7. Pedro     (IRIS 7d + DESTACADO)             │
-│              → ORO 7 (nivel 2, 7 días)         │
-└────────────────────────────────────────────────┘
-
-┌─ SCORE: 3,030,000 ─────────────────────────────┐
-│ 8. Ricardo   (ESMERALDA 30d)   ← Aleatorio     │
-│ 9. Valentina (ESMERALDA 30d)   seed 15min      │
-└────────────────────────────────────────────────┘
-
-┌─ SCORE: 1,010,000 ─────────────────────────────┐
-│ 10. Andrea   (AMATISTA 7d)     ← Aleatorio     │
-│ 11. Mateo    (AMATISTA 7d)     seed 15min      │
-│ 12. Luis     (AMATISTA 7d)                     │
+┌─ NIVEL 5 (AMATISTA) ───────────────────────────┐
+│ ┌─ Score: 1,507,000 ─────────────────────┐   │
+│ │ 10. Andrea (AMATISTA 7d)   ← Shuffled  │   │
+│ │ 11. Mateo  (AMATISTA 7d)               │   │
+│ │ 12. Luis   (AMATISTA 7d)               │   │
+│ └────────────────────────────────────────┘   │
 └────────────────────────────────────────────────┘
 ```
 
 **Factores que Afectan la Visibilidad**:
 - ✅ Plan activo (no expirado)
 - ✅ Nivel del plan (1-5) - **Factor más importante**
-- ✅ Variante de días (7, 15, 30) - **Factor secundario**
-- ✅ Upgrades activos (DESTACADO: -1 nivel + 7 días, IMPULSO: 7→15 días)
+- ✅ Duración del plan (7, 15, 30+ días) - **Factor secundario**
+- ✅ Upgrades activos:
+  - **DESTACADO**: Sube 1 nivel (no modifica duración)
+  - **IMPULSO**: Ordenamiento especial por shuffle (requiere DESTACADO)
 - ✅ Otros upgrades con priorityBonus
-- ✅ Visualizaciones recientes (penalización leve)
 - ✅ Intervalo de rotación actual (seed cada 15 minutos)
 - ✅ Perfil activo (`isActive: true`)
 - ✅ Perfil visible (`visible: true`)
 - ✅ No eliminado (`isDeleted: false`)
-- ✅ Tiempo desde última visualización (`lastShownAt`)
+- ❌ **NO se usa**: Penalización por visualizaciones recientes (eliminado)
 
 **Endpoints que Usan el Motor de Visibilidad**:
 - `GET /api/profiles/home` - Perfiles para la página principal
@@ -1196,53 +1245,9 @@ Authorization: Bearer <jwt_token>
 Content-Type: application/json
 ```
 
----
-
-
-## Cambios recientes en visibilidad y upgrades (Noviembre 2025)
-
-### 1. Nuevo ordenamiento de perfiles con IMPULSO
-
-Los perfiles que tienen el upgrade IMPULSO activo ya no se ordenan por score, sino exclusivamente por la fecha de compra del IMPULSO:
-
-- **Perfiles con IMPULSO**: Se agrupan y se ordenan por `impulsoPurchaseDate` (más reciente primero).
-- Solo un nuevo IMPULSO puede mover la posición de otro perfil con IMPULSO. El score y el shuffle no afectan el orden de estos perfiles mientras el upgrade esté activo.
-- Cuando expira el IMPULSO, el perfil vuelve a la lógica de score y rotación normal.
-
-### 2. Lógica de upgrades y reglas
-
-- **DESTACADO**: Sube el perfil 1 nivel y le asigna variante de 7 días durante 24h.
-- **IMPULSO**: Requiere DESTACADO activo. El perfil se posiciona en el primer lugar de su grupo, pero solo puede ser desplazado por un IMPULSO más reciente.
-- La combinación DESTACADO + IMPULSO otorga máxima prioridad temporal, pero el orden entre perfiles con ambos upgrades depende únicamente de la fecha de compra del IMPULSO.
-
-### 3. Cambios en la API de upgrades
-
-- El endpoint para obtener upgrades disponibles ahora es `/api/plans/upgrades`.
-- El frontend debe consumir este endpoint para mostrar los upgrades en el modal de compra y administración.
-
-### 4. Visualización y rotación
-
-- Los perfiles sin upgrades siguen la lógica de score ponderado y rotación por intervalos de 15 minutos (Fisher-Yates shuffle con seed).
-- Los upgrades no afectan la rotación de los perfiles con IMPULSO activo, solo la fecha de compra.
-
-### 5. Ejemplo de ordenamiento actualizado
-
-```
-// Perfiles con IMPULSO activo:
-1. Perfil A (IMPULSO comprado 25/11/2025 10:00)
-2. Perfil B (IMPULSO comprado 25/11/2025 09:00)
-3. Perfil C (IMPULSO comprado 24/11/2025 22:00)
-
-// Perfiles sin IMPULSO:
-... (ordenados por score y rotación)
-```
-
-### 6. Consideraciones adicionales
-
-- El sistema garantiza que ningún perfil de nivel inferior supere a uno de nivel superior, salvo por upgrades activos.
-- La lógica de upgrades y ordenamiento se encuentra en `backend/src/modules/visibility/visibility.service.ts`.
 
 ---
+
 ## Monitoreo y Logs
 
 ### Logs de Consola
