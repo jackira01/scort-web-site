@@ -8,10 +8,9 @@ export interface IProfileWithMetadata extends IProfile {
   priorityScore?: number;
 }
 
-// --- UTILIDADES DE ROTACIÓN ---
-
 /**
- * Generador pseudo-aleatorio para rotación consistente
+ * Generador de números pseudo-aleatorios con seed
+ * Usado para rotación consistente durante un intervalo de tiempo
  */
 function seededRandom(seed: number) {
   let state = seed;
@@ -22,26 +21,26 @@ function seededRandom(seed: number) {
 }
 
 /**
- * Calcula la semilla de rotación basada en intervalos de tiempo
+ * Calcula el intervalo de rotación actual basado en la configuración dinámica
  */
 async function getRotationSeed(): Promise<number> {
   const now = Date.now();
-  // Obtener intervalo (por defecto 15 minutos)
+  // Obtener intervalo desde config-parameters (valor en minutos)
   const intervalMinutes = await ConfigParameterService.getValue('profile.rotation.interval.minutes') as number;
+  // Si no se encuentra o es inválido, usar 15 minutos por defecto
   const minutes = (intervalMinutes && intervalMinutes > 0) ? intervalMinutes : 15;
-
   const rotationInterval = minutes * 60 * 1000;
   const seed = Math.floor(now / rotationInterval);
-
-  // console.log(`🔄 [ROTATION] Seed: ${seed} (cada ${minutes} min)`);
+  console.log(`🔄 [ROTATION] Seed actual: ${seed} (intervalo: ${minutes} minutos)`);
   return seed;
 }
 
 /**
- * Fisher-Yates shuffle con seed.
- * Mezcla el array de forma determinística durante el intervalo de tiempo.
+ * Función auxiliar para mezclar arrays usando Fisher-Yates shuffle con seed
  */
 async function shuffleArray<T>(array: T[], seed?: number): Promise<T[]> {
+  if (array.length <= 1) return array; // Optimización simple
+
   const shuffled = [...array];
   const usedSeed = seed ?? await getRotationSeed();
   const random = seededRandom(usedSeed);
@@ -50,11 +49,8 @@ async function shuffleArray<T>(array: T[], seed?: number): Promise<T[]> {
     const j = Math.floor(random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-
   return shuffled;
 }
-
-// --- LÓGICA DE NEGOCIO ---
 
 interface EffectiveLevelAndVariant {
   effectiveLevel: number;
@@ -62,12 +58,11 @@ interface EffectiveLevelAndVariant {
   hasDestacado: boolean;
   hasImpulso: boolean;
   originalLevel: number;
+  originalVariantDays: number;
 }
 
 /**
- * Calcula nivel efectivo basado en la documentación original:
- * - DESTACADO: Sube 1 nivel (ej: Nivel 3 -> Nivel 2).
- * - IMPULSO: Se marca para tratamiento especial en el ordenamiento.
+ * Calcula el nivel y variante efectivos considerando upgrades DESTACADO e IMPULSO
  */
 export const calculateEffectiveLevelAndVariant = async (
   profile: IProfile,
@@ -75,7 +70,6 @@ export const calculateEffectiveLevelAndVariant = async (
 ): Promise<EffectiveLevelAndVariant> => {
   let planDefinition;
 
-  // Obtener definición del plan (populado o consulta)
   if (profile.planAssignment?.planId && typeof profile.planAssignment.planId === 'object') {
     planDefinition = profile.planAssignment.planId;
   } else {
@@ -86,67 +80,37 @@ export const calculateEffectiveLevelAndVariant = async (
 
   if (!planDefinition) {
     return {
-      effectiveLevel: 999,
-      effectiveVariantDays: 0,
-      hasDestacado: false,
-      hasImpulso: false,
-      originalLevel: 999,
+      effectiveLevel: 999, effectiveVariantDays: 0, hasDestacado: false, hasImpulso: false, originalLevel: 999, originalVariantDays: 0,
     };
   }
 
   const originalLevel = planDefinition.level;
   const originalVariantDays = profile.planAssignment?.variantDays || 0;
-
   let effectiveLevel = originalLevel;
+  let effectiveVariantDays = originalVariantDays;
   let hasDestacado = false;
   let hasImpulso = false;
 
-  // Filtrar upgrades activos por fecha
   const activeUpgrades = profile.upgrades?.filter(
-    (upgrade) =>
-      upgrade.startAt &&
-      upgrade.endAt &&
-      new Date(upgrade.startAt) <= now &&
-      new Date(upgrade.endAt) > now
+    (upgrade) => upgrade.startAt && upgrade.endAt && new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
   ) || [];
 
-  // 1. Lógica DESTACADO
-  const destacadoUpgrade = activeUpgrades.find(u => u.code === 'DESTACADO');
+  const destacadoUpgrade = activeUpgrades.find((u) => u.code === 'DESTACADO');
 
-  // Si el plan base ya es Nivel 1 (Diamante), actúa como destacado implícito para efectos visuales,
-  // pero no puede subir más de nivel.
-  const isNativeDiamond = originalLevel === 1;
-
-  if (destacadoUpgrade || isNativeDiamond) {
+  if (destacadoUpgrade) {
     hasDestacado = true;
-    // Solo sube de nivel si no es ya el nivel máximo (1) y si tiene el upgrade comprado explícitamente
-    if (effectiveLevel > 1 && destacadoUpgrade) {
+    if (effectiveLevel > 1) {
       effectiveLevel = effectiveLevel - 1;
     }
   }
 
-  // 2. Lógica IMPULSO
-  // Según doc: "Requiere que primero hayas comprado el upgrade DESTACADO"
-  // O si es Nivel 1 nativo, también puede tener impulso.
-  const impulsoUpgrade = activeUpgrades.find(u => u.code === 'IMPULSO');
+  const impulsoUpgrade = activeUpgrades.find((u) => u.code === 'IMPULSO');
 
-  if (impulsoUpgrade) {
-    // Validamos que tenga derecho al impulso (Destacado activo O ser Nivel 1)
-    if (hasDestacado || isNativeDiamond) {
-      hasImpulso = true;
-    } else {
-      // Log silencioso para debug si es necesario
-      // console.log(`Perfil ${profile._id}: Impulso ignorado por falta de Destacado`);
-    }
+  if (impulsoUpgrade && hasDestacado) {
+    hasImpulso = true;
   }
 
-  return {
-    effectiveLevel,
-    effectiveVariantDays: originalVariantDays,
-    hasDestacado,
-    hasImpulso,
-    originalLevel,
-  };
+  return { effectiveLevel, effectiveVariantDays, hasDestacado, hasImpulso, originalLevel, originalVariantDays };
 };
 
 export const getEffectiveLevel = async (profile: IProfile, now: Date = new Date()): Promise<number> => {
@@ -155,54 +119,59 @@ export const getEffectiveLevel = async (profile: IProfile, now: Date = new Date(
 };
 
 /**
- * Calcula el SCORE DE VISIBILIDAD.
- * * CAMBIO CRÍTICO:
- * Se eliminó la penalización por recencia (minutos desde última vista) y se usa Math.floor.
- * Esto asegura que todos los perfiles con las mismas condiciones (Nivel, Plan)
- * tengan EXACTAMENTE el mismo score numérico, permitiendo que la agrupación
- * y el posterior 'shuffle' funcionen correctamente.
+ * Calcula el score de visibilidad completo
  */
 export const calculateVisibilityScore = async (profile: IProfile, now: Date = new Date()): Promise<number> => {
   let score = 0;
 
-  const { effectiveLevel, effectiveVariantDays, hasImpulso } = await calculateEffectiveLevelAndVariant(profile, now);
+  const { effectiveLevel, effectiveVariantDays, hasDestacado, hasImpulso, originalLevel } = await calculateEffectiveLevelAndVariant(profile, now);
 
-  // Sin plan válido
-  if (effectiveLevel === 999) return -1000000000;
-
-  // 1. BASE POR NIVEL (Jerarquía estricta: 1M puntos por nivel)
-  // Nivel 1: 5M, Nivel 2: 4M, etc.
-  const baseLevelScore = (6 - effectiveLevel) * 1000000;
-  score += baseLevelScore;
-
-  // 2. IMPULSO (Prioridad dentro del nivel)
-  // Si tiene impulso, le damos un bono masivo para que quede arriba de los normales del mismo nivel.
-  // Nota: El ordenamiento fino de impulsos se hace por fecha en 'sortProfilesWithinLevel', 
-  // aquí solo aseguramos que el score base sea alto.
-  if (hasImpulso) {
-    score += 500000;
+  if (effectiveLevel === 999) {
+    return -1000000000;
   }
 
-  // 3. DURACIÓN DEL PLAN (Prioridad secundaria)
-  // 30 días > 15 días > 7 días
+  // BASE SCORES (Jerarquía principal):
+  // Nivel 1: 5,000,000
+  // Nivel 2: 4,000,000 ...
+  const baseLevelScore = (6 - effectiveLevel) * 1000000;
+  const isNative = (originalLevel === effectiveLevel);
+
+  // SUBCATEGORÍAS (Saltos de 250,000):
+  if (isNative && hasImpulso) {
+    score = baseLevelScore + 750000;
+  } else if (isNative) {
+    score = baseLevelScore + 500000;
+  } else if (hasDestacado && hasImpulso) {
+    score = baseLevelScore + 250000;
+  } else if (hasDestacado) {
+    score = baseLevelScore;
+  } else {
+    score = baseLevelScore + 500000; // Fallback
+  }
+
+  // DURACIÓN DEL PLAN (Max 249,000)
   const planDurationScore = Math.min(effectiveVariantDays, 249) * 1000;
   score += planDurationScore;
 
-  // 4. OTROS UPGRADES (Bonos pequeños)
+  // OTROS UPGRADES
   if (profile.upgrades && profile.upgrades.length > 0) {
-    // Filtramos upgrades que no sean de visibilidad core
-    const miscUpgrades = profile.upgrades.filter(
-      u => u.code !== 'DESTACADO' && u.code !== 'IMPULSO' &&
-        u.startAt && new Date(u.startAt) <= now && new Date(u.endAt) > now
+    const otherActiveUpgrades = profile.upgrades.filter(
+      (upgrade) => upgrade.code !== 'DESTACADO' && upgrade.code !== 'IMPULSO' &&
+        upgrade.startAt && upgrade.endAt && new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
     );
 
-    for (const u of miscUpgrades) {
-      // Aquí podrías buscar el definition si es necesario, o usar un valor fijo
-      // score += 10000; 
+    for (const upgrade of otherActiveUpgrades) {
+      const upgradeDefinition = await UpgradeDefinitionModel.findOne({ code: upgrade.code }).lean();
+      if (upgradeDefinition?.effect?.priorityBonus) {
+        score += (upgradeDefinition.effect.priorityBonus * 10000);
+      }
     }
   }
 
-  // Retornamos ENTERO para garantizar agrupación correcta
+  // ELIMINADO: Recency Penalty (penalización por tiempo desde última vista)
+  // Esto causaba decimales que fragmentaban los grupos de shuffle.
+
+  // Asegurar Enteros:
   return Math.max(0, Math.floor(score));
 };
 
@@ -211,136 +180,136 @@ export const getPriorityScore = async (profile: IProfile, now: Date = new Date()
 };
 
 /**
- * ORDENAMIENTO DENTRO DE UN NIVEL ESPECÍFICO
- * Aquí ocurre la magia de la rotación vs. fijeza.
+ * Ordena una lista de perfiles dentro del mismo nivel
  */
 export const sortProfilesWithinLevel = async (profiles: IProfile[], now: Date = new Date()): Promise<IProfile[]> => {
-
-  const profilesWithImpulso: Array<{ profile: IProfile, impulsoDate: Date, score: number }> = [];
+  // Separar perfiles con IMPULSO de los demás
+  const profilesWithImpulso: IProfile[] = [];
   const profilesWithoutImpulso: IProfile[] = [];
 
-  // 1. Separación
   for (const profile of profiles) {
-    const p = profile as IProfileWithMetadata;
-    const score = p.priorityScore || 0;
-
-    // Chequeo robusto de Impulso (ya validado en calculateEffectiveLevel, pero re-verificamos objeto)
     const impulsoUpgrade = profile.upgrades?.find(
-      u => u.code === 'IMPULSO' && u.startAt && new Date(u.startAt) <= now && new Date(u.endAt) > now
+      (upgrade) => upgrade.code === 'IMPULSO' && upgrade.startAt && upgrade.endAt &&
+        new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
     );
 
-    // Usamos el flag calculado previamente en el score, o la presencia del upgrade válido
-    // Para ser consistentes con la lógica de negocio: Impulso = Fijeza.
-    // Asumimos que si llegó aquí con un score alto (calculado antes), es válido.
-    if (impulsoUpgrade && impulsoUpgrade.purchaseAt) {
-      // Doble check de lógica de negocio (Impulso requiere Destacado o ser Nivel 1)
-      // En 'calculateVisibilityScore' ya se filtró si era inválido, así que aquí confiamos
-      // o hacemos una verificación rápida.
-      profilesWithImpulso.push({
-        profile,
-        impulsoDate: new Date(impulsoUpgrade.purchaseAt), // Fecha de compra define orden
-        score
-      });
+    if (impulsoUpgrade) {
+      profilesWithImpulso.push(profile);
     } else {
       profilesWithoutImpulso.push(profile);
     }
   }
 
-  // 2. GRUPO VIP (IMPULSO): Ordenamiento Fijo por Fecha (LIFO o FIFO según negocio)
-  // "te devolverá a los primeros lugares" -> Generalmente el más reciente va arriba, o antigüedad.
-  // Vamos a usar: Más reciente compra = Más arriba (LIFO).
-  profilesWithImpulso.sort((a, b) => {
-    return b.impulsoDate.getTime() - a.impulsoDate.getTime();
-  });
+  // 1. MEZCLAR PERFILES CON IMPULSO (Shuffle activo)
+  // Se aplica shuffleArray para rotación aleatoria entre ellos.
+  console.log(`   🎯 Perfiles con IMPULSO: ${profilesWithImpulso.length} (aplicando SHUFFLE aleatorio)`);
+  const shuffledImpulso = await shuffleArray(profilesWithImpulso);
 
-  if (profilesWithImpulso.length > 0) {
-    // console.log(`   🚀 VIP (Impulso): ${profilesWithImpulso.length} perfiles ordenados por fecha.`);
-  }
-
-  // 3. GRUPO ROTATIVO (SIN IMPULSO): Agrupación por Score + Shuffle
+  // 2. MEZCLAR PERFILES SIN IMPULSO
+  // Se agrupan por score exacto. Al ser enteros (sin recencyPenalty), los grupos serán grandes y estables.
   const profilesByScore: { [score: number]: IProfile[] } = {};
 
   profilesWithoutImpulso.forEach(profile => {
     const p = profile as IProfileWithMetadata;
     const score = p.priorityScore || 0;
-    if (!profilesByScore[score]) profilesByScore[score] = [];
+
+    if (!profilesByScore[score]) {
+      profilesByScore[score] = [];
+    }
     profilesByScore[score].push(profile);
   });
 
   // Ordenar los grupos de mayor a menor score
   const sortedScores = Object.keys(profilesByScore).map(Number).sort((a, b) => b - a);
+  console.log(`   📊 Scores únicos encontrados: ${sortedScores.length}`);
 
-  const profilesRotated: IProfile[] = [];
+  const shuffledStandard: IProfile[] = [];
 
   for (const score of sortedScores) {
-    const group = profilesByScore[score];
+    const groupProfiles = profilesByScore[score];
+    // Shuffle dentro del grupo de score idéntico
+    const shuffledGroup = await shuffleArray(groupProfiles);
 
-    // APLICAR ROTACIÓN (SHUFFLE)
-    // Al haber eliminado los decimales del score, este grupo debería contener
-    // a todos los perfiles del mismo plan/variante, permitiendo una mezcla real.
-    const shuffledGroup = await shuffleArray(group);
-
-    if (shuffledGroup.length > 1) {
-      // console.log(`   🔀 Rotando grupo score ${score}: ${shuffledGroup.length} perfiles.`);
-    }
-
-    profilesRotated.push(...shuffledGroup);
+    console.log(`   🔀 [SHUFFLE] Score ${score}: ${groupProfiles.length} perfiles mezclados`);
+    shuffledStandard.push(...shuffledGroup);
   }
 
-  // 4. FUSIÓN FINAL: VIPs primero, luego los Rotativos
-  return [
-    ...profilesWithImpulso.map(x => x.profile),
-    ...profilesRotated
-  ];
+  // Combinar: Impulso primero, luego Standard mezclado
+  return [...shuffledImpulso, ...shuffledStandard];
 };
 
 /**
- * ORDENAMIENTO GLOBAL (Entry Point)
+ * Ordena una lista de perfiles considerando nivel efectivo y prioridad
  */
 export const sortProfiles = async (
   profiles: IProfile[],
   now: Date = new Date(),
   context: string = 'GENERAL'
 ): Promise<IProfile[]> => {
-  console.log(`\n🔄 [${context}] Procesando ${profiles.length} perfiles...`);
+  console.log(`\n🔄 [${context}] ========== INICIANDO ORDENAMIENTO DE ${profiles.length} PERFILES ==========`);
 
-  // 1. Calcular Metadata (Nivel Efectivo y Score) en Paralelo
   const profilesWithMetadata: IProfileWithMetadata[] = await Promise.all(
     profiles.map(async (profile) => {
-      const { effectiveLevel } = await calculateEffectiveLevelAndVariant(profile, now);
+      const { effectiveLevel, hasDestacado, hasImpulso, originalLevel } = await calculateEffectiveLevelAndVariant(profile, now);
       const priorityScore = await calculateVisibilityScore(profile, now);
-
-      return {
-        ...profile,
-        effectiveLevel,
-        priorityScore
-      } as unknown as IProfileWithMetadata;
+      return { ...profile, effectiveLevel, priorityScore } as unknown as IProfileWithMetadata;
     })
   );
 
-  // 2. Filtrar inválidos
-  const validProfiles = profilesWithMetadata.filter(p =>
-    p.priorityScore !== undefined && p.effectiveLevel !== undefined && p.effectiveLevel !== 999
-  );
+  const validProfiles = profilesWithMetadata.filter(profile => {
+    return typeof profile.effectiveLevel === 'number' && !isNaN(profile.effectiveLevel);
+  });
 
-  // 3. Agrupar por Nivel Efectivo
   const profilesByLevel: { [level: number]: IProfileWithMetadata[] } = {};
-  for (const p of validProfiles) {
-    if (!profilesByLevel[p.effectiveLevel!]) profilesByLevel[p.effectiveLevel!] = [];
-    profilesByLevel[p.effectiveLevel!].push(p);
+  for (const profile of validProfiles) {
+    if (!profilesByLevel[profile.effectiveLevel]) {
+      profilesByLevel[profile.effectiveLevel] = [];
+    }
+    profilesByLevel[profile.effectiveLevel].push(profile);
   }
 
-  // 4. Ordenar Niveles (1 es mejor que 5)
-  const levels = Object.keys(profilesByLevel).map(Number).sort((a, b) => a - b);
-  const finalSortedList: IProfile[] = [];
+  const levelsFound = Object.keys(profilesByLevel).map(Number).sort((a, b) => a - b);
+  const sortedProfiles: IProfile[] = [];
 
-  // 5. Procesar cada nivel
-  for (const level of levels) {
-    // console.log(`   📊 Nivel ${level}: ${profilesByLevel[level].length} perfiles`);
-    const sortedLevel = await sortProfilesWithinLevel(profilesByLevel[level], now);
-    finalSortedList.push(...sortedLevel);
+  for (const level of levelsFound) {
+    console.log(`\n📊 [${context}] Ordenando nivel ${level} - ${profilesByLevel[level].length} perfiles`);
+    const sortedLevelProfiles = await sortProfilesWithinLevel(profilesByLevel[level], now);
+    sortedProfiles.push(...sortedLevelProfiles);
   }
 
-  console.log(`✅ [${context}] Ordenamiento finalizado: ${finalSortedList.length} perfiles.\n`);
-  return finalSortedList;
+  // --- LOGGING DETALLADO SOLICITADO ---
+  console.log(`\n🔍 [DEBUG ORDENAMIENTO - ${context}] Top 15 Perfiles Finales:`);
+  console.log('--------------------------------------------------');
+
+  const top15 = sortedProfiles.slice(0, 15);
+  let currentLogLevel = -1;
+
+  top15.forEach((profile, index) => {
+    const p = profile as IProfileWithMetadata;
+
+    // Detectar cambio de nivel para encabezado
+    if (p.effectiveLevel !== currentLogLevel) {
+      currentLogLevel = p.effectiveLevel || 0;
+      console.log(`\n📂 --- NIVEL ACTUAL: ${currentLogLevel} ---`);
+    }
+
+    // Obtener upgrades activos para mostrar
+    const activeUpgrades = profile.upgrades?.filter(u =>
+      u.startAt && u.endAt && new Date(u.startAt) <= now && new Date(u.endAt) > now
+    ).map(u => u.code).join(', ') || 'Ninguno';
+
+    // Obtener fecha relevante (Impulso)
+    const impulsoUpgrade = profile.upgrades?.find(u => u.code === 'IMPULSO');
+    const dateInfo = impulsoUpgrade?.purchaseAt
+      ? ` | 📅 Fecha Impulso: ${new Date(impulsoUpgrade.purchaseAt).toISOString()}`
+      : '';
+
+    console.log(`   ${index + 1}. ${p.name || 'Sin Nombre'} (_id: ${p._id})`);
+    console.log(`      Score: ${p.priorityScore?.toLocaleString()} | Upgrades: [${activeUpgrades}]${dateInfo}`);
+  });
+  console.log('--------------------------------------------------\n');
+
+  console.log(`\n✅ [${context}] ========== ORDENAMIENTO COMPLETADO ==========\n`);
+
+  return sortedProfiles;
 };
