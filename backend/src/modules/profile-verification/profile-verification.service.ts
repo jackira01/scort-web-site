@@ -4,6 +4,15 @@ import type { Types } from 'mongoose';
 import { type IUser } from '../user/User.model';
 import { ProfileModel } from '../profile/profile.model';
 import type { IProfile } from '../profile/profile.types';
+import {
+  CreateProfileVerificationDTO,
+  UpdateProfileVerificationDTO,
+  UpdateVerificationStatusDTO,
+  UpdateVerificationStepsDTO,
+  ProfileVerificationFiltersDTO
+} from './profile-verification.types';
+import { calculateVerificationProgress } from './verification-progress.utils';
+import { calculatePhoneChangeStatus } from './phone-verification.utils';
 
 // Interface para Profile con User poblado
 interface IProfileWithUser extends Omit<IProfile, 'user'> {
@@ -76,20 +85,10 @@ const getDefaultVerificationSteps = (accountType: string, requiresIndependentVer
   // Para agencias o verificación independiente, mantener valores por defecto
   return baseSteps;
 };
-import {
-  CreateProfileVerificationDTO,
-  UpdateProfileVerificationDTO,
-  UpdateVerificationStatusDTO,
-  UpdateVerificationStepsDTO,
-  ProfileVerificationFiltersDTO
-} from './profile-verification.types';
-import { calculateVerificationProgress } from './verification-progress.utils';
 
 // Función auxiliar para recalcular el progreso de verificación
 const recalculateVerificationProgress = async (verification: IProfileVerification) => {
   try {
-
-
     // Obtener datos del usuario asociado al perfil
     const populatedVerification = await ProfileVerification.findById(verification._id)
       .populate({
@@ -102,14 +101,11 @@ const recalculateVerificationProgress = async (verification: IProfileVerificatio
       .lean() as unknown as IProfileVerificationWithPopulatedProfile | null;
 
     if (!populatedVerification?.profile) {
-
       return verification.verificationProgress;
     }
 
     const user = populatedVerification.profile.user;
     const newProgress = calculateVerificationProgress(verification, user);
-
-
 
     // Actualizar SOLO el progreso en la base de datos, sin tocar los steps
     const updatedVerification = await ProfileVerification.findByIdAndUpdate(
@@ -118,11 +114,8 @@ const recalculateVerificationProgress = async (verification: IProfileVerificatio
       { new: true }
     ).lean();
 
-
-
     return newProgress;
   } catch (error) {
-
     return verification.verificationProgress;
   }
 };
@@ -258,15 +251,11 @@ export const updateVerificationSteps = async (
   stepsUpdate: UpdateVerificationStepsDTO
 ) => {
   try {
-
-
     // Primero obtener los datos actuales para hacer un merge correcto
     const currentVerification = await ProfileVerification.findById(verificationId).lean();
     if (!currentVerification) {
       throw new Error('Verificación no encontrada');
     }
-
-
 
     // Hacer un merge profundo de los steps existentes con los nuevos datos
     const updatedSteps = { ...currentVerification.steps };
@@ -284,8 +273,6 @@ export const updateVerificationSteps = async (
         updatedSteps[stepKey as keyof typeof updatedSteps] = stepData as any;
       }
     });
-
-
 
     // Actualizar con los steps completos y resetear estado a pending
     // Cuando se actualizan los pasos, el perfil debe volver a estado pendiente
@@ -308,8 +295,6 @@ export const updateVerificationSteps = async (
       throw new Error('Verificación no encontrada después de actualización');
     }
 
-
-
     // Recalcular progreso automáticamente
     await recalculateVerificationProgress(verification as unknown as IProfileVerification);
 
@@ -318,11 +303,8 @@ export const updateVerificationSteps = async (
       .populate('profile', 'name user')
       .lean();
 
-
-
     return finalVerification;
   } catch (error) {
-
     throw new Error(`Error al actualizar pasos de verificación: ${error}`);
   }
 };
@@ -402,5 +384,41 @@ export const deleteProfileVerification = async (verificationId: string | Types.O
     return verification;
   } catch (error) {
     throw new Error(`Error al eliminar verificación: ${error}`);
+  }
+};
+
+/**
+ * Actualiza el estado de phoneChangeDetected para un perfil
+ * @param profile - Perfil a evaluar
+ */
+export const updatePhoneChangeDetectionStatus = async (profile: IProfile): Promise<void> => {
+  try {
+    // Buscar la verificación del perfil
+    const verification = await ProfileVerification.findOne({ profile: profile._id });
+
+    if (!verification) {
+      console.warn(`No se encontró verificación para el perfil ${profile._id}`);
+      return;
+    }
+
+    // Calcular nuevo estado
+    const phoneChangeDetected = await calculatePhoneChangeStatus(profile);
+
+    // Actualizar solo el campo phoneChangeDetected
+    await ProfileVerification.findByIdAndUpdate(
+      verification._id,
+      {
+        $set: {
+          'steps.phoneChangeDetected': phoneChangeDetected
+        }
+      },
+      { new: true }
+    );
+
+    console.log(`✅ Estado de phoneChangeDetected actualizado para perfil ${profile._id}: ${phoneChangeDetected}`);
+
+  } catch (error) {
+    console.error('Error al actualizar phoneChangeDetected:', error);
+    throw error;
   }
 };

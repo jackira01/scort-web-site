@@ -50,10 +50,13 @@ export interface IProfile extends Document {
     services?: AttributeValue[]; // Servicios separados de features
     age: string;
     contact: {
-        number: string;
+        number: string | null;     // El dato del número
+        lastChangeDate: Date;      // Cuándo ocurrió el último cambio
+        hasChanged: boolean;       // Subvalidación: ¿Hubo un cambio histórico?
+
+        // Mantén los otros campos si son necesarios
         whatsapp?: string;
         telegram?: string;
-        changedAt: Date;
     };
     height: string;
     // Nuevos campos para clasificación de servicios - Soporta tanto string como {key, label}

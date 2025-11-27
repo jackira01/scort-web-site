@@ -13,16 +13,25 @@ interface VerificationBarProps {
 
 export function VerificationBar({ verification, className = '', size = 'sm' }: VerificationBarProps) {
   // Determinar si está verificado
-  const isVerified = typeof verification === 'boolean' 
-    ? verification 
+  const isVerified = typeof verification === 'boolean'
+    ? verification
     : verification?.isVerified || false;
 
-  // Determinar el progreso de verificación (0-100)
-  const verificationProgress = typeof verification === 'object' && verification?.verificationProgress !== undefined
-    ? verification.verificationProgress
-    : typeof verification === 'object' && verification?.verificationLevel
-    ? verification.verificationLevel
-    : isVerified ? 85 : 0;
+  // Determinar el progreso de verificación (0-100) con validación estricta
+  let rawProgress = 0;
+
+  if (typeof verification === 'object' && verification?.verificationProgress !== undefined) {
+    rawProgress = verification.verificationProgress;
+  } else if (typeof verification === 'object' && verification?.verificationLevel !== undefined) {
+    rawProgress = verification.verificationLevel;
+  } else if (isVerified) {
+    rawProgress = 85;
+  }
+
+  // Sanitizar el progreso: asegurar que sea un número válido entre 0 y 100
+  const verificationProgress = Math.min(100, Math.max(0,
+    typeof rawProgress === 'number' && !isNaN(rawProgress) ? Math.round(rawProgress) : 0
+  ));
 
   const getVerificationColor = (progress: number) => {
     if (progress >= 80) return 'bg-green-500';
@@ -46,15 +55,15 @@ export function VerificationBar({ verification, className = '', size = 'sm' }: V
     <div className={`flex items-center space-x-2 ${className}`}>
       {/* Barra de progreso */}
       <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 min-w-[60px]">
-        <div 
+        <div
           className={`h-1.5 rounded-full transition-all duration-300 ${getVerificationColor(verificationProgress)}`}
           style={{ width: `${verificationProgress}%` }}
         />
       </div>
-      
+
       {/* Badge con icono */}
-      <Badge 
-        className={`${paddingSize} ${getVerificationColor(verificationProgress)} text-white border-0 ${textSize} font-medium`}
+      <Badge
+        className={`${paddingSize} ${getVerificationColor(verificationProgress)} text-white border-0 ${textSize} font-medium whitespace-nowrap`}
       >
         <Shield className={`${iconSize} mr-1`} />
         {size === 'md' ? getVerificationText(verificationProgress) : `${verificationProgress}%`}
