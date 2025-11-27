@@ -105,7 +105,7 @@ const recalculateVerificationProgress = async (verification: IProfileVerificatio
     }
 
     const user = populatedVerification.profile.user;
-    const newProgress = calculateVerificationProgress(verification, user);
+    const newProgress = calculateVerificationProgress(verification, user, populatedVerification.profile as unknown as IProfile);
 
     // Actualizar SOLO el progreso en la base de datos, sin tocar los steps
     const updatedVerification = await ProfileVerification.findByIdAndUpdate(
@@ -405,7 +405,7 @@ export const updatePhoneChangeDetectionStatus = async (profile: IProfile): Promi
     const phoneChangeDetected = await calculatePhoneChangeStatus(profile);
 
     // Actualizar solo el campo phoneChangeDetected
-    await ProfileVerification.findByIdAndUpdate(
+    const updatedVerification = await ProfileVerification.findByIdAndUpdate(
       verification._id,
       {
         $set: {
@@ -414,6 +414,11 @@ export const updatePhoneChangeDetectionStatus = async (profile: IProfile): Promi
       },
       { new: true }
     );
+
+    // Recalcular el progreso de verificación si se actualizó
+    if (updatedVerification) {
+      await recalculateVerificationProgress(updatedVerification as unknown as IProfileVerification);
+    }
 
     console.log(`✅ Estado de phoneChangeDetected actualizado para perfil ${profile._id}: ${phoneChangeDetected}`);
 

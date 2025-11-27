@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ProfileCard from './ProfileCard';
-import ProfileCardSkeleton from './ProfileCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ProfilesResponse, FilterQuery } from '@/types/profile.types';
 import { transformProfilesToCards } from '@/utils/profile.utils';
+import ProfileCard from './ProfileCard';
+import ProfileCardSkeleton from './ProfileCardSkeleton';
 
 interface SearchProfilesSSGProps {
   viewMode: 'grid' | 'list';
@@ -21,26 +21,19 @@ export default function SearchProfilesSSG({
   filters,
   onPageChange,
 }: SearchProfilesSSGProps) {
-  // OPTIMIZACIÓN: Usar directamente los datos que vienen de props
-  // El componente padre (SearchPageClient) ya maneja las peticiones con useFilteredProfiles
   const [profilesData, setProfilesData] = useState<ProfilesResponse | null>(initialData);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Sincronizar con los datos que vienen de props cuando cambien
-  // Esto evita hacer peticiones duplicadas
   useEffect(() => {
-
     setProfilesData(initialData);
   }, [initialData]);
 
   const handlePageChange = async (page: number) => {
     setIsLoading(true);
     onPageChange(page);
-    // El loading se desactiva cuando lleguen los nuevos datos por props
     setTimeout(() => setIsLoading(false), 500);
   };
 
-  // Mostrar loading si no hay datos o está cargando
   if (isLoading || !profilesData) {
     return (
       <div className="space-y-6">
@@ -58,8 +51,31 @@ export default function SearchProfilesSSG({
 
   const { profiles, pagination } = profilesData;
 
+  // --- DEBUGGING START ---
+  // 1. Verificamos qué llega exactamente del Backend antes de transformar
+  if (profiles && profiles.length > 0) {
+    console.group('🔍 DEBUG: Datos de Perfil (SearchProfilesSSG)');
+    console.log('1. Dato Crudo del Backend (Primer perfil):', profiles[0]);
+    console.log('   - Verification Object:', profiles[0].verification);
+  }
+
   // Transform profiles to include hasDestacadoUpgrade highlighting
   const transformedProfiles = profiles ? transformProfilesToCards(profiles) : [];
+
+  // 2. Verificamos qué sale después de la transformación
+  if (transformedProfiles && transformedProfiles.length > 0) {
+    console.log('2. Dato Transformado para Card (Primer perfil):', transformedProfiles[0]);
+    console.log('   - Verification Object en Card:', transformedProfiles[0].verification);
+
+    // Verificación específica del bug
+    const v = transformedProfiles[0].verification;
+    if (!v) console.warn('⚠️ ALERTA: El objeto verification se perdió en la transformación');
+    else if (typeof v === 'object' && v.verificationProgress === undefined) {
+      console.warn('⚠️ ALERTA: verificationProgress no existe en el objeto transformado', v);
+    }
+    console.groupEnd();
+  }
+  // --- DEBUGGING END ---
 
   if (!transformedProfiles || transformedProfiles.length === 0) {
     return (
@@ -76,14 +92,6 @@ export default function SearchProfilesSSG({
 
   return (
     <div className="space-y-6">
-      {/* Results count */}
-      {/* <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Mostrando {transformedProfiles.length} de {pagination.totalProfiles} perfiles
-        </p>
-      </div> */}
-
-      {/* Profiles Grid */}
       <div className={`grid gap-4 ${viewMode === 'grid'
         ? 'grid-cols-1 sm:grid-cols-3 md:grid-col-4 lg:grid-cols-4'
         : 'grid-cols-1'
@@ -98,7 +106,6 @@ export default function SearchProfilesSSG({
         ))}
       </div>
 
-      {/* Pagination */}
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-center space-x-2 mt-8">
           <Button

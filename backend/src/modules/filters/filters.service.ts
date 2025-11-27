@@ -9,6 +9,7 @@ import type {
   FilterQuery,
   FilterResponse,
 } from './filters.types';
+import { enrichProfileVerification } from '../profile-verification/verification.helper';
 
 /**
  * Obtiene todos los perfiles con filtros aplicados
@@ -411,8 +412,8 @@ export const getFilteredProfiles = async (
     // Configurar paginación
     const skip = (page - 1) * limit;
 
-    // Determinar campos a seleccionar: asegurar campos requeridos por el motor de visibilidad
-    const requiredFields = ['planAssignment', 'upgrades', 'lastShownAt', 'createdAt'];
+    // Determinar campos a seleccionar: asegurar campos requeridos por el motor de visibilidad y verificación
+    const requiredFields = ['planAssignment', 'upgrades', 'lastShownAt', 'createdAt', 'contact', 'verification'];
 
     // Campos mínimos necesarios para ProfileCard
     const profileCardFields = [
@@ -420,6 +421,7 @@ export const getFilteredProfiles = async (
       'name',
       'age',
       'location',
+      'contact', // IMPORTANTE: Necesario para verificación dinámica
       'description',
       'verification',
       'media.gallery',
@@ -592,16 +594,21 @@ export const getFilteredProfiles = async (
     };
 
     // Agregar información de verificación y hasDestacadoUpgrade a los perfiles
-    const profilesWithVerification = paginatedProfiles.map(profile => {
+    const profilesWithVerification = paginatedProfiles.map(rawProfile => {
+      // Enriquecer perfil con cálculo dinámico de verificación
+      const profile = enrichProfileVerification(rawProfile);
+
       // Calcular estado de verificación basado en verificationStatus
       let isVerified = false;
       let verificationLevel = 'pending';
 
       if (profile.verification) {
-        const verifiedCount = Object.values(profile.verification).filter(status => status === 'verified').length;
-        const totalFields = Object.keys(profile.verification).length;
+        // Usar los steps enriquecidos para determinar si está verificado
+        const verification = profile.verification as any;
+        const verifiedCount = Object.values(verification.steps || {}).filter((step: any) => step?.isVerified === true).length;
 
-        if (verifiedCount === totalFields && totalFields > 0) {
+        // Si tiene los 5 pasos verificados
+        if (verifiedCount >= 5) {
           isVerified = true;
           verificationLevel = 'verified';
         } else if (verifiedCount > 0) {
@@ -630,6 +637,7 @@ export const getFilteredProfiles = async (
         ...profile,
         hasDestacadoUpgrade,
         verification: {
+          ...(typeof profile.verification === 'object' && profile.verification !== null ? profile.verification : {}),
           isVerified,
           verificationLevel
         }

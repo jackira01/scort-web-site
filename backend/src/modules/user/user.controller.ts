@@ -655,7 +655,7 @@ export const getUsers = async (req: Request, res: Response) => {
       populate: {
         path: 'verification',
         model: 'ProfileVerification',
-        select: 'verificationProgress verificationStatus'
+        select: 'verificationProgress verificationStatus steps'
       }
     }
   };

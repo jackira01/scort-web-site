@@ -185,6 +185,7 @@ export interface ProfileCardData {
   _id: string;
   name: string;
   age: number;
+  user?: string;
   location: ProfileLocation;
   description: string;
   media: ProfileMedia;
@@ -193,6 +194,19 @@ export interface ProfileCardData {
   online?: boolean;
   hasVideo?: boolean;
   hasDestacadoUpgrade?: boolean;
+  hasImpulsoUpgrade?: boolean;
+  slug?: string;
+  services?: AttributeValue[];
+  planAssignment?: {
+    planCode: string;
+    variantDays: number;
+    startAt: Date | string;
+    expiresAt: Date | string;
+  } | null;
+  price?: {
+    amount: number;
+    currency: string;
+  };
 }
 
 // Tipos para el feed de Home

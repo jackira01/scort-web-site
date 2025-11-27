@@ -15,6 +15,32 @@ interface VerificationStep {
   hasData: boolean;
 }
 
+const getStatusBadge = (step: VerificationStep) => {
+  if (step.isVerified) {
+    return (
+      <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
+        Verificado
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="text-xs">
+      No verificado
+    </Badge>
+  );
+};
+
+const getStatusIcon = (step: VerificationStep) => {
+  if (step.isVerified) {
+    return <CheckCircle className="h-5 w-5 text-green-500" />;
+  }
+  // Si tiene datos pero no está verificado, podrías mostrar un reloj (pendiente)
+  if (step.hasData && !step.isVerified) {
+    // return <Clock className="h-5 w-5 text-yellow-500" />; // Opcional
+  }
+  return <XCircle className="h-5 w-5 text-gray-300" />;
+};
+
 export function VerificationStatus({ profileId }: VerificationStatusProps) {
   const { data: verificationData, isLoading, error } = useProfileVerification(profileId);
 
@@ -35,7 +61,8 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
     );
   }
 
-  if (error || !verificationData?.data) {
+  // Bloque de error corregido
+  if (error || !verificationData) {
     return (
       <Card className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-sm">
         <CardHeader>
@@ -43,93 +70,50 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
             Estado de Verificación
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col items-center justify-center py-4 space-y-2">
           <p className="text-gray-600 dark:text-gray-400 text-sm">
             No se pudo cargar la información de verificación
           </p>
+          <XCircle className="h-6 w-6 text-red-500" />
         </CardContent>
       </Card>
     );
   }
 
-  const verification = verificationData.data;
-  const steps = verification.steps;
-
-  // Obtener el tipo de cuenta del usuario
-  const userAccountType = verification.profile?.user?.accountType || 'common';
-  const isAgencyUser = userAccountType === 'agency';
-
-  // Calcular si el perfil tiene más de un año de antigüedad
-  const profileCreatedAt = verification.profile?.createdAt || verification.createdAt;
-  const oneYearAgo = new Date();
-  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-  const hasOneYearMembership = profileCreatedAt ? new Date(profileCreatedAt) <= oneYearAgo : false;
-
-  // Definir los pasos de verificación con sus etiquetas
+  // Reconstrucción del array de pasos basado en los datos simulados.
+  const data = verificationData;
   const verificationSteps: VerificationStep[] = [
     {
       label: "Mayoria de edad",
-      isVerified: steps?.documentPhotos?.isVerified || false,
-      hasData: !!(steps?.documentPhotos?.frontPhoto || steps?.documentPhotos?.backPhoto || steps?.documentPhotos?.selfieWithDocument)
+      isVerified: !!data.isAdult,
+      hasData: true
     },
     {
       label: "Identidad confirmada",
-      isVerified: steps?.mediaVerification?.isVerified || false,
-      hasData: !!steps?.mediaVerification?.mediaLink
+      isVerified: !!data.identityConfirmed,
+      hasData: true
     },
     {
       label: "Verificación por videollamada",
-      isVerified: steps?.videoCallRequested?.isVerified || false,
-      hasData: !!steps?.videoCallRequested?.videoLink
-    },
-    {
-      label: "Verificación por redes sociales",
-      isVerified: steps?.socialMedia?.isVerified || false,
-      hasData: true // Always show as having data since we only track verification status
+      isVerified: !!data.videoVerified,
+      hasData: true
     },
     {
       label: "Miembro establecido con antigüedad",
-      isVerified: hasOneYearMembership,
+      isVerified: !!data.isEstablishedMember,
       hasData: true
     },
     {
       label: "Consistencia en datos de contacto",
-      isVerified: !steps?.phoneChangeDetected,
+      isVerified: !!data.contactConsistent,
       hasData: true
-    }
+    },
+    {
+      label: "Verificación por redes sociales",
+      isVerified: !!data.socialVerified,
+      hasData: true
+    },
   ];
-
-  // Agregar el paso de depósito anticipado si aplica
-  const hasAdvanceDeposit = false; // Esto requeriría información adicional del perfil
-  if (hasAdvanceDeposit) {
-    verificationSteps.push({
-      label: "Pide depósito anticipado",
-      isVerified: false,
-      hasData: true
-    });
-  }
-
-  const getStatusIcon = (step: VerificationStep) => {
-    if (step.isVerified) {
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
-    }
-    return <XCircle className="h-4 w-4 text-red-500" />;
-  };
-
-  const getStatusBadge = (step: VerificationStep) => {
-    if (step.isVerified) {
-      return (
-        <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
-          Verificado
-        </Badge>
-      );
-    }
-    return (
-      <Badge variant="outline" className="text-xs">
-        No verificado
-      </Badge>
-    );
-  };
 
   return (
     <Card id="trust-factors" className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-sm">
@@ -151,6 +135,8 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
                 </p>
                 {getStatusBadge(step)}
               </div>
+
+              {/* Mensajes condicionales */}
               {step.label === "Mayoria de edad" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified
@@ -193,11 +179,6 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
                     : "Este perfil aún no ha proporcionado información de redes sociales para verificación."}
                 </p>
               )}
-              {/* {step.label === "Pide depósito anticipado" && (
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  Pide depósito anticipado, hay usuarios que piden depósitos para confirmar su cita, esto no quiere decir que sea un mal usuario, valore usted el resto de factores de confiabilidad antes de quedar con él
-                </p>
-              )} */}
             </div>
           </div>
         ))}

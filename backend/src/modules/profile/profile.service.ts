@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { validateProfileFeatures } from '../attribute-group/validateProfileFeatures';
 import { createProfileVerification, updatePhoneChangeDetectionStatus } from '../profile-verification/profile-verification.service';
+import { enrichProfileVerification } from '../profile-verification/verification.helper';
 import UserModel from '../user/User.model';
 import { ProfileModel } from './profile.model';
 import type { CreateProfileDTO, IProfile } from './profile.types';
@@ -778,7 +779,7 @@ export const getProfiles = async (page: number = 1, limit: number = 10, fields?:
     .populate({
       path: 'verification',
       model: 'ProfileVerification',
-      select: 'verificationProgress verificationStatus'
+      select: 'verificationProgress verificationStatus steps'
     })
     .populate({
       path: 'features.group_id',
@@ -789,20 +790,24 @@ export const getProfiles = async (page: number = 1, limit: number = 10, fields?:
     .lean();
 
   const now = new Date();
-  const profiles = rawProfiles.map(profile => {
+  const profiles = rawProfiles.map(rawProfile => {
+    // Enriquecer perfil con cálculo dinámico de verificación
+    const profile = enrichProfileVerification(rawProfile);
+
     // Calcular estado de verificación basado en campos individuales
     let isVerified = false;
     if (profile.verification) {
       const verification = profile.verification as any;
-      const verifiedCount = Object.values(verification).filter(status => status === 'verified').length;
-      const totalFields = Object.keys(verification).length;
+      // Adaptamos la lógica para usar los steps enriquecidos
+      const verifiedCount = Object.values(verification.steps || {}).filter((step: any) => step?.isVerified === true).length;
 
-      if (verifiedCount === totalFields && totalFields > 0) {
+      // Si tiene los 5 pasos verificados
+      if (verifiedCount >= 5) {
         isVerified = true;
       }
     }
 
-    const featured = profile.upgrades?.some(upgrade =>
+    const featured = profile.upgrades?.some((upgrade: any) =>
       (upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT') &&
       new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
     ) || false;
@@ -862,6 +867,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
       age: 1,
       description: 1,
       user: 1, // IMPORTANTE: Incluir referencia al usuario
+      contact: 1, // IMPORTANTE: Necesario para verificación dinámica
       'location.city.label': 1,
       'location.department.label': 1,
       'media.gallery': { $slice: 1 }, // Solo la primera imagen
@@ -880,7 +886,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
     .populate({
       path: 'verification',
       model: 'ProfileVerification',
-      select: 'verificationProgress verificationStatus'
+      select: 'verificationProgress verificationStatus steps'
     })
     .populate({
       path: 'planAssignment.planId',
@@ -971,29 +977,42 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
   const paginatedProfiles = sortedProfiles.slice(skip, skip + limit);
 
   // Mapear perfiles para incluir información de verificación
-  const cleanProfiles = paginatedProfiles.map(profile => {
+  // Mapear perfiles para incluir información de verificación
+  const cleanProfiles = paginatedProfiles.map(rawProfile => {
+    // Enriquecer perfil con cálculo dinámico de verificación (Score y Steps)
+    const profile = enrichProfileVerification(rawProfile);
+
     // Verificar upgrades activos para incluir en respuesta
-    const activeUpgrades = profile.upgrades?.filter(upgrade =>
+    const activeUpgrades = profile.upgrades?.filter((upgrade: any) =>
       new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
     ) || [];
 
-    const hasDestacadoUpgrade = activeUpgrades.some(u =>
+    const hasDestacadoUpgrade = activeUpgrades.some((u: any) =>
       u.code === 'DESTACADO' || u.code === 'HIGHLIGHT'
     );
-    const hasImpulsoUpgrade = activeUpgrades.some(u =>
+    const hasImpulsoUpgrade = activeUpgrades.some((u: any) =>
       u.code === 'IMPULSO' || u.code === 'BOOST'
     );
 
     // Calcular estado de verificación basado en campos individuales
+    // NOTA: enrichProfileVerification ya calculó el verificationProgress
     let isVerified = false;
     let verificationLevel = 'pending';
 
     if (profile.verification) {
       const verification = profile.verification as any;
-      const verifiedCount = Object.values(verification).filter(status => status === 'verified').length;
-      const totalFields = Object.keys(verification).length;
+      // Mantenemos la lógica de isVerified basada en steps explícitos si es necesario,
+      // o podemos confiar en el progress. Por ahora mantenemos la lógica existente para isVerified
+      // pero usamos el progress calculado dinámicamente.
 
-      if (verifiedCount === totalFields && totalFields > 0) {
+      // La lógica original contaba 'verified' values.
+      // Ahora verification.steps tiene objetos con { isVerified: boolean }
+      // Adaptamos la lógica si es necesario, pero enrichProfileVerification devuelve una estructura compatible
+
+      const verifiedCount = Object.values(verification.steps || {}).filter((step: any) => step?.isVerified === true).length;
+      // Total steps considerados en el helper son 5
+
+      if (verifiedCount >= 5) { // Si tiene los 5 pasos
         isVerified = true;
         verificationLevel = 'verified';
       } else if (verifiedCount > 0) {
@@ -1079,7 +1098,10 @@ export const getProfileById = async (id: string): Promise<IProfile | null> => {
   transformedProfile.features = otherFeatures;
   transformedProfile.services = services;
 
-  return transformedProfile;
+  // Enriquecer con verificación dinámica (Score y Steps calculados al vuelo)
+  const enrichedProfile = enrichProfileVerification(transformedProfile);
+
+  return enrichedProfile;
 };
 
 export const updateProfile = async (
@@ -2425,7 +2447,7 @@ export const getAllProfilesForAdmin = async (
     .populate({
       path: 'verification',
       model: 'ProfileVerification',
-      select: 'verificationProgress verificationStatus'
+      select: 'verificationProgress verificationStatus steps'
     })
     .populate({
       path: 'features.group_id',
