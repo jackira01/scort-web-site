@@ -30,9 +30,10 @@ const profileSchema = new Schema<IProfile>(
     age: { type: String, required: true, },
     contact: {
       number: { type: String, required: false },
+      lastChangeDate: { type: Date, required: false },
+      hasChanged: { type: Boolean, required: false },
       whatsapp: { type: String, required: false },
       telegram: { type: String, required: false },
-      changedAt: Date,
     },
     height: { type: String, required: true },
     // Nuevos campos para clasificación de servicios - Soporta string o { key: string, label: string }

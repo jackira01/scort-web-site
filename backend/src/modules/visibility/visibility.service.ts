@@ -25,13 +25,26 @@ function seededRandom(seed: number) {
  */
 async function getRotationSeed(): Promise<number> {
   const now = Date.now();
-  // Obtener intervalo desde config-parameters (valor en minutos)
-  const intervalMinutes = await ConfigParameterService.getValue('profile.rotation.interval.minutes') as number;
-  // Si no se encuentra o es inválido, usar 15 minutos por defecto
-  const minutes = (intervalMinutes && intervalMinutes > 0) ? intervalMinutes : 15;
-  const rotationInterval = minutes * 60 * 1000;
+
+  // Obtener intervalo desde config-parameters (valor en segundos)
+  let intervalSeconds = await ConfigParameterService.getValue('profile.rotation.interval.seconds');
+
+  // Log para diagnosticar qué se obtiene de la DB
+  console.log(`🔍 [ROTATION DEBUG] Valor bruto de DB: ${intervalSeconds} (tipo: ${typeof intervalSeconds})`);
+
+  // Convertir a número si es string
+  const secondsNum = typeof intervalSeconds === 'string' ? parseInt(intervalSeconds, 10) : Number(intervalSeconds);
+  console.log(`🔍 [ROTATION DEBUG] Después de conversión: ${secondsNum} (tipo: ${typeof secondsNum})`);
+
+  // Si no se encuentra o es inválido, usar 900 segundos (15 minutos) por defecto
+  const seconds = (secondsNum && secondsNum > 0) ? secondsNum : 900;
+  const rotationInterval = seconds * 1000; // Convertir a milisegundos
+
   const seed = Math.floor(now / rotationInterval);
-  console.log(`🔄 [ROTATION] Seed actual: ${seed} (intervalo: ${minutes} minutos)`);
+  const timeInCurrentInterval = now % rotationInterval;
+  const timeUntilNextRotation = rotationInterval - timeInCurrentInterval;
+
+  console.log(`🔄 [ROTATION] Seed: ${seed} | Intervalo: ${seconds}s (${(seconds / 60).toFixed(1)} min) | Tiempo en intervalo: ${timeInCurrentInterval}ms | Próxima rotación en: ${(timeUntilNextRotation / 1000).toFixed(1)}s`);
   return seed;
 }
 
@@ -43,6 +56,7 @@ async function shuffleArray<T>(array: T[], seed?: number): Promise<T[]> {
 
   const shuffled = [...array];
   const usedSeed = seed ?? await getRotationSeed();
+  console.log(`🔀 [SHUFFLE] Usando seed: ${usedSeed} para mezclar ${array.length} elementos`);
   const random = seededRandom(usedSeed);
 
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -181,61 +195,94 @@ export const getPriorityScore = async (profile: IProfile, now: Date = new Date()
 
 /**
  * Ordena una lista de perfiles dentro del mismo nivel
+ * LÓGICA ACTUALIZADA:
+ * 1. SEPARACIÓN: Se dividen en Impulsos y Normales para garantizar prioridad VIP.
+ * 2. ORDENAMIENTO: AMBOS grupos se ordenan por SCORE y luego aplican SHUFFLE.
+ * Ya no se usa la fecha de compra para ordenar Impulsos.
  */
 export const sortProfilesWithinLevel = async (profiles: IProfile[], now: Date = new Date()): Promise<IProfile[]> => {
-  // Separar perfiles con IMPULSO de los demás
-  const profilesWithImpulso: IProfile[] = [];
-  const profilesWithoutImpulso: IProfile[] = [];
 
+  // Interfaces auxiliares locales
+  interface ImpulseItem { profile: IProfile; score: number; }
+  interface NormalItem { profile: IProfile; score: number; }
+
+  const itemsWithImpulso: ImpulseItem[] = [];
+  const itemsWithoutImpulso: NormalItem[] = [];
+
+  // 1. CLASIFICACIÓN
   for (const profile of profiles) {
-    const impulsoUpgrade = profile.upgrades?.find(
-      (upgrade) => upgrade.code === 'IMPULSO' && upgrade.startAt && upgrade.endAt &&
-        new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
-    );
-
-    if (impulsoUpgrade) {
-      profilesWithImpulso.push(profile);
-    } else {
-      profilesWithoutImpulso.push(profile);
-    }
-  }
-
-  // 1. MEZCLAR PERFILES CON IMPULSO (Shuffle activo)
-  // Se aplica shuffleArray para rotación aleatoria entre ellos.
-  console.log(`   🎯 Perfiles con IMPULSO: ${profilesWithImpulso.length} (aplicando SHUFFLE aleatorio)`);
-  const shuffledImpulso = await shuffleArray(profilesWithImpulso);
-
-  // 2. MEZCLAR PERFILES SIN IMPULSO
-  // Se agrupan por score exacto. Al ser enteros (sin recencyPenalty), los grupos serán grandes y estables.
-  const profilesByScore: { [score: number]: IProfile[] } = {};
-
-  profilesWithoutImpulso.forEach(profile => {
     const p = profile as IProfileWithMetadata;
     const score = p.priorityScore || 0;
 
-    if (!profilesByScore[score]) {
-      profilesByScore[score] = [];
+    // Validar Impulso Activo + Destacado (Regla de Negocio)
+    const impulsoUpgrade = profile.upgrades?.find(
+      u => u.code === 'IMPULSO' && u.startAt && new Date(u.startAt) <= now && new Date(u.endAt) > now
+    );
+
+    // Nota: La fecha de compra ya no es relevante para el orden, solo la existencia del upgrade
+    if (impulsoUpgrade && impulsoUpgrade.purchaseAt) {
+      itemsWithImpulso.push({
+        profile,
+        score
+      });
+    } else {
+      itemsWithoutImpulso.push({ profile, score });
     }
-    profilesByScore[score].push(profile);
-  });
-
-  // Ordenar los grupos de mayor a menor score
-  const sortedScores = Object.keys(profilesByScore).map(Number).sort((a, b) => b - a);
-  console.log(`   📊 Scores únicos encontrados: ${sortedScores.length}`);
-
-  const shuffledStandard: IProfile[] = [];
-
-  for (const score of sortedScores) {
-    const groupProfiles = profilesByScore[score];
-    // Shuffle dentro del grupo de score idéntico
-    const shuffledGroup = await shuffleArray(groupProfiles);
-
-    console.log(`   🔀 [SHUFFLE] Score ${score}: ${groupProfiles.length} perfiles mezclados`);
-    shuffledStandard.push(...shuffledGroup);
   }
 
-  // Combinar: Impulso primero, luego Standard mezclado
-  return [...shuffledImpulso, ...shuffledStandard];
+  // 2. PROCESAMIENTO DE IMPULSOS (AHORA CON SHUFFLE)
+  const impulseByScore: { [score: number]: ImpulseItem[] } = {};
+  itemsWithImpulso.forEach(item => {
+    if (!impulseByScore[item.score]) impulseByScore[item.score] = [];
+    impulseByScore[item.score].push(item);
+  });
+
+  // Ordenar los scores de Impulso de MAYOR a MENOR
+  const sortedImpulseScores = Object.keys(impulseByScore).map(Number).sort((a, b) => b - a);
+
+  const finalImpulseList: IProfile[] = [];
+
+  for (const score of sortedImpulseScores) {
+    const group = impulseByScore[score].map(x => x.profile);
+
+    // CAMBIO: Shuffle para Impulsos también.
+    // Si tienen el mismo score, rotan aleatoriamente.
+    // Si tienen scores diferentes, el orden de sortedImpulseScores manda.
+    const shuffledGroup = await shuffleArray(group);
+
+    finalImpulseList.push(...shuffledGroup);
+  }
+
+  if (finalImpulseList.length > 0) {
+    // console.log(`   🚀 VIP (Impulso): ${finalImpulseList.length} perfiles procesados con Score + Shuffle.`);
+  }
+
+  // 3. PROCESAMIENTO DE NORMALES (ROTATIVOS)
+  const normalByScore: { [score: number]: NormalItem[] } = {};
+  itemsWithoutImpulso.forEach(item => {
+    if (!normalByScore[item.score]) normalByScore[item.score] = [];
+    normalByScore[item.score].push(item);
+  });
+
+  const sortedNormalScores = Object.keys(normalByScore).map(Number).sort((a, b) => b - a);
+
+  const finalNormalList: IProfile[] = [];
+
+  for (const score of sortedNormalScores) {
+    const group = normalByScore[score].map(x => x.profile);
+
+    // Shuffle para Normales
+    const shuffledGroup = await shuffleArray(group);
+
+    finalNormalList.push(...shuffledGroup);
+  }
+
+  // 4. FUSIÓN
+  // Los Impulsos siguen yendo primero porque tienen el bono de score (+500k) y además los ponemos al inicio de la lista.
+  return [
+    ...finalImpulseList,
+    ...finalNormalList
+  ];
 };
 
 /**

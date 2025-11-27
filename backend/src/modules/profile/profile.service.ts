@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
 import { validateProfileFeatures } from '../attribute-group/validateProfileFeatures';
-import { createProfileVerification } from '../profile-verification/profile-verification.service';
+import { createProfileVerification, updatePhoneChangeDetectionStatus } from '../profile-verification/profile-verification.service';
 import UserModel from '../user/User.model';
 import { ProfileModel } from './profile.model';
 import type { CreateProfileDTO, IProfile } from './profile.types';
@@ -965,7 +965,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
     return shouldShow;
   });
 
-  const sortedProfiles = await sortProfiles(filteredProfiles as any, now);
+  const sortedProfiles = await sortProfiles(filteredProfiles as any, now, 'HOME');
 
   // Aplicar paginación DESPUÉS del ordenamiento
   const paginatedProfiles = sortedProfiles.slice(skip, skip + limit);
@@ -1090,9 +1090,47 @@ export const updateProfile = async (
   // El perfil siempre debe mantener su propietario original
   const { user, ...safeData } = data;
 
+  // Recuperar perfil existente para detectar cambios
+  const existingProfile = await ProfileModel.findById(id);
+
+  if (!existingProfile) {
+    throw new Error('Perfil no encontrado');
+  }
+
+  // DETECCIÓN DE CAMBIO DE TELÉFONO
+  if (safeData.contact?.number !== undefined) {
+    const oldNumber = existingProfile.contact?.number;
+    const newNumber = safeData.contact.number;
+
+    if (oldNumber !== newNumber) {
+      // Caso 1: Primer número (no penalizar)
+      if (!oldNumber || oldNumber === null) {
+        safeData.contact = {
+          ...safeData.contact,
+          hasChanged: false,
+          lastChangeDate: new Date()
+        } as any;
+      }
+      // Caso 2: Cambio de número (penalizar)
+      else {
+        safeData.contact = {
+          ...safeData.contact,
+          hasChanged: true,
+          lastChangeDate: new Date()
+        } as any;
+      }
+    } else {
+      // Caso 3: Número igual - preservar valores existentes
+      safeData.contact = {
+        ...safeData.contact,
+        hasChanged: existingProfile.contact?.hasChanged ?? false,
+        lastChangeDate: existingProfile.contact?.lastChangeDate ?? new Date()
+      } as any;
+    }
+  }
+
   // Si se está actualizando el campo media, hacer merge con los datos existentes
   if (safeData.media) {
-    const existingProfile = await ProfileModel.findById(id);
     if (existingProfile && existingProfile.media) {
       // Hacer merge del campo media preservando los datos existentes
       // Solo usar datos existentes si el campo no está definido en safeData.media
@@ -1105,7 +1143,19 @@ export const updateProfile = async (
     }
   }
 
-  return ProfileModel.findByIdAndUpdate(id, safeData, { new: true });
+  const updatedProfile = await ProfileModel.findByIdAndUpdate(id, safeData, { new: true });
+
+  // DISPARAR RECÁLCULO DE VERIFICACIÓN si cambió el teléfono
+  if (safeData.contact?.number !== undefined && updatedProfile) {
+    try {
+      await updatePhoneChangeDetectionStatus(updatedProfile);
+    } catch (error) {
+      console.error('Error al actualizar estado de verificación de teléfono:', error);
+      // No fallar la actualización del perfil si falla la verificación
+    }
+  }
+
+  return updatedProfile;
 };
 
 export const deleteProfile = async (id: string): Promise<IProfile | null> => {
