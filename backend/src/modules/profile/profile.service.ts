@@ -965,7 +965,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
     return shouldShow;
   });
 
-  const sortedProfiles = await sortProfiles(filteredProfiles as any, now);
+  const sortedProfiles = await sortProfiles(filteredProfiles as any, now, 'HOME');
 
   // Aplicar paginación DESPUÉS del ordenamiento
   const paginatedProfiles = sortedProfiles.slice(skip, skip + limit);

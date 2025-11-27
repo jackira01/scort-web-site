@@ -25,13 +25,26 @@ function seededRandom(seed: number) {
  */
 async function getRotationSeed(): Promise<number> {
   const now = Date.now();
-  // Obtener intervalo desde config-parameters (valor en minutos)
-  const intervalMinutes = await ConfigParameterService.getValue('profile.rotation.interval.minutes') as number;
-  // Si no se encuentra o es inválido, usar 15 minutos por defecto
-  const minutes = (intervalMinutes && intervalMinutes > 0) ? intervalMinutes : 15;
-  const rotationInterval = minutes * 60 * 1000;
+
+  // Obtener intervalo desde config-parameters (valor en segundos)
+  let intervalSeconds = await ConfigParameterService.getValue('profile.rotation.interval.seconds');
+
+  // Log para diagnosticar qué se obtiene de la DB
+  console.log(`🔍 [ROTATION DEBUG] Valor bruto de DB: ${intervalSeconds} (tipo: ${typeof intervalSeconds})`);
+
+  // Convertir a número si es string
+  const secondsNum = typeof intervalSeconds === 'string' ? parseInt(intervalSeconds, 10) : Number(intervalSeconds);
+  console.log(`🔍 [ROTATION DEBUG] Después de conversión: ${secondsNum} (tipo: ${typeof secondsNum})`);
+
+  // Si no se encuentra o es inválido, usar 900 segundos (15 minutos) por defecto
+  const seconds = (secondsNum && secondsNum > 0) ? secondsNum : 900;
+  const rotationInterval = seconds * 1000; // Convertir a milisegundos
+
   const seed = Math.floor(now / rotationInterval);
-  console.log(`🔄 [ROTATION] Seed actual: ${seed} (intervalo: ${minutes} minutos)`);
+  const timeInCurrentInterval = now % rotationInterval;
+  const timeUntilNextRotation = rotationInterval - timeInCurrentInterval;
+
+  console.log(`🔄 [ROTATION] Seed: ${seed} | Intervalo: ${seconds}s (${(seconds / 60).toFixed(1)} min) | Tiempo en intervalo: ${timeInCurrentInterval}ms | Próxima rotación en: ${(timeUntilNextRotation / 1000).toFixed(1)}s`);
   return seed;
 }
 
@@ -43,6 +56,7 @@ async function shuffleArray<T>(array: T[], seed?: number): Promise<T[]> {
 
   const shuffled = [...array];
   const usedSeed = seed ?? await getRotationSeed();
+  console.log(`🔀 [SHUFFLE] Usando seed: ${usedSeed} para mezclar ${array.length} elementos`);
   const random = seededRandom(usedSeed);
 
   for (let i = shuffled.length - 1; i > 0; i--) {
