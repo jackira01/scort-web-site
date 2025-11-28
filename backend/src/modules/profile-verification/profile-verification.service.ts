@@ -4,6 +4,7 @@ import type { Types } from 'mongoose';
 import { type IUser } from '../user/User.model';
 import { ProfileModel } from '../profile/profile.model';
 import type { IProfile } from '../profile/profile.types';
+import { enrichProfileVerification } from './verification.helper';
 import {
   CreateProfileVerificationDTO,
   UpdateProfileVerificationDTO,
@@ -43,12 +44,15 @@ const shouldRequireIndependentVerification = async (userId: string | Types.Objec
   }
 };
 
-// Función para obtener steps por defecto - versión simplificada
+// Función para obtener steps por defecto - versión simplificada (Nueva estructura)
 const getDefaultVerificationSteps = (accountType: string, requiresIndependentVerification: boolean, lastLoginVerified: boolean, userLastLoginDate: Date | null) => {
   const baseSteps = {
-    documentPhotos: {
-      frontPhoto: undefined,
-      selfieWithDocument: undefined,
+    frontPhotoVerification: {
+      photo: undefined,
+      isVerified: false
+    },
+    selfieVerification: {
+      photo: undefined,
       isVerified: false
     },
     mediaVerification: {
@@ -74,9 +78,12 @@ const getDefaultVerificationSteps = (accountType: string, requiresIndependentVer
   if (accountType === 'common' && !requiresIndependentVerification) {
     return {
       ...baseSteps,
-      documentPhotos: {
-        frontPhoto: undefined,
-        selfieWithDocument: undefined,
+      frontPhotoVerification: {
+        photo: undefined,
+        isVerified: false // Mantener false hasta verificación manual del admin
+      },
+      selfieVerification: {
+        photo: undefined,
         isVerified: false // Mantener false hasta verificación manual del admin
       }
     };
@@ -89,13 +96,14 @@ const getDefaultVerificationSteps = (accountType: string, requiresIndependentVer
 // Función auxiliar para recalcular el progreso de verificación
 const recalculateVerificationProgress = async (verification: IProfileVerification) => {
   try {
-    // Obtener datos del usuario asociado al perfil
+    // Obtener datos del usuario y perfil asociado
     const populatedVerification = await ProfileVerification.findById(verification._id)
       .populate({
         path: 'profile',
+        select: 'name user createdAt contact',
         populate: {
           path: 'user',
-          model: 'User'
+          select: 'accountType lastLogin'
         }
       })
       .lean() as unknown as IProfileVerificationWithPopulatedProfile | null;
@@ -105,7 +113,12 @@ const recalculateVerificationProgress = async (verification: IProfileVerificatio
     }
 
     const user = populatedVerification.profile.user;
-    const newProgress = calculateVerificationProgress(verification, user, populatedVerification.profile as unknown as IProfile);
+    // IMPORTANT: Pass the verification with updated steps (from DB), not the old one
+    const newProgress = calculateVerificationProgress(
+      populatedVerification as unknown as IProfileVerification,
+      user,
+      populatedVerification.profile as unknown as IProfile
+    );
 
     // Actualizar SOLO el progreso en la base de datos, sin tocar los steps
     const updatedVerification = await ProfileVerification.findByIdAndUpdate(
@@ -126,13 +139,30 @@ export const getProfileVerificationByProfileId = async (profileId: string | Type
     const verification = await ProfileVerification.findOne({ profile: profileId })
       .populate({
         path: 'profile',
-        select: 'name user createdAt',
+        select: 'name user createdAt contact',
         populate: {
           path: 'user',
           select: 'accountType lastLogin'
         }
       })
       .lean();
+
+    // If verification and profile exist, enrich the verification with computed values
+    // This ensures accountAge and contactConsistency are calculated dynamically
+    if (verification && verification.profile) {
+      const enrichedProfile = enrichProfileVerification(verification.profile as any);
+      // Copy the computed steps from enriched profile to verification
+      if (enrichedProfile.verification?.steps) {
+        verification.steps = {
+          ...verification.steps,
+          accountAge: enrichedProfile.verification.steps.accountAge,
+          contactConsistency: enrichedProfile.verification.steps.contactConsistency,
+          phoneChangeDetected: enrichedProfile.verification.steps.phoneChangeDetected
+        };
+      }
+      // NOTE: Do NOT update verificationProgress here - it comes from the database
+      // and should only be updated when verification steps change
+    }
 
     return verification;
   } catch (error) {
@@ -231,10 +261,30 @@ export const updateProfileVerification = async (
     if (isUpdatingSteps) {
       await recalculateVerificationProgress(verification as unknown as IProfileVerification);
 
-      // Obtener la verificación actualizada con el nuevo progreso
+      // Obtener la verificación actualizada con el nuevo progreso y enriquecimiento
       const updatedVerification = await ProfileVerification.findById(verificationId)
-        .populate('profile', 'name user')
+        .populate({
+          path: 'profile',
+          select: 'name user createdAt contact',
+          populate: {
+            path: 'user',
+            select: 'accountType lastLogin'
+          }
+        })
         .lean();
+
+      // Enrich verification with computed values
+      if (updatedVerification && updatedVerification.profile) {
+        const enrichedProfile = enrichProfileVerification(updatedVerification.profile as any);
+        if (enrichedProfile.verification?.steps) {
+          updatedVerification.steps = {
+            ...updatedVerification.steps,
+            accountAge: enrichedProfile.verification.steps.accountAge,
+            contactConsistency: enrichedProfile.verification.steps.contactConsistency,
+            phoneChangeDetected: enrichedProfile.verification.steps.phoneChangeDetected
+          };
+        }
+      }
 
       return updatedVerification;
     }
@@ -298,10 +348,30 @@ export const updateVerificationSteps = async (
     // Recalcular progreso automáticamente
     await recalculateVerificationProgress(verification as unknown as IProfileVerification);
 
-    // Retornar verificación actualizada
+    // Retornar verificación actualizada con enriquecimiento
     const finalVerification = await ProfileVerification.findById(verificationId)
-      .populate('profile', 'name user')
+      .populate({
+        path: 'profile',
+        select: 'name user createdAt contact',
+        populate: {
+          path: 'user',
+          select: 'accountType lastLogin'
+        }
+      })
       .lean();
+
+    // Enrich verification with computed values (accountAge, contactConsistency)
+    if (finalVerification && finalVerification.profile) {
+      const enrichedProfile = enrichProfileVerification(finalVerification.profile as any);
+      if (enrichedProfile.verification?.steps) {
+        finalVerification.steps = {
+          ...finalVerification.steps,
+          accountAge: enrichedProfile.verification.steps.accountAge,
+          contactConsistency: enrichedProfile.verification.steps.contactConsistency,
+          phoneChangeDetected: enrichedProfile.verification.steps.phoneChangeDetected
+        };
+      }
+    }
 
     return finalVerification;
   } catch (error) {

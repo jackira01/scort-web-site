@@ -260,6 +260,17 @@ export const createProfile = async (data: CreateProfileDTO, skipLimitsValidation
   // El perfil estará inactivo e invisible hasta que se confirme el pago de su factura
   // Excluir planAssignment del data para evitar sobrescribir la asignación automática
   const { planAssignment, ...profileData } = data;
+
+  // Inicializar correctamente los campos de contacto
+  // Si hay un número de contacto en la primera creación, no se considera un cambio
+  if (profileData.contact?.number) {
+    profileData.contact = {
+      ...profileData.contact,
+      hasChanged: false,           // No es cambio (es primera vez)
+      lastChangeDate: new Date()   // Marcar cuándo se creó/estableció
+    } as any;
+  }
+
   let profile = await ProfileModel.create({
     ...profileData,
     isActive: false,  // Inactivo por defecto hasta pago de factura
@@ -1056,7 +1067,12 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
 export const getProfileById = async (id: string): Promise<IProfile | null> => {
   const profile = await ProfileModel.findById(id)
     .populate('user', '_id name email')
-    .populate('features.group_id');
+    .populate('features.group_id')
+    .populate({
+      path: 'verification',
+      model: 'ProfileVerification',
+      select: 'verificationProgress verificationStatus steps'
+    });
 
   if (!profile) {
     return null;
@@ -1064,6 +1080,19 @@ export const getProfileById = async (id: string): Promise<IProfile | null> => {
 
   // Transformar los features al formato requerido
   const transformedProfile = profile.toObject();
+
+  // IMPORTANTE: Asegurar que contact y createdAt estén disponibles para enrichProfileVerification
+  // Estas propiedades son necesarias para calcular accountAge y contactConsistency
+  if (!transformedProfile.contact) {
+    transformedProfile.contact = {
+      number: null,
+      lastChangeDate: new Date(),
+      hasChanged: false,
+    };
+  }
+  if (!transformedProfile.createdAt) {
+    transformedProfile.createdAt = new Date();
+  }
 
   // Separar servicios del resto de features
   const services: string[] = [];

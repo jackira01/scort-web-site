@@ -1,147 +1,17 @@
 import type { Types } from 'mongoose';
 
-// DTO para crear verificación de perfil (campos opcionales para flexibilidad)
-export interface CreateProfileVerificationDTO {
-  profile: Types.ObjectId | string;
-  verificationStatus?: 'pending' | 'verified' | 'rejected';
-  documentPhotos?: {
-    documents: string[];
-    isVerified: boolean;
-  };
-  selfieWithDoc?: {
-    photo: string;
-    isVerified: boolean;
-  };
-  facePhotos?: boolean;
-  fullBodyPhotos?: boolean;
-  video?: string;
-  videoCallRequested?: {
-    videoLink: string;
-    isVerified: boolean;
-  };
-  socialMedia?: boolean;
-  lastSeen?: Date;
-  phoneChangeDetected?: boolean;
-  lastLogin?: {
-    isVerified?: boolean;
-    date?: Date | null;
-  };
-  verifiedAt?: Date;
-  verificationFailedAt?: Date;
-  verificationFailedReason?: string;
-}
-
-// DTO para crear verificación completa (todos los campos requeridos)
-export interface CreateCompleteProfileVerificationDTO {
-  profile: Types.ObjectId | string;
-  verificationStatus?: 'pending' | 'verified' | 'rejected';
-  documentPhotos: {
-    documents: string[];
-    isVerified: boolean;
-  };
-  selfieWithDoc: {
-    photo: string;
-    isVerified: boolean;
-  };
-  facePhotos: boolean;
-  fullBodyPhotos: boolean;
-  video: string;
-  videoCallRequested: {
-    videoLink: string;
-    isVerified: boolean;
-  };
-  socialMedia: boolean;
-  lastSeen?: Date;
-  phoneChangeDetected?: boolean;
-  lastLogin?: {
-    isVerified?: boolean;
-    date?: Date | null;
-  };
-  verifiedAt?: Date;
-  verificationFailedAt?: Date;
-  verificationFailedReason?: string;
-}
-
-// DTO para actualizar verificación de perfil
-export interface UpdateProfileVerificationDTO {
-  verificationStatus?: 'pending' | 'verified' | 'rejected';
-  documentPhotos?: {
-    documents?: string[];
-    isVerified?: boolean;
-  };
-  selfieWithDoc?: {
+// DTO para actualizar pasos específicos de verificación (Nueva estructura)
+export interface UpdateVerificationStepsDTO {
+  frontPhotoVerification?: {
     photo?: string;
     isVerified?: boolean;
   };
-  facePhotos?: boolean;
-  fullBodyPhotos?: boolean;
-  video?: string;
-  videoCallRequested?: {
-    videoLink?: string;
-    isVerified?: boolean;
-  };
-  socialMedia?: boolean;
-  lastSeen?: Date;
-  phoneChangeDetected?: boolean;
-  lastLogin?: {
-    isVerified?: boolean;
-    date?: Date | null;
-  };
-  verifiedAt?: Date;
-  verificationFailedAt?: Date;
-  verificationFailedReason?: string;
-  steps?: {
-    documentPhotos?: {
-      documents?: string[];
-      isVerified?: boolean;
-    };
-    selfieWithPoster?: {
-      photo?: string;
-      isVerified?: boolean;
-    };
-    selfieWithDoc?: {
-      photo?: string;
-      isVerified?: boolean;
-    };
-    fullBodyPhotos?: {
-      photos?: string[];
-      isVerified?: boolean;
-    };
-    video?: {
-      videoUrl?: string;
-      isVerified?: boolean;
-    };
-    videoCallRequested?: {
-      videoLink?: string;
-      isVerified?: boolean;
-    };
-    socialMedia?: {
-      accounts?: string[];
-      isVerified?: boolean;
-    };
-    phoneChangeDetected?: boolean;
-    lastLogin?: {
-      isVerified?: boolean;
-      date?: Date | null;
-    };
-  };
-}
-
-// DTO para actualizar estado de verificación
-export interface UpdateVerificationStatusDTO {
-  status: 'pending' | 'verified' | 'rejected';
-  reason?: string;
-}
-
-// DTO para actualizar pasos específicos de verificación
-export interface UpdateVerificationStepsDTO {
-  documentPhotos?: {
-    frontPhoto?: string;
-    selfieWithDocument?: string; // Foto con documento al lado del rostro
+  selfieVerification?: {
+    photo?: string;
     isVerified?: boolean;
   };
   mediaVerification?: {
-    mediaLink?: string; // Video o foto de verificación con cartel
+    mediaLink?: string;
     mediaType?: 'video' | 'image';
     isVerified?: boolean;
   };
@@ -157,6 +27,46 @@ export interface UpdateVerificationStepsDTO {
     isVerified?: boolean;
     date?: Date | null;
   };
+  // Campos computados dinámicamente (no se guardan en DB)
+  accountAge?: {
+    isVerified: boolean;
+    status: 'verified' | 'pending';
+  };
+  contactConsistency?: {
+    isVerified: boolean;
+    status: 'verified' | 'pending';
+    debug?: {
+      hasChanged?: boolean;
+      lastChangeDate?: Date;
+      hasContactNumber?: boolean;
+      calculatedAt?: string;
+    };
+  };
+}
+
+// DTO para crear verificación de perfil
+export interface CreateProfileVerificationDTO {
+  profile: Types.ObjectId | string;
+  verificationStatus?: 'pending' | 'verified' | 'rejected';
+  steps?: UpdateVerificationStepsDTO;
+  verifiedAt?: Date;
+  verificationFailedAt?: Date;
+  verificationFailedReason?: string;
+}
+
+// DTO para actualizar verificación de perfil
+export interface UpdateProfileVerificationDTO {
+  verificationStatus?: 'pending' | 'verified' | 'rejected';
+  steps?: UpdateVerificationStepsDTO;
+  verifiedAt?: Date;
+  verificationFailedAt?: Date;
+  verificationFailedReason?: string;
+}
+
+// DTO para actualizar estado de verificación
+export interface UpdateVerificationStatusDTO {
+  status: 'pending' | 'verified' | 'rejected';
+  reason?: string;
 }
 
 // DTO para filtros de búsqueda
@@ -177,24 +87,49 @@ export interface ProfileVerificationResponseDTO {
     user: string;
   };
   verificationStatus: 'pending' | 'verified' | 'rejected';
-  documentPhotos?: {
-    documents: string[];
-    isVerified: boolean;
+  verificationProgress: number;
+  steps?: {
+    frontPhotoVerification?: {
+      photo?: string;
+      isVerified?: boolean;
+    };
+    selfieVerification?: {
+      photo?: string;
+      isVerified?: boolean;
+    };
+    mediaVerification?: {
+      mediaLink?: string;
+      mediaType?: 'video' | 'image';
+      isVerified?: boolean;
+    };
+    videoCallRequested?: {
+      videoLink?: string;
+      isVerified?: boolean;
+    };
+    socialMedia?: {
+      isVerified?: boolean;
+    };
+    phoneChangeDetected?: boolean;
+    lastLogin?: {
+      isVerified?: boolean;
+      date?: Date | null;
+    };
+    // Campos computados dinámicamente (no se guardan en DB)
+    accountAge?: {
+      isVerified: boolean;
+      status: 'verified' | 'pending';
+    };
+    contactConsistency?: {
+      isVerified: boolean;
+      status: 'verified' | 'pending';
+      debug?: {
+        hasChanged?: boolean;
+        lastChangeDate?: Date;
+        hasContactNumber?: boolean;
+        calculatedAt?: string;
+      };
+    };
   };
-  selfieWithDoc?: {
-    photo: string;
-    isVerified: boolean;
-  };
-  facePhotos?: boolean;
-  fullBodyPhotos?: boolean;
-  video?: string;
-  videoCallRequested?: {
-    videoLink: string;
-    isVerified: boolean;
-  };
-  socialMedia?: boolean;
-  lastSeen?: Date;
-  phoneChangeDetected?: boolean;
   verifiedAt?: Date;
   verificationFailedAt?: Date;
   verificationFailedReason?: string;

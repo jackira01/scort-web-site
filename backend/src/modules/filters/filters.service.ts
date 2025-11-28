@@ -164,9 +164,9 @@ export const getFilteredProfiles = async (
       }
     }
 
-    // Filtro por verificación de documentos (basado en documentPhotos)
+    // Filtro por verificación de documentos (basado en frontPhotoVerification y selfieVerification)
     if (documentVerified !== undefined) {
-      // Buscar perfiles que tengan verificación de documentos completada
+      // Buscar perfiles que tengan ambas verificaciones de documentos completadas
       const documentVerificationQuery = await Profile.aggregate([
         {
           $lookup: {
@@ -178,7 +178,10 @@ export const getFilteredProfiles = async (
         },
         {
           $match: {
-            'verificationData.steps.documentPhotos.isVerified': documentVerified
+            $and: [
+              { 'verificationData.steps.frontPhotoVerification.isVerified': documentVerified },
+              { 'verificationData.steps.selfieVerification.isVerified': documentVerified }
+            ]
           }
         },
         {
@@ -412,8 +415,8 @@ export const getFilteredProfiles = async (
     // Configurar paginación
     const skip = (page - 1) * limit;
 
-    // Determinar campos a seleccionar: asegurar campos requeridos por el motor de visibilidad y verificación
-    const requiredFields = ['planAssignment', 'upgrades', 'lastShownAt', 'createdAt', 'contact', 'verification'];
+    // Determinar campos a seleccionar: asegurar campos requeridos por el motor de visibilidad
+    const requiredFields = ['planAssignment', 'upgrades', 'lastShownAt', 'createdAt'];
 
     // Campos mínimos necesarios para ProfileCard
     const profileCardFields = [

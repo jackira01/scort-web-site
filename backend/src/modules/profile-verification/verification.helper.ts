@@ -5,8 +5,12 @@ import type { IProfile, IProfileVerification } from '../profile/profile.types';
  * This ensures that time-based factors (account age, contact consistency) are always up-to-date
  * without requiring database writes.
  * 
+ * IMPORTANT: This function ONLY injects computed fields (accountAge, contactConsistency).
+ * It does NOT recalculate verificationProgress - that should come from the database.
+ * The verificationProgress is only recalculated when verification steps change (via recalculateVerificationProgress).
+ * 
  * @param profile The profile object (should be a plain object/lean)
- * @returns The profile with updated verification.verificationProgress and computed fields
+ * @returns The profile with injected computed verification fields
  */
 export const enrichProfileVerification = (profile: any): any => {
     if (!profile) return profile;
@@ -25,11 +29,10 @@ export const enrichProfileVerification = (profile: any): any => {
 
     const now = new Date();
     const verification = enrichedProfile.verification;
-    const steps = verification.steps || {};
 
-    // --- 1. Calculate Time-Based Factors ---
+    // --- 1. Calculate Time-Based Computed Factors ---
 
-    // Factor 1: Account Age (> 1 year)
+    // Factor: Account Age (> 1 year)
     // Check if createdAt exists and is older than 1 year
     let isAccountAgeVerified = false;
     if (enrichedProfile.createdAt) {
@@ -40,13 +43,14 @@ export const enrichProfileVerification = (profile: any): any => {
         isAccountAgeVerified = createdAt <= oneYearAgo;
     }
 
-    // Factor 2: Contact Consistency (> 3 months without changes)
+    // Factor: Contact Consistency (> 3 months without changes)
     // Logic mirrored from phone-verification.utils.ts but synchronous
     let isContactConsistent = false;
 
     if (enrichedProfile.contact) {
-        // If never changed, it's consistent
-        if (enrichedProfile.contact.hasChanged === false) {
+        // If never changed (hasChanged is undefined or false), it's consistent
+        // This matches the logic in phone-verification.utils.ts
+        if (!enrichedProfile.contact.hasChanged) {
             isContactConsistent = true;
         }
         // If changed, check if enough time has passed
@@ -60,45 +64,9 @@ export const enrichProfileVerification = (profile: any): any => {
         // If changed but no date (shouldn't happen ideally), assume not consistent
     }
 
-    // --- 2. Calculate Score (5 Factors, 20 points each) ---
+    // --- 2. Inject Computed Fields into Steps ---
+    // These are NOT saved to DB, only injected in the response for frontend consumption
 
-    let score = 0;
-    const POINTS_PER_FACTOR = 20;
-
-    // 1. Document Photos
-    if ((steps.documentPhotos?.frontPhoto || steps.documentPhotos?.selfieWithDocument) &&
-        steps.documentPhotos?.isVerified === true) {
-        score += POINTS_PER_FACTOR;
-    }
-
-    // 2. Media Verification
-    if (steps.mediaVerification?.mediaLink &&
-        steps.mediaVerification?.isVerified === true) {
-        score += POINTS_PER_FACTOR;
-    }
-
-    // 3. Social Media
-    if (steps.socialMedia?.isVerified === true) {
-        score += POINTS_PER_FACTOR;
-    }
-
-    // 4. Account Age
-    if (isAccountAgeVerified) {
-        score += POINTS_PER_FACTOR;
-    }
-
-    // 5. Contact Consistency
-    if (isContactConsistent) {
-        score += POINTS_PER_FACTOR;
-    }
-
-    // --- 3. Update Profile with Computed Values ---
-
-    // Update progress
-    enrichedProfile.verification.verificationProgress = score;
-
-    // Inject computed statuses into steps for Frontend to consume easily
-    // We create/overwrite these specific steps in the response object (not DB)
     if (!enrichedProfile.verification.steps) {
         enrichedProfile.verification.steps = {};
     }
@@ -110,13 +78,23 @@ export const enrichProfileVerification = (profile: any): any => {
 
     enrichedProfile.verification.steps.contactConsistency = {
         isVerified: isContactConsistent,
-        status: isContactConsistent ? 'verified' : 'pending'
-    };
+        status: isContactConsistent ? 'verified' : 'pending',
+        // Debug info to help diagnose contact consistency calculation
+        debug: {
+            hasChanged: enrichedProfile.contact?.hasChanged,
+            lastChangeDate: enrichedProfile.contact?.lastChangeDate,
+            hasContactNumber: !!enrichedProfile.contact?.number,
+            calculatedAt: new Date().toISOString()
+        }
+    } as any;
 
     // Also update the phoneChangeDetected flag to match reality
     // If consistent (verified), then change detected is false (stable)
     // If not consistent (not verified), then change detected is true (unstable)
     enrichedProfile.verification.steps.phoneChangeDetected = !isContactConsistent;
+
+    // NOTE: verificationProgress should NOT be recalculated here.
+    // It comes from the database and is only updated when steps change.
 
     return enrichedProfile;
 };

@@ -126,34 +126,41 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
-                {getStatusIcon(verification.steps.documentPhotos.isVerified)}
-                <span className="font-medium">Fotos de Documentos</span>
+                {getStatusIcon(verification.steps.frontPhotoVerification?.isVerified || false)}
+                <span className="font-medium">Documento de Identidad (Frente)</span>
               </div>
               <span className="text-sm text-gray-500">
-                {[
-                  verification.steps.documentPhotos.frontPhoto,
-                  verification.steps.documentPhotos.selfieWithDocument
-                ].filter(Boolean).length} archivo(s)
+                {verification.steps.frontPhotoVerification?.photo ? 'Completado' : 'Pendiente'}
               </span>
             </div>
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
-                {getStatusIcon(verification.steps.mediaVerification?.isVerified || verification.steps.videoVerification?.isVerified || false)}
+                {getStatusIcon(verification.steps.selfieVerification?.isVerified || false)}
+                <span className="font-medium">Foto con Documento al Lado del Rostro</span>
+              </div>
+              <span className="text-sm text-gray-500">
+                {verification.steps.selfieVerification?.photo ? 'Completado' : 'Pendiente'}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="flex items-center space-x-3">
+                {getStatusIcon(verification.steps.mediaVerification?.isVerified || false)}
                 <span className="font-medium">Video o Foto de Verificación</span>
               </div>
               <span className="text-sm text-gray-500">
-                {verification.steps.mediaVerification?.mediaLink || verification.steps.videoVerification?.videoLink ? 'Completado' : 'Pendiente'}
+                {verification.steps.mediaVerification?.mediaLink ? 'Completado' : 'Pendiente'}
               </span>
             </div>
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
-                {getStatusIcon(verification.steps.socialMedia.isVerified)}
+                {getStatusIcon(verification.steps.socialMedia?.isVerified || false)}
                 <span className="font-medium">Verificación Social</span>
               </div>
               <span className="text-sm text-gray-500">
-                {verification.steps.socialMedia.isVerified ? 'Verificado' : 'Pendiente'}
+                {verification.steps.socialMedia?.isVerified ? 'Verificado' : 'Pendiente'}
               </span>
             </div>
           </div>

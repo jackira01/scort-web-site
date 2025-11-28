@@ -91,9 +91,12 @@ export const getProfileVerification = async (profileId: string) => {
                 verificationProgress: 0,
                 data: {
                     steps: {
-                        documentPhotos: {
-                            frontPhoto: '',
-                            selfieWithDocument: '',
+                        frontPhotoVerification: {
+                            photo: '',
+                            isVerified: false
+                        },
+                        selfieVerification: {
+                            photo: '',
                             isVerified: false
                         },
                         mediaVerification: {

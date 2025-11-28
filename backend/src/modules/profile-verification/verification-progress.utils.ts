@@ -7,22 +7,34 @@ export const calculateVerificationProgress = (
   profile?: IProfile
 ): number => {
   let score = 0;
-  const POINTS_PER_FACTOR = 20;
+  // Ajustado a ~14.29 para mantener 100% con 7 factores (100/7 = 14.285...)
+  const POINTS_PER_FACTOR = 100 / 7;
 
-  // 1. Fotos de documentos
-  if ((verification.steps?.documentPhotos?.frontPhoto ||
-    verification.steps?.documentPhotos?.selfieWithDocument) &&
-    verification.steps?.documentPhotos?.isVerified === true) {
+  // 1. Foto frontal del documento
+  if (verification.steps?.frontPhotoVerification?.photo &&
+    verification.steps?.frontPhotoVerification?.isVerified === true) {
     score += POINTS_PER_FACTOR;
   }
 
-  // 2. Media de verificación
+  // 2. Selfie con documento
+  if (verification.steps?.selfieVerification?.photo &&
+    verification.steps?.selfieVerification?.isVerified === true) {
+    score += POINTS_PER_FACTOR;
+  }
+
+  // 3. Media de verificación
   if (verification.steps?.mediaVerification?.mediaLink &&
     verification.steps?.mediaVerification?.isVerified === true) {
     score += POINTS_PER_FACTOR;
   }
 
-  // 3. Redes sociales
+  // 4. Videollamada de verificación
+  if (verification.steps?.videoCallRequested?.videoLink &&
+    verification.steps?.videoCallRequested?.isVerified === true) {
+    score += POINTS_PER_FACTOR;
+  }
+
+  // 5. Redes sociales
   if (verification.steps?.socialMedia?.isVerified === true) {
     score += POINTS_PER_FACTOR;
   }
@@ -31,7 +43,7 @@ export const calculateVerificationProgress = (
   if (profile) {
     const now = new Date();
 
-    // 4. Antigüedad de la cuenta (> 1 año)
+    // 6. Antigüedad de la cuenta (> 1 año)
     let isAccountAgeVerified = false;
     if (profile.createdAt) {
       const createdAt = new Date(profile.createdAt);
@@ -44,10 +56,12 @@ export const calculateVerificationProgress = (
       score += POINTS_PER_FACTOR;
     }
 
-    // 5. Consistencia de contacto
+    // 7. Consistencia de contacto
     let isContactConsistent = false;
     if (profile.contact) {
-      if (profile.contact.hasChanged === false) {
+      // If never changed (hasChanged is undefined or false), it's consistent
+      // This matches the logic in phone-verification.utils.ts
+      if (!profile.contact.hasChanged) {
         isContactConsistent = true;
       } else if (profile.contact.lastChangeDate) {
         const lastChange = new Date(profile.contact.lastChangeDate);
@@ -62,7 +76,5 @@ export const calculateVerificationProgress = (
     }
   }
 
-  return score;
+  return Math.round(score);
 };
-
-// Funciones auxiliares removidas ya que no son necesarias en la nueva lógica simplificada
