@@ -9,6 +9,7 @@ import type {
   FilterQuery,
   FilterResponse,
 } from './filters.types';
+import { enrichProfileVerification } from '../profile-verification/verification.helper';
 
 /**
  * Obtiene todos los perfiles con filtros aplicados
@@ -163,9 +164,9 @@ export const getFilteredProfiles = async (
       }
     }
 
-    // Filtro por verificación de documentos (basado en documentPhotos)
+    // Filtro por verificación de documentos (basado en frontPhotoVerification y selfieVerification)
     if (documentVerified !== undefined) {
-      // Buscar perfiles que tengan verificación de documentos completada
+      // Buscar perfiles que tengan ambas verificaciones de documentos completadas
       const documentVerificationQuery = await Profile.aggregate([
         {
           $lookup: {
@@ -177,7 +178,10 @@ export const getFilteredProfiles = async (
         },
         {
           $match: {
-            'verificationData.steps.documentPhotos.isVerified': documentVerified
+            $and: [
+              { 'verificationData.steps.frontPhotoVerification.isVerified': documentVerified },
+              { 'verificationData.steps.selfieVerification.isVerified': documentVerified }
+            ]
           }
         },
         {
@@ -420,6 +424,7 @@ export const getFilteredProfiles = async (
       'name',
       'age',
       'location',
+      'contact', // IMPORTANTE: Necesario para verificación dinámica
       'description',
       'verification',
       'media.gallery',
@@ -591,25 +596,35 @@ export const getFilteredProfiles = async (
       limit,
     };
 
-    // Agregar información de verificación y hasDestacadoUpgrade a los perfiles
-    const profilesWithVerification = paginatedProfiles.map(profile => {
-      // Calcular estado de verificación basado en verificationStatus
+    const profilesWithVerification = paginatedProfiles.map(rawProfile => {
+      // ✅ CORRECCIÓN: No llamamos a enrichProfileVerification. 
+      // Confiamos en que el Cron Job y la DB tienen la información más actualizada.
+      const profile = rawProfile;
+
+      // Calcular estado de verificación basado DIRECTAMENTE en el progreso de la DB
       let isVerified = false;
       let verificationLevel = 'pending';
 
-      if (profile.verification) {
-        const verifiedCount = Object.values(profile.verification).filter(status => status === 'verified').length;
-        const totalFields = Object.keys(profile.verification).length;
+      // Aseguramos que verification exista y sea un objeto
+      const verification = (typeof profile.verification === 'object' && profile.verification !== null)
+        ? profile.verification as any
+        : {};
 
-        if (verifiedCount === totalFields && totalFields > 0) {
-          isVerified = true;
-          verificationLevel = 'verified';
-        } else if (verifiedCount > 0) {
-          verificationLevel = 'partial';
-        }
+      // Usamos el verificationProgress que viene de la DB (que ya arreglamos con el Cron)
+      const progress = verification.verificationProgress || 0;
+
+      // Determinamos el nivel basado en el porcentaje real almacenado
+      if (progress === 100) {
+        isVerified = true;
+        verificationLevel = 'verified';
+      } else if (progress > 0) {
+        // Si tiene algo de progreso pero no 100%
+        verificationLevel = 'partial';
       }
 
-      // Calcular hasDestacadoUpgrade
+      // ---------------------------------------------------------
+      // Lógica de Destacado (Se mantiene igual, estaba correcta)
+      // ---------------------------------------------------------
       let hasDestacadoUpgrade = false;
 
       // Verificar si tiene plan DIAMANTE
@@ -630,8 +645,11 @@ export const getFilteredProfiles = async (
         ...profile,
         hasDestacadoUpgrade,
         verification: {
-          isVerified,
-          verificationLevel
+          ...verification,
+          isVerified,        // Booleano simple para el frontend
+          verificationLevel, // Estado legible (verified/partial/pending)
+          // Mantenemos el progreso original de la DB
+          verificationProgress: progress
         }
       };
     });

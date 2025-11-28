@@ -304,7 +304,7 @@ export default function AccountProfiles({
                     width={400}
                     height={600}
                     src={profile.media?.gallery?.[0] || '/placeholder.svg'}
-                    alt={profile.name}
+                    alt={profile.name || 'Foto de perfil'}
                     className="w-full h-full object-cover"
                   />
                   {/* Overlay gradient siempre visible para legibilidad */}
@@ -362,16 +362,16 @@ export default function AccountProfiles({
                         Verificación del perfil
                       </span>
                       <span
-                        className={`font-medium ${getProgressTextColor(profile.verification?.verificationProgress)}`}
+                        className={`font-medium ${getProgressTextColor(profile.verification?.verificationProgress ?? 0)}`}
                       >
-                        {profile.verification?.verificationProgress}%
+                        {profile.verification?.verificationProgress ?? 0}%
                       </span>
                     </div>
                     <div className="w-full bg-white/20 rounded-full h-2">
                       <div
-                        className={`h-2 rounded-full transition-all duration-500 ${getProgressColor(profile.verification?.verificationProgress)}`}
+                        className={`h-2 rounded-full transition-all duration-500 ${getProgressColor(profile.verification?.verificationProgress ?? 0)}`}
                         style={{
-                          width: `${profile.verification?.verificationProgress}%`,
+                          width: `${profile.verification?.verificationProgress ?? 0}%`,
                         }}
                       />
                     </div>

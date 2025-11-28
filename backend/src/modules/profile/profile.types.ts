@@ -238,11 +238,14 @@ export interface IProfileVerification extends Document {
     accountType: 'common' | 'agency';
     requiresIndependentVerification: boolean;
     steps: {
-        documentPhotos: {
-            frontPhoto: string;
-            selfieWithDocument: string; // Foto con documento al lado del rostro
+        frontPhotoVerification: {
+            photo: string; // Foto frontal del documento de identidad
             isVerified: boolean;
-        }; // required
+        }; // Documento de Identidad (Frente)
+        selfieVerification: {
+            photo: string; // Foto con documento al lado del rostro
+            isVerified: boolean;
+        }; // Foto con Documento al Lado del Rostro
         mediaVerification: {
             mediaLink: string; // Video o foto de verificación con cartel
             mediaType: 'video' | 'image'; // Tipo de media
@@ -259,6 +262,21 @@ export interface IProfileVerification extends Document {
         lastLogin: {
             isVerified: boolean;
             date: Date | null;
+        };
+        // Campos computados dinámicamente (no se guardan en DB)
+        accountAge?: {
+            isVerified: boolean;
+            status: 'verified' | 'pending';
+        };
+        contactConsistency?: {
+            isVerified: boolean;
+            status: 'verified' | 'pending';
+            debug?: {
+                hasChanged?: boolean;
+                lastChangeDate?: Date;
+                hasContactNumber?: boolean;
+                calculatedAt?: string;
+            };
         };
     }
 

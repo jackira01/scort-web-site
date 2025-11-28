@@ -24,11 +24,18 @@ export const calculatePhoneChangeStatus = async (profile: IProfile): Promise<boo
         }
 
         // Obtener umbral de configuración (en meses)
-        const thresholdMonths = await ConfigParameterService.getValue(
+        const thresholdValue = await ConfigParameterService.getValue(
             'profile.phone.stability.threshold.months'
-        ) as number;
+        );
 
-        // Usar 3 meses por defecto si no está configurado
+        // Parsear a número (el valor viene como string desde la DB)
+        const thresholdMonths = typeof thresholdValue === 'string'
+            ? parseInt(thresholdValue, 10)
+            : typeof thresholdValue === 'number'
+                ? thresholdValue
+                : null;
+
+        // Usar 3 meses por defecto si no está configurado o es inválido
         const months = thresholdMonths && thresholdMonths > 0 ? thresholdMonths : 3;
 
         // Calcular diferencia en milisegundos

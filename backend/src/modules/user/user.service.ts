@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import UserModel from './User.model';
 import ProfileVerification from '../profile-verification/profile-verification.model';
+import { enrichProfileVerification } from '../profile-verification/verification.helper';
 
 
 export const createUser = (data: Record<string, any>) => UserModel.create(data);
@@ -46,13 +47,13 @@ export const getUsers = async (filters: Record<string, any>, options: Record<str
 export const getUserProfiles = async (userId: string, includeInactive: boolean = false) => {
   const user = await UserModel.findById(userId).populate({
     path: 'profiles',
-    select: '_id user name age location verification media planAssignment upgrades visible isActive isDeleted',
+    select: '_id user name age description location contact createdAt verification media planAssignment upgrades visible isActive isDeleted lastLogin',
     populate: {
       path: 'verification',
       model: 'ProfileVerification',
-      select: 'verificationProgress verificationStatus'
+      select: 'verificationProgress verificationStatus steps'
     }
-  });
+  }).lean();
 
   let profiles = user?.profiles || [];
 
@@ -65,7 +66,10 @@ export const getUserProfiles = async (userId: string, includeInactive: boolean =
   const now = new Date();
 
   // Devolver los perfiles con información completa incluyendo upgrades activos
-  return profiles.map((profile: any) => {
+  return profiles.map((rawProfile: any) => {
+    // Enriquecer perfil con cálculo dinámico de verificación
+    const profile = enrichProfileVerification(rawProfile);
+
     // Filtrar upgrades activos
     const activeUpgrades = profile.upgrades?.filter((upgrade: any) =>
       new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
@@ -85,20 +89,10 @@ export const getUserProfiles = async (userId: string, includeInactive: boolean =
     }
 
     return {
-      _id: profile._id,
-      user: profile.user,
-      name: profile.name,
-      age: profile.age,
-      location: profile.location,
-      verification: profile.verification,
-      media: profile.media,
-      planAssignment: profile.planAssignment,
-      upgrades: profile.upgrades,
+      ...profile,
       activeUpgrades,
       hasDestacadoUpgrade,
-      hasImpulsoUpgrade,
-      visible: profile.visible,
-      isActive: profile.isActive
+      hasImpulsoUpgrade
     };
   });
 }

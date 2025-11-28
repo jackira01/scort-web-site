@@ -20,91 +20,84 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
     );
   }
 
-  // Si tiene subKey, renderizar solo ese campo específico
-  if (step.subKey) {
-    const documentData = stepData as ProfileVerificationData['data']['steps']['documentPhotos'];
-    const photoUrl = documentData[step.subKey as keyof typeof documentData] as string;
-
-    if (!photoUrl) {
-      return (
-        <div className="mt-4 text-gray-500 text-center">
-          No se ha subido {step.label.toLowerCase()}.
-        </div>
-      );
-    }
-
-    return (
-      <div className="mt-4">
-        <div className="flex justify-center">
-          <div className="relative group max-w-md">
-            <CloudinaryImage
-              src={photoUrl}
-              alt={step.label}
-              width={400}
-              height={300}
-              className="w-full h-auto object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => onPreviewImage(photoUrl)}
-            />
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
-              <Button
-                size="sm"
-                variant="secondary"
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => onPreviewImage(photoUrl)}
-              >
-                <Eye className="h-4 w-4 mr-1" />
-                Ver
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   switch (step.key) {
-    case 'documentPhotos': {
-      const documentData = stepData as ProfileVerificationData['data']['steps']['documentPhotos'];
-      const photos = [
-        { key: 'frontPhoto', label: 'Documento (frontal)', url: documentData.frontPhoto },
-        { key: 'selfieWithDocument', label: 'Foto con documento al rostro', url: documentData.selfieWithDocument }
-      ].filter(photo => photo.url);
+    case 'frontPhotoVerification': {
+      const photoData = stepData as ProfileVerificationData['data']['steps']['frontPhotoVerification'];
+      const photoUrl = photoData.photo;
 
-      if (photos.length === 0) {
+      if (!photoUrl) {
         return (
           <div className="mt-4 text-gray-500 text-center">
-            No hay fotos de documentos.
+            No se ha subido el documento de identidad (frente).
           </div>
         );
       }
 
       return (
         <div className="mt-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {photos.map((photo, index) => (
-              <div key={photo.key} className="relative group">
-                <CloudinaryImage
-                  src={photo.url!}
-                  alt={photo.label}
-                  width={200}
-                  height={150}
-                  className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => onPreviewImage(photo.url!)}
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => onPreviewImage(photo.url!)}
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Ver
-                  </Button>
-                </div>
-                <p className="text-xs text-gray-600 mt-1 text-center">{photo.label}</p>
+          <div className="flex justify-center">
+            <div className="relative group max-w-md">
+              <CloudinaryImage
+                src={photoUrl}
+                alt="Documento de Identidad (Frente)"
+                width={400}
+                height={300}
+                className="w-full h-auto object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => onPreviewImage(photoUrl)}
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => onPreviewImage(photoUrl)}
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  Ver
+                </Button>
               </div>
-            ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    case 'selfieVerification': {
+      const photoData = stepData as ProfileVerificationData['data']['steps']['selfieVerification'];
+      const photoUrl = photoData.photo;
+
+      if (!photoUrl) {
+        return (
+          <div className="mt-4 text-gray-500 text-center">
+            No se ha subido la foto con documento al lado del rostro.
+          </div>
+        );
+      }
+
+      return (
+        <div className="mt-4">
+          <div className="flex justify-center">
+            <div className="relative group max-w-md">
+              <CloudinaryImage
+                src={photoUrl}
+                alt="Foto con Documento al Lado del Rostro"
+                width={400}
+                height={300}
+                className="w-full h-auto object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => onPreviewImage(photoUrl)}
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => onPreviewImage(photoUrl)}
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  Ver
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       );

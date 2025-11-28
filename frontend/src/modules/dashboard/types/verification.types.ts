@@ -7,9 +7,12 @@ export interface ProfileVerificationData {
   verificationProgress: number;
   data: {
     steps: {
-      documentPhotos: {
-        frontPhoto?: string;
-        selfieWithDocument?: string; // Foto con documento al lado del rostro
+      frontPhotoVerification: {
+        photo?: string;
+        isVerified: boolean;
+      };
+      selfieVerification: {
+        photo?: string; // Foto con documento al lado del rostro
         isVerified: boolean;
       };
       mediaVerification: {
@@ -24,16 +27,29 @@ export interface ProfileVerificationData {
       socialMedia: {
         isVerified: boolean;
       };
+      accountAge: {
+        isVerified: boolean;
+        status: 'verified' | 'pending';
+      };
+      contactConsistency: {
+        isVerified: boolean;
+        status: 'verified' | 'pending';
+        debug?: {
+          hasChanged?: boolean;
+          lastChangeDate?: Date;
+          hasContactNumber?: boolean;
+          calculatedAt?: string;
+        };
+      };
     };
   };
 }
 
 export interface VerificationStep {
-  key: keyof ProfileVerificationData['data']['steps'] | string; // Permitir strings para sub-keys
+  key: keyof ProfileVerificationData['data']['steps'];
   label: string;
   icon: ReactNode;
   description: string;
-  subKey?: string; // Para acceder a propiedades anidadas
 }
 
 export interface AdminProfileVerificationCarouselProps {

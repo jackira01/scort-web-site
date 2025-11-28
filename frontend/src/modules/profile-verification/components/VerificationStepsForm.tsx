@@ -22,9 +22,11 @@ import {
 import { VerificationSuccessModal } from './VerificationSuccessModal';
 
 const verificationSchema = z.object({
-  documentPhotos: z.object({
-    frontPhoto: z.string().optional(),
-    selfieWithDocument: z.string().optional(), // Cambiado de backPhoto
+  frontPhotoVerification: z.object({
+    photo: z.string().optional(),
+  }),
+  selfieVerification: z.object({
+    photo: z.string().optional(),
   }),
   mediaVerification: z.object({
     mediaLink: z.string().optional(),
@@ -85,9 +87,11 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
   const form = useForm<VerificationFormData>({
     resolver: zodResolver(verificationSchema),
     defaultValues: {
-      documentPhotos: {
-        frontPhoto: initialData.documentPhotos?.frontPhoto || '',
-        selfieWithDocument: initialData.documentPhotos?.selfieWithDocument || initialData.documentPhotos?.backPhoto || '', // Fallback para compatibilidad
+      frontPhotoVerification: {
+        photo: initialData.frontPhotoVerification?.photo || '',
+      },
+      selfieVerification: {
+        photo: initialData.selfieVerification?.photo || '',
       },
       mediaVerification: {
         mediaLink: initialData.mediaVerification?.mediaLink || initialData.videoVerification?.videoLink || '',
@@ -116,19 +120,20 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
   // Determinar el paso actual basado en los datos completados
   useEffect(() => {
-    const { frontPhoto, selfieWithDocument } = watchedValues.documentPhotos;
+    const { photo: frontPhoto } = watchedValues.frontPhotoVerification;
+    const { photo: selfiePhoto } = watchedValues.selfieVerification;
     const { mediaLink } = watchedValues.mediaVerification;
 
     if (!frontPhoto) {
       setCurrentStep(1);
     } else if (!mediaLink) {
       setCurrentStep(2);
-    } else if (!selfieWithDocument) {
+    } else if (!selfiePhoto) {
       setCurrentStep(3);
     } else {
       setCurrentStep(3);
     }
-  }, [watchedValues.documentPhotos, watchedValues.mediaVerification]);
+  }, [watchedValues.frontPhotoVerification, watchedValues.selfieVerification, watchedValues.mediaVerification]);
 
   const updateVerificationMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -163,8 +168,10 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
     if (fieldName === 'mediaVerification') {
       form.setValue('mediaVerification.mediaLink', tempUrl);
-    } else {
-      form.setValue(`documentPhotos.${fieldName}` as any, tempUrl);
+    } else if (fieldName === 'frontPhoto') {
+      form.setValue('frontPhotoVerification.photo', tempUrl);
+    } else if (fieldName === 'selfiePhoto') {
+      form.setValue('selfieVerification.photo', tempUrl);
     }
 
     toast.success('Archivo seleccionado. Se subirá al guardar la verificación.');
@@ -172,7 +179,8 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
   const onSubmit = async (data: VerificationFormData) => {
     // Validar que se complete al menos el Paso 1 (foto frontal del documento)
-    const { frontPhoto, selfieWithDocument } = data.documentPhotos;
+    const { photo: frontPhoto } = data.frontPhotoVerification;
+    const { photo: selfiePhoto } = data.selfieVerification;
     const { mediaLink } = data.mediaVerification;
 
     if (!frontPhoto) {
@@ -215,10 +223,15 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   uploadedData.mediaVerification.mediaType = 'image';
                 }
               }
-            } else {
+            } else if (fieldName === 'frontPhoto') {
               uploadedUrls = (await uploadMultipleImages([file])).filter((url): url is string => url !== null);
               if (uploadedUrls.length > 0) {
-                (uploadedData.documentPhotos as any)[fieldName] = uploadedUrls[0];
+                uploadedData.frontPhotoVerification.photo = uploadedUrls[0];
+              }
+            } else if (fieldName === 'selfiePhoto') {
+              uploadedUrls = (await uploadMultipleImages([file])).filter((url): url is string => url !== null);
+              if (uploadedUrls.length > 0) {
+                uploadedData.selfieVerification.photo = uploadedUrls[0];
               }
             }
           } catch (error) {
@@ -232,7 +245,8 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
       // Actualizar la verificación con los datos subidos
       await updateVerificationMutation.mutateAsync({
-        documentPhotos: uploadedData.documentPhotos,
+        frontPhotoVerification: uploadedData.frontPhotoVerification,
+        selfieVerification: uploadedData.selfieVerification,
         mediaVerification: uploadedData.mediaVerification,
       });
 
@@ -369,9 +383,9 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
     return 'pending';
   };
 
-  const isStep1Complete = !!watchedValues.documentPhotos.frontPhoto;
+  const isStep1Complete = !!watchedValues.frontPhotoVerification.photo;
   const isStep2Complete = !!watchedValues.mediaVerification.mediaLink;
-  const isStep3Complete = !!watchedValues.documentPhotos.selfieWithDocument;
+  const isStep3Complete = !!watchedValues.selfieVerification.photo;
 
   return (
     <>
@@ -454,7 +468,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 '',
                 <></>,
                 true,
-                watchedValues.documentPhotos.frontPhoto
+                watchedValues.frontPhotoVerification.photo
               )}
             </CardContent>
           </Card>
@@ -539,12 +553,12 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               </div>
 
               {renderFileUpload(
-                'selfieWithDocument',
+                'selfiePhoto',
                 '',
                 '',
                 <></>,
                 isStep1Complete && isStep2Complete,
-                watchedValues.documentPhotos.selfieWithDocument
+                watchedValues.selfieVerification.photo
               )}
             </CardContent>
           </Card>

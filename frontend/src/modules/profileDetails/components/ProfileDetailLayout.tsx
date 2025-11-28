@@ -154,7 +154,8 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
             <ProfileGallery
               {...adaptedProfileData}
               isIdentityVerified={
-                verification?.data?.steps?.documentPhotos?.isVerified || false
+                (verification?.data?.steps?.frontPhotoVerification?.isVerified || false) &&
+                (verification?.data?.steps?.selfieVerification?.isVerified || false)
               }
             />
 

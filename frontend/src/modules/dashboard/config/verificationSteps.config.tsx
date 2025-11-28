@@ -18,15 +18,13 @@ interface ProfileVerificationSteps {
 
 export const verificationSteps: VerificationStep[] = [
   {
-    key: 'documentPhotos',
-    subKey: 'frontPhoto',
+    key: 'frontPhotoVerification',
     label: 'Documento de Identidad (Frente)',
     icon: <FileText className="h-5 w-5" />,
     description: 'Foto frontal clara del documento de identidad',
   },
   {
-    key: 'documentPhotos',
-    subKey: 'selfieWithDocument',
+    key: 'selfieVerification',
     label: 'Foto con Documento al Lado del Rostro',
     icon: <Camera className="h-5 w-5" />,
     description: 'Foto de la persona sosteniendo el documento al lado de su rostro',
@@ -65,16 +63,9 @@ export const getVerifiedCount = (verification: ProfileVerificationSteps | unknow
 
     if (!stepData) return;
 
-    // Si tiene subKey, verificar que el subKey tenga valor (no isVerified)
-    if (step.subKey) {
-      if ((stepData as any)[step.subKey]) {
-        count++;
-      }
-    } else {
-      // Si no tiene subKey, verificar el isVerified del step completo
-      if (stepData.isVerified) {
-        count++;
-      }
+    // Verificar el isVerified del step
+    if (stepData.isVerified) {
+      count++;
     }
   });
 
@@ -83,5 +74,5 @@ export const getVerifiedCount = (verification: ProfileVerificationSteps | unknow
 
 // Función para obtener el total de pasos
 export const getTotalSteps = (): number => {
-  return verificationSteps.length; // Ahora 4 pasos: documentos, video, videollamada, redes sociales
+  return verificationSteps.length; // Ahora 5 pasos
 };

@@ -78,14 +78,11 @@ export const getProfileById = async (profileId: string) => {
 
 export const getProfileVerification = async (profileId: string) => {
     try {
-        console.log('🔍 Fetching profile verification for profileId:', profileId);
         const response = await axios.get(`${API_URL}/api/profile-verification/profile/${profileId}`);
-        console.log('📊 Profile verification response:', response.data);
 
         // Si el backend devuelve { success: true, data: {} } pero data está vacío,
         // crear una estructura de verificación por defecto
         if (response.data.success && (!response.data.data || Object.keys(response.data.data).length === 0)) {
-            console.log('⚠️ No verification data found, creating default structure');
 
             // Crear un nuevo registro de verificación
             const createResponse = await axios.post(`${API_URL}/api/profile-verification`, {
@@ -94,9 +91,12 @@ export const getProfileVerification = async (profileId: string) => {
                 verificationProgress: 0,
                 data: {
                     steps: {
-                        documentPhotos: {
-                            frontPhoto: '',
-                            selfieWithDocument: '',
+                        frontPhotoVerification: {
+                            photo: '',
+                            isVerified: false
+                        },
+                        selfieVerification: {
+                            photo: '',
                             isVerified: false
                         },
                         mediaVerification: {
