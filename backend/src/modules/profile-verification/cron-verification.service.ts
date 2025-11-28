@@ -4,13 +4,12 @@ import { ConfigParameterService } from '../config-parameter/config-parameter.ser
 import { enrichProfileVerification } from './verification.helper';
 import { calculateVerificationProgress } from './verification-progress.utils';
 
-// --- 1. Lógica extraída a su propia función para poder ejecutarla cuando queramos ---
+// La lógica se mantiene separada para mantener el código limpio
 export const runDailyVerificationProcess = async () => {
-    console.log('⚡ [Manual/Cron Trigger] Ejecutando proceso de verificación...');
+    console.log('⚡ [Cron Job] Iniciando proceso de verificación programado...');
 
     try {
-        // NOTA: Si estás probando con un perfil creado HOY, 
-        // cambia temporalmente esta línea a: const minAgeMonths = 0;
+        // IMPORTANTE: Asegúrate de que esto use el servicio de configuración y NO un número fijo (como 0)
         const minAgeMonths = await ConfigParameterService.getValue('profile.verification.minimum_age_months') || 12;
 
         const cutOffDate = new Date();
@@ -18,6 +17,7 @@ export const runDailyVerificationProcess = async () => {
 
         console.log(`📅 Fecha de corte usada: ${cutOffDate.toISOString()}`);
 
+        // Pipeline optimizado ("Francotirador")
         const candidates = await ProfileVerification.aggregate([
             { $match: { verificationProgress: { $lt: 100 } } },
             {
@@ -45,13 +45,12 @@ export const runDailyVerificationProcess = async () => {
             { $unwind: { path: '$userData', preserveNullAndEmptyArrays: true } }
         ]);
 
-        console.log(`🔍 Candidatos encontrados: ${candidates.length}`);
+        console.log(`🔍 [Cron Job] Candidatos encontrados para procesar: ${candidates.length}`);
 
         let updatedCount = 0;
 
         for (const candidate of candidates) {
             try {
-                // Reconstruir objeto de perfil para el helper
                 const profileForHelper = {
                     ...candidate.profileData,
                     user: candidate.userData,
@@ -71,7 +70,6 @@ export const runDailyVerificationProcess = async () => {
                     Number(minAgeMonths)
                 );
 
-                // Si el progreso ha mejorado, actualizamos la DB
                 if (newProgress > candidate.verificationProgress) {
                     const updatedSteps = {
                         ...candidate.steps,
@@ -88,33 +86,31 @@ export const runDailyVerificationProcess = async () => {
                     });
 
                     updatedCount++;
-                    console.log(`✅ [Update] Perfil ${candidate.profileData._id} actualizado: ${candidate.verificationProgress}% -> ${newProgress}%`);
+                    console.log(`✅ [Cron Job] Perfil ${candidate.profileData._id} actualizado a ${newProgress}%`);
                 }
             } catch (err) {
-                console.error(`❌ Error procesando candidato ${candidate._id}:`, err);
+                console.error(`❌ [Cron Job] Error procesando candidato ${candidate._id}:`, err);
             }
         }
 
-        console.log(`🏁 Proceso finalizado. Actualizados: ${updatedCount}`);
+        console.log(`🏁 [Cron Job] Finalizado. Total actualizados: ${updatedCount}`);
 
     } catch (error) {
-        console.error('❌ Error crítico en runDailyVerificationProcess:', error);
+        console.error('❌ [Cron Job] Error crítico:', error);
     }
 };
 
 /**
- * Servicio Cron para sincronizar el progreso de verificación de perfiles.
+ * Servicio Cron Principal
  */
 export const startVerificationCron = () => {
-    // 1. Programar ejecución futura (Todos los días a las 03:00 AM)
+    // Se ejecuta únicamente a las 03:00 AM
     cron.schedule('0 3 * * *', async () => {
-        console.log('🔄 [Verification Cron] Iniciando sincronización diaria...');
         await runDailyVerificationProcess();
     });
 
-    console.log('⏰ [Verification Cron] Programado para 03:00 AM diariamente.');
+    console.log('⏰ [Verification Cron] Programado correctamente para las 03:00 AM.');
 
-    // 2. EJECUCIÓN INMEDIATA AL ARRANQUE (Para arreglar datos actuales y testing)
-    // Esto hace que corra apenas inicie el servidor sin esperar a la madrugada.
-    runDailyVerificationProcess();
+    // HE ELIMINADO LA LLAMADA MANUAL AQUÍ. 
+    // Ahora solo correrá cuando el reloj marque las 3:00 AM.
 };
