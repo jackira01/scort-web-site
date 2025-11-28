@@ -778,6 +778,12 @@ export const getProfiles = async (page: number = 1, limit: number = 10, fields?:
       cleaned.push('verification');
     }
 
+    // Ensure createdAt and contact are selected for dynamic verification calculation
+    if (needsIsVerified || cleaned.includes('verification')) {
+      if (!cleaned.includes('createdAt')) cleaned.push('createdAt');
+      if (!cleaned.includes('contact')) cleaned.push('contact');
+    }
+
     const selectStr = cleaned.join(' ');
     query = query.select(selectStr) as any;
   }
@@ -801,9 +807,11 @@ export const getProfiles = async (page: number = 1, limit: number = 10, fields?:
     .lean();
 
   const now = new Date();
+  const minAgeMonths = await ConfigParameterService.getValue('profile.verification.minimum_age_months') || 12;
+
   const profiles = rawProfiles.map(rawProfile => {
     // Enriquecer perfil con cálculo dinámico de verificación
-    const profile = enrichProfileVerification(rawProfile);
+    const profile = enrichProfileVerification(rawProfile, Number(minAgeMonths));
 
     // Calcular estado de verificación basado en campos individuales
     let isVerified = false;
@@ -989,9 +997,11 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
 
   // Mapear perfiles para incluir información de verificación
   // Mapear perfiles para incluir información de verificación
+  const minAgeMonths = await ConfigParameterService.getValue('profile.verification.minimum_age_months') || 12;
+
   const cleanProfiles = paginatedProfiles.map(rawProfile => {
     // Enriquecer perfil con cálculo dinámico de verificación (Score y Steps)
-    const profile = enrichProfileVerification(rawProfile);
+    const profile = enrichProfileVerification(rawProfile, Number(minAgeMonths));
 
     // Verificar upgrades activos para incluir en respuesta
     const activeUpgrades = profile.upgrades?.filter((upgrade: any) =>
@@ -1128,7 +1138,8 @@ export const getProfileById = async (id: string): Promise<IProfile | null> => {
   transformedProfile.services = services;
 
   // Enriquecer con verificación dinámica (Score y Steps calculados al vuelo)
-  const enrichedProfile = enrichProfileVerification(transformedProfile);
+  const minAgeMonths = await ConfigParameterService.getValue('profile.verification.minimum_age_months') || 12;
+  const enrichedProfile = enrichProfileVerification(transformedProfile, Number(minAgeMonths));
 
   return enrichedProfile;
 };

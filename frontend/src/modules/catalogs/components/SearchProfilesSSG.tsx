@@ -53,20 +53,13 @@ export default function SearchProfilesSSG({
 
   // --- DEBUGGING START ---
   // 1. Verificamos qué llega exactamente del Backend antes de transformar
-  if (profiles && profiles.length > 0) {
-    console.group('🔍 DEBUG: Datos de Perfil (SearchProfilesSSG)');
-    console.log('1. Dato Crudo del Backend (Primer perfil):', profiles[0]);
-    console.log('   - Verification Object:', profiles[0].verification);
-  }
+
 
   // Transform profiles to include hasDestacadoUpgrade highlighting
   const transformedProfiles = profiles ? transformProfilesToCards(profiles) : [];
 
   // 2. Verificamos qué sale después de la transformación
   if (transformedProfiles && transformedProfiles.length > 0) {
-    console.log('2. Dato Transformado para Card (Primer perfil):', transformedProfiles[0]);
-    console.log('   - Verification Object en Card:', transformedProfiles[0].verification);
-
     // Verificación específica del bug
     const v = transformedProfiles[0].verification;
     if (!v) console.warn('⚠️ ALERTA: El objeto verification se perdió en la transformación');

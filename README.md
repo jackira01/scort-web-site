@@ -790,17 +790,6 @@ Este módulo implementa un sistema de jerarquía y ordenamiento automático para
    5. **Fecha de creación** (descendente)
 
 5. **Paginación**:
-   - Parámetros: `page` (default: 1), `limit` (default: 12)
-   - Respuesta incluye metadatos de paginación
-
----
-
-## Datos Mockeados Pendientes
-
-### ✅ CORREGIDO
-
-#### 1. ManagePlansModal.tsx
-- **Ubicación**: `frontend/src/components/plans/ManagePlansModal.tsx`
 - **Línea**: 57
 - **Descripción**: `AVAILABLE_PLANS` - Array hardcodeado de planes disponibles
 - **Estado**: ✅ **CORREGIDO** - Ahora usa `getAvailablePlans()` desde el backend

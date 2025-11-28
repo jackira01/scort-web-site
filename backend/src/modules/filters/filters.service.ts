@@ -596,30 +596,35 @@ export const getFilteredProfiles = async (
       limit,
     };
 
-    // Agregar información de verificación y hasDestacadoUpgrade a los perfiles
     const profilesWithVerification = paginatedProfiles.map(rawProfile => {
-      // Enriquecer perfil con cálculo dinámico de verificación
-      const profile = enrichProfileVerification(rawProfile);
+      // ✅ CORRECCIÓN: No llamamos a enrichProfileVerification. 
+      // Confiamos en que el Cron Job y la DB tienen la información más actualizada.
+      const profile = rawProfile;
 
-      // Calcular estado de verificación basado en verificationStatus
+      // Calcular estado de verificación basado DIRECTAMENTE en el progreso de la DB
       let isVerified = false;
       let verificationLevel = 'pending';
 
-      if (profile.verification) {
-        // Usar los steps enriquecidos para determinar si está verificado
-        const verification = profile.verification as any;
-        const verifiedCount = Object.values(verification.steps || {}).filter((step: any) => step?.isVerified === true).length;
+      // Aseguramos que verification exista y sea un objeto
+      const verification = (typeof profile.verification === 'object' && profile.verification !== null)
+        ? profile.verification as any
+        : {};
 
-        // Si tiene los 5 pasos verificados
-        if (verifiedCount >= 5) {
-          isVerified = true;
-          verificationLevel = 'verified';
-        } else if (verifiedCount > 0) {
-          verificationLevel = 'partial';
-        }
+      // Usamos el verificationProgress que viene de la DB (que ya arreglamos con el Cron)
+      const progress = verification.verificationProgress || 0;
+
+      // Determinamos el nivel basado en el porcentaje real almacenado
+      if (progress === 100) {
+        isVerified = true;
+        verificationLevel = 'verified';
+      } else if (progress > 0) {
+        // Si tiene algo de progreso pero no 100%
+        verificationLevel = 'partial';
       }
 
-      // Calcular hasDestacadoUpgrade
+      // ---------------------------------------------------------
+      // Lógica de Destacado (Se mantiene igual, estaba correcta)
+      // ---------------------------------------------------------
       let hasDestacadoUpgrade = false;
 
       // Verificar si tiene plan DIAMANTE
@@ -640,9 +645,11 @@ export const getFilteredProfiles = async (
         ...profile,
         hasDestacadoUpgrade,
         verification: {
-          ...(typeof profile.verification === 'object' && profile.verification !== null ? profile.verification : {}),
-          isVerified,
-          verificationLevel
+          ...verification,
+          isVerified,        // Booleano simple para el frontend
+          verificationLevel, // Estado legible (verified/partial/pending)
+          // Mantenemos el progreso original de la DB
+          verificationProgress: progress
         }
       };
     });

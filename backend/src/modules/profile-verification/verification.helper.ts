@@ -10,9 +10,10 @@ import type { IProfile, IProfileVerification } from '../profile/profile.types';
  * The verificationProgress is only recalculated when verification steps change (via recalculateVerificationProgress).
  * 
  * @param profile The profile object (should be a plain object/lean)
+ * @param minAgeMonths Minimum age in months for account age verification (default: 12)
  * @returns The profile with injected computed verification fields
  */
-export const enrichProfileVerification = (profile: any): any => {
+export const enrichProfileVerification = (profile: any, minAgeMonths: number = 12): any => {
     if (!profile) return profile;
 
     // Clone profile to avoid mutating the original reference if needed
@@ -32,15 +33,15 @@ export const enrichProfileVerification = (profile: any): any => {
 
     // --- 1. Calculate Time-Based Computed Factors ---
 
-    // Factor: Account Age (> 1 year)
-    // Check if createdAt exists and is older than 1 year
+    // Factor: Account Age (> minAgeMonths)
+    // Check if createdAt exists and is older than minAgeMonths
     let isAccountAgeVerified = false;
     if (enrichedProfile.createdAt) {
         const createdAt = new Date(enrichedProfile.createdAt);
-        const oneYearAgo = new Date(now);
-        oneYearAgo.setFullYear(now.getFullYear() - 1);
+        const thresholdDate = new Date(now);
+        thresholdDate.setMonth(now.getMonth() - minAgeMonths);
 
-        isAccountAgeVerified = createdAt <= oneYearAgo;
+        isAccountAgeVerified = createdAt <= thresholdDate;
     }
 
     // Factor: Contact Consistency (> 3 months without changes)
@@ -93,8 +94,28 @@ export const enrichProfileVerification = (profile: any): any => {
     // If not consistent (not verified), then change detected is true (unstable)
     enrichedProfile.verification.steps.phoneChangeDetected = !isContactConsistent;
 
-    // NOTE: verificationProgress should NOT be recalculated here.
-    // It comes from the database and is only updated when steps change.
+    // --- 3. Recalculate Verification Progress ---
+    // We recalculate the progress here to ensure it reflects the dynamic factors (Account Age, Contact Consistency)
+    // immediately, without waiting for a database update.
+
+    // We need to cast to unknown first to avoid circular dependency issues or strict type checks 
+    // since we are inside the helper that might be used by the types
+    const { calculateVerificationProgress } = require('./verification-progress.utils');
+
+    if (calculateVerificationProgress) {
+        console.group('🔄 Recalculating Progress in enrichProfileVerification');
+        console.log('Profile ID:', profile._id);
+        const newProgress = calculateVerificationProgress(
+            enrichedProfile.verification,
+            enrichedProfile.user,
+            enrichedProfile,
+            minAgeMonths
+        );
+        console.log('Old Progress:', enrichedProfile.verification.verificationProgress);
+        console.log('New Progress:', newProgress);
+        console.groupEnd();
+        enrichedProfile.verification.verificationProgress = newProgress;
+    }
 
     return enrichedProfile;
 };

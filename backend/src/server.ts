@@ -1,6 +1,7 @@
 import app from './app';
 import { connectDB } from './config/db';
 import { startCleanupCron } from './modules/cleanup/cleanup.cron';
+import { startVerificationCron } from './modules/profile-verification/cron-verification.service';
 
 const PORT = Number(process.env.PORT) || 5000;
 
@@ -12,6 +13,7 @@ const startServer = async () => {
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
       startCleanupCron();
+      startVerificationCron();
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

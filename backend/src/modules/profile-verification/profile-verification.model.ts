@@ -68,6 +68,10 @@ const ProfileVerificationSchema = new Schema<IProfileVerification>({
     verificationFailedReason: { type: String, default: undefined }, // Reason for verification failure.
 });
 
+// Índices para optimización del Cron Job de verificación
+ProfileVerificationSchema.index({ verificationProgress: 1 });
+ProfileVerificationSchema.index({ profile: 1 });
+
 export const ProfileVerification = mongoose.model<IProfileVerification>(
     'ProfileVerification',
     ProfileVerificationSchema,

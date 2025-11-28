@@ -9,14 +9,15 @@ interface VerificationStatusProps {
   profileId: string;
 }
 
-interface VerificationFactor {
+interface VerificationStep {
   label: string;
-  description: string;
   isVerified: boolean;
+  hasData: boolean;
+  details?: any;
 }
 
-const getStatusBadge = (isVerified: boolean) => {
-  if (isVerified) {
+const getStatusBadge = (step: VerificationStep) => {
+  if (step.isVerified) {
     return (
       <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
         Verificado
@@ -30,9 +31,13 @@ const getStatusBadge = (isVerified: boolean) => {
   );
 };
 
-const getStatusIcon = (isVerified: boolean) => {
-  if (isVerified) {
+const getStatusIcon = (step: VerificationStep) => {
+  if (step.isVerified) {
     return <CheckCircle className="h-5 w-5 text-green-500" />;
+  }
+  // Si tiene datos pero no está verificado, podrías mostrar un reloj (pendiente)
+  if (step.hasData && !step.isVerified) {
+    // return <Clock className="h-5 w-5 text-yellow-500" />; // Opcional
   }
   return <XCircle className="h-5 w-5 text-gray-300" />;
 };
@@ -57,7 +62,7 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
     );
   }
 
-  // Bloque de error
+  // Bloque de error corregido
   if (error || !verificationData) {
     return (
       <Card className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-sm">
@@ -76,62 +81,43 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
     );
   }
 
-  // Extraer datos del verificación
-  const verification = verificationData?.data;
-  const steps = verification?.steps || {};
+  // Reconstrucción del array de pasos basado en los datos reales del backend
+  // La respuesta de axios devuelve { success: true, data: { ... } }, por lo que verificationData es ese objeto.
+  // Necesitamos acceder a verificationData.data para obtener los datos reales de la verificación.
+  const data = verificationData.data || verificationData;
 
-  // Array de factores de verificación alineados con el backend
-  // Los 7 factores que se calculan: 2 fotos, media, videollamada, redes sociales, contacto, antigüedad
-  const verificationFactors: VerificationFactor[] = [
+  const verificationSteps: VerificationStep[] = [
     {
-      label: "Documento de Identidad (Frente)",
-      description: steps.frontPhotoVerification?.photo
-        ? "Se ha verificado el documento de identidad frontal correctamente."
-        : "Aún no se ha subido el documento de identidad frontal.",
-      isVerified: steps.frontPhotoVerification?.isVerified || false
+      label: "Mayoria de edad",
+      isVerified: !!data.steps?.frontPhotoVerification?.isVerified,
+      hasData: true
     },
     {
-      label: "Foto con Documento al Lado del Rostro",
-      description: steps.selfieVerification?.photo
-        ? "Se ha verificado la foto con documento al lado del rostro."
-        : "Aún no se ha subido la foto con documento al lado del rostro.",
-      isVerified: steps.selfieVerification?.isVerified || false
+      label: "Identidad confirmada",
+      isVerified: !!data.steps?.selfieVerification?.isVerified,
+      hasData: true
     },
     {
-      label: "Foto de Verificación con Cartel",
-      description: steps.mediaVerification?.mediaLink
-        ? "Se ha verificado la foto/video de verificación con cartel."
-        : "Aún no se ha subido la foto/video de verificación con cartel.",
-      isVerified: steps.mediaVerification?.isVerified || false
+      label: "Verificación por videollamada",
+      isVerified: !!data.steps?.videoCallRequested?.isVerified,
+      hasData: true
     },
     {
-      label: "Videollamada de Verificación",
-      description: steps.videoCallRequested?.videoLink
-        ? "Se ha completado la verificación por videollamada."
-        : "Aún no se ha completado la verificación por videollamada.",
-      isVerified: steps.videoCallRequested?.isVerified || false
+      label: "Miembro establecido con antigüedad",
+      isVerified: !!data.steps?.accountAge?.isVerified,
+      hasData: true
     },
     {
-      label: "Redes Sociales",
-      description: steps.socialMedia?.isVerified
-        ? "Las redes sociales han sido verificadas como auténticas."
-        : "Aún no se han verificado las redes sociales.",
-      isVerified: steps.socialMedia?.isVerified || false
+      label: "Consistencia en datos de contacto",
+      isVerified: !!data.steps?.contactConsistency?.isVerified,
+      hasData: true,
+      details: data.steps?.contactConsistency
     },
     {
-      label: "Consistencia en Datos de Contacto",
-      description: steps.contactConsistency?.isVerified
-        ? "El perfil mantiene estabilidad en su información de contacto sin cambios frecuentes."
-        : "Se han detectado cambios recientes en los datos de contacto del perfil.",
-      isVerified: steps.contactConsistency?.isVerified || false
+      label: "Verificación por redes sociales",
+      isVerified: !!data.steps?.socialMedia?.isVerified,
+      hasData: true
     },
-    {
-      label: "Antigüedad del Perfil",
-      description: steps.accountAge?.isVerified
-        ? "Este usuario cuenta con más de un año de membresía activa, demostrando estabilidad."
-        : "El perfil tiene menos de un año en la plataforma.",
-      isVerified: steps.accountAge?.isVerified || false
-    }
   ];
 
   return (
@@ -143,28 +129,84 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
           </CardTitle>
           <div className="text-right">
             <div className="text-2xl font-bold text-purple-600">
-              {verification?.verificationProgress || 0}%
+              {data.verificationProgress || 0}%
             </div>
             <p className="text-xs text-gray-600 dark:text-gray-400">Progreso de verificación</p>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {verificationFactors.map((factor, index) => (
+        {verificationSteps.map((step, index) => (
           <div key={index} className="flex items-start space-x-3">
             <div className="flex-shrink-0 mt-0.5">
-              {getStatusIcon(factor.isVerified)}
+              {getStatusIcon(step)}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                  {factor.label}
+                  {step.label}
                 </p>
-                {getStatusBadge(factor.isVerified)}
+                {getStatusBadge(step)}
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                {factor.description}
-              </p>
+
+              {/* Mensajes condicionales */}
+              {step.label === "Mayoria de edad" && (
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {step.isVerified
+                    ? "El documento de identidad del usuario ha sido verificado correctamente y confirma que es mayor de edad."
+                    : "Este usuario aún no ha enviado su documento de identidad para verificación de edad."}
+                </p>
+              )}
+              {step.label === "Identidad confirmada" && (
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {step.isVerified
+                    ? "La identidad del usuario ha sido confirmada mediante video/foto de verificación."
+                    : "Este usuario aún no ha completado el video/foto de verificación de identidad."}
+                </p>
+              )}
+              {step.label === "Verificación por videollamada" && (
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {step.isVerified
+                    ? "Se ha verificado en tiempo real mediante videollamada la identidad de este perfil."
+                    : "Este usuario aún no ha completado el proceso de verificación por videollamada."}
+                </p>
+              )}
+              {step.label === "Miembro establecido con antigüedad" && (
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {step.isVerified
+                    ? "Este usuario cuenta con más de un año de membresía activa, lo que demuestra confiabilidad y estabilidad en la plataforma."
+                    : "Este usuario tiene menos de un año en la plataforma. La antigüedad se considera un factor de confiabilidad adicional."}
+                </p>
+              )}
+              {step.label === "Consistencia en datos de contacto" && (
+                <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {step.isVerified ? (
+                    "El perfil mantiene estabilidad en su información de contacto sin cambios frecuentes, lo que indica confiabilidad."
+                  ) : (
+                    <span>
+                      {step.details?.debug?.lastChangeDate ? (
+                        <>
+                          Se detectó un cambio de teléfono el <strong>{new Date(step.details.debug.lastChangeDate).toLocaleDateString()}</strong>.
+                          El perfil se considerará estable nuevamente el <strong>{(() => {
+                            const d = new Date(step.details.debug.lastChangeDate);
+                            d.setMonth(d.getMonth() + 3);
+                            return d.toLocaleDateString();
+                          })()}</strong>.
+                        </>
+                      ) : (
+                        "Se han detectado cambios recientes en los datos de contacto del perfil, lo que puede afectar la confiabilidad."
+                      )}
+                    </span>
+                  )}
+                </div>
+              )}
+              {step.label === "Verificación por redes sociales" && (
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {step.isVerified
+                    ? "El perfil ha proporcionado sus redes sociales y han sido verificadas como auténticas, coincidiendo con la información de la cuenta."
+                    : "Este perfil aún no ha proporcionado información de redes sociales para verificación."}
+                </p>
+              )}
             </div>
           </div>
         ))}
