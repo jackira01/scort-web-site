@@ -261,8 +261,11 @@ export const getSponsoredProfiles = async (
       const planAssignment: any = profile.planAssignment || {};
       const planIncludesDestacado = planAssignment.planId?.includedUpgrades?.includes('DESTACADO') || false;
 
-      // Verificar si tiene upgrade DESTACADO activo comprado
-      const hasDestacadoUpgradeActive = profile.upgrades?.some(
+      // 1. Normalizar array de upgrades (Source of Truth)
+      let upgrades = profile.upgrades || [];
+
+      // Verificar si ya existe un upgrade DESTACADO activo en la lista
+      const hasPurchasedDestacado = upgrades.some(
         (upgrade) => {
           const isDestacado = upgrade.code === 'DESTACADO';
           const hasStartAt = !!upgrade.startAt;
@@ -271,14 +274,41 @@ export const getSponsoredProfiles = async (
             new Date(upgrade.startAt) <= now &&
             new Date(upgrade.endAt) > now;
 
-          return isDestacado && hasStartAt && hasEndAt && isActive;
+          return isDestacado && isActive;
         }
-      ) || false;
+      );
 
-      const hasDestacadoUpgrade = planIncludesDestacado || hasDestacadoUpgradeActive;
+      // Si el plan incluye el upgrade pero no está en la lista de upgrades (porque es implícito del plan),
+      // lo agregamos virtualmente para que el array sea la fuente de verdad
+      if (planIncludesDestacado && !hasPurchasedDestacado) {
+        upgrades = [
+          ...upgrades,
+          {
+            code: 'DESTACADO',
+            startAt: planAssignment.startAt || profile.createdAt,
+            endAt: planAssignment.expiresAt || new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()),
+            purchaseAt: planAssignment.startAt || profile.createdAt
+          }
+        ];
+      }
+
+      // 2. Derivar flags booleanos DESDE el array normalizado
+      const hasDestacadoUpgrade = upgrades.some(
+        (upgrade) => {
+          const isDestacado = upgrade.code === 'DESTACADO';
+          const hasStartAt = !!upgrade.startAt;
+          const hasEndAt = !!upgrade.endAt;
+          const isActive = hasStartAt && hasEndAt &&
+            new Date(upgrade.startAt) <= now &&
+            new Date(upgrade.endAt) > now;
+
+          return isDestacado && isActive;
+        }
+      );
 
       return {
         ...profile,
+        upgrades,
         hasDestacadoUpgrade
       };
     });

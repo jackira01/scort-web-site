@@ -73,12 +73,28 @@ export const publicApiRateLimit = rateLimit({
   legacyHeaders: false
 });
 
+// Rate limiting para formulario de contacto (3 minutos cooldown)
+export const contactRateLimit = rateLimit({
+  windowMs: 3 * 60 * 1000, // 3 minutos
+  max: 1, // 1 solicitud por ventana de tiempo
+  message: {
+    error: 'Debes esperar 3 minutos antes de enviar otro mensaje.',
+    retryAfter: '3 minutos'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Usar IP y User-Agent para identificar al usuario
+    return `${req.ip}-${req.get('User-Agent')}`;
+  }
+});
+
 // Middleware para validar Content-Type en requests POST/PUT
 export const validateContentType = (req: Request, res: Response, next: NextFunction) => {
   if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
     const contentType = req.get('Content-Type');
     const contentLength = req.get('Content-Length');
-    
+
     // Solo validar Content-Type si hay contenido en el cuerpo
     if (contentLength && parseInt(contentLength) > 0) {
       if (!contentType || !contentType.includes('application/json')) {
@@ -88,7 +104,7 @@ export const validateContentType = (req: Request, res: Response, next: NextFunct
       }
     }
   }
-  
+
   next();
 };
 
@@ -97,7 +113,7 @@ export const sanitizeHeaders = (req: Request, res: Response, next: NextFunction)
   // Remover headers potencialmente peligrosos
   delete req.headers['x-forwarded-host'];
   delete req.headers['x-forwarded-server'];
-  
+
   // Validar User-Agent
   const userAgent = req.get('User-Agent');
   if (!userAgent || userAgent.length > 500) {
@@ -105,14 +121,14 @@ export const sanitizeHeaders = (req: Request, res: Response, next: NextFunction)
       error: 'User-Agent inválido'
     });
   }
-  
+
   next();
 };
 
 // Middleware para logging de seguridad
 export const securityLogger = (req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
-  
+
   res.on('finish', () => {
     const duration = Date.now() - startTime;
     const logData = {
@@ -124,31 +140,31 @@ export const securityLogger = (req: Request, res: Response, next: NextFunction) 
       duration,
       timestamp: new Date().toISOString()
     };
-    
+
     // Log requests sospechosos
     if (res.statusCode >= 400 || duration > 5000) {
       logger.warn('Suspicious request detected', logData);
     }
   });
-  
+
   next();
 };
 
 // Middleware para prevenir ataques de timing
 export const preventTimingAttacks = (req: Request, res: Response, next: NextFunction) => {
   const originalSend = res.send;
-  
-  res.send = function(body) {
+
+  res.send = function (body) {
     // Agregar delay mínimo aleatorio para prevenir timing attacks
     const delay = Math.random() * 50; // 0-50ms
-    
+
     setTimeout(() => {
       originalSend.call(this, body);
     }, delay);
-    
+
     return this;
   };
-  
+
   next();
 };
 

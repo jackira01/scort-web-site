@@ -25,7 +25,7 @@ export class ConfigParameterController {
             }
 
             const configParam = await ConfigParameterService.create(input);
-            
+
             res.status(201).json({
                 success: true,
                 message: 'Configuration parameter created successfully',
@@ -55,7 +55,7 @@ export class ConfigParameterController {
             };
 
             const result = await ConfigParameterService.findAll(query);
-            
+
             res.json({
                 success: true,
                 message: 'Configuration parameters retrieved successfully',
@@ -74,11 +74,11 @@ export class ConfigParameterController {
         try {
             const { id } = req.params;
             const configParam = await ConfigParameterService.findById(id);
-            
+
             if (!configParam) {
                 throw new AppError('Configuration parameter not found', 404);
             }
-            
+
             res.json({
                 success: true,
                 message: 'Configuration parameter retrieved successfully',
@@ -97,13 +97,13 @@ export class ConfigParameterController {
         try {
             const { key } = req.params;
             const activeOnly = req.query.activeOnly !== 'false';
-            
+
             const configParam = await ConfigParameterService.findByKey(key, activeOnly);
-            
+
             if (!configParam) {
                 throw new AppError('Configuration parameter not found', 404);
             }
-            
+
             res.json({
                 success: true,
                 message: 'Configuration parameter retrieved successfully',
@@ -122,9 +122,9 @@ export class ConfigParameterController {
         try {
             const { category } = req.params;
             const activeOnly = req.query.activeOnly !== 'false';
-            
+
             const configParams = await ConfigParameterService.findByCategory(category, activeOnly);
-            
+
             res.json({
                 success: true,
                 message: 'Configuration parameters retrieved successfully',
@@ -143,9 +143,9 @@ export class ConfigParameterController {
         try {
             const { type } = req.params;
             const activeOnly = req.query.activeOnly !== 'false';
-            
+
             const configParams = await ConfigParameterService.findByType(type as any, activeOnly);
-            
+
             res.json({
                 success: true,
                 message: 'Configuration parameters retrieved successfully',
@@ -173,11 +173,11 @@ export class ConfigParameterController {
             }
 
             const configParam = await ConfigParameterService.update(id, input);
-            
+
             if (!configParam) {
                 throw new AppError('Configuration parameter not found', 404);
             }
-            
+
             res.json({
                 success: true,
                 message: 'Configuration parameter updated successfully',
@@ -202,11 +202,11 @@ export class ConfigParameterController {
             }
 
             const success = await ConfigParameterService.delete(id, userId);
-            
+
             if (!success) {
                 throw new AppError('Configuration parameter not found', 404);
             }
-            
+
             res.json({
                 success: true,
                 message: 'Configuration parameter deleted successfully'
@@ -223,18 +223,18 @@ export class ConfigParameterController {
     static async toggleActive(req: AuthRequest, res: Response, next: NextFunction) {
         try {
             const { id } = req.params;
-            const userId = req.user?.id || req.body.userId;
+            const userId = req.user?.id || req.user?._id || req.body.userId;
 
             if (!userId) {
                 throw new AppError('User ID is required', 400);
             }
 
             const configParam = await ConfigParameterService.toggleActive(id, userId);
-            
+
             if (!configParam) {
                 throw new AppError('Configuration parameter not found', 404);
             }
-            
+
             res.json({
                 success: true,
                 message: `Configuration parameter ${configParam.isActive ? 'activated' : 'deactivated'} successfully`,
@@ -252,7 +252,7 @@ export class ConfigParameterController {
     static async getCategories(req: AuthRequest, res: Response, next: NextFunction) {
         try {
             const categories = await ConfigParameterService.getCategories();
-            
+
             res.json({
                 success: true,
                 message: 'Categories retrieved successfully',
@@ -270,7 +270,7 @@ export class ConfigParameterController {
     static async getTags(req: AuthRequest, res: Response, next: NextFunction) {
         try {
             const tags = await ConfigParameterService.getTags();
-            
+
             res.json({
                 success: true,
                 message: 'Tags retrieved successfully',
@@ -289,11 +289,11 @@ export class ConfigParameterController {
         try {
             const { key } = req.params;
             const value = await ConfigParameterService.getValue(key);
-            
+
             if (value === null) {
                 throw new AppError('Configuration parameter not found or inactive', 404);
             }
-            
+
             res.json({
                 success: true,
                 message: 'Configuration value retrieved successfully',
@@ -312,13 +312,13 @@ export class ConfigParameterController {
     static async getValues(req: AuthRequest, res: Response, next: NextFunction) {
         try {
             const { keys } = req.body;
-            
+
             if (!Array.isArray(keys)) {
                 throw new AppError('Keys must be an array', 400);
             }
-            
+
             const values = await ConfigParameterService.getValues(keys);
-            
+
             res.json({
                 success: true,
                 message: 'Configuration values retrieved successfully',
@@ -336,11 +336,11 @@ export class ConfigParameterController {
     static async validate(req: AuthRequest, res: Response, next: NextFunction) {
         try {
             const { type, value, metadata } = req.body;
-            
+
             // Aquí puedes implementar validaciones específicas por tipo
             let isValid = true;
             const errors: string[] = [];
-            
+
             // Validaciones básicas por tipo
             switch (type) {
                 case 'location':
@@ -380,7 +380,7 @@ export class ConfigParameterController {
                     }
                     break;
             }
-            
+
             res.json({
                 success: true,
                 message: 'Validation completed',

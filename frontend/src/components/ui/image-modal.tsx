@@ -1,6 +1,6 @@
 'use client';
 
-import { ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCw, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Button } from './button';
@@ -120,11 +120,21 @@ export const ImageModal = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none">
+            <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none [&>button]:hidden">
                 <VisuallyHidden>
                     <DialogTitle>Visor de imágenes - {alt} {currentIndex + 1} de {images?.length || 0}</DialogTitle>
                 </VisuallyHidden>
                 <div className="relative w-full h-[95vh] flex items-center justify-center overflow-hidden">
+                    {/* Close Button */}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onClose}
+                        className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/70 text-white border-none h-10 w-10 rounded-full"
+                    >
+                        <X className="h-6 w-6" />
+                    </Button>
+
                     {/* Controls */}
                     <div className="absolute top-4 left-4 z-50 flex gap-2">
                         <Button

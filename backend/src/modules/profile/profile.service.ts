@@ -22,6 +22,32 @@ interface DefaultPlanConfig {
 }
 
 /**
+ * Genera los objetos de upgrade incluidos en un plan, sincronizados con la expiración del plan
+ */
+const generatePlanUpgrades = (plan: any, startAt: Date, expiresAt: Date) => {
+  if (!plan.includedUpgrades || plan.includedUpgrades.length === 0) return [];
+
+  return plan.includedUpgrades.map((code: string) => ({
+    code,
+    startAt,
+    endAt: expiresAt, // La fecha de fin se sincroniza con la del plan
+    purchaseAt: startAt,
+    isVisible: true
+  }));
+};
+
+/**
+ * Fusiona los upgrades actuales con los nuevos del plan, reemplazando los existentes del mismo tipo
+ */
+const mergeUpgrades = (currentUpgrades: any[], newUpgrades: any[]) => {
+  const newCodes = newUpgrades.map(u => u.code);
+  // Mantener upgrades existentes que NO están en el nuevo set (para no duplicar)
+  // Los upgrades del plan tienen prioridad y reemplazan a los existentes del mismo tipo
+  const kept = (currentUpgrades || []).filter(u => !newCodes.includes(u.code));
+  return [...kept, ...newUpgrades];
+};
+
+/**
  * Limpia upgrades expirados y elimina duplicados del mismo tipo
  * Mantiene solo el upgrade más reciente de cada tipo
  */
@@ -609,6 +635,12 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
         const startAt = new Date();
         const expiresAt = new Date(startAt.getTime() + (planDays * 24 * 60 * 60 * 1000));
 
+        // Generar upgrades incluidos en el plan
+        const planUpgrades = generatePlanUpgrades(plan, startAt, expiresAt);
+
+        // Fusionar con upgrades existentes
+        const updatedUpgrades = mergeUpgrades(profile.upgrades || [], planUpgrades);
+
         // Asignar plan gratuito directamente con todas las fechas
         await ProfileModel.findByIdAndUpdate(
           profile._id,
@@ -620,6 +652,7 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
               startAt,
               expiresAt
             },
+            upgrades: updatedUpgrades,
             isActive: true,
             visible: shouldBeVisible
           }
@@ -651,6 +684,12 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
           const startAt = new Date();
           const expiresAt = new Date(startAt.getTime() + (planDays * 24 * 60 * 60 * 1000));
 
+          // Generar upgrades incluidos en el plan
+          const planUpgrades = generatePlanUpgrades(plan, startAt, expiresAt);
+
+          // Fusionar con upgrades existentes (aunque es perfil nuevo, por consistencia)
+          const updatedUpgrades = mergeUpgrades(profile.upgrades || [], planUpgrades);
+
           // Asignar plan directamente y activar perfil
           await ProfileModel.findByIdAndUpdate(
             profile._id,
@@ -662,6 +701,7 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
                 startAt,
                 expiresAt
               },
+              upgrades: updatedUpgrades,
               $push: { paymentHistory: new Types.ObjectId(invoice._id as string) },
               isActive: true,
               visible: shouldBeVisible
@@ -688,6 +728,12 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
         const startAt = new Date();
         const expiresAt = new Date(startAt.getTime() + (planDays * 24 * 60 * 60 * 1000));
 
+        // Generar upgrades incluidos en el plan
+        const planUpgrades = generatePlanUpgrades(plan, startAt, expiresAt);
+
+        // Fusionar con upgrades existentes
+        const updatedUpgrades = mergeUpgrades(profile.upgrades || [], planUpgrades);
+
         // Asignar plan directamente sin generar factura
         await ProfileModel.findByIdAndUpdate(
           profile._id,
@@ -699,6 +745,7 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
               startAt,
               expiresAt
             },
+            upgrades: updatedUpgrades,
             isActive: true,
             visible: shouldBeVisible
           }
@@ -1076,7 +1123,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
 
 export const getProfileById = async (id: string): Promise<IProfile | null> => {
   const profile = await ProfileModel.findById(id)
-    .populate('user', '_id name email')
+    .populate('user', '_id name email accountType')
     .populate('features.group_id')
     .populate({
       path: 'verification',
@@ -1379,6 +1426,12 @@ export const subscribeProfile = async (profileId: string, planCode: string, vari
     const startAt = new Date();
     const expiresAt = new Date(startAt.getTime() + (variantDays * 24 * 60 * 60 * 1000));
 
+    // Generar upgrades incluidos en el plan
+    const planUpgrades = generatePlanUpgrades(plan, startAt, expiresAt);
+
+    // Fusionar con upgrades existentes
+    const updatedUpgrades = mergeUpgrades(profile.upgrades || [], planUpgrades);
+
     // Actualizar perfil con el plan gratuito
     const updateData: any = {
       planAssignment: {
@@ -1388,6 +1441,7 @@ export const subscribeProfile = async (profileId: string, planCode: string, vari
         startAt,
         expiresAt
       },
+      upgrades: updatedUpgrades,
       visible: true,
       isActive: true
     };
@@ -1748,7 +1802,7 @@ export const validatePlanSelection = async (userId: string, planCode: string): P
     if (freeProfilesCount >= freeProfilesMax) {
       return {
         ok: false,
-        message: 'Has superado el límite de perfiles gratuitos.',
+        message: 'Has alcanzado el máximo de perfiles gratuitos.',
         isPaid: false,
         currentFreeCount: freeProfilesCount,
         maxFree: freeProfilesMax
@@ -2144,64 +2198,19 @@ export const upgradePlan = async (profileId: string, newPlanCode: string, varian
   }
 
   // Calcular nueva fecha de expiración
-  // Si el plan actual está expirado, usar la fecha actual como base
-  // Si el plan actual está activo, mantener el tiempo restante y agregar los días del nuevo plan
-  const currentExpiresAt = new Date(profile.planAssignment.expiresAt);
-  let newExpiresAt: Date;
-
-  if (currentExpiresAt <= now) {
-    // Plan expirado: nueva fecha = ahora + días del nuevo plan
-    newExpiresAt = new Date(now.getTime() + (selectedVariant.days * 24 * 60 * 60 * 1000));
-  } else {
-    // Plan activo: mantener tiempo restante + días del nuevo plan
-    const remainingTime = currentExpiresAt.getTime() - now.getTime();
-    newExpiresAt = new Date(now.getTime() + remainingTime + (selectedVariant.days * 24 * 60 * 60 * 1000));
-  }
+  // CAMBIO: Ahora el upgrade REEMPLAZA el plan actual, reseteando las fechas
+  // Ya no se suma el tiempo restante, se establece la duración exacta del nuevo plan desde ahora
+  const newExpiresAt = new Date(now.getTime() + (selectedVariant.days * 24 * 60 * 60 * 1000));
 
   // Procesar upgrades incluidos en el nuevo plan
   // Primero limpiar upgrades expirados y duplicados
   cleanProfileUpgrades(profile);
 
-  if (newPlan.includedUpgrades && newPlan.includedUpgrades.length > 0) {
-    for (const upgradeCode of newPlan.includedUpgrades) {
-      // Obtener definición del upgrade
-      const upgradeDefinition = await UpgradeDefinitionModel.findOne({ code: upgradeCode });
+  // Generar upgrades incluidos en el nuevo plan (sincronizados con la expiración del plan)
+  const planUpgrades = generatePlanUpgrades(newPlan, now, newExpiresAt);
 
-      if (!upgradeDefinition) {
-        console.warn(`⚠️ Upgrade ${upgradeCode} no encontrado en upgradePlan`);
-        continue;
-      }
-
-      // Calcular fechas del upgrade
-      const upgradeStartAt = now;
-      const upgradeEndAt = new Date(now.getTime() + (upgradeDefinition.durationHours * 60 * 60 * 1000));
-
-      // Buscar si ya existe un upgrade del mismo tipo (sin importar si está activo)
-      const existingUpgradeIndex = profile.upgrades.findIndex(
-        u => u.code === upgradeCode
-      );
-
-      if (existingUpgradeIndex !== -1) {
-        // Reemplazar el upgrade existente con el nuevo
-        profile.upgrades[existingUpgradeIndex] = {
-          code: upgradeCode,
-          startAt: upgradeStartAt,
-          endAt: upgradeEndAt,
-          purchaseAt: now
-        } as any;
-        console.log(`🔄 Upgrade ${upgradeCode} reemplazado en upgradePlan`);
-      } else {
-        // Agregar nuevo upgrade
-        profile.upgrades.push({
-          code: upgradeCode,
-          startAt: upgradeStartAt,
-          endAt: upgradeEndAt,
-          purchaseAt: now
-        } as any);
-        console.log(`➕ Upgrade ${upgradeCode} agregado en upgradePlan`);
-      }
-    }
-  }
+  // Fusionar con upgrades existentes (priorizando los nuevos del plan)
+  profile.upgrades = mergeUpgrades(profile.upgrades || [], planUpgrades);
 
   // Actualizar el plan del perfil y los upgrades
   const updatedProfile = await ProfileModel.findByIdAndUpdate(
@@ -2211,7 +2220,7 @@ export const upgradePlan = async (profileId: string, newPlanCode: string, varian
         planId: newPlan._id,
         planCode: normalizedPlanCode,
         variantDays: selectedVariant.days,
-        startAt: profile.planAssignment.startAt, // Mantener fecha de inicio original
+        startAt: now, // ACTUALIZAR fecha de inicio a ahora (reset)
         expiresAt: newExpiresAt
       },
       upgrades: profile.upgrades // Usar el array limpio y actualizado

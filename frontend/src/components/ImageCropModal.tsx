@@ -181,6 +181,7 @@ export function ImageCropModal({
               onMediaLoaded={onMediaLoaded}
               showGrid={true}
               restrictPosition={false}
+              mediaProps={{ crossOrigin: 'anonymous' }}
               style={{
                 containerStyle: {
                   width: '100%',

@@ -17,6 +17,7 @@ import { ShareProfile } from './ShareProfile';
 import { SocialMediaProfile } from './SocialMediaProfile';
 import { VerificationStatus } from './VerificationStatus';
 import VideoPlayer from './VideoPlayer';
+import { AccountTypeSection } from './AccountTypeSection';
 
 export default function ProfileDetailLayout({ id }: { id: string }) {
   const { data: session } = useSession();
@@ -143,6 +144,7 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
       facebook: profile.socialMedia?.facebook || null,
       tiktok: profile.socialMedia?.tiktok || null,
     },
+    accountType: (profile.user as any)?.accountType || 'common',
   };
 
   return (
@@ -170,6 +172,8 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
                 contact={adaptedProfileData.contact}
                 socialMedia={adaptedProfileData.socialMedia}
               />
+
+              <AccountTypeSection accountType={adaptedProfileData.accountType} />
 
               {/* Compartir perfil en móvil */}
               <ShareProfile
@@ -205,6 +209,8 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
                 contact={adaptedProfileData.contact}
                 socialMedia={adaptedProfileData.socialMedia}
               />
+
+              <AccountTypeSection accountType={adaptedProfileData.accountType} />
 
               {/* Compartir perfil */}
               <ShareProfile

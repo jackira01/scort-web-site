@@ -49,6 +49,8 @@ export function NewsForm({ isOpen, onClose, news, mode }: NewsFormProps) {
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [currentImageToCrop, setCurrentImageToCrop] = useState<File | null>(null);
+  const [currentImageUrlToCrop, setCurrentImageUrlToCrop] = useState<string | null>(null);
+  const [imageUrlInput, setImageUrlInput] = useState('');
   const [isProcessingImage, setIsProcessingImage] = useState(false);
 
   const createNewsMutation = useCreateNews();
@@ -58,7 +60,7 @@ export function NewsForm({ isOpen, onClose, news, mode }: NewsFormProps) {
   useEffect(() => {
     if (mode === 'edit' && news) {
       setTitle(news.title);
-      
+
       // Convertir el contenido del backend (string[]) a INewsContent[]
       const convertedContent: INewsContent[] = (news.content || []).map((contentString, index) => ({
         id: `content-${index}`,
@@ -66,7 +68,7 @@ export function NewsForm({ isOpen, onClose, news, mode }: NewsFormProps) {
         content: contentString,
         order: index
       }));
-      
+
       setContent(convertedContent);
       setIsPublished(news.published);
       setBannerImage(news.imageUrl || null);
@@ -114,7 +116,26 @@ export function NewsForm({ isOpen, onClose, news, mode }: NewsFormProps) {
     }
 
     setCurrentImageToCrop(file);
+    setCurrentImageUrlToCrop(null);
     setCropModalOpen(true);
+  };
+
+  // Función para manejar la URL de imagen
+  const handleUrlSubmit = () => {
+    if (!imageUrlInput.trim()) return;
+
+    // Validar que sea una URL válida (básica)
+    try {
+      new URL(imageUrlInput);
+    } catch (e) {
+      setErrors({ ...errors, banner: 'La URL ingresada no es válida' });
+      return;
+    }
+
+    setCurrentImageUrlToCrop(imageUrlInput);
+    setCurrentImageToCrop(null);
+    setCropModalOpen(true);
+    setImageUrlInput(''); // Limpiar input
   };
 
   // Función para manejar el crop completado
@@ -123,7 +144,8 @@ export function NewsForm({ isOpen, onClose, news, mode }: NewsFormProps) {
       setIsProcessingImage(true);
 
       // Crear archivo desde el blob
-      const processedFile = new File([croppedBlob], currentImageToCrop?.name || 'banner.jpg', {
+      const fileName = currentImageToCrop?.name || 'banner-from-url.jpg';
+      const processedFile = new File([croppedBlob], fileName, {
         type: croppedBlob.type,
         lastModified: Date.now(),
       });
@@ -142,6 +164,7 @@ export function NewsForm({ isOpen, onClose, news, mode }: NewsFormProps) {
       setIsProcessingImage(false);
       setCropModalOpen(false);
       setCurrentImageToCrop(null);
+      setCurrentImageUrlToCrop(null);
     }
   };
 
@@ -178,7 +201,7 @@ export function NewsForm({ isOpen, onClose, news, mode }: NewsFormProps) {
 
       // Convertir INewsContent[] a string[] para compatibilidad con el backend
       const contentStrings = content.map(item => item.content);
-      
+
       const newsData: CreateNewsRequest | UpdateNewsRequest = {
         title: title.trim(),
         content: contentStrings,
@@ -268,24 +291,55 @@ export function NewsForm({ isOpen, onClose, news, mode }: NewsFormProps) {
             </CardHeader>
             <CardContent className="space-y-4">
               {!bannerImage ? (
-                <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageSelect}
-                    className="hidden"
-                    id="banner-upload"
-                  />
-                  <label htmlFor="banner-upload" className="cursor-pointer">
-                    <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-muted-foreground">Seleccionar imagen para banner</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      JPG, PNG, WEBP - Máximo 10MB
-                    </p>
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
-                      📐 Se recortará automáticamente a formato 16:9
-                    </p>
-                  </label>
+                <div className="space-y-4">
+                  {/* Opción 1: Subir archivo */}
+                  <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center hover:border-purple-500 transition-colors duration-200">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                      id="banner-upload"
+                    />
+                    <label htmlFor="banner-upload" className="cursor-pointer">
+                      <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-muted-foreground">Seleccionar imagen para banner</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        JPG, PNG, WEBP - Máximo 10MB
+                      </p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
+                        📐 Se recortará automáticamente a formato 16:9
+                      </p>
+                    </label>
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        O pegar URL
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Opción 2: Pegar URL */}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="https://ejemplo.com/imagen.jpg"
+                      value={imageUrlInput}
+                      onChange={(e) => setImageUrlInput(e.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={handleUrlSubmit}
+                      disabled={!imageUrlInput.trim()}
+                    >
+                      Cargar
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -442,16 +496,17 @@ export function NewsForm({ isOpen, onClose, news, mode }: NewsFormProps) {
         </div>
 
         {/* Modal de recorte de imagen */}
-        {currentImageToCrop && (
+        {(currentImageToCrop || currentImageUrlToCrop) && (
           <ImageCropModal
             isOpen={cropModalOpen}
             onClose={() => {
               setCropModalOpen(false);
               setCurrentImageToCrop(null);
+              setCurrentImageUrlToCrop(null);
             }}
-            imageSrc={URL.createObjectURL(currentImageToCrop)}
+            imageSrc={currentImageToCrop ? URL.createObjectURL(currentImageToCrop) : currentImageUrlToCrop!}
             onCropComplete={handleCropComplete}
-            fileName={currentImageToCrop.name}
+            fileName={currentImageToCrop?.name || 'imagen-externa'}
             aspectRatio={16 / 9} // Formato 16:9 para banners
           />
         )}

@@ -505,7 +505,7 @@ export default function SearchPageClient({
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50">
       {/* Header con información de ubicación */}
       <div className="backdrop-blur-sm border-b border-purple-100 dark:border-purple-900 sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto max-w-screen-xl px-8 py-4">
           <div className="flex flex-col gap-4">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -539,7 +539,7 @@ export default function SearchPageClient({
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto max-w-screen-xl px-8 py-6">
         {/* Sección de perfiles destacados con los mismos filtros */}
         <FeaturedProfilesSection
           className="mb-8"

@@ -172,8 +172,6 @@ export const useUpdateBlog = () => {
 
       // Invalidar blogs relacionados
       queryClient.invalidateQueries({ queryKey: blogKeys.related(updatedBlog._id) });
-
-      toast.success('El blog se ha actualizado exitosamente.');
     },
     onError: (error: any) => {
       toast.error(error.message || 'Error al actualizar blog. Ocurrió un error inesperado.');

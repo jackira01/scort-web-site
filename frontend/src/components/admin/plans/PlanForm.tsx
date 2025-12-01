@@ -265,6 +265,12 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
       toast.error('El código es requerido');
       return false;
     }
+
+    if (!/^[A-Z_]+$/.test(formData.code)) {
+      toast.error('El código debe contener solo letras mayúsculas y guiones bajos');
+      return false;
+    }
+
     if (!formData.name.trim()) {
       toast.error('El nombre es requerido');
       return false;

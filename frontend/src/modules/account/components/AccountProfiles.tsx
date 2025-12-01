@@ -19,7 +19,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createProfileSlug } from '@/utils/slug';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
@@ -113,6 +113,21 @@ export default function AccountProfiles({
   const router = useRouter();
   const [isValidating, setIsValidating] = useState(false);
   const { data: session } = useSession();
+
+  // Redireccionar al home si se borra el último perfil
+  const prevProfilesLength = useRef(profiles.length);
+
+  useEffect(() => {
+    if (prevProfilesLength.current > 0 && profiles.length === 0) {
+      router.push('/');
+    }
+    // Si la página actual queda vacía y no es la primera, ir a la anterior
+    const totalPages = Math.ceil(profiles.length / profilesPerPage);
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+    prevProfilesLength.current = profiles.length;
+  }, [profiles, router, currentPage, profilesPerPage]);
 
   // Calcular perfiles paginados
   const paginatedProfiles = useMemo(() => {

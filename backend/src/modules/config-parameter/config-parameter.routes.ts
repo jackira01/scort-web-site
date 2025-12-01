@@ -19,7 +19,7 @@ router.post(
 );
 
 // Rutas que requieren autenticación
-router.use(devAuthMiddleware);
+router.use(authMiddleware);
 
 // Rutas de lectura (usuarios autenticados)
 router.get('/', ConfigParameterController.getAll);

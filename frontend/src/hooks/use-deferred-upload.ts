@@ -104,9 +104,10 @@ export const useDeferredUpload = () => {
 
     setIsUploading(true);
     const uploadedUrls: { [key: string]: string } = {};
+    let toastId: string | undefined;
 
     try {
-      toast.loading(`Subiendo ${pendingFiles.length} archivo(s)...`);
+      toastId = toast.loading(`Subiendo ${pendingFiles.length} archivo(s)...`);
 
       for (const pendingFile of pendingFiles) {
         const result = await uploadSingleFile(pendingFile.file, folder);
@@ -118,7 +119,7 @@ export const useDeferredUpload = () => {
         }
       }
 
-      toast.success(`${pendingFiles.length} archivo(s) subido(s) exitosamente`);
+      toast.success(`${pendingFiles.length} archivo(s) subido(s) exitosamente`, { id: toastId });
 
       // Limpiar archivos pendientes después de subir
       clearPendingFiles();
@@ -126,7 +127,7 @@ export const useDeferredUpload = () => {
       return uploadedUrls;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error al subir archivos';
-      toast.error(`Error al subir archivos: ${errorMessage}`);
+      toast.error(`Error al subir archivos: ${errorMessage}`, { id: toastId });
       throw error;
     } finally {
       setIsUploading(false);

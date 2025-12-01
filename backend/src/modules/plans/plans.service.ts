@@ -570,41 +570,22 @@ export class PlansService {
             // Limpiar upgrades expirados y duplicados antes de agregar nuevos
             cleanProfileUpgrades(profile);
 
-            // Agregar automáticamente los upgrades incluidos en el plan
+            // Generar upgrades incluidos en el plan (sincronizados con la expiración del plan)
             if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
-                for (const upgradeCode of plan.includedUpgrades) {
-                    // Buscar si ya existe un upgrade del mismo tipo (sin importar si está activo)
-                    const existingUpgradeIndex = profile.upgrades.findIndex(
-                        upgrade => upgrade.code === upgradeCode
-                    );
+                const planUpgrades = plan.includedUpgrades.map((code: string) => ({
+                    code,
+                    startAt: now,
+                    endAt: expiresAt, // La fecha de fin se sincroniza con la del plan
+                    purchaseAt: now,
+                    isVisible: true
+                }));
 
-                    // Obtener definición del upgrade para usar su duración correcta
-                    const upgradeDefinition = await UpgradeDefinitionModel.findOne({ code: upgradeCode });
-                    const upgradeEndAt = upgradeDefinition && upgradeDefinition.durationHours
-                        ? new Date(now.getTime() + (upgradeDefinition.durationHours * 60 * 60 * 1000))
-                        : expiresAt;
+                // Fusionar con upgrades existentes (priorizando los nuevos del plan)
+                const newCodes = planUpgrades.map((u: any) => u.code);
+                const kept = (profile.upgrades || []).filter(u => !newCodes.includes(u.code));
+                profile.upgrades = [...kept, ...planUpgrades];
 
-                    if (existingUpgradeIndex !== -1) {
-                        // Reemplazar el upgrade existente
-                        profile.upgrades[existingUpgradeIndex] = {
-                            code: upgradeCode,
-                            startAt: now,
-                            endAt: upgradeEndAt,
-                            purchaseAt: now
-                        };
-                        console.log(`🔄 Upgrade ${upgradeCode} reemplazado en purchasePlan`);
-                    } else {
-                        // Agregar el upgrade incluido en el plan
-                        const newUpgrade = {
-                            code: upgradeCode,
-                            startAt: now,
-                            endAt: upgradeEndAt,
-                            purchaseAt: now
-                        };
-                        profile.upgrades.push(newUpgrade);
-                        console.log(`➕ Upgrade ${upgradeCode} agregado en purchasePlan`);
-                    }
-                }
+                console.log(`✅ Upgrades sincronizados con el plan en purchasePlan: ${plan.includedUpgrades.join(', ')}`);
             }
 
             profile.isActive = true;
@@ -675,9 +656,22 @@ export class PlansService {
         // Extender la fecha de expiración desde la fecha actual de expiración o desde ahora si ya expiró
         const currentExpiresAt = profile.planAssignment.expiresAt;
         const now = new Date();
-        const baseDate = currentExpiresAt > now ? currentExpiresAt : now;
-        const newExpiresAt = new Date(baseDate);
-        newExpiresAt.setDate(newExpiresAt.getDate() + variantDays);
+
+        // CAMBIO: Si es admin, siempre resetear la fecha de inicio a ahora y la expiración a ahora + días
+        // Esto permite "corregir" o "asignar" un plan desde cero incluso si ya existe
+        let newExpiresAt: Date;
+
+        if (isAdmin) {
+            // Resetear fechas para admin
+            newExpiresAt = new Date(now.getTime() + (variantDays * 24 * 60 * 60 * 1000));
+            // Actualizar también startAt para reflejar el reset
+            profile.planAssignment.startAt = now;
+        } else {
+            // Comportamiento normal de renovación (extensión)
+            const baseDate = currentExpiresAt > now ? currentExpiresAt : now;
+            newExpiresAt = new Date(baseDate);
+            newExpiresAt.setDate(newExpiresAt.getDate() + variantDays);
+        }
 
         // Generar factura si el plan tiene precio y NO es admin
         let invoiceId: string | undefined;
@@ -736,41 +730,22 @@ export class PlansService {
             // Limpiar upgrades expirados y duplicados antes de agregar nuevos
             cleanProfileUpgrades(profile);
 
-            // Agregar automáticamente los upgrades incluidos en el plan
+            // Generar upgrades incluidos en el plan (sincronizados con la expiración del plan)
             if (plan.includedUpgrades && plan.includedUpgrades.length > 0) {
-                for (const upgradeCode of plan.includedUpgrades) {
-                    // Buscar si ya existe un upgrade del mismo tipo (sin importar si está activo)
-                    const existingUpgradeIndex = profile.upgrades.findIndex(
-                        upgrade => upgrade.code === upgradeCode
-                    );
+                const planUpgrades = plan.includedUpgrades.map((code: string) => ({
+                    code,
+                    startAt: now,
+                    endAt: newExpiresAt, // La fecha de fin se sincroniza con la del plan
+                    purchaseAt: now,
+                    isVisible: true
+                }));
 
-                    // Obtener definición del upgrade para usar su duración correcta
-                    const upgradeDefinition = await UpgradeDefinitionModel.findOne({ code: upgradeCode });
-                    const upgradeEndAt = upgradeDefinition && upgradeDefinition.durationHours
-                        ? new Date(now.getTime() + (upgradeDefinition.durationHours * 60 * 60 * 1000))
-                        : newExpiresAt;
+                // Fusionar con upgrades existentes (priorizando los nuevos del plan)
+                const newCodes = planUpgrades.map((u: any) => u.code);
+                const kept = (profile.upgrades || []).filter(u => !newCodes.includes(u.code));
+                profile.upgrades = [...kept, ...planUpgrades];
 
-                    if (existingUpgradeIndex !== -1) {
-                        // Reemplazar el upgrade existente
-                        profile.upgrades[existingUpgradeIndex] = {
-                            code: upgradeCode,
-                            startAt: now,
-                            endAt: upgradeEndAt,
-                            purchaseAt: now
-                        };
-                        console.log(`🔄 Upgrade ${upgradeCode} reemplazado en purchasePlan (renovación)`);
-                    } else {
-                        // Agregar el upgrade incluido en el plan
-                        const newUpgrade = {
-                            code: upgradeCode,
-                            startAt: now,
-                            endAt: upgradeEndAt,
-                            purchaseAt: now
-                        };
-                        profile.upgrades.push(newUpgrade);
-                        console.log(`➕ Upgrade ${upgradeCode} agregado en purchasePlan (renovación)`);
-                    }
-                }
+                console.log(`✅ Upgrades sincronizados con el plan en renewPlan: ${plan.includedUpgrades.join(', ')}`);
             }
 
             await profile.save();

@@ -98,7 +98,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
   // Variante por defecto: card completa con información responsive
   return (
     <Link href={`/perfil/${createProfileSlug(profile.name, profile._id)}`} className="block">
-      <Card className={`group hover:shadow-xl transition-all duration-300 overflow-hidden relative ${profile.hasDestacadoUpgrade
+      <Card className={`group hover:shadow-xl max-w-72 mx-auto group transition-all duration-300 overflow-hidden relative ${profile.hasDestacadoUpgrade
         ? 'bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border-2 border-yellow-400 shadow-lg shadow-yellow-500/30'
         : 'bg-card border-border'
         }`}>

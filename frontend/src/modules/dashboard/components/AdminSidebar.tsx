@@ -1,44 +1,40 @@
 'use client';
 
-import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Menu, X, ChevronRight } from 'lucide-react';
+import { X, ChevronRight } from 'lucide-react';
 import { sidebarItems } from '@/modules/dashboard/data';
 import { cn } from '@/lib/utils';
 
 interface AdminSidebarProps {
     activeSection: string;
     setActiveSection: (section: string) => void;
-    onOverlayChange?: (isOpen: boolean) => void;
+    isOpen: boolean; // NUEVO: Recibe el estado del padre
+    onToggle: () => void; // NUEVO: Función para abrir/cerrar
 }
 
 export function AdminSidebar({
     activeSection,
     setActiveSection,
-    onOverlayChange
+    isOpen,
+    onToggle
 }: AdminSidebarProps) {
-    const [isOpen, setIsOpen] = useState(false);
-
-    const toggleSidebar = () => {
-        const newState = !isOpen;
-        setIsOpen(newState);
-        onOverlayChange?.(newState);
-    };
+    // ELIMINADO: const [isOpen, setIsOpen] = useState(false);
+    // Ya no controlamos el estado aquí adentro
 
     const handleItemClick = (itemId: string) => {
         setActiveSection(itemId);
-        // Cerrar el sidebar después de seleccionar cualquier item
-        setIsOpen(false);
-        onOverlayChange?.(false);
+        // Si quieres que se cierre al dar click en un item:
+        if (isOpen) onToggle();
     };
 
     return (
         <div className=''>
-            {/* Botón de toggle - visible solo cuando el sidebar está cerrado */}
+            {/* ELIMINADO: El div del Overlay interno, ya que usas AdminOverlay en el layout */}
+
+            {/* Botón de toggle (burbuja flotante) */}
             <Button
-                onClick={toggleSidebar}
+                onClick={onToggle} // Usa la función del padre
                 variant="outline"
                 size="icon"
                 className={cn(
@@ -51,12 +47,11 @@ export function AdminSidebar({
                 <ChevronRight className="h-5 w-5" />
             </Button>
 
-
-            {/* Sidebar superpuesto - posicionado debajo del header */}
+            {/* Sidebar */}
             <div
                 className={cn(
                     "fixed top-16 left-0 h-[calc(100vh-4rem)] w-80 bg-white dark:bg-slate-800 shadow-2xl z-40 transform transition-transform duration-300 ease-in-out",
-                    isOpen ? "translate-x-0" : "-translate-x-full"
+                    isOpen ? "translate-x-0" : "-translate-x-full" // Obedece al prop isOpen
                 )}
             >
                 {/* Header del sidebar */}
@@ -66,7 +61,7 @@ export function AdminSidebar({
                             Panel de Admin
                         </h2>
                         <Button
-                            onClick={toggleSidebar}
+                            onClick={onToggle} // Usa la función del padre
                             variant="ghost"
                             size="sm"
                             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -76,7 +71,7 @@ export function AdminSidebar({
                     </div>
                 </div>
 
-                {/* Contenido del sidebar - ajustado para el nuevo posicionamiento */}
+                {/* Contenido ... (El resto sigue igual, solo asegúrate de usar handleItemClick actualizado arriba) */}
                 <div className="p-4 h-[calc(100%-8rem)] overflow-y-auto">
                     <Card className="bg-transparent border-none shadow-none">
                         <CardContent className="p-0">
@@ -105,58 +100,18 @@ export function AdminSidebar({
                                             />
                                             <div className="flex-1">
                                                 <span className="font-medium text-sm">{item.label}</span>
-                                                {item.description && (
-                                                    <p className={cn(
-                                                        "text-xs mt-1 transition-colors duration-200",
-                                                        activeSection === item.id
-                                                            ? 'text-white/80'
-                                                            : 'text-gray-500 dark:text-gray-400'
-                                                    )}>
-                                                        {item.description}
-                                                    </p>
-                                                )}
                                             </div>
                                         </div>
-
-                                        {/*  <div className="flex items-center space-x-2">
-                                            {item.badge && (
-                                                <Badge
-                                                    variant={activeSection === item.id ? 'secondary' : 'default'}
-                                                    className={cn(
-                                                        "text-xs transition-colors duration-200",
-                                                        activeSection === item.id
-                                                            ? 'bg-white/20 text-white border-white/30'
-                                                            : 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-100'
-                                                    )}
-                                                >
-                                                    {item.badge}
-                                                </Badge>
-                                            )}
-                                            <ChevronRight
-                                                className={cn(
-                                                    "h-4 w-4 transition-all duration-200",
-                                                    activeSection === item.id
-                                                        ? 'text-white rotate-90'
-                                                        : 'text-gray-400 dark:text-gray-500 group-hover:text-purple-600 dark:group-hover:text-purple-400 group-hover:translate-x-1'
-                                                )}
-                                            />
-                                        </div> */}
                                     </button>
                                 ))}
                             </nav>
                         </CardContent>
                     </Card>
                 </div>
-
-                {/* Footer del sidebar */}
+                {/* Footer del sidebar (igual que antes) */}
                 <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
                     <div className="text-center">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Panel de Administración
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                            Online Escorts v2.0
-                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Panel de Administración</p>
                     </div>
                 </div>
             </div>

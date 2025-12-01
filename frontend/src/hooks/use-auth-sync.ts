@@ -153,11 +153,11 @@ export async function broadcastLogout(callbackUrl: string = '/') {
         }
 
         // Ejecutar el logout local
-        await signOut({ callbackUrl, redirect: true });
+        await signOut({ callbackUrl: '/', redirect: true });
     } catch (error) {
         console.error('❌ [AuthSync] Error en broadcastLogout:', error);
         // Intentar logout de todas formas
-        await signOut({ callbackUrl, redirect: true });
+        await signOut({ callbackUrl: '/', redirect: true });
     }
 }
 

@@ -535,8 +535,7 @@ export function useToggleConfigParameterActive() {
         mutationFn: (id: string) => ConfigParameterService.toggleActive(id),
         onSuccess: (data, id) => {
             queryClient.setQueryData(configParameterKeys.detail(id), data);
-            queryClient.invalidateQueries({ queryKey: configParameterKeys.lists() });
-            queryClient.invalidateQueries({ queryKey: configParameterKeys.values() });
+            queryClient.invalidateQueries({ queryKey: configParameterKeys.all });
             toast.success(
                 `Parámetro ${data.isActive ? 'activado' : 'desactivado'} exitosamente`,
             );

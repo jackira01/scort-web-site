@@ -64,6 +64,42 @@ export const useFileHandlers = ({
                     ? ((videos || []).filter(v => v !== null))
                     : (audios || []);
 
+        // ✅ VALIDACIÓN DE DUPLICADOS
+        const uniqueNewFiles: File[] = [];
+        let duplicatesCount = 0;
+
+        fileArray.forEach(newFile => {
+            const isDuplicate = currentFiles.some(existingFile => {
+                if (existingFile instanceof File) {
+                    // Comparar archivos por nombre, tamaño y fecha de modificación
+                    return existingFile.name === newFile.name &&
+                        existingFile.size === newFile.size &&
+                        existingFile.lastModified === newFile.lastModified;
+                } else if (typeof existingFile === 'string') {
+                    // Si es una URL, difícil comparar con File, pero intentamos por nombre si la URL lo contiene
+                    return existingFile.includes(encodeURIComponent(newFile.name));
+                }
+                return false;
+            });
+
+            if (isDuplicate) {
+                duplicatesCount++;
+            } else {
+                uniqueNewFiles.push(newFile);
+            }
+        });
+
+        if (duplicatesCount > 0) {
+            toast.error(`${duplicatesCount} archivo(s) ya existen y fueron ignorados.`);
+        }
+
+        if (uniqueNewFiles.length === 0) {
+            return;
+        }
+
+        // Usar solo los archivos únicos para las siguientes validaciones
+        const filesToProcess = uniqueNewFiles;
+
         // Validaciones
         const limits = {
             photos: contentLimits.maxPhotos,
@@ -71,31 +107,31 @@ export const useFileHandlers = ({
             audios: contentLimits.maxAudios,
         };
 
-        if (!validateFileLimits(currentFiles.length, fileArray.length, limits[type], type, selectedPlan?.name)) {
+        if (!validateFileLimits(currentFiles.length, filesToProcess.length, limits[type], type, selectedPlan?.name)) {
             return;
         }
 
-        if (!validateFileTypes(fileArray, type)) {
+        if (!validateFileTypes(filesToProcess, type)) {
             return;
         }
 
-        if (type !== 'photos' && !validateFileSize(fileArray, type)) {
+        if (type !== 'photos' && !validateFileSize(filesToProcess, type)) {
             return;
         }
 
         // Procesar archivos
         if (type === 'photos') {
-            const newFiles = [...currentFiles, ...fileArray];
+            const newFiles = [...currentFiles, ...filesToProcess];
             setValue('photos', newFiles, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
 
             const newOriginalImages = new Map(originalImages);
-            fileArray.forEach((file, i) => {
+            filesToProcess.forEach((file, i) => {
                 newOriginalImages.set(currentFiles.length + i, file);
             });
             setOriginalImages(newOriginalImages);
 
-            toast.loading(`Procesando ${fileArray.length} imagen(es)...`, { id: 'processing-images' });
-            const processedCount = await processNewImages(fileArray, currentFiles.length);
+            toast.loading(`Procesando ${filesToProcess.length} imagen(es)...`, { id: 'processing-images' });
+            const processedCount = await processNewImages(filesToProcess, currentFiles.length);
             toast.dismiss('processing-images');
 
             if (processedCount > 0) {
@@ -104,9 +140,9 @@ export const useFileHandlers = ({
                 toast.error('No se pudieron procesar las imágenes');
             }
         } else {
-            const newFiles = [...currentFiles, ...fileArray];
+            const newFiles = [...currentFiles, ...filesToProcess];
             setValue(type, newFiles, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-            toast.success(`${fileArray.length} archivo(s) agregado(s)`);
+            toast.success(`${filesToProcess.length} archivo(s) agregado(s)`);
         }
     };
 
@@ -159,7 +195,7 @@ export const useFileHandlers = ({
                 // ✅ VERIFICACIÓN CRÍTICA: Solo asignar imagen procesada si el nombre coincide
                 if (processed) {
                     const namesMatch = currentFileName && processed.originalFileName === currentFileName;
-                    
+
                     if (namesMatch) {
                         // ✅ La imagen procesada SÍ corresponde a este archivo
                         reindexedProcessedImages.set(newIndex, {
