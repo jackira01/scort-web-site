@@ -43,6 +43,8 @@ export default function DashboardLayout() {
         setSidebarOpen(isOpen);
     };
 
+    const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+
     // Evitar hidratación mismatch
     if (!mounted) {
         return null;
@@ -158,7 +160,8 @@ export default function DashboardLayout() {
             <AdminSidebar
                 activeSection={activeSection}
                 setActiveSection={setActiveSection}
-                onOverlayChange={handleSidebarOverlayChange}
+                isOpen={sidebarOpen}
+                onToggle={toggleSidebar}
             />
 
             {/* Contenido principal con overlay */}

@@ -76,7 +76,7 @@ const StoriesCards = () => {
             <div className="relative p-2">
               <div
                 className={`p-1 rounded-full transition-transform duration-300 transform-gpu ${profile.hasNewStories
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 group-hover:scale-110'
+                  ? 'bg-gradient-to-r from-red-600 to-pink-500 group-hover:scale-110'
                   : 'bg-gray-300 dark:bg-gray-600 group-hover:scale-105'
                   }`}
               >
@@ -91,7 +91,7 @@ const StoriesCards = () => {
                 </div>
               </div>
               {profile.hasNewStories && (
-                <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center animate-pulse">
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-red-600 to-pink-600 rounded-full flex items-center justify-center animate-pulse">
                   <Play className="h-3 w-3 text-white fill-white" />
                 </div>
               )}

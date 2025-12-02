@@ -1077,7 +1077,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                     </div>
                     <div className="flex-1">
                       <p className="text-purple-800 dark:text-purple-200 text-sm font-medium mb-2">
-                        <strong>¡Has superado el límite!</strong>
+                        <strong>¡Has alcanzado el máximo de fotos!</strong>
                       </p>
                       <p className="text-purple-700 dark:text-purple-300 text-sm mb-3">
                         Has alcanzado el máximo de {contentLimits.maxPhotos} fotos para {selectedPlan?.name || 'tu plan actual'}.

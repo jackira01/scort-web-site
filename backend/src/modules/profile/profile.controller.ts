@@ -1022,3 +1022,20 @@ export const validatePlanSelectionController = async (req: AuthRequest, res: Res
     });
   }
 };
+
+export const addStoryController = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id: profileId } = req.params;
+    const { link, type, duration, startTime } = req.body;
+
+    if (!link || !type) {
+      return res.status(400).json({ message: 'Link and type are required' });
+    }
+
+    const updatedProfile = await service.addStory(profileId, { link, type, duration, startTime });
+    res.json(updatedProfile);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An error occurred';
+    res.status(400).json({ message });
+  }
+};

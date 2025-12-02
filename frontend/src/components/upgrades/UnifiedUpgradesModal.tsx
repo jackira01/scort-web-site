@@ -131,6 +131,16 @@ export default function UnifiedUpgradesModal({
             const hours = Math.floor(diffMinutes / 60);
             const minutes = diffMinutes % 60;
 
+            if (hours >= 24) {
+                const days = Math.floor(hours / 24);
+                const remainingHours = hours % 24;
+                let result = `${days} día${days > 1 ? 's' : ''}`;
+                if (remainingHours > 0) {
+                    result += ` y ${remainingHours} hora${remainingHours > 1 ? 's' : ''}`;
+                }
+                return result;
+            }
+
             if (hours > 0 && minutes > 0) {
                 return `${hours} hora${hours > 1 ? 's' : ''} y ${minutes} minuto${minutes > 1 ? 's' : ''}`;
             } else if (hours > 0) {
@@ -141,6 +151,23 @@ export default function UnifiedUpgradesModal({
         } catch {
             return 'N/A';
         }
+    };
+
+    // Función para formatear duración en horas a texto legible (días y horas)
+    const formatDurationFromHours = (hours: number) => {
+        if (!hours) return '1 hora';
+
+        if (hours >= 24) {
+            const days = Math.floor(hours / 24);
+            const remainingHours = hours % 24;
+
+            if (remainingHours > 0) {
+                return `${days} ${days === 1 ? 'día' : 'días'} y ${remainingHours} ${remainingHours === 1 ? 'hora' : 'horas'}`;
+            }
+            return `${days} ${days === 1 ? 'día' : 'días'}`;
+        }
+
+        return `${hours} ${hours === 1 ? 'hora' : 'horas'}`;
     };
 
     return (
@@ -187,7 +214,7 @@ export default function UnifiedUpgradesModal({
                                     Upgrade Destacado
                                 </h4>
                                 <p className="text-sm text-muted-foreground">
-                                    Destaca tu perfil y aparece primero en los resultados de búsqueda durante {destacadoDefinition?.durationHours || 1} {destacadoDefinition?.durationHours === 1 ? 'hora' : 'horas'}.
+                                    Destaca tu perfil y aparece primero en los resultados de búsqueda durante {formatDurationFromHours(destacadoDefinition?.durationHours || 1)}.
                                 </p>
 
                                 {/* Fechas si está activo */}
@@ -271,7 +298,7 @@ export default function UnifiedUpgradesModal({
                                     Upgrade Impulso
                                 </h4>
                                 <p className="text-sm text-muted-foreground">
-                                    Potencia tu perfil destacado durante {impulsoDefinition?.durationHours || 1} {impulsoDefinition?.durationHours === 1 ? 'hora' : 'horas'}. Requiere tener el upgrade "Destacado"
+                                    Potencia tu perfil destacado durante {formatDurationFromHours(impulsoDefinition?.durationHours || 1)}. Requiere tener el upgrade "Destacado"
                                     activo. Tu perfil aparecerá en las primeras posiciones con máxima prioridad.
                                 </p>
 

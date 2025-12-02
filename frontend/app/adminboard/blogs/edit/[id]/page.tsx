@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Eye, Trash2, ToggleLeft, ToggleRight, Upload } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Trash2, ToggleLeft, ToggleRight, Upload, Crop, ImageIcon } from 'lucide-react';
 import { useUpdateBlog, useDeleteBlog, useToggleBlog } from '../../../../../src/hooks/use-blogs';
 import { blogService } from '../../../../../src/services/blog.service';
 import { useDeferredUpload } from '../../../../../src/hooks/use-deferred-upload';
@@ -35,6 +35,7 @@ import { Separator } from '../../../../../src/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../../../src/components/ui/alert-dialog';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
+import { ImageCropModal } from '../../../../../src/components/ImageCropModal';
 
 const BlogRenderer = dynamic(
   () => import('@/components/blog/BlogRenderer'),
@@ -84,6 +85,13 @@ export default function EditBlogPage() {
   const [errors, setErrors] = useState<BlogFormErrors>({});
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
+
+  // Estados para recorte de imagen
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [currentImageToCrop, setCurrentImageToCrop] = useState<File | null>(null);
+  const [currentImageUrlToCrop, setCurrentImageUrlToCrop] = useState<string | null>(null);
+  const [imageUrlInput, setImageUrlInput] = useState('');
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
 
   // Usar useQuery con el método de admin para obtener blogs no publicados también
   const { data: blog, isLoading, error } = useQuery({
@@ -173,26 +181,8 @@ export default function EditBlogPage() {
     }
   };
 
-  // Función eliminada: handleContentChange ya no es necesaria
-  // El contenido se obtiene directamente del editor cuando se necesita
-
-  const handleCoverImageChange = (coverImage: string) => {
-    // Limpiar fileId previo si se ingresa una URL
-    if (formData.coverImageFileId) {
-      removePendingFile(formData.coverImageFileId);
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      coverImage,
-      coverImageFileId: undefined // Limpiar referencia a archivo
-    }));
-    if (errors.coverImage) {
-      setErrors(prev => ({ ...prev, coverImage: undefined }));
-    }
-  };
-
-  const handleCoverImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Manejo de selección de imagen para recortar
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -208,25 +198,80 @@ export default function EditBlogPage() {
       return;
     }
 
-    // Remover archivo anterior si existe
+    setCurrentImageToCrop(file);
+    setCurrentImageUrlToCrop(null);
+    setCropModalOpen(true);
+
+    // Resetear input para permitir seleccionar el mismo archivo
+    e.target.value = '';
+  };
+
+  // Manejo de URL para recortar
+  const handleUrlSubmit = () => {
+    if (!imageUrlInput.trim()) return;
+
+    try {
+      new URL(imageUrlInput);
+    } catch (e) {
+      toast.error('La URL ingresada no es válida');
+      return;
+    }
+
+    setCurrentImageUrlToCrop(imageUrlInput);
+    setCurrentImageToCrop(null);
+    setCropModalOpen(true);
+    setImageUrlInput('');
+  };
+
+  // Procesar imagen recortada
+  const handleCropComplete = async (croppedBlob: Blob, croppedUrl: string) => {
+    try {
+      setIsProcessingImage(true);
+      const fileName = currentImageToCrop?.name || 'cover-from-url.jpg';
+      const processedFile = new File([croppedBlob], fileName, {
+        type: croppedBlob.type,
+        lastModified: Date.now(),
+      });
+
+      // Remover archivo anterior si existe
+      if (formData.coverImageFileId) {
+        removePendingFile(formData.coverImageFileId);
+      }
+
+      // Agregar archivo para subida diferida
+      const { id, preview } = addPendingFile(processedFile, 'image');
+
+      setFormData(prev => ({
+        ...prev,
+        coverImage: preview,
+        coverImageFileId: id
+      }));
+
+      if (errors.coverImage) {
+        setErrors(prev => ({ ...prev, coverImage: undefined }));
+      }
+
+      toast.success('Imagen procesada correctamente');
+    } catch (error) {
+      console.error('Error processing cropped image:', error);
+      toast.error('Error al procesar la imagen');
+    } finally {
+      setIsProcessingImage(false);
+      setCropModalOpen(false);
+      setCurrentImageToCrop(null);
+      setCurrentImageUrlToCrop(null);
+    }
+  };
+
+  const handleRemoveImage = () => {
     if (formData.coverImageFileId) {
       removePendingFile(formData.coverImageFileId);
     }
-
-    // Agregar archivo para subida diferida
-    const { id, preview } = addPendingFile(file, 'image');
-
     setFormData(prev => ({
       ...prev,
-      coverImage: preview,
-      coverImageFileId: id
+      coverImage: '',
+      coverImageFileId: undefined
     }));
-
-    if (errors.coverImage) {
-      setErrors(prev => ({ ...prev, coverImage: undefined }));
-    }
-
-    toast.success('Imagen seleccionada. Se subirá al guardar el blog.');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -571,56 +616,106 @@ export default function EditBlogPage() {
 
                 {/* Cover Image */}
                 <div>
-                  <Label htmlFor="coverImage">Imagen de Portada</Label>
-                  <div className="space-y-3">
-                    {/* URL Input */}
-                    <Input
-                      id="coverImage"
-                      value={formData.coverImage}
-                      onChange={(e) => handleCoverImageChange(e.target.value)}
-                      placeholder="https://ejemplo.com/imagen.jpg"
-                      className={errors.coverImage ? 'border-red-500' : ''}
-                    />
-                    <p className="text-sm text-gray-600">
-                      URL de la imagen de portada (opcional)
-                    </p>
+                  <Label htmlFor="coverImage">Imagen de Portada (16:9)</Label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                    id="cover-upload"
+                  />
+                  <div className="space-y-4 mt-2">
+                    {!formData.coverImage ? (
+                      <div className="space-y-4">
+                        {/* Opción 1: Subir archivo */}
+                        <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center hover:border-blue-500 transition-colors duration-200">
+                          <label htmlFor="cover-upload" className="cursor-pointer">
+                            <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                            <p className="text-muted-foreground">Seleccionar imagen de portada</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              JPG, PNG, WEBP - Máximo 10MB
+                            </p>
+                            <p className="text-xs text-blue-600 mt-1 font-medium">
+                              📐 Se recortará automáticamente a formato 16:9
+                            </p>
+                          </label>
+                        </div>
 
-                    {/* File Upload */}
-                    <div className="flex items-center gap-2">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleCoverImageFileChange}
-                        className="hidden"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-2"
-                      >
-                        <Upload className="h-4 w-4" />
-                        Subir desde equipo
-                      </Button>
-                      <span className="text-sm text-gray-500">o ingresa una URL arriba</span>
-                    </div>
+                        <div className="relative">
+                          <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                          </div>
+                          <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">
+                              O pegar URL
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Opción 2: Pegar URL */}
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="https://ejemplo.com/imagen.jpg"
+                            value={imageUrlInput}
+                            onChange={(e) => setImageUrlInput(e.target.value)}
+                          />
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={handleUrlSubmit}
+                            disabled={!imageUrlInput.trim()}
+                          >
+                            Cargar
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="relative group max-w-md">
+                          <div className="aspect-video overflow-hidden rounded-lg border">
+                            <img
+                              src={formData.coverImage}
+                              alt="Portada del blog"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => {
+                                // Si hay un archivo pendiente, podemos intentar recortarlo de nuevo
+                                // Pero como ya es un blob URL, es mejor simplemente permitir subir uno nuevo
+                                // O si queremos re-recortar, necesitaríamos guardar el archivo original
+                                // Por simplicidad, permitimos reemplazar
+                                fileInputRef.current?.click();
+                              }}
+                            >
+                              <Crop className="h-4 w-4 mr-1" />
+                              Cambiar
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="destructive"
+                              onClick={handleRemoveImage}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Eliminar
+                            </Button>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="w-fit">
+                          <ImageIcon className="h-3 w-3 mr-1" />
+                          Imagen cargada - Formato 16:9
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                   {errors.coverImage && (
                     <p className="text-sm text-red-600 mt-1">{errors.coverImage}</p>
-                  )}
-
-                  {/* Image Preview */}
-                  {formData.coverImage && blogService.isValidImageUrl(formData.coverImage) && (
-                    <div className="mt-3">
-                      <div className="relative aspect-video w-full max-w-md overflow-hidden rounded-lg border">
-                        <img
-                          src={formData.coverImage}
-                          alt="Vista previa"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </div>
                   )}
                 </div>
 
@@ -665,6 +760,22 @@ export default function EditBlogPage() {
           </form>
         )}
       </div>
+
+      {/* Modal de recorte de imagen */}
+      {(currentImageToCrop || currentImageUrlToCrop) && (
+        <ImageCropModal
+          isOpen={cropModalOpen}
+          onClose={() => {
+            setCropModalOpen(false);
+            setCurrentImageToCrop(null);
+            setCurrentImageUrlToCrop(null);
+          }}
+          imageSrc={currentImageToCrop ? URL.createObjectURL(currentImageToCrop) : currentImageUrlToCrop!}
+          onCropComplete={handleCropComplete}
+          fileName={currentImageToCrop?.name || 'imagen-externa'}
+          aspectRatio={16 / 9} // Formato 16:9 para portadas de blog
+        />
+      )}
     </div>
   );
 }

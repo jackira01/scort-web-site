@@ -7,6 +7,7 @@ import {
 } from '../controllers/email.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { adminMiddleware } from '../middlewares/admin.middleware';
+import { contactRateLimit } from '../middlewares/security.middleware';
 
 const router = Router();
 
@@ -36,6 +37,6 @@ router.post('/test', authMiddleware, adminMiddleware, testEmailConfigController)
  * @desc Enviar mensaje desde formulario de contacto
  * @access Public (no requiere autenticación)
  */
-router.post('/contact', sendContactFormController);
+router.post('/contact', contactRateLimit, sendContactFormController);
 
 export default router;

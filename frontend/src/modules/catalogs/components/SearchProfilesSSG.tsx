@@ -38,7 +38,7 @@ export default function SearchProfilesSSG({
     return (
       <div className="space-y-6">
         <div className={`grid gap-4 ${viewMode === 'grid'
-          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+          ? 'grid-cols-1 sm:grid-cols-3'
           : 'grid-cols-1'
           }`}>
           {Array.from({ length: 8 }).map((_, index) => (
@@ -86,7 +86,7 @@ export default function SearchProfilesSSG({
   return (
     <div className="space-y-6">
       <div className={`grid gap-4 ${viewMode === 'grid'
-        ? 'grid-cols-1 sm:grid-cols-3 md:grid-col-4 lg:grid-cols-4'
+        ? 'grid-cols-1 sm:grid-cols-3'
         : 'grid-cols-1'
         }`}>
         {transformedProfiles.map((profile) => (

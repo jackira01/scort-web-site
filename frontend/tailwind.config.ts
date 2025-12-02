@@ -5,9 +5,7 @@ const config: Config = {
   content: [
     './src/modules/**/*.{js,ts,jsx,tsx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-    '*.{js,ts,jsx,tsx,mdx}',
-  ],
+    './app/**/*.{js,ts,jsx,tsx,mdx}'],
   safelist: [
     'bg-green-500',
     'bg-orange-500',

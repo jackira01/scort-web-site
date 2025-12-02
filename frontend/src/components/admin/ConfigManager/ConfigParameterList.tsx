@@ -51,7 +51,7 @@ export function ConfigParameterList({
             setLoadingStates(prev => ({ ...prev, [parameter._id]: true }));
             await toggleActive.mutateAsync(parameter._id);
         } catch (error) {
-
+            console.error('Error toggling parameter:', error);
         } finally {
             setLoadingStates(prev => ({ ...prev, [parameter._id]: false }));
         }

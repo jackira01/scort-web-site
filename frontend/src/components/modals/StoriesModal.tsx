@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Pause, Play, X } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 
@@ -10,6 +10,8 @@ interface Story {
   link: string;
   type: 'image' | 'video';
   timestamp?: string;
+  duration?: number;
+  startTime?: number;
 }
 
 interface ProfileWithStories {
@@ -47,6 +49,7 @@ const StoriesModal = ({
   const [isPaused, setIsPaused] = useState(false);
   const [orientation, setOrientation] = useState<'horizontal' | 'vertical'>('vertical');
   const [imageSize, setImageSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (imageSize.w && imageSize.h) {
@@ -56,10 +59,15 @@ const StoriesModal = ({
 
   const currentProfile = profiles[currentProfileIndex];
   const currentStory = currentProfile?.stories[currentStoryIndex];
-  const storyDuration = 5000; // 5 segundos por historia
+  
+  const storyDuration = currentStory?.type === 'video' 
+    ? (currentStory.duration || 60) * 1000 
+    : 5000;
 
   useEffect(() => {
-    if (!isOpen || isPaused) return; // 🔒 No avanzar si está pausado
+    if (!isOpen || isPaused) return; 
+    
+    if (currentStory?.type === 'video') return;
 
     const interval = setInterval(() => {
       setProgress((prev) => {
@@ -72,7 +80,14 @@ const StoriesModal = ({
     }, 100);
 
     return () => clearInterval(interval);
-  }, [isOpen, isPaused, currentProfileIndex, currentStoryIndex]);
+  }, [isOpen, isPaused, currentProfileIndex, currentStoryIndex, currentStory?.type, storyDuration]);
+
+  useEffect(() => {
+    if (currentStory?.type === 'video' && videoRef.current) {
+      videoRef.current.currentTime = currentStory.startTime || 0;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [currentStoryIndex, currentProfileIndex]);
 
   const nextStory = () => {
     if (currentProfile?.stories && currentStoryIndex < currentProfile.stories.length - 1) {
@@ -109,6 +124,24 @@ const StoriesModal = ({
         profiles[currentProfileIndex - 1]?.stories?.length ? profiles[currentProfileIndex - 1].stories.length - 1 : 0,
       );
       setProgress(0);
+    }
+  };
+
+  const handleVideoTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    if (isPaused) return;
+    
+    const video = e.currentTarget;
+    const start = currentStory.startTime || 0;
+    const duration = currentStory.duration || 60;
+    const end = start + duration;
+    
+    const relativeTime = Math.max(0, video.currentTime - start);
+    const pct = Math.min(100, (relativeTime / duration) * 100);
+    
+    setProgress(pct);
+
+    if (video.currentTime >= end) {
+      nextStory();
     }
   };
 
@@ -164,7 +197,14 @@ const StoriesModal = ({
           <Button
             variant="ghost"
             size="lg"
-            onClick={() => setIsPaused(!isPaused)}
+            onClick={() => {
+                const newPaused = !isPaused;
+                setIsPaused(newPaused);
+                if (currentStory.type === 'video' && videoRef.current) {
+                    if (newPaused) videoRef.current.pause();
+                    else videoRef.current.play();
+                }
+            }}
             className="text-white bg-black/40 hover:bg-black/60 rounded-full p-3 transition-transform hover:scale-110"
           >
             {isPaused ? (
@@ -261,11 +301,18 @@ const StoriesModal = ({
           />
         ) : (
           <video
+            ref={videoRef}
             src={currentStory.link}
             className="max-w-full h-auto max-h-[90vh] rounded-lg object-contain"
             autoPlay
             muted
             onEnded={nextStory}
+            onTimeUpdate={handleVideoTimeUpdate}
+            onLoadedMetadata={(e) => {
+                if (currentStory.startTime) {
+                    e.currentTarget.currentTime = currentStory.startTime;
+                }
+            }}
             onPlay={() => setIsPaused(false)}
             onPause={() => setIsPaused(true)}
           />

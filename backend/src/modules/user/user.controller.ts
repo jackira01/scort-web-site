@@ -649,14 +649,10 @@ export const getUsers = async (req: Request, res: Response) => {
     page: Number(page),
     limit: Number(limit),
     sort: { createdAt: -1 },
+    select: 'name email role isVerified accountType verificationDocument profiles',
     populate: {
       path: 'profiles',
-      select: '_id user name age location verification media planAssignment upgrades socialMedia visible isActive',
-      populate: {
-        path: 'verification',
-        model: 'ProfileVerification',
-        select: 'verificationProgress verificationStatus steps'
-      }
+      select: 'isActive socialMedia'
     }
   };
 

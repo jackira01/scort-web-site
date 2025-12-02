@@ -135,8 +135,9 @@ export class PaymentProcessorService {
           continue;
         }
 
-        // Calcular fecha de expiración basada en durationHours del upgrade
-        const upgradeEndAt = new Date(now.getTime() + (upgradeDefinition.durationHours * 60 * 60 * 1000));
+        // CAMBIO: Sincronizar la fecha de expiración del upgrade con la del plan
+        // En lugar de usar la duración del upgrade, usamos la fecha de expiración del plan
+        const upgradeEndAt = expiresAt;
 
         // Buscar si ya existe un upgrade del mismo tipo (activo o no)
         const existingUpgradeIndex = profile.upgrades.findIndex(
@@ -151,7 +152,7 @@ export class PaymentProcessorService {
             endAt: upgradeEndAt,
             purchaseAt: now
           };
-          console.log(`🔄 Upgrade ${upgradeCode} reemplazado en perfil`);
+          console.log(`🔄 Upgrade ${upgradeCode} reemplazado en perfil (Sincronizado con Plan)`);
         } else {
           // Agregar el upgrade incluido en el plan con su duración correcta
           const newUpgrade = {
@@ -161,7 +162,7 @@ export class PaymentProcessorService {
             purchaseAt: now
           };
           profile.upgrades.push(newUpgrade);
-          console.log(`➕ Upgrade ${upgradeCode} agregado al perfil`);
+          console.log(`➕ Upgrade ${upgradeCode} agregado al perfil (Sincronizado con Plan)`);
         }
       }
     }
