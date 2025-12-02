@@ -170,7 +170,7 @@ const FilterBar = () => {
               </Select>
             ) : (
               <Select value={categoria || 'all'} onValueChange={handleCategoryChange}>
-                <SelectTrigger className="w-full hover:border-purple-500 transition-all duration-200 focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/10">
+                <SelectTrigger className="w-full hover:border-red-500 transition-all duration-200 focus:border-red-500 focus:shadow-lg focus:shadow-red-500/10">
                   <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
                 <SelectContent>
@@ -203,7 +203,7 @@ const FilterBar = () => {
               </Select>
             ) : (
               <Select value={departamento || 'all'} onValueChange={handleDepartmentChange}>
-                <SelectTrigger className="w-full hover:border-purple-500 transition-all duration-200 focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/10">
+                <SelectTrigger className="w-full hover:border-red-500 transition-all duration-200 focus:border-red-500 focus:shadow-lg focus:shadow-red-500/10">
                   <SelectValue placeholder="Todos los departamentos" />
                 </SelectTrigger>
                 <SelectContent>
@@ -240,7 +240,7 @@ const FilterBar = () => {
                 onValueChange={handleCityChange}
                 disabled={!departamento}
               >
-                <SelectTrigger className="w-full hover:border-purple-500 transition-all duration-200 focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/10 disabled:opacity-50">
+                <SelectTrigger className="w-full hover:border-red-500 transition-all duration-200 focus:border-red-500 focus:shadow-lg focus:shadow-red-500/10 disabled:opacity-50">
                   <SelectValue placeholder={departamento ? "Seleccionar ciudad" : "Primero selecciona departamento"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -261,15 +261,13 @@ const FilterBar = () => {
           </div>
 
           {/* Botón Buscar */}
-          <div className="animate-in slide-in-from-bottom-2" style={{ animationDelay: '300ms' }}>
-            <Button
-              className="w-full bg-red-600 hover:bg-pink-800 text-white font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
-              onClick={handleSearch}
-            >
-              <Search className="w-4 h-4 mr-2" />
-              Buscar
-            </Button>
-          </div>
+          <Button
+            className="w-full text-white font-medium shadow-lg transition-all duration-200 hover:scale-[1.02] bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 border-t border-red-400/20"
+            onClick={handleSearch}
+          >
+            <Search className="w-4 h-4 mr-2" />
+            Buscar
+          </Button>
         </div>
       </div>
     </div>

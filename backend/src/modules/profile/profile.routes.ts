@@ -24,6 +24,7 @@ router.post('/create-missing-verifications', controller.createMissingVerificatio
 router.post('/:id/subscribe', authMiddleware, controller.subscribeProfileController);
 router.post('/:id/purchase-upgrade', authMiddleware, controller.purchaseUpgradeController);
 router.post('/:id/upgrade-plan', authMiddleware, controller.upgradePlanController);
+router.post('/:id/stories', authMiddleware, controller.addStoryController);
 
 // Información de plan y validaciones
 router.get('/:profileId/plan', controller.getProfilePlanInfoController);

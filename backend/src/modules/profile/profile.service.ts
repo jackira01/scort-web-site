@@ -1332,26 +1332,79 @@ export const createMissingVerifications = async (): Promise<{ total: number; cre
   }
 };
 
+export const addStory = async (profileId: string, storyData: { link: string; type: 'image' | 'video'; duration?: number; startTime?: number }) => {
+  const profile = await ProfileModel.findById(profileId).populate('planAssignment.planId');
+  if (!profile) throw new Error('Profile not found');
+
+  // Check plan limits
+  const plan = profile.planAssignment?.planId as any;
+  // If no plan, assume default limits (maybe 0 or small number)
+  const storiesLimit = plan?.contentLimits?.storiesPerDayMax || 0;
+
+  // Count stories from last 24h
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const recentStories = profile.media?.stories?.filter(s => s.createdAt && s.createdAt > oneDayAgo) || [];
+
+  if (recentStories.length >= storiesLimit) {
+    throw new Error(`Has alcanzado el límite diario de historias (${storiesLimit})`);
+  }
+
+  // Add story
+  const updatedProfile = await ProfileModel.findByIdAndUpdate(profileId, {
+    $push: {
+      'media.stories': {
+        ...storyData,
+        createdAt: new Date()
+      }
+    }
+  }, { new: true });
+  
+  return updatedProfile;
+};
+
 export const getProfilesWithStories = async (page: number = 1, limit: number = 10): Promise<{ profiles: IProfile[]; total: number; page: number; limit: number; totalPages: number }> => {
   const skip = (page - 1) * limit;
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  // Filtrar perfiles que tengan al menos una historia en media.stories
-  // Solo seleccionar los campos necesarios: _id, name, media
-  const query = ProfileModel.find({
-    'media.stories': { $exists: true, $ne: [] },
-    isActive: true
-  })
-    .select('_id name media')
-    .skip(skip)
-    .limit(limit)
-    .sort({ createdAt: -1 });
+  const pipeline = [
+    {
+      $match: {
+        isActive: true,
+        'media.stories': {
+          $elemMatch: { createdAt: { $gt: oneDayAgo } }
+        }
+      }
+    },
+    {
+      $project: {
+        name: 1,
+        media: {
+          stories: {
+            $filter: {
+              input: '$media.stories',
+              as: 'story',
+              cond: { $gt: ['$$story.createdAt', oneDayAgo] }
+            }
+          },
+          gallery: 1
+        },
+        user: 1,
+        createdAt: 1
+      }
+    },
+    { $sort: { 'media.stories.createdAt': -1 } as Record<string, 1 | -1> },
+    {
+      $facet: {
+        metadata: [{ $count: "total" }],
+        data: [{ $skip: skip }, { $limit: limit }]
+      }
+    }
+  ];
 
-  const countQuery = ProfileModel.countDocuments({
-    'media.stories': { $exists: true, $ne: [] },
-    isActive: true
-  });
-
-  const [profiles, total] = await Promise.all([query.exec(), countQuery]);
+  const result = await ProfileModel.aggregate(pipeline);
+  
+  const profiles = result[0].data;
+  const total = result[0].metadata[0]?.total || 0;
 
   return {
     profiles,

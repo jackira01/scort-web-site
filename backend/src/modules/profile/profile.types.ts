@@ -3,6 +3,9 @@ import type { Document, Types } from 'mongoose';
 export interface IStories {
     link: string;
     type: 'image' | 'video';
+    duration?: number;
+    startTime?: number;
+    createdAt?: Date;
 }
 
 // Tipo para atributos que soporta tanto string como objeto {key, label}

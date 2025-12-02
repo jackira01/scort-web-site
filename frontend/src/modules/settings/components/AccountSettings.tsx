@@ -43,7 +43,7 @@ const AccountSettings = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
-      <h1 className="text-2xl lg:text-3xl font-bold  bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+      <h1 className="text-2xl lg:text-3xl font-bold  bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">
         Ajustes de Cuenta
       </h1>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -84,7 +84,7 @@ const AccountSettings = () => {
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-foreground flex items-center gap-2">
-              <Shield className="h-5 w-5 text-purple-600" />
+              <Shield className="h-5 w-5 text-red-600" />
               Verificación de Identidad
             </CardTitle>
           </CardHeader>
@@ -119,7 +119,7 @@ const AccountSettings = () => {
             </p>
             <Button
               variant="outline"
-              className="w-full hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:border-purple-500 transition-all duration-200"
+              className="w-full hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-500 transition-all duration-200"
               onClick={() => setIsVerificationModalOpen(true)}
             >
               <Shield className="h-4 w-4 mr-2" />

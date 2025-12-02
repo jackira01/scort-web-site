@@ -158,7 +158,7 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
           {(isCommonUser && (!hasAgencyInfo || !user.agencyInfo?.conversionStatus || isRejected)) ? (
             <Button
               onClick={() => setShowWarningModal(true)}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              className="w-full bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white"
             >
               Solicitar conversión
             </Button>
@@ -201,7 +201,7 @@ const AgencyConversionCard = ({ user }: AgencyConversionCardProps) => {
             <Button
               onClick={handleAcceptConversion}
               disabled={requestConversion.isPending}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white"
             >
               {requestConversion.isPending ? 'Procesando...' : 'Aceptar'}
             </Button>

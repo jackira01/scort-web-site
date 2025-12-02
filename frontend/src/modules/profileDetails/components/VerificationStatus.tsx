@@ -55,7 +55,7 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600"></div>
           </div>
         </CardContent>
       </Card>
@@ -98,6 +98,11 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
       hasData: true
     },
     {
+      label: "Veracidad de fotos del perfil",
+      isVerified: !!data.steps?.mediaVerification?.isVerified,
+      hasData: true
+    },
+    {
       label: "Verificación por videollamada",
       isVerified: !!data.steps?.videoCallRequested?.isVerified,
       hasData: true
@@ -128,7 +133,7 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
             Factores que garantizan la confiabilidad de este perfil:
           </CardTitle>
           <div className="text-right">
-            <div className="text-2xl font-bold text-purple-600">
+            <div className="text-2xl font-bold text-red-600">
               {data.verificationProgress || 0}%
             </div>
             <p className="text-xs text-gray-600 dark:text-gray-400">Progreso de verificación</p>
@@ -162,6 +167,13 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
                   {step.isVerified
                     ? "La identidad del usuario ha sido confirmada mediante video/foto de verificación."
                     : "Este usuario aún no ha completado el video/foto de verificación de identidad."}
+                </p>
+              )}
+              {step.label === "Veracidad de fotos del perfil" && (
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {step.isVerified
+                    ? "Las fotos de perfil corresponden a un video solicitado al usuario."
+                    : "Este usuario aún no ha completado la verificación de veracidad de fotos."}
                 </p>
               )}
               {step.label === "Verificación por videollamada" && (

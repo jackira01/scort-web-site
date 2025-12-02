@@ -194,7 +194,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
           <CardContent className="p-3 sm:hidden lg:p-6 flex-1 flex flex-col justify-between">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h3 className="font-semibold text-sm sm:text-base lg:text-lg text-foreground group-hover:text-purple-600 transition-colors line-clamp-1">
+                <h3 className="font-semibold text-sm sm:text-base lg:text-lg text-foreground group-hover:text-red-600 transition-colors line-clamp-1">
                   {profile.name}
                 </h3>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 text-xs lg:text-sm text-muted-foreground mt-1 space-y-1 sm:space-y-0">
@@ -233,7 +233,7 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
             <div className="mt-2">
               <Button
                 className={`w-full text-white text-xs py-1 ${profile.hasDestacadoUpgrade
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                  ? 'bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700'
                   : 'bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600'
                   }`}
               >

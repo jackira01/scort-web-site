@@ -83,10 +83,8 @@ export const contactRateLimit = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    // Usar IP y User-Agent para identificar al usuario
-    return `${req.ip}-${req.get('User-Agent')}`;
-  }
+  // Se elimina keyGenerator personalizado para evitar error ERR_ERL_KEY_GEN_IPV6
+  // y usar la validación de IP por defecto que es más segura y compatible con IPv6
 });
 
 // Middleware para validar Content-Type en requests POST/PUT

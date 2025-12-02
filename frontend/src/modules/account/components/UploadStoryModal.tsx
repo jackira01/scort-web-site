@@ -23,6 +23,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Slider } from '@/components/ui/slider';
 import { getProfileById, updateProfile } from '@/services/user.service';
 import { uploadMultipleImages, uploadMultipleVideos } from '@/utils/tools';
 
@@ -39,6 +40,9 @@ interface StoryFile {
     file: File;
     type: 'image' | 'video';
     preview: string;
+    duration: number;
+    startTime: number;
+    selectedDuration: number;
 }
 
 export default function UploadStoryModal({
@@ -89,6 +93,9 @@ export default function UploadStoryModal({
                 file,
                 type: isImage ? 'image' : 'video',
                 preview,
+                duration: 0,
+                startTime: 0,
+                selectedDuration: 5 // Default min duration
             };
 
             setSelectedFiles((prev) => [...prev, newStoryFile]);
@@ -96,6 +103,43 @@ export default function UploadStoryModal({
 
         // Limpiar el input
         event.target.value = '';
+    };
+
+    const handleMetadataLoaded = (id: string, duration: number) => {
+        setSelectedFiles(prev => prev.map(f => {
+            if (f.id === id) {
+                return {
+                    ...f,
+                    duration,
+                    startTime: 0,
+                    selectedDuration: Math.min(duration, 60) // Default to max 60s or full video
+                };
+            }
+            return f;
+        }));
+    };
+
+    const handleSliderChange = (id: string, value: number[]) => {
+        const [start] = value;
+        setSelectedFiles(prev => prev.map(f => {
+            if (f.id === id) {
+                // Ensure we don't exceed video duration
+                // If video is 70s, start at 10s -> max duration 60s.
+                // If video is 70s, start at 65s -> max duration 5s.
+                let newDuration = Math.min(f.duration - start, 60);
+                if (newDuration < 5) newDuration = 5; // Enforce min 5s if possible, but if start is too late?
+                
+                // Actually, slider max should prevent starting too late.
+                // Max start time = duration - 5.
+                
+                return {
+                    ...f,
+                    startTime: start,
+                    selectedDuration: newDuration
+                };
+            }
+            return f;
+        }));
     };
 
     const removeFile = (id: string) => {
@@ -124,7 +168,7 @@ export default function UploadStoryModal({
                 .filter((f) => f.type === 'video')
                 .map((f) => f.file);
 
-            let uploadedStories: { link: string; type: 'image' | 'video' }[] = [];
+            let uploadedStories: { link: string; type: 'image' | 'video'; duration?: number; startTime?: number }[] = [];
 
             // Subir imágenes
             if (imageFiles.length > 0) {
@@ -132,7 +176,7 @@ export default function UploadStoryModal({
                 const imageUrls = await uploadMultipleImages(imageFiles);
                 const imageStories = imageUrls
                     .filter((url): url is string => url !== null)
-                    .map((url) => ({ link: url, type: 'image' as const }));
+                    .map((url) => ({ link: url, type: 'image' as const, duration: 5, startTime: 0 }));
                 uploadedStories = [...uploadedStories, ...imageStories];
                 toast.dismiss();
             }
@@ -141,10 +185,22 @@ export default function UploadStoryModal({
             if (videoFiles.length > 0) {
                 toast.loading('Subiendo videos...');
                 const videoResults = await uploadMultipleVideos(videoFiles);
-                const videoStories = videoResults.map((result) => ({
-                    link: result.link,
-                    type: 'video' as const
-                }));
+                
+                // Map results back to selectedFiles to get duration/startTime
+                // Assuming order is preserved or we need to match by some ID? 
+                // uploadMultipleVideos returns { link: string }[], doesn't preserve ID.
+                // But we filtered videoFiles from selectedFiles in order.
+                
+                const videoStories = videoResults.map((result, index) => {
+                    // Find the corresponding selected file (video)
+                    const originalFile = selectedFiles.filter(f => f.type === 'video')[index];
+                    return {
+                        link: result.link,
+                        type: 'video' as const,
+                        duration: originalFile.selectedDuration,
+                        startTime: originalFile.startTime
+                    };
+                });
                 uploadedStories = [...uploadedStories, ...videoStories];
                 toast.dismiss();
             }
@@ -153,23 +209,25 @@ export default function UploadStoryModal({
                 throw new Error('No se pudieron subir los archivos');
             }
 
-            // Combinar historias existentes con las nuevas
-            const allStories = [...currentStories, ...uploadedStories];
+            // Usar el nuevo endpoint para agregar historias una por una (para validar límites)
+            toast.loading('Guardando historias...');
+            
+            for (const story of uploadedStories) {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile/${profileId}/stories`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session?.user?.accessToken || ''}`,
+                        'X-User-ID': session?.user?.id || session?.user?._id || ''
+                    },
+                    body: JSON.stringify(story)
+                });
 
-            // Obtener el perfil completo para preservar todos los datos de media
-            toast.loading('Obteniendo datos del perfil...');
-            const fullProfile = await getProfileById(profileId);
-
-            // Actualizar el perfil con las nuevas historias preservando otros datos
-            toast.loading('Actualizando perfil...');
-            await updateProfile(profileId, {
-                media: {
-                    gallery: fullProfile.media?.gallery || [],
-                    videos: fullProfile.media?.videos || [],
-                    audios: fullProfile.media?.audios || [],
-                    stories: allStories,
-                },
-            });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Error al guardar historia');
+                }
+            }
 
             // Invalidar queries para refrescar los datos
             if (session?.user?._id) {
@@ -190,9 +248,9 @@ export default function UploadStoryModal({
             selectedFiles.forEach((file) => URL.revokeObjectURL(file.preview));
             setSelectedFiles([]);
             onClose();
-        } catch (error: unknown) {
+        } catch (error: any) {
             toast.dismiss();
-            toast.error('Error al subir las historias');
+            toast.error(error.message || 'Error al subir las historias');
         } finally {
             setUploading(false);
         }
@@ -321,11 +379,27 @@ export default function UploadStoryModal({
                                                             className="w-full h-full object-cover"
                                                         />
                                                     ) : (
-                                                        <video
-                                                            src={storyFile.preview}
-                                                            className="w-full h-full object-cover"
-                                                            muted
-                                                        />
+                                                        <div className="w-full h-full flex flex-col">
+                                                            <video
+                                                                src={storyFile.preview}
+                                                                className="w-full h-full object-cover flex-1"
+                                                                muted
+                                                                onLoadedMetadata={(e) => handleMetadataLoaded(storyFile.id, e.currentTarget.duration)}
+                                                            />
+                                                            <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-2 z-10">
+                                                                <p className="text-[10px] text-white mb-1">
+                                                                    Inicio: {storyFile.startTime.toFixed(1)}s | Duración: {storyFile.selectedDuration.toFixed(1)}s
+                                                                </p>
+                                                                <Slider
+                                                                    defaultValue={[0]}
+                                                                    max={Math.max(storyFile.duration - 5, 0)}
+                                                                    step={1}
+                                                                    value={[storyFile.startTime]}
+                                                                    onValueChange={(val) => handleSliderChange(storyFile.id, val)}
+                                                                    className="cursor-pointer"
+                                                                />
+                                                            </div>
+                                                        </div>
                                                     )}
                                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
                                                     <Button

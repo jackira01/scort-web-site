@@ -188,8 +188,8 @@ const HeaderComponent = () => {
                           Mi cuenta
                         </Link>
                       </DropdownMenuItem>
-                      
-                      <DropdownMenuItem 
+
+                      <DropdownMenuItem
                         onClick={handleCreateProfile}
                         disabled={isValidating}
                         className="flex items-center cursor-pointer text-purple-600 dark:text-purple-400 focus:text-purple-700 dark:focus:text-purple-300"
@@ -199,7 +199,7 @@ const HeaderComponent = () => {
                       </DropdownMenuItem>
 
                       <DropdownMenuSeparator />
-                      
+
                       <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-500 focus:text-red-600">
                         <LogOut className="h-4 w-4 mr-2" />
                         Cerrar sesión
@@ -309,7 +309,7 @@ const HeaderComponent = () => {
                         </Link>
                       </DropdownMenuItem>
 
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={handleCreateProfile}
                         disabled={isValidating}
                         className="flex items-center cursor-pointer text-purple-600 dark:text-purple-400 focus:text-purple-700 dark:focus:text-purple-300"

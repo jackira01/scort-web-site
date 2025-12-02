@@ -317,7 +317,7 @@ const ChangePasswordCard = () => {
           
           <Button
             onClick={handleOpenModal}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+            className="w-full bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white"
           >
             Cambiar Contraseña
           </Button>
@@ -329,7 +329,7 @@ const ChangePasswordCard = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Key className="h-5 w-5 text-purple-600" />
+              <Key className="h-5 w-5 text-red-600" />
               {getStepTitle()}
             </DialogTitle>
             <p className="text-sm text-muted-foreground">
@@ -454,7 +454,7 @@ const ChangePasswordCard = () => {
             <Button
               onClick={step === 'email' ? handleSendCode : step === 'code' ? handleVerifyCode : handleChangePassword}
               disabled={isLoading}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white"
             >
               {isLoading ? (
                 <>
