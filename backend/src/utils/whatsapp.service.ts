@@ -94,8 +94,7 @@ export class WhatsAppService {
       `• Email: ${data.userEmail}${planInfo}\n\n` +
       ` *Productos/Servicios:*\n${itemsText}\n\n` +
       ` *Total a pagar: $${data.totalAmount.toLocaleString()}*\n\n` +
-      ` *Vence el:* ${expirationDate}\n\n` +
-      `Por favor, confirma el pago para activar mi perfil. ¡Gracias!`;
+      ` *Factura vence el:* ${expirationDate}\n\n`
   }
 
   /**

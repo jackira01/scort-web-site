@@ -1,7 +1,8 @@
 'use client';
 
-import { Menu, UserRound, ChevronDown, Shield, LogOut } from 'lucide-react';
+import { Menu, UserRound, ChevronDown, Shield, LogOut, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCentralizedSession } from '@/hooks/use-centralized-session';
 import { useState, useEffect } from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -18,15 +19,20 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import SignIn, { SignOut, handleSignOut } from '../authentication/sign-in';
 import Image from 'next/image';
+import toast from 'react-hot-toast';
+import { validateMaxProfiles } from '@/services/profile-validation.service';
 
 const HeaderComponent = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-  const { session, status, isAdmin } = useCentralizedSession();
+  const [isValidating, setIsValidating] = useState(false);
+  const { session, status, isAdmin, userId } = useCentralizedSession();
+  const router = useRouter();
 
   useEffect(() => {
     const controlHeader = () => {
@@ -51,6 +57,37 @@ const HeaderComponent = () => {
     window.addEventListener('scroll', controlHeader);
     return () => window.removeEventListener('scroll', controlHeader);
   }, [lastScrollY]);
+
+  const handleCreateProfile = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation(); // Evitar que se cierre el menú inmediatamente si es necesario
+
+    if (!userId) {
+      toast.error('Debes iniciar sesión para crear un perfil');
+      return;
+    }
+
+    setIsValidating(true);
+
+    try {
+      const validation = await validateMaxProfiles(userId);
+
+      if (!validation.ok) {
+        toast.error(validation.message || 'Has alcanzado el límite de perfiles');
+        return;
+      }
+
+      // Validación pasó, redirigir al wizard
+      router.push('/cuenta/crear-perfil');
+      setMobileMenuOpen(false); // Cerrar menú móvil si está abierto
+
+    } catch (error) {
+      console.error('Error al validar perfiles:', error);
+      toast.error('Error al validar. Intenta nuevamente.');
+    } finally {
+      setIsValidating(false);
+    }
+  };
 
   return (
     <header className={`bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-b sticky top-0 z-50 transition-all duration-500 ease-in-out ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
@@ -134,7 +171,7 @@ const HeaderComponent = () => {
                     <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-56">
                   {isAdmin && (
                     <DropdownMenuItem asChild>
                       <Link href="/adminboard" className="flex items-center">
@@ -151,7 +188,19 @@ const HeaderComponent = () => {
                           Mi cuenta
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                      
+                      <DropdownMenuItem 
+                        onClick={handleCreateProfile}
+                        disabled={isValidating}
+                        className="flex items-center cursor-pointer text-purple-600 dark:text-purple-400 focus:text-purple-700 dark:focus:text-purple-300"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        {isValidating ? 'Validando...' : 'Crear perfil'}
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
+                      
+                      <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-500 focus:text-red-600">
                         <LogOut className="h-4 w-4 mr-2" />
                         Cerrar sesión
                       </DropdownMenuItem>
@@ -242,7 +291,7 @@ const HeaderComponent = () => {
                     <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuContent align="start" className="w-56">
                   {isAdmin && (
                     <DropdownMenuItem asChild>
                       <Link href="/adminboard" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
@@ -259,12 +308,24 @@ const HeaderComponent = () => {
                           Mi cuenta
                         </Link>
                       </DropdownMenuItem>
+
+                      <DropdownMenuItem 
+                        onClick={handleCreateProfile}
+                        disabled={isValidating}
+                        className="flex items-center cursor-pointer text-purple-600 dark:text-purple-400 focus:text-purple-700 dark:focus:text-purple-300"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        {isValidating ? 'Validando...' : 'Crear perfil'}
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
+
                       <DropdownMenuItem
                         onClick={() => {
                           setMobileMenuOpen(false);
                           handleSignOut();
                         }}
-                        className="cursor-pointer"
+                        className="cursor-pointer text-red-500 focus:text-red-600"
                       >
                         <LogOut className="h-4 w-4 mr-2" />
                         Cerrar sesión

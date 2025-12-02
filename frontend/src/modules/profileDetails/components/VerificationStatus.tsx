@@ -187,11 +187,7 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
                       {step.details?.debug?.lastChangeDate ? (
                         <>
                           Se detectó un cambio de teléfono el <strong>{new Date(step.details.debug.lastChangeDate).toLocaleDateString()}</strong>.
-                          El perfil se considerará estable nuevamente el <strong>{(() => {
-                            const d = new Date(step.details.debug.lastChangeDate);
-                            d.setMonth(d.getMonth() + 3);
-                            return d.toLocaleDateString();
-                          })()}</strong>.
+
                         </>
                       ) : (
                         "Se han detectado cambios recientes en los datos de contacto del perfil, lo que puede afectar la confiabilidad."
