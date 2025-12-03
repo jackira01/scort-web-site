@@ -358,7 +358,7 @@ export function Step4Plan() {
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <div className="flex items-center space-x-3 mb-6">
-        <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+        <div className="w-8 h-8 bg-gradient-to-r from-red-600 to-pink-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
           04
         </div>
         <h2 className="text-2xl font-bold text-foreground">Plan</h2>
@@ -369,7 +369,7 @@ export function Step4Plan() {
         <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-lg border border-purple-200/50 dark:border-purple-800/50">
           <div className="flex items-center space-x-2 mb-3">
             <Ticket className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-            <h3 className="text-sm font-semibold text-purple-800 dark:text-purple-200">
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-white">
               ¿Tienes un cupón?
             </h3>
           </div>
@@ -421,13 +421,13 @@ export function Step4Plan() {
                 placeholder="Ingresa tu código"
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                className="flex-1 text-sm bg-white dark:bg-gray-800 border-purple-200 dark:border-purple-700 focus:border-purple-500 dark:focus:border-purple-400 w-full"
+                className="flex-1 text-sm bg-white dark:bg-gray-800 w-full"
                 maxLength={50}
               />
               <Button
                 onClick={handleValidateCoupon}
                 disabled={!couponCode.trim() || validateCouponMutation.isPending}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 text-sm font-medium w-full sm:w-auto"
+                className="bg-gradient-to-r from-red-600 to-pink-500 hover:from-red-700 hover:to-pink-600 text-white px-4 py-2 text-sm font-medium w-full sm:w-auto"
               >
                 {validateCouponMutation.isPending ? 'Validando...' : 'Canjear cupón'}
               </Button>

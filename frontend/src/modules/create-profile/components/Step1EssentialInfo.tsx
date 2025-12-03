@@ -38,7 +38,7 @@ export function Step1EssentialInfo({
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <div className="flex items-center space-x-3 mb-6">
-        <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+        <div className="w-8 h-8 bg-gradient-to-r from-red-600 to-pink-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
           01
         </div>
         <h2 className="text-2xl font-bold text-foreground">
@@ -114,29 +114,6 @@ export function Step1EssentialInfo({
             )}
           </div>
 
-          {/* <div className="flex flex-wrap gap-2 mt-2">
-              {genderGroup.variants
-                .filter((v) => v.active)
-                .map((variant) => (
-                  <Button
-                    key={variant._id}
-                    variant={
-                      gender === variant.value ? 'default' : 'outline'
-                    }
-                    onClick={() => setValue('gender', variant.value)}
-                    className={
-                      gender === variant.value
-                        ? 'bg-green-600 hover:bg-green-700'
-                        : ''
-                    }
-                  >
-                    {gender === variant.value && (
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                    )}
-                    {variant.value}
-                  </Button>
-                ))}
-            </div>  */}
           <div>
             <Label className="text-foreground">
               ¿Dónde quieres que se muestre tu anuncio?{' '}

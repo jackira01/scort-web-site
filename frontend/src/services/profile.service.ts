@@ -28,7 +28,14 @@ export const getProfilesWithStories = async (page: number = 1, limit: number = 1
   return response.data;
 };
 
-export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 10, fields?: string | string[], userId?: string) => {
+export const getAllProfilesForAdmin = async (
+  page: number = 1, 
+  limit: number = 10, 
+  fields?: string | string[], 
+  userId?: string,
+  profileName?: string,
+  profileId?: string
+) => {
   // Convertir fields a array si es string
   const fieldsArray = typeof fields === 'string'
     ? fields.split(',').map(f => f.trim()).filter(Boolean)
@@ -38,7 +45,9 @@ export const getAllProfilesForAdmin = async (page: number = 1, limit: number = 1
     page,
     limit,
     ...(fieldsArray && { fields: fieldsArray }),
-    ...(userId && { userId })
+    ...(userId && { userId }),
+    ...(profileName && { profileName }),
+    ...(profileId && { profileId })
   };
 
   console.log('📡 [ADMIN API] Solicitando perfiles:', payload);

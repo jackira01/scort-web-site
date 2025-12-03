@@ -40,8 +40,8 @@ export default function Sidebar({
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 group animate-in slide-in-from-left-2 ${activeSection === item.id
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  ? 'bg-gradient-to-r from-red-600 to-pink-500 text-white shadow-lg'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                   }`}
                 style={{ animationDelay: `${index * 100}ms` }}
               >

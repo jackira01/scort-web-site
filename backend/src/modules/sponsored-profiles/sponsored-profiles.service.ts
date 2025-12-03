@@ -174,7 +174,7 @@ export const getSponsoredProfiles = async (
 
     // Aplicar filtros de verificación
     if (verification?.identityVerified) {
-      baseFilters['verification.verificationStatus'] = 'verified';
+      baseFilters['verification.verificationStatus'] = 'check';
     }
     if (verification?.hasVideo) {
       baseFilters['media.videos'] = { $exists: true, $ne: [] };

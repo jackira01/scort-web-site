@@ -2478,7 +2478,9 @@ export const getAllProfilesForAdmin = async (
   page: number = 1,
   limit: number = 10,
   fields?: string | string[],
-  userId?: string
+  userId?: string,
+  profileName?: string,
+  profileId?: string
 ): Promise<{
   docs: IProfile[];
   totalDocs: number;
@@ -2496,6 +2498,8 @@ export const getAllProfilesForAdmin = async (
   // Filtro básico
   const filter: any = {};
   if (userId) filter.user = userId;
+  if (profileId) filter._id = profileId;
+  if (profileName) filter.name = { $regex: profileName, $options: 'i' };
 
   let query = ProfileModel.find(filter);
 

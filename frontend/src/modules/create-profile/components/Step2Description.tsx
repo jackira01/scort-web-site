@@ -82,7 +82,7 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <div className="flex items-center space-x-3 mb-6">
-        <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+        <div className="w-8 h-8 bg-gradient-to-r from-red-600 to-pink-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
           02
         </div>
         <h2 className="text-2xl font-bold text-foreground">Descripción</h2>

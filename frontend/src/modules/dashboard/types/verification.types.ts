@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 export interface ProfileVerificationData {
   _id: string;
   profile: string;
-  verificationStatus: 'pending' | 'verified' | 'rejected';
+  verificationStatus: 'pending' | 'check';
   verificationProgress: number;
   data: {
     steps: {

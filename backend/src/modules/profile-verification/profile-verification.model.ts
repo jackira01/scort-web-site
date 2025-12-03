@@ -5,15 +5,10 @@ const ProfileVerificationSchema = new Schema<IProfileVerification>({
     profile: { type: Schema.Types.ObjectId, ref: 'Profile' },
     verificationStatus: {
         type: String,
-        enum: ['pending', 'verified', 'rejected'],
-        default: 'pending',
+        enum: ['pending', 'check'],
+        default: 'check',
     },
     verificationProgress: { type: Number, required: true, default: 0 },
-    accountType: {
-        type: String,
-        enum: ['common', 'agency'],
-        default: 'common'
-    },
     requiresIndependentVerification: {
         type: Boolean,
         default: false

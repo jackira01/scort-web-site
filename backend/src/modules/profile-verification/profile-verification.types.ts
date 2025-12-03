@@ -47,7 +47,7 @@ export interface UpdateVerificationStepsDTO {
 // DTO para crear verificación de perfil
 export interface CreateProfileVerificationDTO {
   profile: Types.ObjectId | string;
-  verificationStatus?: 'pending' | 'verified' | 'rejected';
+  verificationStatus?: 'pending' | 'check';
   steps?: UpdateVerificationStepsDTO;
   verifiedAt?: Date;
   verificationFailedAt?: Date;
@@ -56,7 +56,7 @@ export interface CreateProfileVerificationDTO {
 
 // DTO para actualizar verificación de perfil
 export interface UpdateProfileVerificationDTO {
-  verificationStatus?: 'pending' | 'verified' | 'rejected';
+  verificationStatus?: 'pending' | 'check';
   steps?: UpdateVerificationStepsDTO;
   verifiedAt?: Date;
   verificationFailedAt?: Date;
@@ -65,13 +65,13 @@ export interface UpdateProfileVerificationDTO {
 
 // DTO para actualizar estado de verificación
 export interface UpdateVerificationStatusDTO {
-  status: 'pending' | 'verified' | 'rejected';
+  status: 'pending' | 'check';
   reason?: string;
 }
 
 // DTO para filtros de búsqueda
 export interface ProfileVerificationFiltersDTO {
-  status?: 'pending' | 'verified' | 'rejected';
+  status?: 'pending' | 'check';
   page?: number;
   limit?: number;
   profileId?: string;
@@ -86,7 +86,7 @@ export interface ProfileVerificationResponseDTO {
     name: string;
     user: string;
   };
-  verificationStatus: 'pending' | 'verified' | 'rejected';
+  verificationStatus: 'pending' | 'check';
   verificationProgress: number;
   steps?: {
     frontPhotoVerification?: {

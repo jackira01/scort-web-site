@@ -236,9 +236,8 @@ export interface IProfileInput {
 export interface IProfileVerification extends Document {
     _id: Types.ObjectId;
     profile: Types.ObjectId;
-    verificationStatus: 'pending' | 'verified' | 'rejected';
+    verificationStatus: 'pending' | 'check';
     verificationProgress: number;
-    accountType: 'common' | 'agency';
     requiresIndependentVerification: boolean;
     steps: {
         frontPhotoVerification: {

@@ -64,10 +64,8 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'verified':
+      case 'check':
         return <Badge className="bg-green-100 text-green-800">Verificado</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-100 text-red-800">Rechazado</Badge>;
       default:
         return <Badge className="bg-yellow-100 text-yellow-800">Pendiente</Badge>;
     }
