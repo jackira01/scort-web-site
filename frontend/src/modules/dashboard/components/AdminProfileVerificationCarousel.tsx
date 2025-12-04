@@ -395,89 +395,88 @@ const AdminProfileVerificationCarousel: React.FC<
               </div>
 
             </div>
-          </div>
-        </DialogHeader>
+          </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Social Media Section */}
+          <div className="space-y-6">
+            {/* Social Media Section */}
 
-          {/* Progress indicator */}
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              Paso {currentStepIndex + 1} de {verificationSteps.length}
+            {/* Progress indicator */}
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Paso {currentStepIndex + 1} de {verificationSteps.length}
+              </div>
+              <Badge
+                variant={
+                  getVerifiedCount(verificationData) === verificationSteps.length
+                    ? 'default'
+                    : 'secondary'
+                }
+              >
+                {getVerifiedCount(verificationData)}/{verificationSteps.length} Verificados
+              </Badge>
             </div>
-            <Badge
-              variant={
-                getVerifiedCount(verificationData) === verificationSteps.length
-                  ? 'default'
-                  : 'secondary'
-              }
-            >
-              {getVerifiedCount(verificationData)}/{verificationSteps.length} Verificados
-            </Badge>
-          </div>
 
-          {/* Navigation dots */}
-          <div className="flex justify-center gap-2">
-            {verificationSteps.map((step, index) => (
-              <button
-                type="button"
-                key={`verification-step-${step.key}-${index}`}
-                onClick={() => setCurrentStepIndex(index)}
-                className={`h-2 w-2 rounded-full transition-colors ${index === currentStepIndex
-                  ? 'bg-primary'
-                  : verificationData?.data?.steps?.[verificationSteps[index].key]
-                    ?.isVerified
-                    ? 'bg-green-500'
-                    : 'bg-muted'
-                  }`}
-              />
-            ))}
-          </div>
-
-          {/* Current step card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {currentStep.icon}
-                  {currentStep.label}
-                </div>
-
-                <Badge
-                  variant={
-                    verificationData?.data?.steps?.[currentStep.key]?.isVerified
-                      ? 'default'
-                      : 'secondary'
-                  }
-                >
-                  {verificationData?.data?.steps?.[currentStep.key]?.isVerified ? (
-                    <>
-                      <Check className="h-3 w-3 mr-1" /> Verificado
-                    </>
-                  ) : (
-                    <>
-                      <X className="h-3 w-3 mr-1" /> No Verificado
-                    </>
-                  )}
-                </Badge>
-                <Switch
-                  checked={getCurrentVerificationStatus(currentStep.key, verificationData)}
-                  onCheckedChange={(checked) =>
-                    handleToggleVerification(currentStep.key, checked)
-                  }
-                  disabled={updateVerificationMutation.isPending}
+            {/* Navigation dots */}
+            <div className="flex justify-center gap-2">
+              {verificationSteps.map((step, index) => (
+                <button
+                  type="button"
+                  key={`verification-step-${step.key}-${index}`}
+                  onClick={() => setCurrentStepIndex(index)}
+                  className={`h-2 w-2 rounded-full transition-colors ${index === currentStepIndex
+                    ? 'bg-primary'
+                    : verificationData?.data?.steps?.[verificationSteps[index].key]
+                      ?.isVerified
+                      ? 'bg-green-500'
+                      : 'bg-muted'
+                    }`}
                 />
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {currentStep.description && (
-                <p className="text-sm text-muted-foreground">
-                  {currentStep.description}
-                </p>
-              )}
+              ))}
+            </div>
 
-              {/* <div className="flex items-center justify-between p-4 border rounded-lg">
+            {/* Current step card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {currentStep.icon}
+                    {currentStep.label}
+                  </div>
+
+                  <Badge
+                    variant={
+                      verificationData?.data?.steps?.[currentStep.key]?.isVerified
+                        ? 'default'
+                        : 'secondary'
+                    }
+                  >
+                    {verificationData?.data?.steps?.[currentStep.key]?.isVerified ? (
+                      <>
+                        <Check className="h-3 w-3 mr-1" /> Verificado
+                      </>
+                    ) : (
+                      <>
+                        <X className="h-3 w-3 mr-1" /> No Verificado
+                      </>
+                    )}
+                  </Badge>
+                  <Switch
+                    checked={getCurrentVerificationStatus(currentStep.key, verificationData)}
+                    onCheckedChange={(checked) =>
+                      handleToggleVerification(currentStep.key, checked)
+                    }
+                    disabled={updateVerificationMutation.isPending}
+                  />
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {currentStep.description && (
+                  <p className="text-sm text-muted-foreground">
+                    {currentStep.description}
+                  </p>
+                )}
+
+                {/* <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center gap-3">
                     {currentStep.icon}
                     <div>
@@ -496,281 +495,281 @@ const AdminProfileVerificationCarousel: React.FC<
                   />
                 </div> */}
 
-              {/* Document preview section */}
-              {currentStep.label === 'Redes Sociales' ?
-                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                  <h3 className="text-lg font-semibold">Redes Sociales</h3>
+                {/* Document preview section */}
+                {currentStep.label === 'Redes Sociales' ?
+                  <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                    <h3 className="text-lg font-semibold">Redes Sociales</h3>
 
-                  {(() => {
-                    // Obtener los datos de socialMedia de la verificación
-                    const socialMedia = verificationData?.data?.steps?.socialMedia;
+                    {(() => {
+                      // Obtener los datos de socialMedia de la verificación
+                      const socialMedia = verificationData?.data?.steps?.socialMedia;
 
-                    return socialMedia && (
-                      socialMedia.instagram ||
-                      socialMedia.facebook ||
-                      socialMedia.tiktok ||
-                      socialMedia.twitter ||
-                      socialMedia.onlyFans
-                    ) ? (
-                      <div className="grid gap-4 md:grid-cols-2">
-                        {socialMedia.instagram && (
-                          <Card className="hover:shadow-md transition-shadow">
-                            <CardContent className="p-4">
-                              <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-pink-100 dark:bg-pink-900 rounded-lg">
-                                  <Instagram className="h-6 w-6 text-pink-600 dark:text-pink-400" />
+                      return socialMedia && (
+                        socialMedia.instagram ||
+                        socialMedia.facebook ||
+                        socialMedia.tiktok ||
+                        socialMedia.twitter ||
+                        socialMedia.onlyFans
+                      ) ? (
+                        <div className="grid gap-4 md:grid-cols-2">
+                          {socialMedia.instagram && (
+                            <Card className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="p-2 bg-pink-100 dark:bg-pink-900 rounded-lg">
+                                    <Instagram className="h-6 w-6 text-pink-600 dark:text-pink-400" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <h4 className="font-medium">Instagram</h4>
+                                    <p className="text-sm text-muted-foreground break-all">
+                                      {socialMedia.instagram}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      window.open(`https://www.instagram.com/${socialMedia.instagram}`, "_blank")
+                                    }
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
                                 </div>
-                                <div className="flex-1">
-                                  <h4 className="font-medium">Instagram</h4>
-                                  <p className="text-sm text-muted-foreground break-all">
-                                    {socialMedia.instagram}
-                                  </p>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {socialMedia.facebook && (
+                            <Card className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                                    <Facebook className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <h4 className="font-medium">Facebook</h4>
+                                    <p className="text-sm text-muted-foreground break-all">
+                                      {socialMedia.facebook}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      window.open(`https://www.facebook.com/${socialMedia.facebook}`, "_blank")
+                                    }
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
                                 </div>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    window.open(`https://www.instagram.com/${socialMedia.instagram}`, "_blank")
-                                  }
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {socialMedia.tiktok && (
+                            <Card className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                                    <ExternalLink className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <h4 className="font-medium">TikTok</h4>
+                                    <p className="text-sm text-muted-foreground break-all">
+                                      {socialMedia.tiktok}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      window.open(`https://www.tiktok.com/@${socialMedia.tiktok}`, "_blank")
+                                    }
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {socialMedia.twitter && (
+                            <Card className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="p-2 bg-sky-100 dark:bg-sky-900 rounded-lg">
+                                    <Twitter className="h-6 w-6 text-sky-600 dark:text-sky-400" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <h4 className="font-medium">Twitter</h4>
+                                    <p className="text-sm text-muted-foreground break-all">
+                                      {socialMedia.twitter}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      window.open(`https://twitter.com/${socialMedia.twitter}`, "_blank")
+                                    }
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {socialMedia.onlyFans && (
+                            <Card className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                                    <ExternalLink className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <h4 className="font-medium">OnlyFans</h4>
+                                    <p className="text-sm text-muted-foreground break-all">
+                                      {socialMedia.onlyFans}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      window.open(`https://onlyfans.com/${socialMedia.onlyFans}`, "_blank")
+                                    }
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                        </div>
+                      ) : (
+                        <Card>
+                          <CardContent className="p-8 text-center">
+                            <div className="space-y-3">
+                              <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-full w-fit mx-auto">
+                                <ExternalLink className="h-8 w-8 text-gray-400" />
                               </div>
-                            </CardContent>
-                          </Card>
-                        )}
-
-                        {socialMedia.facebook && (
-                          <Card className="hover:shadow-md transition-shadow">
-                            <CardContent className="p-4">
-                              <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                                  <Facebook className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                                </div>
-                                <div className="flex-1">
-                                  <h4 className="font-medium">Facebook</h4>
-                                  <p className="text-sm text-muted-foreground break-all">
-                                    {socialMedia.facebook}
-                                  </p>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    window.open(`https://www.facebook.com/${socialMedia.facebook}`, "_blank")
-                                  }
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )}
-
-                        {socialMedia.tiktok && (
-                          <Card className="hover:shadow-md transition-shadow">
-                            <CardContent className="p-4">
-                              <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                                  <ExternalLink className="h-6 w-6 text-gray-600 dark:text-gray-400" />
-                                </div>
-                                <div className="flex-1">
-                                  <h4 className="font-medium">TikTok</h4>
-                                  <p className="text-sm text-muted-foreground break-all">
-                                    {socialMedia.tiktok}
-                                  </p>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    window.open(`https://www.tiktok.com/@${socialMedia.tiktok}`, "_blank")
-                                  }
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )}
-
-                        {socialMedia.twitter && (
-                          <Card className="hover:shadow-md transition-shadow">
-                            <CardContent className="p-4">
-                              <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-sky-100 dark:bg-sky-900 rounded-lg">
-                                  <Twitter className="h-6 w-6 text-sky-600 dark:text-sky-400" />
-                                </div>
-                                <div className="flex-1">
-                                  <h4 className="font-medium">Twitter</h4>
-                                  <p className="text-sm text-muted-foreground break-all">
-                                    {socialMedia.twitter}
-                                  </p>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    window.open(`https://twitter.com/${socialMedia.twitter}`, "_blank")
-                                  }
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )}
-
-                        {socialMedia.onlyFans && (
-                          <Card className="hover:shadow-md transition-shadow">
-                            <CardContent className="p-4">
-                              <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                                  <ExternalLink className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                                </div>
-                                <div className="flex-1">
-                                  <h4 className="font-medium">OnlyFans</h4>
-                                  <p className="text-sm text-muted-foreground break-all">
-                                    {socialMedia.onlyFans}
-                                  </p>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    window.open(`https://onlyfans.com/${socialMedia.onlyFans}`, "_blank")
-                                  }
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )}
-
-                      </div>
-                    ) : (
-                      <Card>
-                        <CardContent className="p-8 text-center">
-                          <div className="space-y-3">
-                            <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-full w-fit mx-auto">
-                              <ExternalLink className="h-8 w-8 text-gray-400" />
+                              <h4 className="font-medium text-gray-600 dark:text-gray-400">
+                                No hay redes sociales configuradas
+                              </h4>
+                              <p className="text-sm text-muted-foreground">
+                                Este perfil no ha configurado ninguna red social
+                              </p>
                             </div>
-                            <h4 className="font-medium text-gray-600 dark:text-gray-400">
-                              No hay redes sociales configuradas
-                            </h4>
-                            <p className="text-sm text-muted-foreground">
-                              Este perfil no ha configurado ninguna red social
-                            </p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })()}
-                </div> :
-                (<div className="border rounded-lg p-4">
-                  {(() => {
-                    // Obtener los datos del paso actual desde el objeto steps
-                    const stepData = verificationData?.data?.steps?.[currentStep.key as keyof typeof verificationData.data.steps];
+                          </CardContent>
+                        </Card>
+                      );
+                    })()}
+                  </div> :
+                  (<div className="border rounded-lg p-4">
+                    {(() => {
+                      // Obtener los datos del paso actual desde el objeto steps
+                      const stepData = verificationData?.data?.steps?.[currentStep.key as keyof typeof verificationData.data.steps];
 
-                    return (
-                      <VerificationStepRenderer
-                        step={currentStep}
-                        stepData={stepData}
-                        onPreviewImage={setPreviewImage}
-                        getCurrentVideoLink={(stepKey) => getCurrentVideoLink(stepKey, verificationData)}
-                        handleVideoLinkChange={handleVideoLinkChange}
-                      />
-                    );
-                  })()}
-                </div>)}
-            </CardContent>
-          </Card>
+                      return (
+                        <VerificationStepRenderer
+                          step={currentStep}
+                          stepData={stepData}
+                          onPreviewImage={setPreviewImage}
+                          getCurrentVideoLink={(stepKey) => getCurrentVideoLink(stepKey, verificationData)}
+                          handleVideoLinkChange={handleVideoLinkChange}
+                        />
+                      );
+                    })()}
+                  </div>)}
+              </CardContent>
+            </Card>
 
-          {/* Navigation buttons */}
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              className="flex items-center gap-2"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Anterior
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={handleNext}
-              className="flex items-center gap-2"
-            >
-              Siguiente
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex gap-2 pt-4 border-t">
-            {hasAnyChanges ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleCancelAllChanges}
-                  className="flex-1"
-                  disabled={updateVerificationMutation.isPending || updateProfileMutation.isPending}
-                >
-                  Cancelar cambios
-                </Button>
-                <Button
-                  onClick={handleSaveAllChanges}
-                  className="flex-1"
-                  disabled={
-                    updateVerificationMutation.isPending ||
-                    updateProfileMutation.isPending
-                  }
-                >
-                  {(updateVerificationMutation.isPending || updateProfileMutation.isPending) ? 'Guardando...' : 'Guardar cambios'}
-                </Button>
-              </>
-            ) : (
+            {/* Navigation buttons */}
+            <div className="flex items-center justify-between">
               <Button
                 variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="flex-1"
+                onClick={handlePrevious}
+                className="flex items-center gap-2"
               >
-                Cerrar
+                <ChevronLeft className="h-4 w-4" />
+                Anterior
               </Button>
-            )}
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog >
 
-      {/* Image preview modal - Moved outside main dialog */ }
+              <Button
+                variant="outline"
+                onClick={handleNext}
+                className="flex items-center gap-2"
+              >
+                Siguiente
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-2 pt-4 border-t">
+              {hasAnyChanges ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleCancelAllChanges}
+                    className="flex-1"
+                    disabled={updateVerificationMutation.isPending || updateProfileMutation.isPending}
+                  >
+                    Cancelar cambios
+                  </Button>
+                  <Button
+                    onClick={handleSaveAllChanges}
+                    className="flex-1"
+                    disabled={
+                      updateVerificationMutation.isPending ||
+                      updateProfileMutation.isPending
+                    }
+                  >
+                    {(updateVerificationMutation.isPending || updateProfileMutation.isPending) ? 'Guardando...' : 'Guardar cambios'}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  className="flex-1"
+                >
+                  Cerrar
+                </Button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog >
+
+      {/* Image preview modal - Moved outside main dialog */}
       < Dialog
-  open = {!!previewImage
-}
-onOpenChange = {(open) => {
-  if (!open) setPreviewImage(null);
-}}
+        open={!!previewImage
+        }
+        onOpenChange={(open) => {
+          if (!open) setPreviewImage(null);
+        }}
       >
-  <DialogContent className="max-w-4xl">
-    <DialogHeader>
-      <DialogTitle>Vista previa de imagen</DialogTitle>
-    </DialogHeader>
-    {previewImage && (
-      <div className="flex justify-center">
-        <div className="relative">
-          <CloudinaryImage
-            src={previewImage}
-            alt="Vista previa"
-            width={800}
-            height={600}
-            className="max-w-full max-h-[70vh] object-contain rounded-lg"
-          />
-        </div>
-      </div>
-    )}
-  </DialogContent>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Vista previa de imagen</DialogTitle>
+          </DialogHeader>
+          {previewImage && (
+            <div className="flex justify-center">
+              <div className="relative">
+                <CloudinaryImage
+                  src={previewImage}
+                  alt="Vista previa"
+                  width={800}
+                  height={600}
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                />
+              </div>
+            </div>
+          )}
+        </DialogContent>
       </Dialog >
     </>
   );
