@@ -621,7 +621,7 @@ export default function CreateBlogPage() {
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  
+
                   {/* Selected Categories Badges */}
                   {formData.categories.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">

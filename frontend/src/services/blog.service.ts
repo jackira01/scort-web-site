@@ -71,7 +71,7 @@ class BlogService {
   private getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('authToken'); // Ajustar según tu implementación de auth
     const userId = localStorage.getItem('userId');
-    
+
     return {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),

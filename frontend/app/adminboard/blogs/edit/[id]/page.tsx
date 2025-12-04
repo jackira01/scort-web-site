@@ -162,9 +162,9 @@ export default function EditBlogPage() {
       // Nota: El backend puede devolver 'categories' (array) o 'category' (single legacy)
       // Adaptar según la respuesta real del backend
       const rawCategories = (blog as any).categories || ((blog as any).category ? [(blog as any).category] : []);
-      
-      const categories = Array.isArray(rawCategories) 
-        ? rawCategories.map((c: any) => typeof c === 'object' ? c._id : c) 
+
+      const categories = Array.isArray(rawCategories)
+        ? rawCategories.map((c: any) => typeof c === 'object' ? c._id : c)
         : [];
 
       setFormData({
@@ -715,7 +715,7 @@ export default function EditBlogPage() {
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  
+
                   {/* Selected Categories Badges */}
                   {formData.categories.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">

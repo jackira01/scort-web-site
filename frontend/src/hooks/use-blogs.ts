@@ -147,6 +147,8 @@ export const useCreateBlog = () => {
       // Agregar el nuevo blog al cache
       queryClient.setQueryData(blogKeys.detail(newBlog._id), newBlog);
       queryClient.setQueryData(blogKeys.detail(newBlog.slug), newBlog);
+
+      toast.success('El blog se ha creado exitosamente.');
     },
     onError: (error: any) => {
       toast.error(error.message || 'Error al crear blog. Ocurrió un error inesperado.');

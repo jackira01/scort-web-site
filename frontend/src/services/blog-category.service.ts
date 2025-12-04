@@ -15,7 +15,7 @@ class BlogCategoryService {
   private getAuthHeaders(): HeadersInit {
     // Ensure we are in the browser before accessing localStorage
     if (typeof window === 'undefined') return { 'Content-Type': 'application/json' };
-    
+
     const token = localStorage.getItem('authToken');
     const userId = localStorage.getItem('userId');
 

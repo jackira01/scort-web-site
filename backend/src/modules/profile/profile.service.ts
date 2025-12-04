@@ -383,7 +383,7 @@ export const createProfile = async (data: CreateProfileDTO, skipLimitsValidation
         { _id: profile._id },
         { $set: { verification: verification._id } }
       );
-      
+
       // Actualizar la instancia local del perfil para devolverla completa
       profile.verification = verification._id as any;
     }
@@ -1360,7 +1360,7 @@ export const addStory = async (profileId: string, storyData: { link: string; typ
       }
     }
   }, { new: true });
-  
+
   return updatedProfile;
 };
 
@@ -1404,7 +1404,7 @@ export const getProfilesWithStories = async (page: number = 1, limit: number = 1
   ];
 
   const result = await ProfileModel.aggregate(pipeline);
-  
+
   const profiles = result[0].data;
   const total = result[0].metadata[0]?.total || 0;
 
