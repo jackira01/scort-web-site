@@ -42,6 +42,7 @@ const AdminProfileVerificationCarousel: React.FC<
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isActiveLocal, setIsActiveLocal] = useState<boolean>(true);
+  const [verificationStatusLocal, setVerificationStatusLocal] = useState<string>('pending');
   const queryClient = useQueryClient();
 
   // Fetch verification data using the hook
@@ -54,6 +55,15 @@ const AdminProfileVerificationCarousel: React.FC<
     isLoading: boolean;
     error: any;
   };
+
+  // Sincronizar verificationStatusLocal con los datos de verificación
+  useEffect(() => {
+    if (verificationData?.verificationStatus) {
+      setVerificationStatusLocal(verificationData.verificationStatus);
+    } else if (verificationData?.data?.verificationStatus) {
+      setVerificationStatusLocal(verificationData.data.verificationStatus);
+    }
+  }, [verificationData]);
 
   // Debug log para verificar los datos de verificación
   useEffect(() => {
@@ -116,12 +126,16 @@ const AdminProfileVerificationCarousel: React.FC<
   // Detectar si isActive ha cambiado
   const hasIsActiveChanged = profileData.data?.isActive !== undefined && profileData.data.isActive !== isActiveLocal;
 
-  // Detectar si hay cambios en general (verificación + isActive)
-  const hasAnyChanges = hasChanges || hasIsActiveChanged;
+  // Detectar si verificationStatus ha cambiado
+  const originalVerificationStatus = verificationData?.verificationStatus || verificationData?.data?.verificationStatus || 'pending';
+  const hasVerificationStatusChanged = verificationStatusLocal !== originalVerificationStatus;
+
+  // Detectar si hay cambios en general (verificación + isActive + verificationStatus)
+  const hasAnyChanges = hasChanges || hasIsActiveChanged || hasVerificationStatusChanged;
 
   // Debug log para entender por qué el botón permanece deshabilitado
   useEffect(() => {
-  }, [hasChanges, hasIsActiveChanged, hasAnyChanges, verificationData]);
+  }, [hasChanges, hasIsActiveChanged, hasVerificationStatusChanged, hasAnyChanges, verificationData]);
 
   // Función personalizada para guardar todos los cambios
   const handleSaveAllChanges = async () => {
@@ -129,10 +143,17 @@ const AdminProfileVerificationCarousel: React.FC<
     try {
       // Guardar cambios de isActive si han cambiado
       if (hasIsActiveChanged) {
-        const profileResult = await updateProfileMutation.mutateAsync({ isActive: isActiveLocal });
+        await updateProfileMutation.mutateAsync({ isActive: isActiveLocal });
       }
 
-      // Guardar cambios de verificación si los hay
+      // Guardar cambios de verificationStatus si han cambiado
+      if (hasVerificationStatusChanged) {
+        await updateVerificationMutation.mutateAsync({
+          verificationStatus: verificationStatusLocal
+        });
+      }
+
+      // Guardar cambios de verificación (steps) si los hay
       if (hasChanges) {
         await handleSaveChanges();
       }
@@ -153,6 +174,13 @@ const AdminProfileVerificationCarousel: React.FC<
     // Restaurar isActive al valor original
     if (profileData.data?.isActive !== undefined) {
       setIsActiveLocal(profileData.data.isActive);
+    }
+
+    // Restaurar verificationStatus al valor original
+    if (verificationData?.verificationStatus) {
+      setVerificationStatusLocal(verificationData.verificationStatus);
+    } else if (verificationData?.data?.verificationStatus) {
+      setVerificationStatusLocal(verificationData.data.verificationStatus);
     }
 
     // Cancelar cambios de verificación
@@ -328,21 +356,45 @@ const AdminProfileVerificationCarousel: React.FC<
               )}
             </DialogTitle>
 
-            {/* Toggle para isActive */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg mt-4">
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Estado del perfil
-                </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {isActiveLocal ? 'Perfil activo y visible' : 'Perfil inactivo y oculto'}
-                </span>
+            {/* Switches de estado */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              {/* Toggle para isActive */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Estado del perfil
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {isActiveLocal ? 'Perfil activo y visible' : 'Perfil inactivo y oculto'}
+                  </span>
+                </div>
+                <Switch
+                  checked={isActiveLocal}
+                  onCheckedChange={setIsActiveLocal}
+                  disabled={profileData.isLoading}
+                />
               </div>
-              <Switch
-                checked={isActiveLocal}
-                onCheckedChange={setIsActiveLocal}
-                disabled={profileData.isLoading}
-              />
+
+              {/* Toggle para Verification Status */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Estado de Verificación
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {verificationStatusLocal === 'check' ? 'Verificado' : 'Pendiente'}
+                  </span>
+                </div>
+                <Switch
+                  checked={verificationStatusLocal === 'check'}
+                  onCheckedChange={(checked) => {
+                    setVerificationStatusLocal(checked ? 'check' : 'pending');
+                  }}
+                  disabled={profileData.isLoading}
+                />
+              </div>
+
+              </div>
             </div>
           </DialogHeader>
 
@@ -446,12 +498,12 @@ const AdminProfileVerificationCarousel: React.FC<
 
                 {/* Document preview section */}
                 {currentStep.label === 'Redes Sociales' ?
-                  <div className="space-y-4">
+                  <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
                     <h3 className="text-lg font-semibold">Redes Sociales</h3>
 
                     {(() => {
-                      // Obtener los datos de socialMedia del perfil
-                      const socialMedia = profileData.data?.socialMedia;
+                      // Obtener los datos de socialMedia de la verificación
+                      const socialMedia = verificationData?.data?.steps?.socialMedia;
 
                       return socialMedia && (
                         socialMedia.instagram ||

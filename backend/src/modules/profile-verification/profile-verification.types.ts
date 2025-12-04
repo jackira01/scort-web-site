@@ -6,6 +6,10 @@ export interface UpdateVerificationStepsDTO {
     photo?: string;
     isVerified?: boolean;
   };
+  backPhotoVerification?: {
+    photo?: string;
+    isVerified?: boolean;
+  };
   selfieVerification?: {
     photo?: string;
     isVerified?: boolean;
@@ -20,6 +24,11 @@ export interface UpdateVerificationStepsDTO {
     isVerified?: boolean;
   };
   socialMedia?: {
+    instagram?: string;
+    facebook?: string;
+    tiktok?: string;
+    twitter?: string;
+    onlyFans?: string;
     isVerified?: boolean;
   };
   phoneChangeDetected?: boolean;
@@ -93,6 +102,10 @@ export interface ProfileVerificationResponseDTO {
       photo?: string;
       isVerified?: boolean;
     };
+    backPhotoVerification?: {
+      photo?: string;
+      isVerified?: boolean;
+    };
     selfieVerification?: {
       photo?: string;
       isVerified?: boolean;
@@ -107,6 +120,11 @@ export interface ProfileVerificationResponseDTO {
       isVerified?: boolean;
     };
     socialMedia?: {
+      instagram?: string;
+      facebook?: string;
+      tiktok?: string;
+      twitter?: string;
+      onlyFans?: string;
       isVerified?: boolean;
     };
     phoneChangeDetected?: boolean;

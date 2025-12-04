@@ -120,6 +120,13 @@ export const DashbProfileCard = ({
       </div>
     )}
 
+    {/* Pendiente de Verificación */}
+    {profile.verification?.verificationStatus === 'pending' && (
+       <Badge className="w-fit bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100">
+         Pendiente
+       </Badge>
+    )}
+
   </div>
 </div>
 

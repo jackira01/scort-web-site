@@ -170,7 +170,7 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
               />
               <SocialMediaProfile
                 contact={adaptedProfileData.contact}
-                socialMedia={adaptedProfileData.socialMedia}
+                // socialMedia={adaptedProfileData.socialMedia}
               />
 
               <AccountTypeSection accountType={adaptedProfileData.accountType} />
@@ -207,7 +207,7 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
               />
               <SocialMediaProfile
                 contact={adaptedProfileData.contact}
-                socialMedia={adaptedProfileData.socialMedia}
+                // socialMedia={adaptedProfileData.socialMedia}
               />
 
               <AccountTypeSection accountType={adaptedProfileData.accountType} />

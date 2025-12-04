@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { uploadMultipleImages, uploadMultipleVideos } from '@/utils/tools';
-import { CheckCircle, Upload, AlertCircle, FileImage, Video, Camera, MessageCircle } from 'lucide-react';
+import { CheckCircle, Upload, AlertCircle, FileImage, Video, Camera, MessageCircle, Share2 } from 'lucide-react';
 import axios from '@/lib/axios';
 import {
   getWhatsAppRedirectData,
@@ -25,6 +25,9 @@ const verificationSchema = z.object({
   frontPhotoVerification: z.object({
     photo: z.string().optional(),
   }),
+  backPhotoVerification: z.object({
+    photo: z.string().optional(),
+  }),
   selfieVerification: z.object({
     photo: z.string().optional(),
   }),
@@ -32,6 +35,13 @@ const verificationSchema = z.object({
     mediaLink: z.string().optional(),
     mediaType: z.enum(['video', 'image']).optional(),
   }),
+  socialMedia: z.object({
+    instagram: z.string().optional(),
+    facebook: z.string().optional(),
+    tiktok: z.string().optional(),
+    twitter: z.string().optional(),
+    onlyFans: z.string().optional(),
+  }).optional(),
 });
 
 type VerificationFormData = z.infer<typeof verificationSchema>;
@@ -43,9 +53,10 @@ interface VerificationStepsFormProps {
   onSuccess: () => void;
   profileName?: string;
   userName?: string;
+  initialStep?: number;
 }
 
-export function VerificationStepsForm({ profileId, verificationId, initialData, onSuccess, profileName, userName }: VerificationStepsFormProps) {
+export function VerificationStepsForm({ profileId, verificationId, initialData, onSuccess, profileName, userName, initialStep }: VerificationStepsFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<{ [key: string]: boolean }>({});
   const [currentStep, setCurrentStep] = useState(1);
@@ -58,6 +69,25 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
   } | null>(null);
   const queryClient = useQueryClient();
   const router = useRouter();
+
+  // Refs for scrolling
+  const step1Ref = useRef<HTMLDivElement>(null);
+  const step2Ref = useRef<HTMLDivElement>(null);
+  const step3Ref = useRef<HTMLDivElement>(null);
+  const step4Ref = useRef<HTMLDivElement>(null);
+  const step5Ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (initialStep) {
+      const refs = [step1Ref, step2Ref, step3Ref, step4Ref, step5Ref];
+      const ref = refs[initialStep - 1];
+      if (ref && ref.current) {
+        setTimeout(() => {
+          ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    }
+  }, [initialStep]);
 
   // Obtener número de WhatsApp de la empresa
   useEffect(() => {
@@ -90,11 +120,21 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
       frontPhotoVerification: {
         photo: initialData.frontPhotoVerification?.photo || '',
       },
+      backPhotoVerification: {
+        photo: initialData.backPhotoVerification?.photo || '',
+      },
       selfieVerification: {
         photo: initialData.selfieVerification?.photo || '',
       },
       mediaVerification: {
         mediaLink: initialData.mediaVerification?.mediaLink || initialData.videoVerification?.videoLink || '',
+      },
+      socialMedia: {
+        instagram: initialData.socialMedia?.instagram || '',
+        facebook: initialData.socialMedia?.facebook || '',
+        tiktok: initialData.socialMedia?.tiktok || '',
+        twitter: initialData.socialMedia?.twitter || '',
+        onlyFans: initialData.socialMedia?.onlyFans || '',
       },
     },
   });
@@ -121,19 +161,24 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
   // Determinar el paso actual basado en los datos completados
   useEffect(() => {
     const { photo: frontPhoto } = watchedValues.frontPhotoVerification;
+    const { photo: backPhoto } = watchedValues.backPhotoVerification;
     const { photo: selfiePhoto } = watchedValues.selfieVerification;
     const { mediaLink } = watchedValues.mediaVerification;
+    // Social media is optional/additional, doesn't necessarily block steps, but let's include it in logic if needed
+    // For now, we keep the step logic as is for 1-4
 
     if (!frontPhoto) {
       setCurrentStep(1);
-    } else if (!mediaLink) {
+    } else if (!backPhoto) {
       setCurrentStep(2);
+    } else if (!mediaLink) {
+      setCurrentStep(3);
     } else if (!selfiePhoto) {
-      setCurrentStep(3);
+      setCurrentStep(4);
     } else {
-      setCurrentStep(3);
+      setCurrentStep(5); // Assuming 5 is social media or completion
     }
-  }, [watchedValues.frontPhotoVerification, watchedValues.selfieVerification, watchedValues.mediaVerification]);
+  }, [watchedValues.frontPhotoVerification, watchedValues.backPhotoVerification, watchedValues.selfieVerification, watchedValues.mediaVerification]);
 
   const updateVerificationMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -170,6 +215,8 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
       form.setValue('mediaVerification.mediaLink', tempUrl);
     } else if (fieldName === 'frontPhoto') {
       form.setValue('frontPhotoVerification.photo', tempUrl);
+    } else if (fieldName === 'backPhoto') {
+      form.setValue('backPhotoVerification.photo', tempUrl);
     } else if (fieldName === 'selfiePhoto') {
       form.setValue('selfieVerification.photo', tempUrl);
     }
@@ -178,17 +225,21 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
   };
 
   const onSubmit = async (data: VerificationFormData) => {
-    // Validar que se complete al menos el Paso 1 (foto frontal del documento)
+    // Validar que se complete al menos el Paso 1 y Paso 2
     const { photo: frontPhoto } = data.frontPhotoVerification;
-    const { photo: selfiePhoto } = data.selfieVerification;
-    const { mediaLink } = data.mediaVerification;
+    const { photo: backPhoto } = data.backPhotoVerification;
 
     if (!frontPhoto) {
-      toast.error('Debes completar al menos el Paso 1 (foto frontal del documento)');
+      toast.error('Debes completar el Paso 1 (foto frontal del documento)');
       return;
     }
 
-    // Los pasos 2 y 3 son opcionales - no se requieren para enviar la verificación
+    if (!backPhoto) {
+      toast.error('Debes completar el Paso 2 (foto reverso del documento)');
+      return;
+    }
+
+    // Los pasos 3 y 4 son opcionales
 
     setIsSubmitting(true);
 
@@ -216,17 +267,19 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   uploadedData.mediaVerification.mediaType = 'video';
                 }
               } else {
-                uploadedUrls = (await uploadMultipleImages([file])).filter((url): url is string => url !== null);
-
-                if (uploadedUrls.length > 0) {
-                  uploadedData.mediaVerification.mediaLink = uploadedUrls[0];
-                  uploadedData.mediaVerification.mediaType = 'image';
-                }
+                // Ya no permitimos imágenes en este paso, pero mantenemos la lógica por si acaso
+                toast.error('Solo se permiten videos para este paso');
+                return;
               }
             } else if (fieldName === 'frontPhoto') {
               uploadedUrls = (await uploadMultipleImages([file])).filter((url): url is string => url !== null);
               if (uploadedUrls.length > 0) {
                 uploadedData.frontPhotoVerification.photo = uploadedUrls[0];
+              }
+            } else if (fieldName === 'backPhoto') {
+              uploadedUrls = (await uploadMultipleImages([file])).filter((url): url is string => url !== null);
+              if (uploadedUrls.length > 0) {
+                uploadedData.backPhotoVerification.photo = uploadedUrls[0];
               }
             } else if (fieldName === 'selfiePhoto') {
               uploadedUrls = (await uploadMultipleImages([file])).filter((url): url is string => url !== null);
@@ -246,8 +299,10 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
       // Actualizar la verificación con los datos subidos
       await updateVerificationMutation.mutateAsync({
         frontPhotoVerification: uploadedData.frontPhotoVerification,
+        backPhotoVerification: uploadedData.backPhotoVerification,
         selfieVerification: uploadedData.selfieVerification,
         mediaVerification: uploadedData.mediaVerification,
+        socialMedia: uploadedData.socialMedia,
       });
 
       // Limpiar archivos pendientes después del éxito
@@ -282,7 +337,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
             {hasValue && !isPendingUrl && <CheckCircle className="h-5 w-5 text-green-500" />}
             {hasPendingFile && <Upload className="h-5 w-5 text-orange-500" />}
           </CardTitle>
-          <p className="text-sm text-gray-600">{description}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300">{description}</p>
         </CardHeader>
         <CardContent>
           {hasValue ? (
@@ -322,7 +377,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                 <Input
                   type="file"
-                  accept={fieldName === 'mediaVerification' ? 'video/*,image/*' : 'image/*'}
+                  accept={fieldName === 'mediaVerification' ? 'video/*' : 'image/*'}
                   onChange={(e) => {
                     const files = Array.from(e.target.files || []);
                     if (files.length > 0) {
@@ -335,7 +390,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 />
                 <label
                   htmlFor={`${fieldName}-replace`}
-                  className={`cursor-pointer text-sm text-gray-600 ${!isEnabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                  className={`cursor-pointer text-sm text-gray-600 dark:text-gray-300 ${!isEnabled ? 'cursor-not-allowed opacity-50' : ''}`}
                 >
                   Cambiar archivo
                 </label>
@@ -346,7 +401,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               }`}>
               <Input
                 type="file"
-                accept={fieldName === 'mediaVerification' ? 'video/*,image/*' : 'image/*'}
+                accept={fieldName === 'mediaVerification' ? 'video/*' : 'image/*'}
                 onChange={(e) => {
                   const files = Array.from(e.target.files || []);
                   if (files.length > 0) {
@@ -367,7 +422,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   {isUploading ? 'Subiendo...' : 'Haz clic para seleccionar'}
                 </span>
                 <span className="text-xs text-gray-500">
-                  {fieldName === 'mediaVerification' ? 'Formatos: MP4, MOV, AVI, JPG, PNG, WEBP' : 'Formatos: JPG, PNG, WEBP'}
+                  {fieldName === 'mediaVerification' ? 'Formatos: MP4, MOV, AVI' : 'Formatos: JPG, PNG, WEBP'}
                 </span>
               </label>
             </div>
@@ -384,8 +439,10 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
   };
 
   const isStep1Complete = !!watchedValues.frontPhotoVerification.photo;
-  const isStep2Complete = !!watchedValues.mediaVerification.mediaLink;
-  const isStep3Complete = !!watchedValues.selfieVerification.photo;
+  const isStep2Complete = !!watchedValues.backPhotoVerification.photo;
+  const isStep3Complete = !!watchedValues.mediaVerification.mediaLink;
+  const isStep4Complete = !!watchedValues.selfieVerification.photo;
+  const isStep5Complete = Object.values(watchedValues.socialMedia || {}).some(val => !!val);
 
   return (
     <>
@@ -397,13 +454,13 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               <CardTitle>Progreso de Verificación</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between mb-4">
-                {[1, 2, 3].map((step) => {
+              <div className="flex items-center justify-between mb-4 w-full">
+                {[1, 2, 3, 4, 5].map((step) => {
                   const status = getStepStatus(step);
                   return (
-                    <div key={step} className="flex items-center">
+                    <div key={step} className={`flex items-center ${step < 5 ? 'flex-1' : ''}`}>
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${status === 'completed'
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0 ${status === 'completed'
                           ? 'bg-green-500 text-white'
                           : status === 'current'
                             ? 'bg-purple-500 text-white'
@@ -412,9 +469,9 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                       >
                         {status === 'completed' ? <CheckCircle className="h-4 w-4" /> : step}
                       </div>
-                      {step < 3 && (
+                      {step < 5 && (
                         <div
-                          className={`w-16 h-1 mx-2 ${step < currentStep ? 'bg-green-500' : 'bg-gray-200'
+                          className={`h-1 mx-2 flex-1 ${step < currentStep ? 'bg-green-500' : 'bg-gray-200'
                             }`}
                         />
                       )}
@@ -422,146 +479,263 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   );
                 })}
               </div>
-              <div className="text-sm text-gray-600">
-                Paso {currentStep} de 3: {
+              <div className="text-sm text-gray-600 dark:text-gray-300">
+                Paso {currentStep} de 5: {
                   currentStep === 1 ? 'Documento (frontal)' :
                     currentStep === 2 ? 'Documento (reverso)' :
-                      'Video o foto de verificación'
+                      currentStep === 3 ? 'Video de verificación' :
+                        currentStep === 4 ? 'Foto con documento' :
+                          'Redes Sociales'
                 }
               </div>
             </CardContent>
           </Card>
 
           {/* Step 1: Document Front Photo */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileImage className="h-5 w-5 text-purple-500" />
-                Paso 1: Documento (frontal)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Sube una foto clara del frente de tu documento de identidad
-              </p>
-
-              {/* Imagen guía */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
-                  📋 Ejemplo de documento frontal:
-                </h4>
-                <div className="flex justify-center">
-                  <img
-                    src="/images/Documento frontal.png"
-                    alt="Ejemplo de documento frontal"
-                    className="max-w-full h-auto max-h-48 rounded-lg border border-gray-200 dark:border-gray-700"
-                  />
-                </div>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mt-2 text-center">
-                  Asegúrate de que todos los datos sean legibles y la imagen esté bien iluminada
-                </p>
-              </div>
-
-              {renderFileUpload(
-                'frontPhoto',
-                '',
-                '',
-                <></>,
-                true,
-                watchedValues.frontPhotoVerification.photo
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Step 2: Video o foto de verificación con cartel */}
-          <Card className={`border-2 transition-all duration-300 ${isStep1Complete
-            ? 'border-purple-200 bg-purple-50 dark:bg-purple-950/20'
-            : 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
-            }`}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Video className="h-5 w-5 text-purple-500" />
-                Paso 2: Video o foto de verificación con cartel
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-4">
-                <p className="text-sm text-muted-foreground mb-3">
-                  Sube una foto o video de la persona junto con un cartel con el nombre del perfil y fecha de la solicitud de inscripción registrada
+          <div ref={step1Ref}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileImage className="h-5 w-5 text-purple-500" />
+                  Paso 1: Documento (frontal)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Sube una foto clara del frente de tu documento de identidad
                 </p>
 
-                {/* Imagen de referencia */}
-                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200">
-                  <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
-                    📋 Ejemplo de referencia:
-                  </p>
+                {/* Imagen guía */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                    📋 Ejemplo de documento frontal:
+                  </h4>
                   <div className="flex justify-center">
                     <img
-                      src="/images/perfil con cartel.png"
-                      alt="Ejemplo de foto con cartel"
-                      className="max-w-full h-auto max-h-48 rounded-lg border border-blue-300"
+                      src="/images/Documento frontal.png"
+                      alt="Ejemplo de documento frontal"
+                      className="max-w-full h-auto max-h-48 rounded-lg border border-gray-200 dark:border-gray-700"
                     />
                   </div>
-                  <p className="text-xs text-blue-600 dark:text-blue-300 mt-2 text-center">
-                    La persona debe sostener un cartel con el nombre del perfil y la fecha
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-2 text-center">
+                    Asegúrate de que todos los datos sean legibles y la imagen esté bien iluminada
                   </p>
                 </div>
-              </div>
 
-              {renderFileUpload(
-                'mediaVerification',
-                '',
-                '',
-                <></>,
-                isStep1Complete,
-                watchedValues.mediaVerification.mediaLink
-              )}
-            </CardContent>
-          </Card>
+                {renderFileUpload(
+                  'frontPhoto',
+                  '',
+                  '',
+                  <></>,
+                  true,
+                  watchedValues.frontPhotoVerification.photo
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Step 3: Foto con documento al lado del rostro */}
-          <Card className={`border-2 transition-all duration-300 ${isStep1Complete && isStep2Complete
-            ? 'border-purple-200 bg-purple-50 dark:bg-purple-950/20'
-            : 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
-            }`}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Camera className="h-5 w-5 text-purple-500" />
-                Paso 3: Foto con documento al lado del rostro
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Sube una foto donde la persona sostenga el documento de identidad al lado de su rostro
-              </p>
-
-              {/* Imagen guía */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
-                  📋 Ejemplo de rostro con documento:
-                </h4>
-                <div className="flex justify-center">
-                  <img
-                    src="/images/document guide.png"
-                    alt="Ejemplo de rostro con documento"
-                    className="max-w-full h-auto max-h-48 rounded-lg border border-gray-200 dark:border-gray-700"
-                  />
-                </div>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mt-2 text-center">
-                  La persona debe sostener el documento al lado de su rostro (mismo documento del paso 1)
+          {/* Step 2: Document Back Photo */}
+          <div ref={step2Ref}>
+            <Card className={`border-2 transition-all duration-300 ${isStep1Complete
+              ? 'border-purple-200 bg-purple-50 dark:bg-purple-950/20'
+              : 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
+              }`}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileImage className="h-5 w-5 text-purple-500" />
+                  Paso 2: Documento (reverso)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Sube una foto clara del reverso de tu documento de identidad
                 </p>
-              </div>
 
-              {renderFileUpload(
-                'selfiePhoto',
-                '',
-                '',
-                <></>,
-                isStep1Complete && isStep2Complete,
-                watchedValues.selfieVerification.photo
-              )}
-            </CardContent>
-          </Card>
+                {/* Imagen guía */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                    📋 Ejemplo de documento reverso:
+                  </h4>
+                  <div className="flex justify-center">
+                    <img
+                      src="/images/Documento reverso.png"
+                      alt="Ejemplo de documento reverso"
+                      className="max-w-full h-auto max-h-48 rounded-lg border border-gray-200 dark:border-gray-700"
+                    />
+                  </div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-2 text-center">
+                    Asegúrate de que todos los datos sean legibles y la imagen esté bien iluminada
+                  </p>
+                </div>
+
+                {renderFileUpload(
+                  'backPhoto',
+                  '',
+                  '',
+                  <></>,
+                  isStep1Complete,
+                  watchedValues.backPhotoVerification.photo
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Step 3: Video de verificación con cartel */}
+          <div ref={step3Ref}>
+            <Card className={`border-2 transition-all duration-300 ${isStep1Complete && isStep2Complete
+              ? 'border-purple-200 bg-purple-50 dark:bg-purple-950/20'
+              : 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
+              }`}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Video className="h-5 w-5 text-purple-500" />
+                  Paso 3: Video de verificación con cartel
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <p className="text-sm text-muted-foreground mb-3 text-gray-600 dark:text-gray-300">
+                    Sube un video con un cartel que indique el nombre de tu perfil y la fecha actual.
+                  </p>
+
+                  {/* Imagen de referencia */}
+                  <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200">
+                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                      📋 Ejemplo de referencia:
+                    </p>
+                    <div className="flex justify-center">
+                      <img
+                        src="/images/perfil con cartel.png"
+                        alt="Ejemplo de foto con cartel"
+                        className="max-w-full h-auto max-h-48 rounded-lg border border-blue-300"
+                      />
+                    </div>
+                    <p className="text-xs text-blue-600 dark:text-blue-300 mt-2 text-center">
+                      La persona debe sostener un cartel con el nombre del perfil y la fecha
+                    </p>
+                  </div>
+                </div>
+
+                {renderFileUpload(
+                  'mediaVerification',
+                  '',
+                  '',
+                  <></>,
+                  isStep1Complete && isStep2Complete,
+                  watchedValues.mediaVerification.mediaLink
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Step 4: Foto con documento al lado del rostro */}
+          <div ref={step4Ref}>
+            <Card className={`border-2 transition-all duration-300 ${isStep1Complete && isStep2Complete && isStep3Complete
+              ? 'border-purple-200 bg-purple-50 dark:bg-purple-950/20'
+              : 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
+              }`}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="h-5 w-5 text-purple-500" />
+                  Paso 4: Foto con documento al lado del rostro
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Sube una foto sosteniendo el documento de identidad al lado de tu rostro
+                </p>
+
+                {/* Imagen guía */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                    📋 Ejemplo de rostro con documento:
+                  </h4>
+                  <div className="flex justify-center">
+                    <img
+                      src="/images/document guide.png"
+                      alt="Ejemplo de rostro con documento"
+                      className="max-w-full h-auto max-h-48 rounded-lg border border-gray-200 dark:border-gray-700"
+                    />
+                  </div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-2 text-center">
+                    La persona debe sostener el documento al lado de su rostro (mismo documento del paso 1)
+                  </p>
+                </div>
+
+                {renderFileUpload(
+                  'selfiePhoto',
+                  '',
+                  '',
+                  <></>,
+                  isStep1Complete && isStep2Complete && isStep3Complete,
+                  watchedValues.selfieVerification.photo
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Step 5: Redes Sociales */}
+          <div ref={step5Ref}>
+            <Card className={`border-2 transition-all duration-300 ${isStep1Complete && isStep2Complete && isStep3Complete && isStep4Complete
+              ? 'border-purple-200 bg-purple-50 dark:bg-purple-950/20'
+              : 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
+              }`}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Share2 className="h-5 w-5 text-purple-500" />
+                  Paso 5: Redes Sociales
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                    <p className="text-sm text-amber-800 dark:text-amber-900">
+                      <strong>Importante:</strong> Las redes sociales deben ser visibles (públicas) mientras se realiza el proceso de validación para poder verificar que te pertenecen.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Instagram</label>
+                    <Input
+                      placeholder="@usuario"
+                      {...form.register('socialMedia.instagram')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Facebook</label>
+                    <Input
+                      placeholder="usuario o enlace"
+                      {...form.register('socialMedia.facebook')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">TikTok</label>
+                    <Input
+                      placeholder="@usuario"
+                      {...form.register('socialMedia.tiktok')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Twitter/X</label>
+                    <Input
+                      placeholder="@usuario"
+                      {...form.register('socialMedia.twitter')}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-sm font-medium">OnlyFans</label>
+                    <Input
+                      placeholder="usuario o enlace"
+                      {...form.register('socialMedia.onlyFans')}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Validation Warnings */}
           {isStep1Complete && !isStep2Complete && (
@@ -570,7 +744,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-5 w-5 text-amber-500" />
                   <p className="text-sm text-amber-700 dark:text-amber-300">
-                    <strong>Importante:</strong> Completa el Paso 2 (video o foto de verificación con cartel) para continuar.
+                    <strong>Importante:</strong> Completa el Paso 2 (documento reverso) para continuar.
                   </p>
                 </div>
               </CardContent>
@@ -578,12 +752,25 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
           )}
 
           {isStep2Complete && !isStep3Complete && (
-            <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-amber-500" />
-                  <p className="text-sm text-amber-700 dark:text-amber-300">
-                    <strong>Importante:</strong> Completa al menos el Paso 1 (foto frontal del documento) para enviar la verificación. Los pasos 2 y 3 son opcionales.
+                  <AlertCircle className="h-5 w-5 text-blue-500" />
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <strong>Opcional:</strong> Puedes completar el Paso 3 (video de verificación) para mayor confianza.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {isStep3Complete && !isStep4Complete && (
+            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-blue-500" />
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <strong>Opcional:</strong> Puedes completar el Paso 4 (foto con documento) para mayor confianza.
                   </p>
                 </div>
               </CardContent>
@@ -601,7 +788,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-green-700 dark:text-green-300">
-                  ¿Prefieres verificar tu perfil mediante una videollamada rápida de 1 minuto? Solicita tu cita por WhatsApp.
+                Solicita tu cita por WhatsApp. A mayor grado de verificación, mayor confianza y visibilidad en la plataforma.
                 </p>
                 <Button
                   type="button"
@@ -632,8 +819,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 isSubmitting ||
                 Object.values(uploadingFiles).some(Boolean) ||
                 !isStep1Complete ||
-                !isStep2Complete ||
-                !isStep3Complete
+                !isStep2Complete
               }
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
             >

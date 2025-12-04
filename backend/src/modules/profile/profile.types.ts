@@ -258,8 +258,13 @@ export interface IProfileVerification extends Document {
             isVerified: boolean;
         }; // Meet with profile
         socialMedia: {
+            instagram?: string;
+            facebook?: string;
+            tiktok?: string;
+            twitter?: string;
+            onlyFans?: string;
             isVerified: boolean;
-        }; // Social media verification status only
+        };
         phoneChangeDetected: boolean;
         lastLogin: {
             isVerified: boolean;

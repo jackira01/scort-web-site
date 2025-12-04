@@ -18,6 +18,10 @@ const ProfileVerificationSchema = new Schema<IProfileVerification>({
             photo: { type: String, default: undefined }, // Foto frontal del documento de identidad
             isVerified: { type: Boolean, default: false },
         },
+        backPhotoVerification: {
+            photo: { type: String, default: undefined }, // Foto reverso del documento de identidad
+            isVerified: { type: Boolean, default: false },
+        },
         selfieVerification: {
             photo: { type: String, default: undefined }, // Foto con documento al lado del rostro
             isVerified: { type: Boolean, default: false },
@@ -32,6 +36,11 @@ const ProfileVerificationSchema = new Schema<IProfileVerification>({
             isVerified: { type: Boolean, default: false },
         }, // Meet with profile
         socialMedia: {
+            instagram: { type: String, default: undefined },
+            facebook: { type: String, default: undefined },
+            tiktok: { type: String, default: undefined },
+            twitter: { type: String, default: undefined },
+            onlyFans: { type: String, default: undefined },
             isVerified: { type: Boolean, default: false },
         },
         phoneChangeDetected: {

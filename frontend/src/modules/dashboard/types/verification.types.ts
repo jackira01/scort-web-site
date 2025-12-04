@@ -11,6 +11,10 @@ export interface ProfileVerificationData {
         photo?: string;
         isVerified: boolean;
       };
+      backPhotoVerification: {
+        photo?: string; // Foto reverso del documento de identidad
+        isVerified: boolean;
+      };
       selfieVerification: {
         photo?: string; // Foto con documento al lado del rostro
         isVerified: boolean;

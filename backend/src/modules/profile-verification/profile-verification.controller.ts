@@ -25,6 +25,7 @@ export const getProfileVerificationByProfileId = async (req: Request, res: Respo
     }
 
     const verification = await profileVerificationService.getProfileVerificationByProfileId(profileId);
+    console.log('Fetched verification for profileId:', verification ? 'Found' : 'Not Found');
     console.log('Service returned verification:', !!verification);
     if (verification) {
       console.log('Verification Progress:', verification.verificationProgress);

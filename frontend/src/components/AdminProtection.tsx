@@ -18,6 +18,12 @@ export default function AdminProtection({ children }: AdminProtectionProps) {
   const hasRedirected = useRef(false); // ✅ Prevenir múltiples redirects
 
   useEffect(() => {
+    if (session?.user?.id) {
+      localStorage.setItem('userId', session.user.id);
+    }
+  }, [session]);
+
+  useEffect(() => {
     if (status === 'loading' || hasRedirected.current) return;
 
     if (!session) {

@@ -192,6 +192,15 @@ export const sidebarItems = [
         active: false,
     },
     {
+        id: 'categorias-blog',
+        label: 'Categorías de Blog',
+        icon: Tags,
+        badge: null,
+        description:
+            'Gestiona las categorías para los artículos del blog',
+        active: false,
+    },
+    {
         id: 'noticias',
         label: 'Tablero de Noticias',
         icon: Newspaper,

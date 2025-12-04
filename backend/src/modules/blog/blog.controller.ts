@@ -24,7 +24,8 @@ export class BlogController {
         slug: req.body.slug,
         content: req.body.content,
         coverImage: req.body.coverImage,
-        published: req.body.published !== undefined ? req.body.published : true
+        published: req.body.published !== undefined ? req.body.published : true,
+        categories: req.body.categories
       };
 
       const blog = await BlogService.createBlog(blogData);
@@ -169,6 +170,7 @@ export class BlogController {
       if (req.body.content !== undefined) updateData.content = req.body.content;
       if (req.body.coverImage !== undefined) updateData.coverImage = req.body.coverImage;
       if (req.body.published !== undefined) updateData.published = req.body.published;
+      if (req.body.categories !== undefined) updateData.categories = req.body.categories;
 
       const blog = await BlogService.updateBlog(id, updateData);
 

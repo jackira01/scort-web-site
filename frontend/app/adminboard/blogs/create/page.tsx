@@ -20,6 +20,29 @@ import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 import type { OutputData } from '@editorjs/editorjs';
 import { ImageCropModal } from '../../../../src/components/ImageCropModal';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../../../src/components/ui/select';
+import { blogCategoryService, BlogCategory } from '../../../../src/services/blog-category.service';
+import { Check, ChevronsUpDown, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const BlogRenderer = dynamic(
   () => import('@/components/blog/BlogRenderer'),
@@ -52,6 +75,7 @@ interface BlogFormData {
   coverImage: string;
   coverImageFileId?: string; // ID del archivo pendiente
   published: boolean;
+  categories: string[];
 }
 
 interface BlogFormErrors {
@@ -60,6 +84,7 @@ interface BlogFormErrors {
   content?: string;
   coverImage?: string;
   published?: string;
+  categories?: string;
 }
 
 const initialFormData: BlogFormData = {
@@ -69,6 +94,7 @@ const initialFormData: BlogFormData = {
   coverImage: '',
   coverImageFileId: undefined,
   published: false,
+  categories: [],
 };
 
 export default function CreateBlogPage() {
@@ -86,6 +112,8 @@ export default function CreateBlogPage() {
   const [currentImageUrlToCrop, setCurrentImageUrlToCrop] = useState<string | null>(null);
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [availableCategories, setAvailableCategories] = useState<BlogCategory[]>([]);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
 
   const createBlogMutation = useCreateBlog();
   const { addPendingFile, removePendingFile, uploadAllPendingFiles, getPreviewUrl, clearPendingFiles, processEditorContent } = useDeferredUpload();
@@ -96,6 +124,20 @@ export default function CreateBlogPage() {
       clearPendingFiles();
     };
   }, [clearPendingFiles]);
+
+  // Cargar categorías disponibles
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categories = await blogCategoryService.getAll();
+        setAvailableCategories(categories);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        toast.error('Error al cargar categorías');
+      }
+    };
+    loadCategories();
+  }, []);
 
   const validateForm = (): boolean => {
     const newErrors: BlogFormErrors = {};
@@ -287,6 +329,7 @@ export default function CreateBlogPage() {
         content: processedContent,
         coverImage: finalCoverImage || undefined,
         published: updatedFormData.published,
+        categories: updatedFormData.categories,
       });
 
       toast.success('Blog creado exitosamente');
@@ -328,6 +371,7 @@ export default function CreateBlogPage() {
         content: processedContent,
         coverImage: finalCoverImage || undefined,
         published: false,
+        categories: formData.categories,
       });
 
       toast.success('Borrador guardado exitosamente');
@@ -519,6 +563,87 @@ export default function CreateBlogPage() {
                   </p>
                   {errors.slug && (
                     <p className="text-sm text-red-600 mt-1">{errors.slug}</p>
+                  )}
+                </div>
+
+                {/* Categories */}
+                <div className="space-y-2">
+                  <Label>Categorías</Label>
+                  <Popover open={isCategoryOpen} onOpenChange={setIsCategoryOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={isCategoryOpen}
+                        className="w-full justify-between"
+                      >
+                        {formData.categories.length > 0
+                          ? `${formData.categories.length} seleccionada${formData.categories.length > 1 ? 's' : ''}`
+                          : "Seleccionar categorías..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Buscar categoría..." />
+                        <CommandEmpty>No se encontraron categorías.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandList>
+                            {availableCategories.map((category) => (
+                              <CommandItem
+                                key={category._id}
+                                value={category.name}
+                                onSelect={() => {
+                                  setFormData((prev) => {
+                                    const isSelected = prev.categories.includes(category._id);
+                                    return {
+                                      ...prev,
+                                      categories: isSelected
+                                        ? prev.categories.filter((id) => id !== category._id)
+                                        : [...prev.categories, category._id],
+                                    };
+                                  });
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    formData.categories.includes(category._id)
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                {category.name}
+                              </CommandItem>
+                            ))}
+                          </CommandList>
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  {/* Selected Categories Badges */}
+                  {formData.categories.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.categories.map((catId) => {
+                        const category = availableCategories.find(c => c._id === catId);
+                        if (!category) return null;
+                        return (
+                          <Badge key={catId} variant="secondary" className="flex items-center gap-1">
+                            {category.name}
+                            <X
+                              className="h-3 w-3 cursor-pointer hover:text-destructive"
+                              onClick={() => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  categories: prev.categories.filter(id => id !== catId)
+                                }));
+                              }}
+                            />
+                          </Badge>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
 
