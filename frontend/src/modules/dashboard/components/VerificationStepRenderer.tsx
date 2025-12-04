@@ -62,6 +62,47 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
       );
     }
 
+    case 'backPhotoVerification': {
+      const photoData = stepData as ProfileVerificationData['data']['steps']['backPhotoVerification'];
+      const photoUrl = photoData.photo;
+
+      if (!photoUrl) {
+        return (
+          <div className="mt-4 text-gray-500 text-center">
+            No se ha subido el documento de identidad (reverso).
+          </div>
+        );
+      }
+
+      return (
+        <div className="mt-4">
+          <div className="flex justify-center">
+            <div className="relative group max-w-md">
+              <CloudinaryImage
+                src={photoUrl}
+                alt="Documento de Identidad (Reverso)"
+                width={400}
+                height={300}
+                className="w-full h-auto object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => onPreviewImage(photoUrl)}
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => onPreviewImage(photoUrl)}
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  Ver
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     case 'selfieVerification': {
       const photoData = stepData as ProfileVerificationData['data']['steps']['selfieVerification'];
       const photoUrl = photoData.photo;

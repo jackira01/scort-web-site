@@ -3,12 +3,16 @@ import { ReactNode } from 'react';
 export interface ProfileVerificationData {
   _id: string;
   profile: string;
-  verificationStatus: 'pending' | 'verified' | 'rejected';
+  verificationStatus: 'pending' | 'check';
   verificationProgress: number;
   data: {
     steps: {
       frontPhotoVerification: {
         photo?: string;
+        isVerified: boolean;
+      };
+      backPhotoVerification: {
+        photo?: string; // Foto reverso del documento de identidad
         isVerified: boolean;
       };
       selfieVerification: {

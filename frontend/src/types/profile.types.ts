@@ -30,7 +30,7 @@ export interface ProfileVerification {
   _id?: string;
   isVerified: boolean;
   verifiedAt?: Date;
-  verificationStatus?: 'pending' | 'verified' | 'rejected';
+  verificationStatus?: 'pending' | 'check';
   verificationProgress?: number;
   documents?: {
     type: string;

@@ -242,7 +242,6 @@ export const createProfileVerification = async (verificationData: CreateProfileV
       ...verificationData,
       steps: defaultSteps,
       verificationProgress: 0,
-      accountType,
       requiresIndependentVerification
     };
 
@@ -394,7 +393,7 @@ export const updateVerificationSteps = async (
 // Actualizar estado de verificación
 export const updateVerificationStatus = async (
   verificationId: string | Types.ObjectId,
-  status: 'pending' | 'verified' | 'rejected',
+  status: 'pending' | 'check',
   reason?: string
 ) => {
   try {
@@ -402,11 +401,8 @@ export const updateVerificationStatus = async (
       verificationStatus: status,
     };
 
-    if (status === 'verified') {
+    if (status === 'check') {
       updateData.verifiedAt = new Date();
-    } else if (status === 'rejected' && reason) {
-      updateData.verificationFailedAt = new Date();
-      updateData.verificationFailedReason = reason;
     }
 
     const verification = await ProfileVerification.findByIdAndUpdate(

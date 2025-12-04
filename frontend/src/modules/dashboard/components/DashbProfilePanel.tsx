@@ -27,6 +27,10 @@ export const DashProfilePanel = () => {
   const [limit] = useState(10);
   const [userId, setUserId] = useState<string | undefined>(undefined);
   const [userIdInput, setUserIdInput] = useState('');
+  const [profileNameInput, setProfileNameInput] = useState('');
+  const [profileIdInput, setProfileIdInput] = useState('');
+  const [profileName, setProfileName] = useState<string | undefined>(undefined);
+  const [profileId, setProfileId] = useState<string | undefined>(undefined);
 
   // Obtener usuarios para el selector
   const { data: usersData, isLoading: isLoadingUsers } = useAllUsers(1, 100);
@@ -35,7 +39,14 @@ export const DashProfilePanel = () => {
     data: profilesResponse,
     isLoading,
     error,
-  } = useAdminProfiles(currentPage, limit, '_id,name,profileName,age,isActive,isDeleted,media,featured,location,verification,isVerified,planAssignment,upgrades', userId);
+  } = useAdminProfiles(
+    currentPage, 
+    limit, 
+    '_id,name,profileName,age,isActive,isDeleted,media,featured,location,verification,isVerified,planAssignment,upgrades', 
+    userId,
+    profileName,
+    profileId
+  );
 
   // Extraer los datos de la respuesta del nuevo endpoint
   const profilesData = profilesResponse?.success ? profilesResponse.data : null;
@@ -43,17 +54,29 @@ export const DashProfilePanel = () => {
   // Resetear la página cuando cambia el filtro de usuario
   useEffect(() => {
     setCurrentPage(1);
-  }, [userId]);
+  }, [userId, profileName, profileId]);
 
   // Manejar la búsqueda por ID de usuario
   const handleUserIdSearch = () => {
     setUserId(userIdInput || undefined);
   };
 
+  const handleProfileNameSearch = () => {
+    setProfileName(profileNameInput || undefined);
+  };
+
+  const handleProfileIdSearch = () => {
+    setProfileId(profileIdInput || undefined);
+  };
+
   // Limpiar filtros
   const handleClearFilters = () => {
     setUserId(undefined);
     setUserIdInput('');
+    setProfileName(undefined);
+    setProfileNameInput('');
+    setProfileId(undefined);
+    setProfileIdInput('');
   };
 
   if (isLoading) {
@@ -76,60 +99,99 @@ export const DashProfilePanel = () => {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 p-4 border rounded-lg bg-muted/30">
-        {/* Buscar por ID */}
-        <div className="w-full md:w-1/3 space-y-2">
-          <Label htmlFor="userId">Buscar por ID de usuario</Label>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Input
-              id="userId"
-              placeholder="Ingresa el ID del usuario"
-              value={userIdInput}
-              onChange={(e) => setUserIdInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleUserIdSearch()}
-            />
-            <Button onClick={handleUserIdSearch} variant="secondary" className="w-full sm:w-auto">
-              Buscar
-            </Button>
+      <div className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/30">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Buscar por ID de usuario */}
+          <div className="space-y-2">
+            <Label htmlFor="userId">Buscar por ID de usuario</Label>
+            <div className="flex gap-2">
+              <Input
+                id="userId"
+                placeholder="ID del usuario"
+                value={userIdInput}
+                onChange={(e) => setUserIdInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleUserIdSearch()}
+              />
+              <Button onClick={handleUserIdSearch} variant="secondary" size="icon">
+                <span className="sr-only">Buscar</span>
+                🔍
+              </Button>
+            </div>
+          </div>
+
+          {/* Buscar por Nombre de Perfil */}
+          <div className="space-y-2">
+            <Label htmlFor="profileName">Buscar por Nombre de Perfil</Label>
+            <div className="flex gap-2">
+              <Input
+                id="profileName"
+                placeholder="Nombre del perfil"
+                value={profileNameInput}
+                onChange={(e) => setProfileNameInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleProfileNameSearch()}
+              />
+              <Button onClick={handleProfileNameSearch} variant="secondary" size="icon">
+                <span className="sr-only">Buscar</span>
+                🔍
+              </Button>
+            </div>
+          </div>
+
+          {/* Buscar por ID de Perfil */}
+          <div className="space-y-2">
+            <Label htmlFor="profileId">Buscar por ID de Perfil</Label>
+            <div className="flex gap-2">
+              <Input
+                id="profileId"
+                placeholder="ID del perfil (exacto)"
+                value={profileIdInput}
+                onChange={(e) => setProfileIdInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleProfileIdSearch()}
+              />
+              <Button onClick={handleProfileIdSearch} variant="secondary" size="icon">
+                <span className="sr-only">Buscar</span>
+                🔍
+              </Button>
+            </div>
+          </div>
+
+          {/* Selector de usuario */}
+          <div className="space-y-2">
+            <Label htmlFor="userSelect">Seleccionar Usuario</Label>
+            <Select
+              value={userId || 'all'}
+              onValueChange={(value) => {
+                if (value === 'all') {
+                  setUserId(undefined);
+                  setUserIdInput('');
+                } else {
+                  setUserId(value);
+                  setUserIdInput(value);
+                }
+              }}
+            >
+              <SelectTrigger id="userSelect" className="w-full">
+                <SelectValue placeholder="Seleccionar usuario" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los usuarios</SelectItem>
+                {usersData?.docs?.map((user: any) => (
+                  <SelectItem key={user._id} value={user._id}>
+                    {user.username || user.email || user._id}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        {/* Selector de usuario */}
-        <div className="w-full md:w-1/3 space-y-2">
-          <Label htmlFor="userSelect">Seleccionar Usuario</Label>
-          <Select
-            value={userId || 'all'}
-            onValueChange={(value) => {
-              if (value === 'all') {
-                setUserId(undefined);
-                setUserIdInput('');
-              } else {
-                setUserId(value);
-                setUserIdInput(value);
-              }
-            }}
-          >
-            <SelectTrigger id="userSelect" className="w-full">
-              <SelectValue placeholder="Seleccionar usuario" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los usuarios</SelectItem>
-              {usersData?.docs?.map((user: any) => (
-                <SelectItem key={user._id} value={user._id}>
-                  {user.username || user.email || user._id}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
         {/* Botón limpiar filtros */}
-        {userId && (
-          <div className="w-full md:w-auto flex justify-center md:justify-end">
+        {(userId || profileName || profileId) && (
+          <div className="flex justify-end">
             <Button
               variant="outline"
               onClick={handleClearFilters}
-              className="flex items-center gap-2 w-full sm:w-auto"
+              className="flex items-center gap-2"
             >
               <X className="h-4 w-4" />
               Limpiar filtros

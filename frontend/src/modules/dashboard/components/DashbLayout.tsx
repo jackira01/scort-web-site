@@ -14,6 +14,7 @@ import EmailManager from '@/components/admin/emails/EmailManager';
 import ContentPagesManager from '@/components/admin/content/ContentPagesManager';
 import ContentEditor from '@/components/admin/content/ContentEditor';
 import ProfileFormTipsManager from '@/components/admin/content/ProfileFormTipsManager';
+import { BlogCategoriesManager } from '@/modules/adminboard/components/BlogCategoriesManager';
 import { AdminSidebar } from '@/modules/dashboard/components/AdminSidebar';
 import { AdminOverlay } from '@/modules/dashboard/components/AdminOverlay';
 import { DashProfilePanel } from './DashbProfilePanel';
@@ -94,6 +95,13 @@ export default function DashboardLayout() {
                 return (
                     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
                         <BlogsManager />
+                    </div>
+                );
+
+            case 'categorias-blog':
+                return (
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                        <BlogCategoriesManager />
                     </div>
                 );
 

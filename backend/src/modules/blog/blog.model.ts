@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 
 export interface IBlog extends Document {
   title: string;
@@ -6,6 +6,7 @@ export interface IBlog extends Document {
   content: object; // JSON del Rich Text Editor
   coverImage?: string; // URL de la imagen principal
   published: boolean;
+  categories?: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,7 +45,11 @@ const blogSchema = new Schema<IBlog>(
     published: {
       type: Boolean,
       default: true
-    }
+    },
+    categories: [{
+      type: Schema.Types.ObjectId,
+      ref: 'BlogCategory'
+    }]
   },
   {
     timestamps: true,

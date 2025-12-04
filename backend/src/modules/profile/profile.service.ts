@@ -368,26 +368,28 @@ export const createProfile = async (data: CreateProfileDTO, skipLimitsValidation
 
   // Crear automáticamente una verificación de perfil
   try {
+    // Asegurarse de que tenemos el ID del perfil como string
+    const profileIdStr = (profile._id as any).toString();
 
     const verification = await createProfileVerification({
-      profile: (profile._id as any).toString(),
+      profile: profileIdStr,
       verificationStatus: 'pending',
     });
 
-
-
     // Actualizar el perfil con la referencia a la verificación
     if (verification && verification._id) {
-      const updatedProfile = await ProfileModel.findByIdAndUpdate(
-        profile._id,
-        { verification: verification._id },
-        { new: true },
+      // Usar updateOne para evitar hooks o validaciones innecesarias que puedan fallar
+      await ProfileModel.updateOne(
+        { _id: profile._id },
+        { $set: { verification: verification._id } }
       );
 
+      // Actualizar la instancia local del perfil para devolverla completa
+      profile.verification = verification._id as any;
     }
   } catch (error) {
-    // Error al crear verificación automática
-    // No fallar la creación del perfil si falla la verificación
+    console.error('Error al crear/vincular verificación automática:', error);
+    // No fallar la creación del perfil si falla la verificación, pero loguear el error
   }
 
   return profile;
@@ -1358,7 +1360,7 @@ export const addStory = async (profileId: string, storyData: { link: string; typ
       }
     }
   }, { new: true });
-  
+
   return updatedProfile;
 };
 
@@ -1402,7 +1404,7 @@ export const getProfilesWithStories = async (page: number = 1, limit: number = 1
   ];
 
   const result = await ProfileModel.aggregate(pipeline);
-  
+
   const profiles = result[0].data;
   const total = result[0].metadata[0]?.total || 0;
 
@@ -2478,7 +2480,9 @@ export const getAllProfilesForAdmin = async (
   page: number = 1,
   limit: number = 10,
   fields?: string | string[],
-  userId?: string
+  userId?: string,
+  profileName?: string,
+  profileId?: string
 ): Promise<{
   docs: IProfile[];
   totalDocs: number;
@@ -2496,6 +2500,8 @@ export const getAllProfilesForAdmin = async (
   // Filtro básico
   const filter: any = {};
   if (userId) filter.user = userId;
+  if (profileId) filter._id = profileId;
+  if (profileName) filter.name = { $regex: profileName, $options: 'i' };
 
   let query = ProfileModel.find(filter);
 
@@ -2568,8 +2574,15 @@ export const getAllProfilesForAdmin = async (
   const now = new Date();
   const profiles = rawProfiles.map(profile => {
     let isVerified = false;
+    let verificationStatus = 'unverified';
+
     if (profile.verification) {
       const verification = profile.verification as any;
+
+      if (verification.verificationStatus) {
+        verificationStatus = verification.verificationStatus;
+      }
+
       const verifiedCount = Object.values(verification).filter(status => status === 'verified').length;
       const totalFields = Object.keys(verification).length;
       if (verifiedCount === totalFields && totalFields > 0) {
@@ -2588,6 +2601,7 @@ export const getAllProfilesForAdmin = async (
     return {
       ...profile,
       isVerified,
+      verificationStatus,
       featured,
     };
   }) as unknown as IProfile[];

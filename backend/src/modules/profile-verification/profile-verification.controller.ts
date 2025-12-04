@@ -25,6 +25,7 @@ export const getProfileVerificationByProfileId = async (req: Request, res: Respo
     }
 
     const verification = await profileVerificationService.getProfileVerificationByProfileId(profileId);
+    console.log('Fetched verification for profileId:', verification ? 'Found' : 'Not Found');
     console.log('Service returned verification:', !!verification);
     if (verification) {
       console.log('Verification Progress:', verification.verificationProgress);
@@ -166,10 +167,10 @@ export const updateVerificationStatus = async (req: Request, res: Response) => {
       });
     }
 
-    if (!status || !['pending', 'verified', 'rejected'].includes(status)) {
+    if (!status || !['pending', 'check'].includes(status)) {
       return res.status(400).json({
         success: false,
-        message: 'Estado de verificación inválido. Debe ser: pending, verified o rejected'
+        message: 'Estado de verificación inválido. Debe ser: pending o check'
       });
     }
 
@@ -203,7 +204,7 @@ export const getAllProfileVerifications = async (req: Request, res: Response) =>
     const { status, page, limit } = req.query;
 
     const filters: ProfileVerificationFiltersDTO = {
-      status: status as 'pending' | 'verified' | 'rejected' | undefined,
+      status: status as 'pending' | 'check' | undefined,
       page: page ? parseInt(page as string) : 1,
       limit: limit ? parseInt(limit as string) : 10
     };

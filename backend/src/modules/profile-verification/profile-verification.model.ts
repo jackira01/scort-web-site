@@ -5,15 +5,10 @@ const ProfileVerificationSchema = new Schema<IProfileVerification>({
     profile: { type: Schema.Types.ObjectId, ref: 'Profile' },
     verificationStatus: {
         type: String,
-        enum: ['pending', 'verified', 'rejected'],
-        default: 'pending',
+        enum: ['pending', 'check'],
+        default: 'check',
     },
     verificationProgress: { type: Number, required: true, default: 0 },
-    accountType: {
-        type: String,
-        enum: ['common', 'agency'],
-        default: 'common'
-    },
     requiresIndependentVerification: {
         type: Boolean,
         default: false
@@ -21,6 +16,10 @@ const ProfileVerificationSchema = new Schema<IProfileVerification>({
     steps: {
         frontPhotoVerification: {
             photo: { type: String, default: undefined }, // Foto frontal del documento de identidad
+            isVerified: { type: Boolean, default: false },
+        },
+        backPhotoVerification: {
+            photo: { type: String, default: undefined }, // Foto reverso del documento de identidad
             isVerified: { type: Boolean, default: false },
         },
         selfieVerification: {
@@ -37,6 +36,11 @@ const ProfileVerificationSchema = new Schema<IProfileVerification>({
             isVerified: { type: Boolean, default: false },
         }, // Meet with profile
         socialMedia: {
+            instagram: { type: String, default: undefined },
+            facebook: { type: String, default: undefined },
+            tiktok: { type: String, default: undefined },
+            twitter: { type: String, default: undefined },
+            onlyFans: { type: String, default: undefined },
             isVerified: { type: Boolean, default: false },
         },
         phoneChangeDetected: {

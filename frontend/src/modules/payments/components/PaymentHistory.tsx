@@ -94,7 +94,7 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
   if (error) {
     return (
       <div className={`space-y-6 ${className} `}>
-        <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+        <h1 className="text-2xl lg:text-3xl font-bold text-gray-700 dark:text-white bg-clip-text">
           Historial de Facturas
         </h1>
         <Card className="border-red-200 bg-red-50">
@@ -113,7 +113,7 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
 
   return (
     <div className={`space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500 ${className}`}>
-      <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+      <h1 className="text-2xl lg:text-3xl font-bold text-gray-700 dark:text-white bg-clip-text">
         Historial de Facturas
       </h1>
 
@@ -204,10 +204,10 @@ const PaymentHistory = ({ className }: PaymentHistoryProps) => {
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 El ID de factura ingresado no existe o es inválido
               </p>
-              <Button 
-                onClick={clearFilters} 
-                variant="outline" 
-                size="sm" 
+              <Button
+                onClick={clearFilters}
+                variant="outline"
+                size="sm"
                 className="mt-4"
               >
                 Limpiar filtros

@@ -60,7 +60,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
     notFound();
   }
 
-  const formattedDate = blogService.formatDate(blog.createdAt);
+  const formattedDate = blogService.formatDate(blog.updatedAt);
   const extractedText = blogService.extractTextFromContent(blog.content);
   const readingTime = Math.ceil((extractedText?.length || 0) / 200);
 
@@ -162,7 +162,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
 
                           <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                             <Calendar className="w-3 h-3" />
-                            <span>{blogService.formatDate(relatedBlog.createdAt)}</span>
+                            <span>{blogService.formatDate(relatedBlog.updatedAt)}</span>
                           </div>
                         </div>
                       </div>

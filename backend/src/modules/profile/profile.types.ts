@@ -236,9 +236,8 @@ export interface IProfileInput {
 export interface IProfileVerification extends Document {
     _id: Types.ObjectId;
     profile: Types.ObjectId;
-    verificationStatus: 'pending' | 'verified' | 'rejected';
+    verificationStatus: 'pending' | 'check';
     verificationProgress: number;
-    accountType: 'common' | 'agency';
     requiresIndependentVerification: boolean;
     steps: {
         frontPhotoVerification: {
@@ -259,8 +258,13 @@ export interface IProfileVerification extends Document {
             isVerified: boolean;
         }; // Meet with profile
         socialMedia: {
+            instagram?: string;
+            facebook?: string;
+            tiktok?: string;
+            twitter?: string;
+            onlyFans?: string;
             isVerified: boolean;
-        }; // Social media verification status only
+        };
         phoneChangeDetected: boolean;
         lastLogin: {
             isVerified: boolean;

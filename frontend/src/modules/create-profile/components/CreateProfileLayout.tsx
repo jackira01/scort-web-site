@@ -828,7 +828,7 @@ export function CreateProfileLayout() {
                   ) : (
                     <Button
                       onClick={handleNext}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                      className="bg-gradient-to-r from-red-600 to-pink-500 hover:from-red-700 hover:to-pink-600 text-white"
                     >
                       próximo
                       <ArrowRight className="h-4 w-4 ml-2" />
@@ -848,7 +848,7 @@ export function CreateProfileLayout() {
                 <div
                   key={step.id}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 ${currentStep === step.id
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                    ? 'bg-gradient-to-r from-red-600 to-pink-500 text-white'
                     : currentStep > step.id
                       ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
                       : 'bg-muted text-muted-foreground'

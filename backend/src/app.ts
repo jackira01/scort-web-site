@@ -7,6 +7,7 @@ import { securityMiddleware, generalRateLimit, authRateLimit, publicApiRateLimit
 import { connectDB } from './config/db';
 import attributeGroupRoutes from './modules/attribute-group/attribute-group.routes';
 import blogRoutes from './modules/blog/blog.routes';
+import blogCategoryRoutes from './modules/blog-category/blog-category.routes';
 import cleanupRoutes from './modules/cleanup/cleanup.routes';
 import newsRoutes from './modules/news/news.routes';
 import { configParameterRoutes } from './modules/config-parameter/config-parameter.routes';
@@ -104,6 +105,7 @@ app.get('/', (req, res) => {
 });
 app.use('/api/attribute-groups', attributeGroupRoutes);
 app.use('/api/blogs', blogRoutes);
+app.use('/api/blog-categories', blogCategoryRoutes);
 app.use('/api/cleanup', cleanupRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/config-parameters', configParameterRoutes);

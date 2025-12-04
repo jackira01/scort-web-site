@@ -267,7 +267,7 @@ export default function AccountProfiles({
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+        <h1 className="text-2xl lg:text-3xl font-bold text-gray-700 dark:text-white bg-clip-text">
           Mis Perfiles
         </h1>
         <Button
@@ -328,7 +328,7 @@ export default function AccountProfiles({
 
                 {/* Badge de verificación siempre visible */}
                 <div className="absolute top-3 right-3 z-10 flex space-x-2">
-                  {profile.verification?.verificationStatus === 'Activo' && (
+                  {profile.verification?.verificationStatus === 'check' && (
                     <Badge className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100">
                       <CheckCircle className="h-3 w-3" />
                     </Badge>
@@ -402,7 +402,7 @@ export default function AccountProfiles({
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="p-2 bg-background hover:bg-accent hover:border-purple-500 transition-all duration-200"
+                                className="p-2 bg-white/90 dark:bg-gray-800 hover:bg-white hover:border-blue-500 transition-all duration-200"
                               >
                                 <Edit className="h-4 w-4 text-foreground" />
                               </Button>
@@ -420,7 +420,7 @@ export default function AccountProfiles({
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="p-2 bg-background hover:bg-accent hover:border-green-500 transition-all duration-200"
+                                className="p-2 bg-white/90 dark:bg-gray-800 hover:bg-white hover:border-blue-500 transition-all duration-200"
                               >
                                 <Shield className="h-4 w-4 text-foreground" />
                               </Button>
@@ -439,7 +439,7 @@ export default function AccountProfiles({
                             <Button
                               size="sm"
                               variant="outline"
-                              className="p-2 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-950/40 dark:to-pink-950/40 hover:from-purple-200 hover:to-pink-200 border-purple-300 transition-all duration-200"
+                              className="p-2 bg-white/90 dark:bg-gray-800 hover:bg-white hover:border-blue-500 transition-all duration-200"
                               onClick={() => handleUpgradesClick(profile)}
                             >
                               <Rocket className="h-4 w-4 text-purple-600" />
@@ -460,7 +460,7 @@ export default function AccountProfiles({
                               size="sm"
                               variant="outline"
                               onClick={() => setManagePlansProfileId(profile._id)}
-                              className="p-2 bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200 transition-all duration-200"
+                              className="p-2 bg-white/90 dark:bg-gray-800 hover:bg-white hover:border-blue-500 transition-all duration-200"
                             >
                               <DollarSign className="h-4 w-4" />
                             </Button>
@@ -480,7 +480,7 @@ export default function AccountProfiles({
                                 setSelectedProfileForStory(profile);
                                 setUploadStoryModalOpen(true);
                               }}
-                              className="p-2 bg-white/90 hover:bg-white hover:border-blue-500 transition-all duration-200"
+                              className="p-2 bg-white/90 dark:bg-gray-800 hover:bg-white hover:border-blue-500 transition-all duration-200"
                             >
                               <Upload className="h-4 w-4" />
                             </Button>
@@ -496,7 +496,8 @@ export default function AccountProfiles({
                             <Link href={`/perfil/${createProfileSlug(profile.name, profile._id)}`}>
                               <Button
                                 size="sm"
-                                className="p-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                                variant="outline"
+                                className="p-2 bg-white/90 dark:bg-gray-800 hover:bg-white hover:border-blue-500 transition-all duration-200"
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>

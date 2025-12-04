@@ -19,12 +19,12 @@ interface BlogCardProps {
         slug: string;
         content: object;
         coverImage?: string;
-        createdAt: string;
+        updatedAt: string;
     };
 }
 
 const BlogCard = ({ blog }: BlogCardProps) => {
-    const formattedDate = blogService.formatDate(blog.createdAt);
+    const formattedDate = blogService.formatDate(blog.updatedAt);
     const excerpt = blogService.extractTextFromContent(blog.content);
 
     return (
@@ -111,7 +111,7 @@ const EmptyState = () => (
 const BlogsPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [sortBy, setSortBy] = useState<'createdAt' | 'title'>('createdAt');
+    const [sortBy, setSortBy] = useState<'updatedAt' | 'title'>('updatedAt');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
     const { data, isLoading, error } = usePublishedBlogs({
@@ -173,14 +173,14 @@ const BlogsPage = () => {
                                 value={`${sortBy}-${sortOrder}`}
                                 onChange={(e) => {
                                     const [field, order] = e.target.value.split('-');
-                                    setSortBy(field as 'createdAt' | 'title');
+                                    setSortBy(field as 'updatedAt' | 'title');
                                     setSortOrder(order as 'asc' | 'desc');
                                     setCurrentPage(1);
                                 }}
                                 className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                <option value="createdAt-desc">Más recientes</option>
-                                <option value="createdAt-asc">Más antiguos</option>
+                                <option value="updatedAt-desc">Más recientes</option>
+                                <option value="updatedAt-asc">Más antiguos</option>
                                 <option value="title-asc">Título A-Z</option>
                                 <option value="title-desc">Título Z-A</option>
                             </select>

@@ -16,6 +16,7 @@ interface ProfileVerificationFormProps {
 export function ProfileVerificationForm({ profileId }: ProfileVerificationFormProps) {
   const { data: verificationData, isLoading, error } = useProfileVerification(profileId);
   const [showForm, setShowForm] = useState(false);
+  const [selectedStep, setSelectedStep] = useState<number | undefined>(undefined);
 
   if (isLoading) {
     return (
@@ -64,10 +65,8 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'verified':
+      case 'check':
         return <Badge className="bg-green-100 text-green-800">Verificado</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-100 text-red-800">Rechazado</Badge>;
       default:
         return <Badge className="bg-yellow-100 text-yellow-800">Pendiente</Badge>;
     }
@@ -124,7 +123,10 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div 
+              className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              onClick={() => { setSelectedStep(1); setShowForm(true); }}
+            >
               <div className="flex items-center space-x-3">
                 {getStatusIcon(verification.steps.frontPhotoVerification?.isVerified || false)}
                 <span className="font-medium">Documento de Identidad (Frente)</span>
@@ -134,7 +136,36 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div 
+              className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              onClick={() => { setSelectedStep(2); setShowForm(true); }}
+            >
+              <div className="flex items-center space-x-3">
+                {getStatusIcon(verification.steps.backPhotoVerification?.isVerified || false)}
+                <span className="font-medium">Documento de Identidad (Reverso)</span>
+              </div>
+              <span className="text-sm text-gray-500">
+                {verification.steps.backPhotoVerification?.photo ? 'Completado' : 'Pendiente'}
+              </span>
+            </div>
+
+            <div 
+              className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              onClick={() => { setSelectedStep(3); setShowForm(true); }}
+            >
+              <div className="flex items-center space-x-3">
+                {getStatusIcon(verification.steps.mediaVerification?.isVerified || false)}
+                <span className="font-medium">Video de Verificación</span>
+              </div>
+              <span className="text-sm text-gray-500">
+                {verification.steps.mediaVerification?.mediaLink ? 'Completado' : 'Pendiente'}
+              </span>
+            </div>
+
+            <div 
+              className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              onClick={() => { setSelectedStep(4); setShowForm(true); }}
+            >
               <div className="flex items-center space-x-3">
                 {getStatusIcon(verification.steps.selfieVerification?.isVerified || false)}
                 <span className="font-medium">Foto con Documento al Lado del Rostro</span>
@@ -144,17 +175,10 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                {getStatusIcon(verification.steps.mediaVerification?.isVerified || false)}
-                <span className="font-medium">Video o Foto de Verificación</span>
-              </div>
-              <span className="text-sm text-gray-500">
-                {verification.steps.mediaVerification?.mediaLink ? 'Completado' : 'Pendiente'}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div 
+              className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              onClick={() => { setSelectedStep(5); setShowForm(true); }}
+            >
               <div className="flex items-center space-x-3">
                 {getStatusIcon(verification.steps.socialMedia?.isVerified || false)}
                 <span className="font-medium">Verificación Social</span>
@@ -195,6 +219,7 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
           onSuccess={() => setShowForm(false)}
           profileName={verification.profile?.name}
           userName={verification.profile?.user?.name}
+          initialStep={selectedStep}
         />
       )}
     </div>

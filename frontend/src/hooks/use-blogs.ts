@@ -12,6 +12,7 @@ export interface Blog {
   content: OutputData;
   coverImage?: string;
   published: boolean;
+  categories?: string[] | { _id: string; name: string; slug: string }[];
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +32,7 @@ export interface CreateBlogData {
   content: OutputData;
   coverImage?: string;
   published?: boolean;
+  categories?: string[];
 }
 
 export interface UpdateBlogData {
@@ -39,6 +41,7 @@ export interface UpdateBlogData {
   content?: object;
   coverImage?: string;
   published?: boolean;
+  categories?: string[];
 }
 
 export interface BlogsResponse {

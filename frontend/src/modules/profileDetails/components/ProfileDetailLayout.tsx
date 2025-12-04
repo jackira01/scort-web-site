@@ -80,7 +80,7 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
       if (v && typeof v === 'object' && 'label' in v) return (v as any).label;
       return v || 'ESCORT';
     })(),
-    verified: profile.verification?.verificationStatus === 'verified',
+    verified: profile.verification?.verificationStatus === 'check',
     description: profile.description,
     images: profile.media?.gallery || ['/placeholder.svg?height=400&width=600'],
     videos: (() => {
@@ -170,7 +170,7 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
               />
               <SocialMediaProfile
                 contact={adaptedProfileData.contact}
-                socialMedia={adaptedProfileData.socialMedia}
+                // socialMedia={adaptedProfileData.socialMedia}
               />
 
               <AccountTypeSection accountType={adaptedProfileData.accountType} />
@@ -207,7 +207,7 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
               />
               <SocialMediaProfile
                 contact={adaptedProfileData.contact}
-                socialMedia={adaptedProfileData.socialMedia}
+                // socialMedia={adaptedProfileData.socialMedia}
               />
 
               <AccountTypeSection accountType={adaptedProfileData.accountType} />

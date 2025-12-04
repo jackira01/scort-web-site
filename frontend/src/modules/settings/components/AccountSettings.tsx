@@ -43,7 +43,7 @@ const AccountSettings = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
-      <h1 className="text-2xl lg:text-3xl font-bold  bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">
+      <h1 className="text-2xl lg:text-3xl font-bold text-gray-700 dark:text-white bg-clip-text">
         Ajustes de Cuenta
       </h1>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

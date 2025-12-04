@@ -7,6 +7,7 @@ export interface CreateBlogData {
   content: object;
   coverImage?: string;
   published?: boolean;
+  categories?: string[];
 }
 
 export interface UpdateBlogData {
@@ -15,6 +16,7 @@ export interface UpdateBlogData {
   content?: object;
   coverImage?: string;
   published?: boolean;
+  categories?: string[];
 }
 
 export interface BlogFilters {
@@ -79,7 +81,7 @@ export class BlogService {
         search,
         limit = 10,
         skip = 0,
-        sortBy = 'createdAt',
+        sortBy = 'updatedAt',
         sortOrder = 'desc'
       } = filters;
 
@@ -184,8 +186,7 @@ export class BlogService {
       }
 
       const updateData: UpdateQuery<IBlog> = {
-        ...data,
-        updatedAt: new Date()
+        ...data
       };
 
       const blog = await Blog.findByIdAndUpdate(
@@ -215,7 +216,6 @@ export class BlogService {
       }
 
       blog.published = !blog.published;
-      blog.updatedAt = new Date();
 
       await blog.save();
       return blog;
@@ -237,15 +237,27 @@ export class BlogService {
   }
 
   /**
-   * Obtener blogs relacionados (por ejemplo, los más recientes excluyendo el actual)
+   * Obtener blogs relacionados (por categoría)
    */
   static async getRelatedBlogs(currentBlogId: string, limit: number = 3): Promise<IBlog[]> {
     try {
+      const currentBlog = await Blog.findById(currentBlogId);
+
+      if (!currentBlog) {
+        throw new Error('Blog no encontrado');
+      }
+
+      // Si el blog no tiene categorías, no devolvemos relacionados
+      if (!currentBlog.categories || currentBlog.categories.length === 0) {
+        return [];
+      }
+
       const blogs = await Blog.find({
         _id: { $ne: currentBlogId },
-        published: true
+        published: true,
+        categories: { $in: currentBlog.categories }
       })
-        .sort({ createdAt: -1 })
+        .sort({ updatedAt: -1 })
         .limit(limit)
         .lean();
 
@@ -271,7 +283,7 @@ export class BlogService {
           }
         ]
       })
-        .sort({ score: { $meta: 'textScore' }, createdAt: -1 })
+        .sort({ score: { $meta: 'textScore' }, updatedAt: -1 })
         .limit(limit)
         .lean();
 

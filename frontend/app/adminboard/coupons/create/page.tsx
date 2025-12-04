@@ -471,8 +471,8 @@ export default function CreateCouponPage() {
                               <label
                                 key={variant.days}
                                 className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all ${isSelected
-                                    ? 'bg-blue-50 border-2 border-blue-500 shadow-sm'
-                                    : 'bg-gray-50 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
+                                    ? 'text-gray-800 dark:text-white border-2 border-blue-500 shadow-sm'
+                                    : 'text-gray-800 dark:text-white border-2 border-gray-200'
                                   }`}
                               >
                                 <input
@@ -485,7 +485,7 @@ export default function CreateCouponPage() {
                                   <div className="font-medium text-sm">
                                     {variant.days} días
                                   </div>
-                                  <div className="text-xs text-gray-600">
+                                  <div className="text-xs text-gray-600 dark:text-gray-300">
                                     ${variant.price.toLocaleString()}
                                   </div>
                                 </div>
