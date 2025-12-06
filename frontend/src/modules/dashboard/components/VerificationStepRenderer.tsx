@@ -21,90 +21,87 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
   }
 
   switch (step.key) {
-    case 'frontPhotoVerification': {
-      const photoData = stepData as ProfileVerificationData['data']['steps']['frontPhotoVerification'];
-      const photoUrl = photoData.photo;
-
-      if (!photoUrl) {
-        return (
-          <div className="mt-4 text-gray-500 text-center">
-            No se ha subido el documento de identidad (frente).
-          </div>
-        );
-      }
+    case 'documentVerification': {
+      // Cast to any because types might not be fully updated in frontend yet
+      const docData = stepData as any;
+      const frontPhoto = docData.frontPhoto;
+      const backPhoto = docData.backPhoto;
 
       return (
-        <div className="mt-4">
-          <div className="flex justify-center">
-            <div className="relative group max-w-md">
-              <CloudinaryImage
-                src={photoUrl}
-                alt="Documento de Identidad (Frente)"
-                width={400}
-                height={300}
-                className="w-full h-auto object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => onPreviewImage(photoUrl)}
-              />
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => onPreviewImage(photoUrl)}
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  Ver
-                </Button>
+        <div className="mt-4 space-y-6">
+          {/* Front Photo */}
+          <div>
+            <h4 className="text-sm font-medium mb-2 text-center">Frente</h4>
+            {frontPhoto ? (
+              <div className="flex justify-center">
+                <div className="relative group max-w-md">
+                  <CloudinaryImage
+                    src={frontPhoto}
+                    alt="Documento de Identidad (Frente)"
+                    width={400}
+                    height={300}
+                    className="w-full h-auto object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => onPreviewImage(frontPhoto)}
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => onPreviewImage(frontPhoto)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Ver
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    case 'backPhotoVerification': {
-      const photoData = stepData as ProfileVerificationData['data']['steps']['backPhotoVerification'];
-      const photoUrl = photoData.photo;
-
-      if (!photoUrl) {
-        return (
-          <div className="mt-4 text-gray-500 text-center">
-            No se ha subido el documento de identidad (reverso).
-          </div>
-        );
-      }
-
-      return (
-        <div className="mt-4">
-          <div className="flex justify-center">
-            <div className="relative group max-w-md">
-              <CloudinaryImage
-                src={photoUrl}
-                alt="Documento de Identidad (Reverso)"
-                width={400}
-                height={300}
-                className="w-full h-auto object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => onPreviewImage(photoUrl)}
-              />
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => onPreviewImage(photoUrl)}
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  Ver
-                </Button>
+            ) : (
+              <div className="text-gray-500 text-center">
+                No se ha subido el documento de identidad (frente).
               </div>
-            </div>
+            )}
+          </div>
+
+          {/* Back Photo */}
+          <div>
+            <h4 className="text-sm font-medium mb-2 text-center">Reverso</h4>
+            {backPhoto ? (
+              <div className="flex justify-center">
+                <div className="relative group max-w-md">
+                  <CloudinaryImage
+                    src={backPhoto}
+                    alt="Documento de Identidad (Reverso)"
+                    width={400}
+                    height={300}
+                    className="w-full h-auto object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => onPreviewImage(backPhoto)}
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => onPreviewImage(backPhoto)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Ver
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500 text-center">
+                No se ha subido el documento de identidad (reverso).
+              </div>
+            )}
           </div>
         </div>
       );
     }
 
     case 'selfieVerification': {
-      const photoData = stepData as ProfileVerificationData['data']['steps']['selfieVerification'];
+      const photoData = stepData as any;
       const photoUrl = photoData.photo;
 
       if (!photoUrl) {
@@ -144,9 +141,9 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
       );
     }
 
-    case 'mediaVerification': {
-      const mediaData = stepData as ProfileVerificationData['data']['steps']['mediaVerification'];
-      const currentVideoLink = getCurrentVideoLink('mediaVerification');
+    case 'cartelVerification': {
+      const mediaData = stepData as any;
+      const currentVideoLink = getCurrentVideoLink('cartelVerification');
 
       return (
         <div className="mt-4 space-y-4">
@@ -159,7 +156,7 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
               type="url"
               placeholder="https://..."
               value={currentVideoLink}
-              onChange={(e) => handleVideoLinkChange('mediaVerification', e.target.value)}
+              onChange={(e) => handleVideoLinkChange('cartelVerification', e.target.value)}
               className="w-full"
             />
           </div>
@@ -251,7 +248,7 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
     }
 
     case 'socialMedia': {
-      const socialMediaData = stepData as ProfileVerificationData['data']['steps']['socialMedia'];
+      const socialMediaData = stepData as any;
 
       return (
         <div className="mt-4">

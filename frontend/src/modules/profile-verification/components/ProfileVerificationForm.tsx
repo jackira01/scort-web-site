@@ -128,11 +128,11 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
               onClick={() => { setSelectedStep(1); setShowForm(true); }}
             >
               <div className="flex items-center space-x-3">
-                {getStatusIcon(verification.steps.frontPhotoVerification?.isVerified || false)}
+                {getStatusIcon(verification.steps.documentVerification?.isVerified || false)}
                 <span className="font-medium">Documento de Identidad (Frente)</span>
               </div>
               <span className="text-sm text-gray-500">
-                {verification.steps.frontPhotoVerification?.photo ? 'Completado' : 'Pendiente'}
+                {verification.steps.documentVerification?.frontPhoto ? 'Completado' : 'Pendiente'}
               </span>
             </div>
 
@@ -141,11 +141,11 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
               onClick={() => { setSelectedStep(2); setShowForm(true); }}
             >
               <div className="flex items-center space-x-3">
-                {getStatusIcon(verification.steps.backPhotoVerification?.isVerified || false)}
+                {getStatusIcon(verification.steps.documentVerification?.isVerified || false)}
                 <span className="font-medium">Documento de Identidad (Reverso)</span>
               </div>
               <span className="text-sm text-gray-500">
-                {verification.steps.backPhotoVerification?.photo ? 'Completado' : 'Pendiente'}
+                {verification.steps.documentVerification?.backPhoto ? 'Completado' : 'Pendiente'}
               </span>
             </div>
 
@@ -154,11 +154,11 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
               onClick={() => { setSelectedStep(3); setShowForm(true); }}
             >
               <div className="flex items-center space-x-3">
-                {getStatusIcon(verification.steps.mediaVerification?.isVerified || false)}
-                <span className="font-medium">Video de Verificación</span>
+                {getStatusIcon(verification.steps.cartelVerification?.isVerified || false)}
+                <span className="font-medium">Verificación con Cartel</span>
               </div>
               <span className="text-sm text-gray-500">
-                {verification.steps.mediaVerification?.mediaLink ? 'Completado' : 'Pendiente'}
+                {verification.steps.cartelVerification?.mediaLink ? 'Completado' : 'Pendiente'}
               </span>
             </div>
 

@@ -2,19 +2,16 @@ import type { Types } from 'mongoose';
 
 // DTO para actualizar pasos específicos de verificación (Nueva estructura)
 export interface UpdateVerificationStepsDTO {
-  frontPhotoVerification?: {
-    photo?: string;
-    isVerified?: boolean;
-  };
-  backPhotoVerification?: {
-    photo?: string;
+  documentVerification?: {
+    frontPhoto?: string;
+    backPhoto?: string;
     isVerified?: boolean;
   };
   selfieVerification?: {
     photo?: string;
     isVerified?: boolean;
   };
-  mediaVerification?: {
+  cartelVerification?: {
     mediaLink?: string;
     mediaType?: 'video' | 'image';
     isVerified?: boolean;

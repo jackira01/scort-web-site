@@ -7,19 +7,16 @@ export interface ProfileVerificationData {
   verificationProgress: number;
   data: {
     steps: {
-      frontPhotoVerification: {
-        photo?: string;
-        isVerified: boolean;
-      };
-      backPhotoVerification: {
-        photo?: string; // Foto reverso del documento de identidad
+      documentVerification: {
+        frontPhoto?: string;
+        backPhoto?: string;
         isVerified: boolean;
       };
       selfieVerification: {
         photo?: string; // Foto con documento al lado del rostro
         isVerified: boolean;
       };
-      mediaVerification: {
+      cartelVerification: {
         mediaLink?: string; // Video o foto de verificación con cartel
         mediaType?: 'video' | 'image';
         isVerified: boolean;
@@ -29,6 +26,11 @@ export interface ProfileVerificationData {
         isVerified: boolean;
       };
       socialMedia: {
+        instagram?: string;
+        facebook?: string;
+        tiktok?: string;
+        twitter?: string;
+        onlyFans?: string;
         isVerified: boolean;
       };
       accountAge: {

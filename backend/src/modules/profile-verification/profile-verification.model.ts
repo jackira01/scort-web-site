@@ -14,19 +14,16 @@ const ProfileVerificationSchema = new Schema<IProfileVerification>({
         default: false
     },
     steps: {
-        frontPhotoVerification: {
-            photo: { type: String, default: undefined }, // Foto frontal del documento de identidad
-            isVerified: { type: Boolean, default: false },
-        },
-        backPhotoVerification: {
-            photo: { type: String, default: undefined }, // Foto reverso del documento de identidad
+        documentVerification: {
+            frontPhoto: { type: String, default: undefined }, // Foto frontal del documento de identidad
+            backPhoto: { type: String, default: undefined }, // Foto reverso del documento de identidad
             isVerified: { type: Boolean, default: false },
         },
         selfieVerification: {
             photo: { type: String, default: undefined }, // Foto con documento al lado del rostro
             isVerified: { type: Boolean, default: false },
         },
-        mediaVerification: {
+        cartelVerification: {
             mediaLink: { type: String, default: undefined }, // Paso 2: Video o foto de verificación con cartel
             mediaType: { type: String, enum: ['video', 'image'], default: undefined }, // Tipo de media
             isVerified: { type: Boolean, default: false },

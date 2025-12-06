@@ -240,15 +240,16 @@ export interface IProfileVerification extends Document {
     verificationProgress: number;
     requiresIndependentVerification: boolean;
     steps: {
-        frontPhotoVerification: {
-            photo: string; // Foto frontal del documento de identidad
+        documentVerification: {
+            frontPhoto: string; // Foto frontal del documento de identidad
+            backPhoto: string; // Foto reverso del documento de identidad
             isVerified: boolean;
-        }; // Documento de Identidad (Frente)
+        }; // Documento de Identidad (Frente y Reverso)
         selfieVerification: {
             photo: string; // Foto con documento al lado del rostro
             isVerified: boolean;
         }; // Foto con Documento al Lado del Rostro
-        mediaVerification: {
+        cartelVerification: {
             mediaLink: string; // Video o foto de verificación con cartel
             mediaType: 'video' | 'image'; // Tipo de media
             isVerified: boolean;

@@ -6,9 +6,9 @@ interface UseVerificationChangesReturn {
   pendingChanges: Record<string, boolean>;
   pendingVideoLinks: Record<string, string>;
   handleToggleVerification: (stepKey: keyof ProfileVerificationData['data']['steps'], isVerified: boolean) => void;
-  handleVideoLinkChange: (stepKey: 'videoVerification' | 'videoCallRequested', videoLink: string) => void;
+  handleVideoLinkChange: (stepKey: 'cartelVerification' | 'videoCallRequested', videoLink: string) => void;
   getCurrentVerificationStatus: (stepKey: keyof ProfileVerificationData['data']['steps'], verificationData?: ProfileVerificationData) => boolean;
-  getCurrentVideoLink: (stepKey: 'videoVerification' | 'videoCallRequested', verificationData?: ProfileVerificationData) => string;
+  getCurrentVideoLink: (stepKey: 'cartelVerification' | 'videoCallRequested', verificationData?: ProfileVerificationData) => string;
   resetChanges: () => void;
   buildUpdatedSteps: (verificationData: ProfileVerificationData) => ProfileVerificationData['data']['steps'];
 }
@@ -36,7 +36,7 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
   };
 
   const handleVideoLinkChange = (
-    stepKey: 'mediaVerification' | 'videoCallRequested',
+    stepKey: 'cartelVerification' | 'videoCallRequested',
     videoLink: string
   ) => {
     setPendingVideoLinks(prev => ({
@@ -61,14 +61,14 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
   };
 
   const getCurrentVideoLink = (
-    stepKey: 'mediaVerification' | 'videoCallRequested',
+    stepKey: 'cartelVerification' | 'videoCallRequested',
     verificationData?: ProfileVerificationData
   ) => {
     if (stepKey in pendingVideoLinks) {
       return pendingVideoLinks[stepKey];
     }
 
-    if (stepKey === 'mediaVerification') {
+    if (stepKey === 'cartelVerification') {
       return verificationData?.data?.steps?.[stepKey]?.mediaLink || '';
     }
 
@@ -126,10 +126,10 @@ export const useVerificationChanges = (): UseVerificationChangesReturn => {
 
     // Aplicar cambios pendientes de video links
     Object.entries(pendingVideoLinks).forEach(([stepKey, videoLink]) => {
-      const key = stepKey as 'mediaVerification' | 'videoCallRequested';
+      const key = stepKey as 'cartelVerification' | 'videoCallRequested';
       if (updatedSteps[key]) {
 
-        if (key === 'mediaVerification' && 'mediaLink' in updatedSteps[key]) {
+        if (key === 'cartelVerification' && 'mediaLink' in updatedSteps[key]) {
           updatedSteps[key] = {
             ...updatedSteps[key],
             mediaLink: videoLink

@@ -27,7 +27,7 @@ import { Switch } from '@/components/ui/switch';
 import { useProfileVerification } from '@/hooks/use-profile-verification';
 import { useProfile } from '@/hooks/use-profile';
 import CloudinaryImage from '@/components/CloudinaryImage';
-import { useProfileVerificationMutation } from '../hooks/useProfileVerificationMutation';
+import { useProfileVerificationMutation, useUpdateVerificationStatusMutation } from '../hooks/useProfileVerificationMutation';
 import { useUpdateProfileMutation } from '../hooks/useUpdateProfileMutation';
 import { useVerificationChanges } from '../hooks/useVerificationChanges';
 import { verificationSteps, getVerifiedCount } from '../config/verificationSteps.config';
@@ -56,32 +56,15 @@ const AdminProfileVerificationCarousel: React.FC<
     error: any;
   };
 
+  // Robust ID extraction
+  const verificationId = (verificationData as any)?.data?._id || (verificationData as any)?._id;
+
   // Sincronizar verificationStatusLocal con los datos de verificación
   useEffect(() => {
     if (verificationData?.verificationStatus) {
       setVerificationStatusLocal(verificationData.verificationStatus);
-    } else if (verificationData?.data?.verificationStatus) {
-      setVerificationStatusLocal(verificationData.data.verificationStatus);
-    }
-  }, [verificationData]);
-
-  // Debug log para verificar los datos de verificación
-  useEffect(() => {
-    if (verificationData) {
-
-
-      // Si tiene la estructura { success: true, data: { _id, steps, ... } }
-      if (verificationData.success && verificationData.data) {
-
-        if (verificationData.data.steps) {
-          Object.entries(verificationData.data.steps).forEach(([stepKey, stepValue]) => {
-          });
-        }
-      }
-      // Si tiene la estructura directa { _id, data: { steps: ... } }
-      else if (verificationData._id && verificationData.data) {
-
-      }
+    } else if ((verificationData as any)?.data?.verificationStatus) {
+      setVerificationStatusLocal((verificationData as any).data.verificationStatus);
     }
   }, [verificationData]);
 
@@ -102,7 +85,16 @@ const AdminProfileVerificationCarousel: React.FC<
   // Mutation hook for updating verification
   const updateVerificationMutation = useProfileVerificationMutation({
     profileId,
-    verificationId: verificationData?.data?._id,
+    verificationId,
+    onSuccess: () => {
+      // Callback adicional si es necesario
+    }
+  });
+
+  // Mutation hook for updating verification status
+  const updateVerificationStatusMutation = useUpdateVerificationStatusMutation({
+    profileId,
+    verificationId,
     onSuccess: () => {
       // Callback adicional si es necesario
     }
@@ -127,15 +119,11 @@ const AdminProfileVerificationCarousel: React.FC<
   const hasIsActiveChanged = profileData.data?.isActive !== undefined && profileData.data.isActive !== isActiveLocal;
 
   // Detectar si verificationStatus ha cambiado
-  const originalVerificationStatus = verificationData?.verificationStatus || verificationData?.data?.verificationStatus || 'pending';
+  const originalVerificationStatus = verificationData?.verificationStatus || (verificationData as any)?.data?.verificationStatus || 'pending';
   const hasVerificationStatusChanged = verificationStatusLocal !== originalVerificationStatus;
 
   // Detectar si hay cambios en general (verificación + isActive + verificationStatus)
   const hasAnyChanges = hasChanges || hasIsActiveChanged || hasVerificationStatusChanged;
-
-  // Debug log para entender por qué el botón permanece deshabilitado
-  useEffect(() => {
-  }, [hasChanges, hasIsActiveChanged, hasVerificationStatusChanged, hasAnyChanges, verificationData]);
 
   // Función personalizada para guardar todos los cambios
   const handleSaveAllChanges = async () => {
@@ -148,7 +136,7 @@ const AdminProfileVerificationCarousel: React.FC<
 
       // Guardar cambios de verificationStatus si han cambiado
       if (hasVerificationStatusChanged) {
-        await updateVerificationMutation.mutateAsync({
+        await updateVerificationStatusMutation.mutateAsync({
           verificationStatus: verificationStatusLocal
         });
       }
@@ -179,8 +167,8 @@ const AdminProfileVerificationCarousel: React.FC<
     // Restaurar verificationStatus al valor original
     if (verificationData?.verificationStatus) {
       setVerificationStatusLocal(verificationData.verificationStatus);
-    } else if (verificationData?.data?.verificationStatus) {
-      setVerificationStatusLocal(verificationData.data.verificationStatus);
+    } else if ((verificationData as any)?.data?.verificationStatus) {
+      setVerificationStatusLocal((verificationData as any).data.verificationStatus);
     }
 
     // Cancelar cambios de verificación
@@ -205,33 +193,9 @@ const AdminProfileVerificationCarousel: React.FC<
 
   // Save and cancel functions
   const handleSaveChanges = async () => {
-    // Debug: Verificar datos antes de guarda
-
     // Verificar si tenemos datos de verificación válidos
     if (!verificationData) {
       toast.error('No se puede guardar: datos de verificación no disponibles');
-      return;
-    }
-
-    // Extraer datos correctamente según la estructura del backend
-    let actualVerificationData;
-    let verificationId;
-
-    // La estructura del backend siempre es { success: true, data: { _id, ... } }
-    if (verificationData.success && verificationData.data?._id) {
-      actualVerificationData = verificationData.data;
-      verificationId = verificationData.data._id;
-
-    }
-    // Fallback para estructura directa (no debería ocurrir con el backend actual)
-    else if (verificationData._id && verificationData.steps) {
-      actualVerificationData = verificationData;
-      verificationId = verificationData._id;
-    }
-    else {
-      if (verificationData?.data) {
-      }
-      toast.error('Estructura de datos de verificación inválida');
       return;
     }
 
@@ -241,27 +205,14 @@ const AdminProfileVerificationCarousel: React.FC<
       return;
     }
 
-    // Verificar si tenemos steps válidos (considerando estructura anidada)
-    const stepsData = actualVerificationData?.data?.steps || actualVerificationData?.steps;
-    if (!stepsData) {
-
-      toast.error('No se puede guardar: datos de steps no disponibles');
-      return;
-    }
-
     try {
       const updatedSteps = buildUpdatedSteps(verificationData);
-
-      const result = await updateVerificationMutation.mutateAsync(updatedSteps);
+      await updateVerificationMutation.mutateAsync(updatedSteps);
       resetChanges();
     } catch (error) {
       console.error('❌ Error al guardar cambios de verificación:', error);
       toast.error('Error al guardar los cambios de verificación');
     }
-  };
-
-  const handleCancelChanges = () => {
-    resetChanges();
   };
 
   // Loading and error states
@@ -336,18 +287,14 @@ const AdminProfileVerificationCarousel: React.FC<
               <span>Verificación de Perfil - {profileName}</span>
               <Badge
                 variant={
-                  verificationData?.verificationStatus === 'verified'
+                  verificationData?.verificationStatus === 'check'
                     ? 'default'
-                    : verificationData?.verificationStatus === 'rejected'
-                      ? 'destructive'
-                      : 'secondary'
+                    : 'secondary'
                 }
               >
-                {verificationData?.verificationStatus === 'verified'
+                {verificationData?.verificationStatus === 'check'
                   ? 'Verificado'
-                  : verificationData?.verificationStatus === 'rejected'
-                    ? 'Rechazado'
-                    : 'Pendiente'}
+                  : 'Pendiente'}
               </Badge>
               {hasChanges && (
                 <Badge variant="outline" className="text-orange-600 border-orange-600">
@@ -398,8 +345,6 @@ const AdminProfileVerificationCarousel: React.FC<
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* Social Media Section */}
-
             {/* Progress indicator */}
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
@@ -476,25 +421,6 @@ const AdminProfileVerificationCarousel: React.FC<
                   </p>
                 )}
 
-                {/* <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {currentStep.icon}
-                    <div>
-                      <div className="font-medium">{currentStep.label}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Estado de verificación
-                      </div>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={getCurrentVerificationStatus(currentStep.key, verificationData?.data)}
-                    onCheckedChange={(checked) =>
-                      handleToggleVerification(currentStep.key, checked)
-                    }
-                    disabled={updateVerificationMutation.isPending}
-                  />
-                </div> */}
-
                 {/* Document preview section */}
                 {currentStep.label === 'Redes Sociales' ?
                   <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
@@ -502,7 +428,7 @@ const AdminProfileVerificationCarousel: React.FC<
 
                     {(() => {
                       // Obtener los datos de socialMedia de la verificación
-                      const socialMedia = verificationData?.data?.steps?.socialMedia;
+                      const socialMedia = verificationData?.data?.steps?.socialMedia as any;
 
                       return socialMedia && (
                         socialMedia.instagram ||
@@ -677,8 +603,8 @@ const AdminProfileVerificationCarousel: React.FC<
                           step={currentStep}
                           stepData={stepData}
                           onPreviewImage={setPreviewImage}
-                          getCurrentVideoLink={(stepKey) => getCurrentVideoLink(stepKey, verificationData)}
-                          handleVideoLinkChange={handleVideoLinkChange}
+                          getCurrentVideoLink={(stepKey) => getCurrentVideoLink(stepKey as any, verificationData)}
+                          handleVideoLinkChange={(stepKey, link) => handleVideoLinkChange(stepKey as any, link)}
                         />
                       );
                     })()}

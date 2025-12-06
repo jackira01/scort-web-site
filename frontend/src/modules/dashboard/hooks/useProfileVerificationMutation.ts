@@ -51,3 +51,50 @@ export const useProfileVerificationMutation = ({
     },
   });
 };
+
+export const useUpdateVerificationStatusMutation = ({
+  profileId,
+  verificationId,
+  onSuccess
+}: UseProfileVerificationMutationProps) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { verificationStatus: string; reason?: string }) => {
+      if (!verificationId) {
+        throw new Error('ID de verificación no disponible');
+      }
+
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/profile-verification/${verificationId}/status`;
+
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: data.verificationStatus,
+          reason: data.reason
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar el estado de verificación');
+      }
+
+      const result = await response.json();
+      return result;
+    },
+    onSuccess: () => {
+      toast.success('Estado de verificación actualizado exitosamente.');
+      queryClient.invalidateQueries({
+        queryKey: ['profileVerification', profileId],
+      });
+      onSuccess?.();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Error al actualizar el estado');
+    },
+  });
+};
