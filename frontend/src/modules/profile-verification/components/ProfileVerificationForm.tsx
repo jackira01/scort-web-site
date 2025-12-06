@@ -123,7 +123,7 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div 
+            <div
               className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               onClick={() => { setSelectedStep(1); setShowForm(true); }}
             >
@@ -136,7 +136,7 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
               </span>
             </div>
 
-            <div 
+            <div
               className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               onClick={() => { setSelectedStep(2); setShowForm(true); }}
             >
@@ -149,7 +149,7 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
               </span>
             </div>
 
-            <div 
+            <div
               className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               onClick={() => { setSelectedStep(3); setShowForm(true); }}
             >
@@ -162,7 +162,7 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
               </span>
             </div>
 
-            <div 
+            <div
               className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               onClick={() => { setSelectedStep(4); setShowForm(true); }}
             >
@@ -175,7 +175,7 @@ export function ProfileVerificationForm({ profileId }: ProfileVerificationFormPr
               </span>
             </div>
 
-            <div 
+            <div
               className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               onClick={() => { setSelectedStep(5); setShowForm(true); }}
             >

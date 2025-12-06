@@ -782,7 +782,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-green-700 dark:text-green-300">
-                Solicita tu cita por WhatsApp. A mayor grado de verificación, mayor confianza y visibilidad en la plataforma.
+                  Solicita tu cita por WhatsApp. A mayor grado de verificación, mayor confianza y visibilidad en la plataforma.
                 </p>
                 <Button
                   type="button"
