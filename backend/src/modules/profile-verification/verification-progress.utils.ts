@@ -16,39 +16,31 @@ export const calculateVerificationProgress = (
   console.log('Verification Steps Input:', JSON.stringify(verification.steps, null, 2));
 
   // 1. Documento de Identidad (Frente y Reverso)
-  if (verification.steps?.documentVerification?.frontPhoto &&
-    verification.steps?.documentVerification?.backPhoto &&
-    verification.steps?.documentVerification?.isVerified === true) {
+  if (verification.steps?.documentVerification?.isVerified === true) {
     score += POINTS_PER_FACTOR;
     console.log('✅ Document Verification: Verified (+14.29)');
   } else {
     console.log('❌ Document Verification: Failed', {
-      hasFront: !!verification.steps?.documentVerification?.frontPhoto,
-      hasBack: !!verification.steps?.documentVerification?.backPhoto,
       isVerified: verification.steps?.documentVerification?.isVerified
     });
   }
 
   // 2. Selfie con documento
-  if (verification.steps?.selfieVerification?.photo &&
-    verification.steps?.selfieVerification?.isVerified === true) {
+  if (verification.steps?.selfieVerification?.isVerified === true) {
     score += POINTS_PER_FACTOR;
     console.log('✅ Selfie: Verified (+14.29)');
   } else {
     console.log('❌ Selfie: Failed', {
-      hasPhoto: !!verification.steps?.selfieVerification?.photo,
       isVerified: verification.steps?.selfieVerification?.isVerified
     });
   }
 
   // 3. Cartel de verificación
-  if (verification.steps?.cartelVerification?.mediaLink &&
-    verification.steps?.cartelVerification?.isVerified === true) {
+  if (verification.steps?.cartelVerification?.isVerified === true) {
     score += POINTS_PER_FACTOR;
     console.log('✅ Cartel Verification: Verified (+14.29)');
   } else {
     console.log('❌ Cartel Verification: Failed', {
-      hasLink: !!verification.steps?.cartelVerification?.mediaLink,
       isVerified: verification.steps?.cartelVerification?.isVerified
     });
   }

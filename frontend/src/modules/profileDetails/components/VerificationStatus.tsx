@@ -88,14 +88,9 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
 
   const verificationSteps: VerificationStep[] = [
     {
-      label: "Mayoria de edad (Frente)",
+      label: "Mayoría de edad",
       isVerified: !!data.steps?.documentVerification?.isVerified,
-      hasData: !!data.steps?.documentVerification?.frontPhoto
-    },
-    {
-      label: "Mayoria de edad (Reverso)",
-      isVerified: !!data.steps?.documentVerification?.isVerified,
-      hasData: !!data.steps?.documentVerification?.backPhoto
+      hasData: !!data.steps?.documentVerification?.frontPhoto && !!data.steps?.documentVerification?.backPhoto
     },
     {
       label: "Identidad confirmada",
@@ -160,18 +155,11 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
               </div>
 
               {/* Mensajes condicionales */}
-              {step.label === "Mayoria de edad (Frente)" && (
+              {step.label === "Mayoría de edad" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified
-                    ? "El documento de identidad (frente) del usuario ha sido verificado correctamente."
-                    : "Este usuario aún no ha enviado el frente de su documento de identidad."}
-                </p>
-              )}
-              {step.label === "Mayoria de edad (Reverso)" && (
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  {step.isVerified
-                    ? "El documento de identidad (reverso) del usuario ha sido verificado correctamente."
-                    : "Este usuario aún no ha enviado el reverso de su documento de identidad."}
+                    ? "El documento de identidad del usuario ha sido verificado correctamente."
+                    : "Este usuario aún no ha completado la verificación de su documento de identidad."}
                 </p>
               )}
               {step.label === "Identidad confirmada" && (
