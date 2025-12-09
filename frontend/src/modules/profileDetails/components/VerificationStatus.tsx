@@ -88,29 +88,24 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
 
   const verificationSteps: VerificationStep[] = [
     {
-      label: "Mayoria de edad (Frente)",
-      isVerified: !!data.steps?.frontPhotoVerification?.isVerified,
-      hasData: true
-    },
-    {
-      label: "Mayoria de edad (Reverso)",
-      isVerified: !!data.steps?.backPhotoVerification?.isVerified,
-      hasData: true
+      label: "Mayoría de edad",
+      isVerified: !!data.steps?.documentVerification?.isVerified,
+      hasData: !!data.steps?.documentVerification?.frontPhoto && !!data.steps?.documentVerification?.backPhoto
     },
     {
       label: "Identidad confirmada",
       isVerified: !!data.steps?.selfieVerification?.isVerified,
-      hasData: true
+      hasData: !!data.steps?.selfieVerification?.photo
     },
     {
-      label: "Veracidad de fotos del perfil",
-      isVerified: !!data.steps?.mediaVerification?.isVerified,
-      hasData: true
+      label: "Verificación con Cartel",
+      isVerified: !!data.steps?.cartelVerification?.isVerified,
+      hasData: !!data.steps?.cartelVerification?.mediaLink
     },
     {
       label: "Verificación por videollamada",
       isVerified: !!data.steps?.videoCallRequested?.isVerified,
-      hasData: true
+      hasData: !!data.steps?.videoCallRequested?.videoLink
     },
     {
       label: "Miembro establecido con antigüedad",
@@ -160,18 +155,11 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
               </div>
 
               {/* Mensajes condicionales */}
-              {step.label === "Mayoria de edad (Frente)" && (
+              {step.label === "Mayoría de edad" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified
-                    ? "El documento de identidad (frente) del usuario ha sido verificado correctamente."
-                    : "Este usuario aún no ha enviado el frente de su documento de identidad."}
-                </p>
-              )}
-              {step.label === "Mayoria de edad (Reverso)" && (
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  {step.isVerified
-                    ? "El documento de identidad (reverso) del usuario ha sido verificado correctamente."
-                    : "Este usuario aún no ha enviado el reverso de su documento de identidad."}
+                    ? "El documento de identidad del usuario ha sido verificado correctamente."
+                    : "Este usuario aún no ha completado la verificación de su documento de identidad."}
                 </p>
               )}
               {step.label === "Identidad confirmada" && (
@@ -181,11 +169,11 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
                     : "Este usuario aún no ha completado el video/foto de verificación de identidad."}
                 </p>
               )}
-              {step.label === "Veracidad de fotos del perfil" && (
+              {step.label === "Verificación con Cartel" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified
-                    ? "Las fotos de perfil corresponden a un video solicitado al usuario."
-                    : "Este usuario aún no ha completado la verificación de veracidad de fotos."}
+                    ? "El usuario ha verificado su identidad mediante una foto con cartel."
+                    : "Este usuario aún no ha completado la verificación con cartel."}
                 </p>
               )}
               {step.label === "Verificación por videollamada" && (

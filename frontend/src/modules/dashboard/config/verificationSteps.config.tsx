@@ -18,16 +18,10 @@ interface ProfileVerificationSteps {
 
 export const verificationSteps: VerificationStep[] = [
   {
-    key: 'frontPhotoVerification',
-    label: 'Documento de Identidad (Frente)',
+    key: 'documentVerification',
+    label: 'Documento de Identidad',
     icon: <FileText className="h-5 w-5" />,
-    description: 'Foto frontal clara del documento de identidad',
-  },
-  {
-    key: 'backPhotoVerification',
-    label: 'Documento de Identidad (Reverso)',
-    icon: <FileText className="h-5 w-5" />,
-    description: 'Foto reverso clara del documento de identidad',
+    description: 'Fotos frontal y reverso del documento de identidad',
   },
   {
     key: 'selfieVerification',
@@ -36,10 +30,10 @@ export const verificationSteps: VerificationStep[] = [
     description: 'Foto de la persona sosteniendo el documento al lado de su rostro',
   },
   {
-    key: 'mediaVerification',
-    label: 'Video de Verificación con Cartel',
+    key: 'cartelVerification',
+    label: 'Cartel de Verificación',
     icon: <Video className="h-5 w-5" />,
-    description: 'Video mostrando un cartel con datos de verificación',
+    description: 'Foto o video mostrando un cartel con datos de verificación',
   },
   {
     key: 'videoCallRequested',

@@ -5,6 +5,8 @@ import { Providers } from '@/config/providers';
 import { Poppins } from "next/font/google";
 import ConditionalHeader from '@/components/layout/ConditionalHeader';
 import { auth } from '@/auth';
+import { GoogleAnalytics } from '@next/third-parties/google'
+const gaId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID || '';
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -35,6 +37,7 @@ export default async function RootLayout({
         <Providers session={session}>
           <ConditionalHeader />
           {children}
+          <GoogleAnalytics gaId={gaId} />
         </Providers>
       </body>
     </html>

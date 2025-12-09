@@ -373,7 +373,7 @@ export const createProfile = async (data: CreateProfileDTO, skipLimitsValidation
 
     const verification = await createProfileVerification({
       profile: profileIdStr,
-      verificationStatus: 'pending',
+      verificationStatus: 'check',
     });
 
     // Actualizar el perfil con la referencia a la verificación

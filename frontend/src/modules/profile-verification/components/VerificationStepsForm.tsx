@@ -22,16 +22,14 @@ import {
 import { VerificationSuccessModal } from './VerificationSuccessModal';
 
 const verificationSchema = z.object({
-  frontPhotoVerification: z.object({
-    photo: z.string().optional(),
-  }),
-  backPhotoVerification: z.object({
-    photo: z.string().optional(),
+  documentVerification: z.object({
+    frontPhoto: z.string().optional(),
+    backPhoto: z.string().optional(),
   }),
   selfieVerification: z.object({
     photo: z.string().optional(),
   }),
-  mediaVerification: z.object({
+  cartelVerification: z.object({
     mediaLink: z.string().optional(),
     mediaType: z.enum(['video', 'image']).optional(),
   }),
@@ -117,17 +115,16 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
   const form = useForm<VerificationFormData>({
     resolver: zodResolver(verificationSchema),
     defaultValues: {
-      frontPhotoVerification: {
-        photo: initialData.frontPhotoVerification?.photo || '',
-      },
-      backPhotoVerification: {
-        photo: initialData.backPhotoVerification?.photo || '',
+      documentVerification: {
+        frontPhoto: initialData.documentVerification?.frontPhoto || initialData.frontPhotoVerification?.photo || '',
+        backPhoto: initialData.documentVerification?.backPhoto || initialData.backPhotoVerification?.photo || '',
       },
       selfieVerification: {
         photo: initialData.selfieVerification?.photo || '',
       },
-      mediaVerification: {
-        mediaLink: initialData.mediaVerification?.mediaLink || initialData.videoVerification?.videoLink || '',
+      cartelVerification: {
+        mediaLink: initialData.cartelVerification?.mediaLink || initialData.mediaVerification?.mediaLink || '',
+        mediaType: initialData.cartelVerification?.mediaType || 'video',
       },
       socialMedia: {
         instagram: initialData.socialMedia?.instagram || '',
@@ -160,10 +157,9 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
   // Determinar el paso actual basado en los datos completados
   useEffect(() => {
-    const { photo: frontPhoto } = watchedValues.frontPhotoVerification;
-    const { photo: backPhoto } = watchedValues.backPhotoVerification;
+    const { frontPhoto, backPhoto } = watchedValues.documentVerification;
     const { photo: selfiePhoto } = watchedValues.selfieVerification;
-    const { mediaLink } = watchedValues.mediaVerification;
+    const { mediaLink } = watchedValues.cartelVerification;
     // Social media is optional/additional, doesn't necessarily block steps, but let's include it in logic if needed
     // For now, we keep the step logic as is for 1-4
 
@@ -178,7 +174,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
     } else {
       setCurrentStep(5); // Assuming 5 is social media or completion
     }
-  }, [watchedValues.frontPhotoVerification, watchedValues.backPhotoVerification, watchedValues.selfieVerification, watchedValues.mediaVerification]);
+  }, [watchedValues.documentVerification, watchedValues.selfieVerification, watchedValues.cartelVerification]);
 
   const updateVerificationMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -211,12 +207,12 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
     // Crear una URL temporal para mostrar preview
     const tempUrl = URL.createObjectURL(files[0]);
 
-    if (fieldName === 'mediaVerification') {
-      form.setValue('mediaVerification.mediaLink', tempUrl);
+    if (fieldName === 'cartelVerification') {
+      form.setValue('cartelVerification.mediaLink', tempUrl);
     } else if (fieldName === 'frontPhoto') {
-      form.setValue('frontPhotoVerification.photo', tempUrl);
+      form.setValue('documentVerification.frontPhoto', tempUrl);
     } else if (fieldName === 'backPhoto') {
-      form.setValue('backPhotoVerification.photo', tempUrl);
+      form.setValue('documentVerification.backPhoto', tempUrl);
     } else if (fieldName === 'selfiePhoto') {
       form.setValue('selfieVerification.photo', tempUrl);
     }
@@ -226,8 +222,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
   const onSubmit = async (data: VerificationFormData) => {
     // Validar que se complete al menos el Paso 1 y Paso 2
-    const { photo: frontPhoto } = data.frontPhotoVerification;
-    const { photo: backPhoto } = data.backPhotoVerification;
+    const { frontPhoto, backPhoto } = data.documentVerification;
 
     if (!frontPhoto) {
       toast.error('Debes completar el Paso 1 (foto frontal del documento)');
@@ -254,7 +249,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
           try {
             let uploadedUrls: string[] = [];
 
-            if (fieldName === 'mediaVerification') {
+            if (fieldName === 'cartelVerification') {
               // Detectar si es video o imagen
               const isVideo = file.type.startsWith('video/');
 
@@ -263,8 +258,8 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 uploadedUrls = videoResults.map(result => result.link);
 
                 if (uploadedUrls.length > 0) {
-                  uploadedData.mediaVerification.mediaLink = uploadedUrls[0];
-                  uploadedData.mediaVerification.mediaType = 'video';
+                  uploadedData.cartelVerification.mediaLink = uploadedUrls[0];
+                  uploadedData.cartelVerification.mediaType = 'video';
                 }
               } else {
                 // Ya no permitimos imágenes en este paso, pero mantenemos la lógica por si acaso
@@ -274,12 +269,12 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
             } else if (fieldName === 'frontPhoto') {
               uploadedUrls = (await uploadMultipleImages([file])).filter((url): url is string => url !== null);
               if (uploadedUrls.length > 0) {
-                uploadedData.frontPhotoVerification.photo = uploadedUrls[0];
+                uploadedData.documentVerification.frontPhoto = uploadedUrls[0];
               }
             } else if (fieldName === 'backPhoto') {
               uploadedUrls = (await uploadMultipleImages([file])).filter((url): url is string => url !== null);
               if (uploadedUrls.length > 0) {
-                uploadedData.backPhotoVerification.photo = uploadedUrls[0];
+                uploadedData.documentVerification.backPhoto = uploadedUrls[0];
               }
             } else if (fieldName === 'selfiePhoto') {
               uploadedUrls = (await uploadMultipleImages([file])).filter((url): url is string => url !== null);
@@ -298,10 +293,9 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
       // Actualizar la verificación con los datos subidos
       await updateVerificationMutation.mutateAsync({
-        frontPhotoVerification: uploadedData.frontPhotoVerification,
-        backPhotoVerification: uploadedData.backPhotoVerification,
+        documentVerification: uploadedData.documentVerification,
         selfieVerification: uploadedData.selfieVerification,
-        mediaVerification: uploadedData.mediaVerification,
+        cartelVerification: uploadedData.cartelVerification,
         socialMedia: uploadedData.socialMedia,
       });
 
@@ -438,9 +432,9 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
     return 'pending';
   };
 
-  const isStep1Complete = !!watchedValues.frontPhotoVerification.photo;
-  const isStep2Complete = !!watchedValues.backPhotoVerification.photo;
-  const isStep3Complete = !!watchedValues.mediaVerification.mediaLink;
+  const isStep1Complete = !!watchedValues.documentVerification.frontPhoto;
+  const isStep2Complete = !!watchedValues.documentVerification.backPhoto;
+  const isStep3Complete = !!watchedValues.cartelVerification.mediaLink;
   const isStep4Complete = !!watchedValues.selfieVerification.photo;
   const isStep5Complete = Object.values(watchedValues.socialMedia || {}).some(val => !!val);
 
@@ -483,7 +477,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 Paso {currentStep} de 5: {
                   currentStep === 1 ? 'Documento (frontal)' :
                     currentStep === 2 ? 'Documento (reverso)' :
-                      currentStep === 3 ? 'Video de verificación' :
+                      currentStep === 3 ? 'Verificación con Cartel' :
                         currentStep === 4 ? 'Foto con documento' :
                           'Redes Sociales'
                 }
@@ -528,7 +522,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   '',
                   <></>,
                   true,
-                  watchedValues.frontPhotoVerification.photo
+                  watchedValues.documentVerification.frontPhoto
                 )}
               </CardContent>
             </Card>
@@ -574,7 +568,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   '',
                   <></>,
                   isStep1Complete,
-                  watchedValues.backPhotoVerification.photo
+                  watchedValues.documentVerification.backPhoto
                 )}
               </CardContent>
             </Card>
@@ -589,7 +583,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Video className="h-5 w-5 text-purple-500" />
-                  Paso 3: Video de verificación con cartel
+                  Paso 3: Verificación con Cartel
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -617,12 +611,12 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 </div>
 
                 {renderFileUpload(
-                  'mediaVerification',
+                  'cartelVerification',
                   '',
                   '',
                   <></>,
                   isStep1Complete && isStep2Complete,
-                  watchedValues.mediaVerification.mediaLink
+                  watchedValues.cartelVerification.mediaLink
                 )}
               </CardContent>
             </Card>
@@ -788,7 +782,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-green-700 dark:text-green-300">
-                Solicita tu cita por WhatsApp. A mayor grado de verificación, mayor confianza y visibilidad en la plataforma.
+                  Solicita tu cita por WhatsApp. A mayor grado de verificación, mayor confianza y visibilidad en la plataforma.
                 </p>
                 <Button
                   type="button"

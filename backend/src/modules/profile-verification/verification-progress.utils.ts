@@ -8,51 +8,44 @@ export const calculateVerificationProgress = (
   minAgeMonths: number = 12 // Default to 12 months (1 year) if not provided
 ): number => {
   let score = 0;
-  // Ajustado a ~14.29 para mantener 100% con 7 factores (100/7 = 14.285...)
+  // 7 Factors: Document, Selfie, Cartel, Video, Social, AccountAge, ContactConsistency
   const POINTS_PER_FACTOR = 100 / 7;
 
   console.group('🔍 DEBUG: calculateVerificationProgress');
   console.log('Min Age Months Config:', minAgeMonths);
   console.log('Verification Steps Input:', JSON.stringify(verification.steps, null, 2));
 
-  // 1. Foto frontal del documento
-  if (verification.steps?.frontPhotoVerification?.photo &&
-    verification.steps?.frontPhotoVerification?.isVerified === true) {
+  // 1. Documento de Identidad (Frente y Reverso)
+  if (verification.steps?.documentVerification?.isVerified === true) {
     score += POINTS_PER_FACTOR;
-    console.log('✅ Front Photo: Verified (+14.29)');
+    console.log('✅ Document Verification: Verified (+14.29)');
   } else {
-    console.log('❌ Front Photo: Failed', {
-      hasPhoto: !!verification.steps?.frontPhotoVerification?.photo,
-      isVerified: verification.steps?.frontPhotoVerification?.isVerified
+    console.log('❌ Document Verification: Failed', {
+      isVerified: verification.steps?.documentVerification?.isVerified
     });
   }
 
   // 2. Selfie con documento
-  if (verification.steps?.selfieVerification?.photo &&
-    verification.steps?.selfieVerification?.isVerified === true) {
+  if (verification.steps?.selfieVerification?.isVerified === true) {
     score += POINTS_PER_FACTOR;
     console.log('✅ Selfie: Verified (+14.29)');
   } else {
     console.log('❌ Selfie: Failed', {
-      hasPhoto: !!verification.steps?.selfieVerification?.photo,
       isVerified: verification.steps?.selfieVerification?.isVerified
     });
   }
 
-  // 3. Media de verificación
-  if (verification.steps?.mediaVerification?.mediaLink &&
-    verification.steps?.mediaVerification?.isVerified === true) {
+  // 3. Cartel de verificación
+  if (verification.steps?.cartelVerification?.isVerified === true) {
     score += POINTS_PER_FACTOR;
-    console.log('✅ Media Verification: Verified (+14.29)');
+    console.log('✅ Cartel Verification: Verified (+14.29)');
   } else {
-    console.log('❌ Media Verification: Failed', {
-      hasLink: !!verification.steps?.mediaVerification?.mediaLink,
-      isVerified: verification.steps?.mediaVerification?.isVerified
+    console.log('❌ Cartel Verification: Failed', {
+      isVerified: verification.steps?.cartelVerification?.isVerified
     });
   }
 
   // 4. Videollamada de verificación
-  // Relaxed check: Only require isVerified to be true, videoLink is optional
   if (verification.steps?.videoCallRequested?.isVerified === true) {
     score += POINTS_PER_FACTOR;
     console.log('✅ Video Call: Verified (+14.29)');
@@ -104,7 +97,6 @@ export const calculateVerificationProgress = (
     let isContactConsistent = false;
     if (profile.contact) {
       // If never changed (hasChanged is undefined or false), it's consistent
-      // This matches the logic in phone-verification.utils.ts
       if (!profile.contact.hasChanged) {
         isContactConsistent = true;
         console.log('ℹ️ Contact Consistency: Never changed (Consistent)');
@@ -131,6 +123,7 @@ export const calculateVerificationProgress = (
     } else {
       console.log('❌ Contact Consistency: Failed');
     }
+
   } else {
     console.warn('⚠️ Dynamic Factors skipped: Profile object missing');
   }
