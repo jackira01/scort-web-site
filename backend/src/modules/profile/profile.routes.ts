@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import * as controller from './profile.controller';
-import * as debugController from './profile-debug.controller';
-import { authMiddleware } from '../../middlewares/auth.middleware';
 import { adminMiddleware } from '../../middlewares/admin.middleware';
+import { authMiddleware } from '../../middlewares/auth.middleware';
+import * as debugController from './profile-debug.controller';
+import * as controller from './profile.controller';
 
 const router = Router();
 
@@ -65,6 +65,12 @@ router.patch('/:id/soft-delete', authMiddleware, adminMiddleware, controller.sof
 router.delete('/:id/hard-delete', authMiddleware, adminMiddleware, controller.hardDeleteProfileController);
 router.patch('/:id/restore', authMiddleware, adminMiddleware, controller.restoreProfileController);
 router.get('/deleted', authMiddleware, adminMiddleware, controller.getDeletedProfilesController);
+
+/* ===========================
+   📌 Rutas de historias
+=========================== */
+router.get('/:profileId/story-limits', authMiddleware, controller.checkStoryLimitsController);
+router.delete('/:profileId/stories', authMiddleware, controller.deleteAllStoriesController);
 
 /* ===========================
    📌 Rutas genéricas con :id (SIEMPRE AL FINAL)

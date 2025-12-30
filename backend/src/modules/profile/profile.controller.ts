@@ -1,29 +1,29 @@
 import type { Response } from 'express';
 import type { AuthRequest } from '../../types/auth.types';
-import * as service from './profile.service';
-import {
-  subscribeProfile,
-  purchaseUpgrade,
-  getActiveProfilesCount,
-  createProfileWithInvoice,
-  hideProfile,
-  softDeleteProfile,
-  hardDeleteProfile,
-  showProfile,
-  restoreProfile,
-  getDeletedProfiles
-} from './profile.service';
 import { ConfigParameterService } from '../config-parameter/config-parameter.service';
 import { UpgradeDefinitionModel } from '../plans/upgrade.model';
-import { ProfileModel } from './profile.model';
 import {
-  validatePaidPlanAssignment,
-  validateUpgradePurchase,
-  validatePurchaseIdempotency,
-  validateAmatistaLimit,
+  BusinessValidationError,
   getUserUsageStats,
-  BusinessValidationError
+  validateAmatistaLimit,
+  validatePaidPlanAssignment,
+  validatePurchaseIdempotency,
+  validateUpgradePurchase
 } from '../validation/business-validation.service';
+import { ProfileModel } from './profile.model';
+import * as service from './profile.service';
+import {
+  createProfileWithInvoice,
+  getActiveProfilesCount,
+  getDeletedProfiles,
+  hardDeleteProfile,
+  hideProfile,
+  purchaseUpgrade,
+  restoreProfile,
+  showProfile,
+  softDeleteProfile,
+  subscribeProfile
+} from './profile.service';
 
 export const createProfile = async (req: AuthRequest, res: Response) => {
   try {
@@ -1033,6 +1033,28 @@ export const addStoryController = async (req: AuthRequest, res: Response) => {
     }
 
     const updatedProfile = await service.addStory(profileId, { link, type, duration, startTime });
+    res.json(updatedProfile);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An error occurred';
+    res.status(400).json({ message });
+  }
+};
+
+export const checkStoryLimitsController = async (req: AuthRequest, res: Response) => {
+  try {
+    const { profileId } = req.params;
+    const limits = await service.checkStoryLimits(profileId);
+    res.json(limits);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An error occurred';
+    res.status(400).json({ message });
+  }
+};
+
+export const deleteAllStoriesController = async (req: AuthRequest, res: Response) => {
+  try {
+    const { profileId } = req.params;
+    const updatedProfile = await service.deleteAllStories(profileId);
     res.json(updatedProfile);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'An error occurred';

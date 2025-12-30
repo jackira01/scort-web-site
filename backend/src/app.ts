@@ -1,34 +1,34 @@
-import cors, { type CorsOptions } from 'cors';
 import compression from 'compression';
+import cors, { type CorsOptions } from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import morgan from 'morgan';
-import { securityMiddleware, generalRateLimit, authRateLimit, publicApiRateLimit } from './middlewares/security.middleware';
-import { connectDB } from './config/db';
+import { authRateLimit, generalRateLimit, publicApiRateLimit, securityMiddleware } from './middlewares/security.middleware';
 import attributeGroupRoutes from './modules/attribute-group/attribute-group.routes';
-import blogRoutes from './modules/blog/blog.routes';
 import blogCategoryRoutes from './modules/blog-category/blog-category.routes';
+import blogRoutes from './modules/blog/blog.routes';
 import cleanupRoutes from './modules/cleanup/cleanup.routes';
-import newsRoutes from './modules/news/news.routes';
 import { configParameterRoutes } from './modules/config-parameter/config-parameter.routes';
+import { contentRoutes } from './modules/content';
+import { couponRoutes } from './modules/coupons';
+import { emailInboxRoutes } from './modules/email-inbox';
 import feedsRoutes from './modules/feeds/feeds.routes';
 import filtersRoutes from './modules/filters/filters.routes';
+import locationRoutes from './modules/location/location.routes';
+import newsRoutes from './modules/news/news.routes';
+import invoiceRoutes from './modules/payments/invoice.routes';
 import plansRoutes from './modules/plans/plans.routes';
-import profileRoutes from './modules/profile/profile.routes';
 import profileVerificationRoutes from './modules/profile-verification/profile-verification.routes';
+import profileRoutes from './modules/profile/profile.routes';
+import reportsRoutes from './modules/reports/reports.routes';
+import { sponsoredProfilesRoutes } from './modules/sponsored-profiles';
 import agencyConversionRoutes from './routes/agency-conversion.routes';
 import authRoutes from './routes/auth';
 import emailRoutes from './routes/email.routes';
-import { emailInboxRoutes } from './modules/email-inbox';
-import invoiceRoutes from './modules/payments/invoice.routes';
-import { couponRoutes } from './modules/coupons';
-import { sponsoredProfilesRoutes } from './modules/sponsored-profiles';
-import { contentRoutes } from './modules/content';
-import locationRoutes from './modules/location/location.routes';
 
+import { enforceVisibilityForFeeds } from './middlewares/visibility.middleware';
 import userRoutes from './modules/user/user.routes';
 import adminEmailRoutes from './routes/admin/emails';
-import { enforceVisibilityForFeeds } from './middlewares/visibility.middleware';
 
 dotenv.config();
 
@@ -123,6 +123,7 @@ app.use('/api/coupons', couponRoutes);
 app.use('/api/sponsored-profiles', publicApiRateLimit, sponsoredProfilesRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/locations', locationRoutes);
+app.use('/api/reports', reportsRoutes);
 
 app.use('/api/user', userRoutes);
 app.use('/api/admin/emails', adminEmailRoutes);

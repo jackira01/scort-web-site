@@ -1,19 +1,5 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
-import {
-    Image as ImageIcon,
-    Loader2,
-    Play,
-    Trash2,
-    Upload,
-    Video,
-    X,
-} from 'lucide-react';
-import Image from 'next/image';
-import { useSession } from 'next-auth/react';
-import { useState } from 'react';
-import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,6 +12,20 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { getProfileById, updateProfile } from '@/services/user.service';
 import { uploadMultipleImages, uploadMultipleVideos } from '@/utils/tools';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+    Image as ImageIcon,
+    Loader2,
+    Play,
+    Trash2,
+    Upload,
+    Video,
+    X,
+} from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 
 interface UploadStoryModalProps {
     isOpen: boolean;
@@ -60,13 +60,57 @@ export default function UploadStoryModal({
         link: string;
         type: 'image' | 'video';
     } | null>(null);
+    const [limits, setLimits] = useState<{
+        limit: number;
+        used: number;
+        remaining: number;
+        nextUploadDate: string | null;
+    } | null>(null);
+    const [loadingLimits, setLoadingLimits] = useState(false);
     const queryClient = useQueryClient();
     const { data: session } = useSession();
 
+    const fetchLimits = async () => {
+        if (!isOpen || !profileId || !session?.user?.accessToken) return;
 
+        try {
+            setLoadingLimits(true);
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile/${profileId}/story-limits`, {
+                headers: {
+                    'Authorization': `Bearer ${session.user.accessToken}`,
+                    'X-User-ID': session.user.id || session.user._id || ''
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setLimits(data);
+            }
+        } catch (error) {
+            console.error('Error fetching limits:', error);
+        } finally {
+            setLoadingLimits(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchLimits();
+    }, [isOpen, profileId, session]);
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        // Validar límites antes de seleccionar
+        if (limits && limits.remaining <= 0) {
+            toast.error(`Has alcanzado el límite diario de historias (${limits.limit}). Podrás subir más el ${new Date(limits.nextUploadDate!).toLocaleString()}`);
+            return;
+        }
+
         const files = Array.from(event.target.files || []);
+
+        // Validar cantidad de archivos vs restante
+        if (limits && files.length + selectedFiles.length > limits.remaining) {
+            toast.error(`Solo puedes subir ${limits.remaining} historia(s) más hoy.`);
+            return;
+        }
 
         files.forEach((file) => {
             const isImage = file.type.startsWith('image/');
@@ -128,10 +172,10 @@ export default function UploadStoryModal({
                 // If video is 70s, start at 65s -> max duration 5s.
                 let newDuration = Math.min(f.duration - start, 60);
                 if (newDuration < 5) newDuration = 5; // Enforce min 5s if possible, but if start is too late?
-                
+
                 // Actually, slider max should prevent starting too late.
                 // Max start time = duration - 5.
-                
+
                 return {
                     ...f,
                     startTime: start,
@@ -156,6 +200,18 @@ export default function UploadStoryModal({
         if (selectedFiles.length === 0) {
             toast.error('Selecciona al menos un archivo');
             return;
+        }
+
+        // Validar límites nuevamente antes de subir
+        if (limits) {
+            if (limits.remaining <= 0) {
+                toast.error(`Has alcanzado el límite diario de historias. Podrás subir más el ${new Date(limits.nextUploadDate!).toLocaleString()}`);
+                return;
+            }
+            if (selectedFiles.length > limits.remaining) {
+                toast.error(`Solo puedes subir ${limits.remaining} historia(s) más hoy.`);
+                return;
+            }
         }
 
         setUploading(true);
@@ -185,12 +241,12 @@ export default function UploadStoryModal({
             if (videoFiles.length > 0) {
                 toast.loading('Subiendo videos...');
                 const videoResults = await uploadMultipleVideos(videoFiles);
-                
+
                 // Map results back to selectedFiles to get duration/startTime
                 // Assuming order is preserved or we need to match by some ID? 
                 // uploadMultipleVideos returns { link: string }[], doesn't preserve ID.
                 // But we filtered videoFiles from selectedFiles in order.
-                
+
                 const videoStories = videoResults.map((result, index) => {
                     // Find the corresponding selected file (video)
                     const originalFile = selectedFiles.filter(f => f.type === 'video')[index];
@@ -211,7 +267,7 @@ export default function UploadStoryModal({
 
             // Usar el nuevo endpoint para agregar historias una por una (para validar límites)
             toast.loading('Guardando historias...');
-            
+
             for (const story of uploadedStories) {
                 const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile/${profileId}/stories`, {
                     method: 'POST',
@@ -298,6 +354,54 @@ export default function UploadStoryModal({
         }
     };
 
+    const handleDeleteAllStories = async () => {
+        if (!confirm('¿Estás seguro de que quieres borrar TODAS las historias? Esta acción no se puede deshacer.')) {
+            return;
+        }
+
+        try {
+            setUploading(true);
+            toast.loading('Eliminando todas las historias...');
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile/${profileId}/stories`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${session?.user?.accessToken || ''}`,
+                    'X-User-ID': session?.user?.id || session?.user?._id || ''
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al eliminar historias');
+            }
+
+            // Invalidar queries
+            if (session?.user?._id) {
+                await queryClient.invalidateQueries({
+                    queryKey: ['userProfiles', session.user._id],
+                });
+                await queryClient.invalidateQueries({
+                    queryKey: ['profileDetails', profileId],
+                });
+            }
+
+            toast.dismiss();
+            toast.success('Todas las historias han sido eliminadas');
+
+            // Refresh limits
+            fetchLimits();
+
+            window.location.reload();
+
+        } catch (error) {
+            console.error(error);
+            toast.dismiss();
+            toast.error('Error al eliminar las historias');
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const handleClose = () => {
         if (!uploading) {
             // Limpiar URLs de preview
@@ -316,6 +420,32 @@ export default function UploadStoryModal({
                             <Upload className="h-5 w-5" />
                             <span>Subir Historias - {profileName}</span>
                         </DialogTitle>
+                        {limits && (
+                            <div className="flex flex-col gap-1 mt-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">
+                                        Historias hoy: <span className="font-medium text-foreground">{limits.used} / {limits.limit}</span>
+                                    </span>
+                                    {currentStories.length > 0 && (
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={handleDeleteAllStories}
+                                            disabled={uploading}
+                                            className="h-7 text-xs"
+                                        >
+                                            <Trash2 className="h-3 w-3 mr-1" />
+                                            Borrar todas
+                                        </Button>
+                                    )}
+                                </div>
+                                {limits.remaining <= 0 && limits.nextUploadDate && (
+                                    <p className="text-xs text-red-500 font-medium">
+                                        Has alcanzado el límite diario. Podrás subir nuevas historias el: {new Date(limits.nextUploadDate).toLocaleString()}
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </DialogHeader>
 
                     <div className="space-y-6">
@@ -341,13 +471,13 @@ export default function UploadStoryModal({
                                     onChange={handleFileSelect}
                                     className="hidden"
                                     id="story-upload"
-                                    disabled={uploading}
+                                    disabled={uploading || (limits ? limits.remaining <= 0 : false)}
                                 />
                                 <label htmlFor="story-upload">
                                     <Button
                                         variant="outline"
                                         className="cursor-pointer"
-                                        disabled={uploading}
+                                        disabled={uploading || (limits ? limits.remaining <= 0 : false)}
                                         asChild
                                     >
                                         <span>

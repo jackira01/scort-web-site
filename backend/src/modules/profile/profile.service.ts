@@ -1,18 +1,18 @@
 import { Types } from 'mongoose';
+import EmailService from '../../services/email.service';
 import { validateProfileFeatures } from '../attribute-group/validateProfileFeatures';
+import { ConfigParameterService } from '../config-parameter/config-parameter.service';
+import type { IInvoice } from '../payments/invoice.model';
+import InvoiceModel from '../payments/invoice.model';
+import invoiceService from '../payments/invoice.service';
+import { PlanDefinitionModel } from '../plans/plan.model';
+import { UpgradeDefinitionModel } from '../plans/upgrade.model';
 import { createProfileVerification, updatePhoneChangeDetectionStatus } from '../profile-verification/profile-verification.service';
 import { enrichProfileVerification } from '../profile-verification/verification.helper';
 import UserModel from '../user/User.model';
+import { sortProfiles } from '../visibility/visibility.service';
 import { ProfileModel } from './profile.model';
 import type { CreateProfileDTO, IProfile } from './profile.types';
-import type { IInvoice } from '../payments/invoice.model';
-import InvoiceModel from '../payments/invoice.model';
-import { PlanDefinitionModel } from '../plans/plan.model';
-import { UpgradeDefinitionModel } from '../plans/upgrade.model';
-import { ConfigParameterService } from '../config-parameter/config-parameter.service';
-import invoiceService from '../payments/invoice.service';
-import EmailService from '../../services/email.service';
-import { sortProfiles } from '../visibility/visibility.service';
 
 // Interfaz para la configuración del plan por defecto
 interface DefaultPlanConfig {
@@ -1345,10 +1345,18 @@ export const addStory = async (profileId: string, storyData: { link: string; typ
 
   // Count stories from last 24h
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const recentStories = profile.media?.stories?.filter(s => s.createdAt && s.createdAt > oneDayAgo) || [];
+  const recentStories = profile.media?.stories?.filter(s => {
+    const createdAt = new Date(s.createdAt);
+    return createdAt > oneDayAgo;
+  }) || [];
 
   if (recentStories.length >= storiesLimit) {
-    throw new Error(`Has alcanzado el límite diario de historias (${storiesLimit})`);
+    // Calculate next upload date for error message
+    const sortedStories = recentStories.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const oldestRecentStory = sortedStories[0];
+    const nextUploadDate = new Date(new Date(oldestRecentStory.createdAt).getTime() + 24 * 60 * 60 * 1000);
+
+    throw new Error(`Has alcanzado el límite diario de historias (${storiesLimit}). Podrás subir más el ${nextUploadDate.toLocaleString()}`);
   }
 
   // Add story
@@ -2628,5 +2636,45 @@ export const getAllProfilesForAdmin = async (
     prevPage,
     pagingCounter,
   };
+};
+
+export const checkStoryLimits = async (profileId: string) => {
+  const profile = await ProfileModel.findById(profileId).populate('planAssignment.planId');
+  if (!profile) throw new Error('Profile not found');
+
+  const plan = profile.planAssignment?.planId as any;
+  const storiesLimit = plan?.contentLimits?.storiesPerDayMax || 0;
+
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const recentStories = profile.media?.stories?.filter(s => {
+    const createdAt = new Date(s.createdAt);
+    return createdAt > oneDayAgo;
+  }) || [];
+
+  const remaining = Math.max(0, storiesLimit - recentStories.length);
+
+  // Calculate when the next slot opens
+  let nextUploadDate = null;
+  if (remaining === 0 && recentStories.length > 0) {
+    // Sort by createdAt ascending to find the oldest story that is still "recent"
+    // The next slot opens 24h after that story was created
+    const sortedStories = recentStories.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const oldestRecentStory = sortedStories[0];
+    nextUploadDate = new Date(new Date(oldestRecentStory.createdAt).getTime() + 24 * 60 * 60 * 1000);
+  }
+
+  return {
+    limit: storiesLimit,
+    used: recentStories.length,
+    remaining,
+    nextUploadDate
+  };
+};
+
+export const deleteAllStories = async (profileId: string) => {
+  const profile = await ProfileModel.findByIdAndUpdate(profileId, {
+    $set: { 'media.stories': [] }
+  }, { new: true });
+  return profile;
 };
 

@@ -98,7 +98,7 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
       hasData: !!data.steps?.selfieVerification?.photo
     },
     {
-      label: "Verificación con Cartel",
+      label: "Verificación con Multimedia",
       isVerified: !!data.steps?.cartelVerification?.isVerified,
       hasData: !!data.steps?.cartelVerification?.mediaLink
     },
@@ -108,12 +108,12 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
       hasData: !!data.steps?.videoCallRequested?.videoLink
     },
     {
-      label: "Miembro establecido con antigüedad",
+      label: "Estabilidad",
       isVerified: !!data.steps?.accountAge?.isVerified,
       hasData: true
     },
     {
-      label: "Consistencia en datos de contacto",
+      label: "Confiabilidad",
       isVerified: !!data.steps?.contactConsistency?.isVerified,
       hasData: true,
       details: data.steps?.contactConsistency
@@ -169,11 +169,11 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
                     : "Este usuario aún no ha completado el video/foto de verificación de identidad."}
                 </p>
               )}
-              {step.label === "Verificación con Cartel" && (
+              {step.label === "Verificación con Multimedia" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified
-                    ? "El usuario ha verificado su identidad mediante una foto con cartel."
-                    : "Este usuario aún no ha completado la verificación con cartel."}
+                    ? "Este usuario ya envio fotos/videos verificando su perfil."
+                    : "Este usuario aún no ha enviado fotos/videos de verificación de perfil."}
                 </p>
               )}
               {step.label === "Verificación por videollamada" && (
@@ -183,27 +183,20 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
                     : "Este usuario aún no ha completado el proceso de verificación por videollamada."}
                 </p>
               )}
-              {step.label === "Miembro establecido con antigüedad" && (
+              {step.label === "Estabilidad" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified
-                    ? "Este usuario cuenta con más de un año de membresía activa, lo que demuestra confiabilidad y estabilidad en la plataforma."
-                    : "Este usuario tiene menos de un año en la plataforma. La antigüedad se considera un factor de confiabilidad adicional."}
+                    ? "Este perfil ha estado activo por mas de 3 meses."
+                    : "Este perfil no ha estado activo por mas de 3 meses. Esto no es necesariamente negativo, puede ser un perfil nuevo."}
                 </p>
               )}
-              {step.label === "Consistencia en datos de contacto" && (
+              {step.label === "Confiabilidad" && (
                 <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified ? (
-                    "El perfil mantiene estabilidad en su información de contacto sin cambios frecuentes, lo que indica confiabilidad."
+                    "El perfil no ha cambiado su telefono en X tiempo."
                   ) : (
                     <span>
-                      {step.details?.debug?.lastChangeDate ? (
-                        <>
-                          Se detectó un cambio de teléfono el <strong>{new Date(step.details.debug.lastChangeDate).toLocaleDateString()}</strong>.
-
-                        </>
-                      ) : (
-                        "Se han detectado cambios recientes en los datos de contacto del perfil, lo que puede afectar la confiabilidad."
-                      )}
+                      "El usuario ha cambiado su teléfono recientemente."
                     </span>
                   )}
                 </div>
@@ -211,7 +204,7 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
               {step.label === "Verificación por redes sociales" && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified
-                    ? "El perfil ha proporcionado sus redes sociales y han sido verificadas como auténticas, coincidiendo con la información de la cuenta."
+                    ? "El perfil ha proporcionado redes sociales confiables y coinciden con la información de este perfil."
                     : "Este perfil aún no ha proporcionado información de redes sociales para verificación."}
                 </p>
               )}

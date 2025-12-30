@@ -1,8 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Filter } from 'lucide-react';
+import FeaturedProfilesSection from '@/components/featured/FeaturedProfilesSection';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -13,16 +11,19 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { useCitiesByDepartmentQuery, useDepartmentsQuery } from '@/hooks/use-filter-options-query';
+import { useFilteredProfiles } from '@/hooks/use-filtered-profiles';
+import { useSearchFilters } from '@/hooks/use-search-filters';
 import SearchProfilesSSG from '@/modules/catalogs/components/SearchProfilesSSG';
-import FeaturedProfilesSection from '@/components/featured/FeaturedProfilesSection';
 import AgeFilter from '@/modules/filters/components/AgeFilter';
 import CategoryFilter from '@/modules/filters/components/CategoryFilter';
-import LocationFilter from '@/modules/filters/components/LocationFIlter';
 import HorizontalFilterBar from '@/modules/filters/components/HorizontalFilterBar';
-import { useSearchFilters } from '@/hooks/use-search-filters';
-import { useFilteredProfiles } from '@/hooks/use-filtered-profiles';
-import { useDepartmentsQuery, useCitiesByDepartmentQuery } from '@/hooks/use-filter-options-query';
+import LocationFilter from '@/modules/filters/components/LocationFIlter';
 import type { ProfilesResponse } from '@/types/profile.types';
+import { Filter } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface SearchPageClientProps {
   categoria: string;
@@ -509,23 +510,35 @@ export default function SearchPageClient({
           <div className="flex flex-col gap-4">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>Inicio</span>
+              <Link href="/" className="hover:text-purple-600 transition-colors">Inicio</Link>
               {categoria && (
                 <>
                   <span>/</span>
-                  <span className="capitalize font-medium text-purple-600">{categoria}</span>
+                  <Link href={`/${categoria}`} className="capitalize font-medium text-purple-600 hover:underline">
+                    {categoria}
+                  </Link>
                 </>
               )}
               {locationInfo?.department && (
                 <>
                   <span>/</span>
-                  <span className="font-medium text-purple-600">{locationInfo.department}</span>
+                  <Link
+                    href={categoria ? `/${categoria}/${departamento}` : `/${departamento}`}
+                    className="font-medium text-purple-600 hover:underline"
+                  >
+                    {locationInfo.department}
+                  </Link>
                 </>
               )}
               {locationInfo?.city && (
                 <>
                   <span>/</span>
-                  <span className="font-medium text-purple-600">{locationInfo.city}</span>
+                  <Link
+                    href={categoria ? `/${categoria}/${departamento}/${ciudad}` : `/${departamento}/${ciudad}`}
+                    className="font-medium text-purple-600 hover:underline"
+                  >
+                    {locationInfo.city}
+                  </Link>
                 </>
               )}
               {!categoria && !locationInfo && (

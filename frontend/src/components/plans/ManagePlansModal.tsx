@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Calendar, Crown, Star, Zap, CheckCircle, X, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -11,28 +13,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
-import toast from 'react-hot-toast';
-import { useSession } from 'next-auth/react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useAvailablePlans } from '@/hooks/use-available-plans';
+import { useProfilePlan } from '@/hooks/use-profile-plan';
+import { invoiceService, type CreateInvoiceData } from '@/services/invoice.service';
 import {
   purchasePlan,
   renewPlan,
   upgradePlan,
-  getActiveProfilesCount,
   validatePlanBusinessRules,
   type PlanPurchaseRequest,
   type PlanRenewalRequest,
-  type PlanUpgradeRequest,
+  type PlanUpgradeRequest
 } from '@/services/plans.service';
-import { invoiceService, type CreateInvoiceData } from '@/services/invoice.service';
 import { Plan } from '@/types/plans';
-import { useAvailablePlans } from '@/hooks/use-available-plans';
-import { useProfilePlan } from '@/hooks/use-profile-plan';
+import { useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle, CheckCircle, Crown, Star, X, Zap } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 
 interface ProfilePlan {
   planCode: string;
@@ -226,10 +225,10 @@ export default function ManagePlansModal({
         variants: [{ days: 30, price: 0, durationRank: 1 }],
         features: { showInHome: false, showInFilters: false, showInSponsored: false },
         contentLimits: {
-          photos: { min: 1, max: 5 },
-          videos: { min: 0, max: 1 },
+          photos: { min: 3, max: 15 },
+          videos: { min: 1, max: 5 },
           audios: { min: 0, max: 1 },
-          storiesPerDayMax: 1
+          storiesPerDayMax: 3
         },
         includedUpgrades: [],
         active: true,
