@@ -1,5 +1,5 @@
-import { DefaultSession, DefaultUser } from "next-auth"
-import { JWT, DefaultJWT } from "next-auth/jwt"
+import { DefaultSession, DefaultUser } from "next-auth";
+import { DefaultJWT } from "next-auth/jwt";
 
 declare module "next-auth" {
   interface Session {
@@ -19,6 +19,7 @@ declare module "next-auth" {
       verificationDocument?: string[];
       password?: string;
       emailVerified?: Date | null;
+      accessToken?: string;
     } & DefaultSession["user"]
   }
 
@@ -38,6 +39,7 @@ declare module "next-auth" {
     verificationDocument?: string[];
     password?: string;
     emailVerified?: Date | null;
+    accessToken?: string;
   }
 }
 
@@ -58,5 +60,6 @@ declare module "next-auth/jwt" {
     verificationDocument?: string[];
     password?: string;
     emailVerified?: Date | null;
+    accessToken?: string;
   }
 }

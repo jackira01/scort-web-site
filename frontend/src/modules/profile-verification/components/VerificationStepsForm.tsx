@@ -1,24 +1,24 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect, useRef } from 'react';
-import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
-import toast from 'react-hot-toast';
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { uploadMultipleImages, uploadMultipleVideos } from '@/utils/tools';
-import { CheckCircle, Upload, AlertCircle, FileImage, Video, Camera, MessageCircle, Share2 } from 'lucide-react';
 import axios from '@/lib/axios';
 import {
-  getWhatsAppRedirectData,
   clearWhatsAppRedirectData,
+  getWhatsAppRedirectData,
   isWhatsAppRedirectForProfile
 } from '@/lib/whatsapp-redirect-storage';
+import { uploadMultipleImages, uploadMultipleVideos } from '@/utils/tools';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { AlertCircle, Camera, CheckCircle, FileImage, MessageCircle, Share2, Upload, Video } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
+import { z } from 'zod';
 import { VerificationSuccessModal } from './VerificationSuccessModal';
 
 const verificationSchema = z.object({
@@ -371,7 +371,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                 <Input
                   type="file"
-                  accept={fieldName === 'mediaVerification' ? 'video/*' : 'image/*'}
+                  accept={(fieldName === 'mediaVerification' || fieldName === 'cartelVerification') ? 'video/*' : 'image/*'}
                   onChange={(e) => {
                     const files = Array.from(e.target.files || []);
                     if (files.length > 0) {
@@ -395,7 +395,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               }`}>
               <Input
                 type="file"
-                accept={fieldName === 'mediaVerification' ? 'video/*' : 'image/*'}
+                accept={(fieldName === 'mediaVerification' || fieldName === 'cartelVerification') ? 'video/*' : 'image/*'}
                 onChange={(e) => {
                   const files = Array.from(e.target.files || []);
                   if (files.length > 0) {
@@ -416,7 +416,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   {isUploading ? 'Subiendo...' : 'Haz clic para seleccionar'}
                 </span>
                 <span className="text-xs text-gray-500">
-                  {fieldName === 'mediaVerification' ? 'Formatos: MP4, MOV, AVI' : 'Formatos: JPG, PNG, WEBP'}
+                  {(fieldName === 'mediaVerification' || fieldName === 'cartelVerification') ? 'Formatos: MP4, MOV, AVI' : 'Formatos: JPG, PNG, WEBP'}
                 </span>
               </label>
             </div>
@@ -589,7 +589,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
               <CardContent>
                 <div className="mb-4">
                   <p className="text-sm text-muted-foreground mb-3 text-gray-600 dark:text-gray-300">
-                    Sube un video con un cartel que indique el nombre de tu perfil y la fecha actual.
+                    Sube un video con un cartel que indique el nombre de tu perfil y la fecha en que subes el video.
                   </p>
 
                   {/* Imagen de referencia */}
@@ -685,7 +685,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   <div className="flex items-start gap-2">
                     <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
                     <p className="text-sm text-amber-800 dark:text-amber-900">
-                      <strong>Importante:</strong> Las redes sociales deben ser visibles (públicas) mientras se realiza el proceso de validación para poder verificar que te pertenecen.
+                      <strong>Importante:</strong> Las redes sociales deben ser públicas mientras se realiza el proceso de validación para poder verificar que te pertenecen. Estas no se mostrarán en tu perfil. Puedes diligenciar una o todas.
                     </p>
                   </div>
                 </div>

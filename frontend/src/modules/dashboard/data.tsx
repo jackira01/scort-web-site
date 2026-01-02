@@ -1,4 +1,4 @@
-import { Receipt, Settings, User, Cog, CreditCard, Zap, UserCheck, FileText, Mail, Tags, Newspaper, Ticket, MapPin } from "lucide-react";
+import { Cog, CreditCard, FileSpreadsheet, FileText, Mail, MapPin, Newspaper, Receipt, Tags, Ticket, User } from "lucide-react";
 
 export const userProfiles = [
     {
@@ -234,6 +234,15 @@ export const sidebarItems = [
         badge: null,
         description:
             'Gestiona departamentos, ciudades y localidades del sistema',
+        active: false,
+    },
+    {
+        id: 'datos-excel',
+        label: 'Datos Excel',
+        icon: FileSpreadsheet,
+        badge: null,
+        description:
+            'Descarga reportes en formato Excel de la base de datos',
         active: false,
     },
 ];

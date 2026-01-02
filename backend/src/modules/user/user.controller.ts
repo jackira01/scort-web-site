@@ -1,9 +1,10 @@
+import bcrypt from 'bcryptjs';
 import type { Request, Response } from 'express';
+import EmailService from '../../services/email.service';
+import { JWTService } from '../../services/jwt.service';
+import { sendWelcomeEmail } from '../../utils/welcome-email.util';
 import UserModel from './User.model';
 import * as userService from './user.service';
-import { sendWelcomeEmail } from '../../utils/welcome-email.util';
-import bcrypt from 'bcryptjs';
-import EmailService from '../../services/email.service';
 
 export const CreateUserController = async (req: Request, res: Response) => {
   try {
@@ -348,9 +349,19 @@ export const loginUserController = async (req: Request, res: Response) => {
     // Actualizar último login
     await userService.updateUserLastLogin(user._id?.toString() || '');
 
+    // Generar JWT Token
+    const jwtService = new JWTService();
+    const token = jwtService.generateToken({
+      userId: user._id?.toString() || '',
+      role: user.role || 'user',
+      isVerified: user.isVerified,
+      verification_in_progress: user.verification_in_progress
+    });
+
     res.json({
       success: true,
       message: 'Login exitoso',
+      token, // Enviar token al frontend
       user: {
         _id: user._id,
         email: user.email,
@@ -528,8 +539,18 @@ export const authGoogleUserController = async (req: Request, res: Response) => {
     }
   }
 
+  // Generar JWT Token
+  const jwtService = new JWTService();
+  const token = jwtService.generateToken({
+    userId: user._id?.toString() || '',
+    role: user.role || 'user',
+    isVerified: user.isVerified,
+    verification_in_progress: user.verification_in_progress
+  });
+
   return res.json({
     success: true,
+    token, // Enviar token al frontend
     user: {
       _id: user._id,
       email: user.email,

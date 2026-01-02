@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -60,7 +60,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             role: result.user.role,
             hasPassword: true,
             emailVerified: result.user.emailVerified,
-            provider: "credentials"
+            provider: "credentials",
+            accessToken: result.token // Capturar el token del backend
           };
         } catch (error) {
           throw new Error(error instanceof Error ? error.message : "Error de autenticación");
@@ -129,6 +130,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           user.role = result.user.role;
           user.hasPassword = result.user.hasPassword;
           user.emailVerified = result.user.emailVerified;
+          user.accessToken = result.token; // Capturar el token del backend
 
           return true;
         } catch (error) {
@@ -158,6 +160,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.profileVerificationStatus = user.profileVerificationStatus;
         token.isHighlighted = user.isHighlighted ?? false;
         token.highlightedUntil = user.highlightedUntil;
+        // Guardar accessToken si existe
+        if (user.accessToken) {
+          token.accessToken = user.accessToken;
+        }
       }
 
       // CRÍTICO: Solo actualizar en trigger 'update' explícito, no en cada petición
@@ -226,6 +232,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.profileVerificationStatus = token.profileVerificationStatus as string;
         session.user.isHighlighted = token.isHighlighted as boolean;
         session.user.highlightedUntil = token.highlightedUntil as string;
+        session.user.accessToken = token.accessToken as string; // Pasar accessToken a la sesión
       }
       return session;
     },

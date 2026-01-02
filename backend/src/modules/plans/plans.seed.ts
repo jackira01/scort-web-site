@@ -164,6 +164,11 @@ export async function seedPlans(): Promise<void> {
             if (!existingPlan) {
                 const plan = new PlanDefinitionModel(planData);
                 await plan.save();
+            } else {
+                // Update existing plan
+                Object.assign(existingPlan, planData);
+                await existingPlan.save();
+                console.log(`🔄 Plan ${planData.code} actualizado`);
             }
         }
     } catch (error) {

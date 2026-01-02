@@ -1,24 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import BlogsManager from '@/components/admin/blogs/BlogsManager';
+import ConfigManager from '@/components/admin/ConfigManager/ConfigManager';
+import ContentEditor from '@/components/admin/content/ContentEditor';
+import ContentPagesManager from '@/components/admin/content/ContentPagesManager';
+import ProfileFormTipsManager from '@/components/admin/content/ProfileFormTipsManager';
+import CouponsManager from '@/components/admin/coupons/CouponsManager';
+import EmailManager from '@/components/admin/emails/EmailManager';
+import InvoicesManager from '@/components/admin/invoices/InvoicesManager';
+import LocationsManager from '@/components/admin/locations/LocationsManager';
+import NewsManager from '@/components/admin/news/NewsManager';
+import PlansManager from '@/components/admin/plans/PlansManager';
+import { BlogCategoriesManager } from '@/modules/adminboard/components/BlogCategoriesManager';
+import { AdminOverlay } from '@/modules/dashboard/components/AdminOverlay';
+import { AdminSidebar } from '@/modules/dashboard/components/AdminSidebar';
 import { AttributeGroupsAdmin } from '@/modules/dashboard/components/AttributeGroupsAdmin';
 import { DashUserPanel } from '@/modules/dashboard/components/DashbUserPanel';
-import ConfigManager from '@/components/admin/ConfigManager/ConfigManager';
-import PlansManager from '@/components/admin/plans/PlansManager';
-import BlogsManager from '@/components/admin/blogs/BlogsManager';
-import NewsManager from '@/components/admin/news/NewsManager';
-import CouponsManager from '@/components/admin/coupons/CouponsManager';
-import LocationsManager from '@/components/admin/locations/LocationsManager';
-import EmailManager from '@/components/admin/emails/EmailManager';
-import ContentPagesManager from '@/components/admin/content/ContentPagesManager';
-import ContentEditor from '@/components/admin/content/ContentEditor';
-import ProfileFormTipsManager from '@/components/admin/content/ProfileFormTipsManager';
-import { BlogCategoriesManager } from '@/modules/adminboard/components/BlogCategoriesManager';
-import { AdminSidebar } from '@/modules/dashboard/components/AdminSidebar';
-import { AdminOverlay } from '@/modules/dashboard/components/AdminOverlay';
+import { ExcelReports } from '@/modules/dashboard/components/ExcelReports';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { DashProfilePanel } from './DashbProfilePanel';
-import InvoicesManager from '@/components/admin/invoices/InvoicesManager';
 
 
 export default function DashboardLayout() {
@@ -95,6 +96,13 @@ export default function DashboardLayout() {
                 return (
                     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
                         <BlogsManager />
+                    </div>
+                );
+
+            case 'datos-excel':
+                return (
+                    <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+                        <ExcelReports />
                     </div>
                 );
 

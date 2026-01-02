@@ -1,0 +1,23 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./backend"
+    },
+    {
+      "path": "./frontend"
+    }
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "skipLibCheck": true,
+    "disableSourceOfProjectReferenceRedirect": true
+  },
+  "exclude": [
+    "node_modules",
+    "**/.next",
+    "**/dist",
+    "**/build",
+    "**/coverage"
+  ]
+}
