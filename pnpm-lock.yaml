@@ -4569,13 +4569,13 @@ packages:
       react: ^16.14.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc
       react-dom: ^16.14.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc
 
-  react-server-dom-turbopack@19.2.0:
-    resolution: {integrity: sha512-c0BUP0YuCK2CEBAV5O1XI+wNtMkPl+q81UAYLqqOXMiu+UDllC3ENyi64hPEbbUX7gsVFLFnfqrvLzCBwLoV9w==}
+  react-server-dom-turbopack@19.1.2:
+    resolution: {integrity: sha512-NIFUsIt+rBIAHWEMaklbIU6MJJDMOsyd6M0XiAAupUGIhjwrWgPcIZKS7pV7RK8odTAwPzHtEFO8+ynsIlz1mg==}
     engines: {node: '>=0.10.0'}
     deprecated: Critical Security Vulnerability in React Server Components
     peerDependencies:
-      react: ^19.2.0
-      react-dom: ^19.2.0
+      react: ^19.1.2
+      react-dom: ^19.1.2
 
   react-smooth@4.0.4:
     resolution: {integrity: sha512-gnGKTpYwqL0Iii09gHobNolvX4Kiq4PKx6eWBCYYix+8cdw+cGo3do906l1NBPKkSWx1DghC1dlWG9L2uGd61Q==}
@@ -9818,7 +9818,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  react-server-dom-turbopack@19.2.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-server-dom-turbopack@19.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       acorn-loose: 8.5.2
       neo-async: 2.6.2
