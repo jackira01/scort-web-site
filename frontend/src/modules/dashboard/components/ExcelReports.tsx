@@ -106,7 +106,7 @@ export function ExcelReports() {
                 </Card>
 
                 {/* Aquí puedes agregar más tarjetas para otros reportes futuros */}
-                <Card className="opacity-50">
+                {/* <Card className="opacity-50">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
                             Base de Datos de Usuarios
@@ -122,7 +122,7 @@ export function ExcelReports() {
                             Próximamente
                         </Button>
                     </CardContent>
-                </Card>
+                </Card> */}
             </div>
         </div>
     );

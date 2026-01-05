@@ -15,6 +15,11 @@ export const exportProfilesToExcel = async (req: Request, res: Response) => {
         // Obtener TODOS los grupos de atributos para columnas dinámicas
         const allAttributeGroups = await AttributeGroupModel.find({});
 
+        // Identificar el grupo de "Servicios" para tratamiento especial
+        const servicesGroup = allAttributeGroups.find(g => g.key === 'services' || g.name === 'Servicios');
+        const servicesGroupId = servicesGroup ? servicesGroup._id.toString() : null;
+        const serviceVariants = servicesGroup ? servicesGroup.variants : [];
+
         // 2. Definir columnas
         const columns: ExcelColumn[] = [
             { header: 'ID', key: '_id', width: 25 },
@@ -23,14 +28,27 @@ export const exportProfilesToExcel = async (req: Request, res: Response) => {
             { header: 'Edad', key: 'age', width: 10 },
         ];
 
-        // Agregar columnas dinámicas por cada AttributeGroup
+        // Agregar columnas dinámicas por cada AttributeGroup (EXCEPTO Servicios)
         allAttributeGroups.forEach(group => {
-            columns.push({ 
-                header: group.name || group.key, // Usar nombre o key como header
-                key: `attr_${group._id.toString()}`, 
-                width: 20 
-            });
+            if (group._id.toString() !== servicesGroupId) {
+                columns.push({ 
+                    header: group.name || group.key, 
+                    key: `attr_${group._id.toString()}`, 
+                    width: 20 
+                });
+            }
         });
+
+        // Agregar columnas específicas para cada variante de SERVICIOS
+        if (servicesGroup) {
+            serviceVariants.forEach(variant => {
+                columns.push({
+                    header: `Servicio: ${variant.label}`,
+                    key: `srv_${variant.value}`,
+                    width: 15
+                });
+            });
+        }
 
         // Agregar resto de columnas fijas
         columns.push(
@@ -72,10 +90,19 @@ export const exportProfilesToExcel = async (req: Request, res: Response) => {
             // Lógica para AttributeGroups Dinámicos
             const attributeValues: Record<string, string> = {};
             
-            // Inicializar todas en "No"
+            // Inicializar atributos normales en vacío (para rellenar con valor real)
             allAttributeGroups.forEach(group => {
-                attributeValues[`attr_${group._id.toString()}`] = 'No';
+                if (group._id.toString() !== servicesGroupId) {
+                    attributeValues[`attr_${group._id.toString()}`] = '';
+                }
             });
+
+            // Inicializar variantes de servicios en "No"
+            if (servicesGroup) {
+                serviceVariants.forEach(variant => {
+                    attributeValues[`srv_${variant.value}`] = 'No';
+                });
+            }
 
             // Verificar qué atributos tiene el perfil
             if (profile.features && profile.features.length > 0) {
@@ -85,9 +112,31 @@ export const exportProfilesToExcel = async (req: Request, res: Response) => {
                         ? feature.group_id._id.toString() 
                         : feature.group_id.toString();
                     
-                    // Si el perfil tiene este grupo de atributos y tiene valores
-                    if (attributeValues[`attr_${groupId}`] !== undefined && feature.value && feature.value.length > 0) {
-                        attributeValues[`attr_${groupId}`] = 'Sí';
+                    // CASO 1: Es el grupo de SERVICIOS -> Desglosar variantes (Sí/No)
+                    if (groupId === servicesGroupId) {
+                        if (feature.value && Array.isArray(feature.value)) {
+                            feature.value.forEach((val: any) => {
+                                // val puede ser string o objeto {key, label, value}
+                                const valKey = (typeof val === 'string' ? val : val.value || val.key || '').toLowerCase();
+                                
+                                // Buscar si coincide con alguna variante conocida
+                                const matchedVariant = serviceVariants.find(v => v.value === valKey);
+                                if (matchedVariant) {
+                                    attributeValues[`srv_${matchedVariant.value}`] = 'Sí';
+                                }
+                            });
+                        }
+                    } 
+                    // CASO 2: Es otro grupo -> Mostrar el valor real (concatenado si son múltiples)
+                    else if (attributeValues[`attr_${groupId}`] !== undefined) {
+                        if (feature.value && Array.isArray(feature.value)) {
+                            // Extraer etiquetas legibles
+                            const labels = feature.value.map((val: any) => {
+                                return typeof val === 'string' ? val : val.label || val.value || '';
+                            }).filter(Boolean);
+                            
+                            attributeValues[`attr_${groupId}`] = labels.join(', ');
+                        }
                     }
                 });
             }
@@ -97,7 +146,7 @@ export const exportProfilesToExcel = async (req: Request, res: Response) => {
                 name: profile.name,
                 userName: (profile.user as any)?.name || 'N/A',
                 age: profile.age,
-                ...attributeValues, // Esparcir las columnas de atributos
+                ...attributeValues, // Esparcir las columnas de atributos y servicios
                 planInfo: planInfo,
                 city: profile.location?.city?.label || '',
                 department: profile.location?.department?.label || '',
