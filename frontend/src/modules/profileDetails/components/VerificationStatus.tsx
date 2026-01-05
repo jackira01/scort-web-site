@@ -193,7 +193,23 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
               {step.label === "Confiabilidad" && (
                 <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {step.isVerified ? (
-                    "El perfil no ha cambiado su telefono en X tiempo."
+                    (() => {
+                      const lastChange = step.details?.debug?.lastChangeDate;
+                      if (!lastChange) return "El perfil no ha cambiado su teléfono recientemente.";
+                      
+                      const diffTime = Math.abs(new Date().getTime() - new Date(lastChange).getTime());
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      const diffMonths = Math.floor(diffDays / 30);
+                      
+                      let timeString = "";
+                      if (diffMonths > 0) {
+                        timeString = `${diffMonths} ${diffMonths === 1 ? 'mes' : 'meses'}`;
+                      } else {
+                        timeString = `${diffDays} ${diffDays === 1 ? 'día' : 'días'}`;
+                      }
+                      
+                      return `El perfil no ha cambiado su teléfono en ${timeString}.`;
+                    })()
                   ) : (
                     <span>
                       "El usuario ha cambiado su teléfono recientemente."

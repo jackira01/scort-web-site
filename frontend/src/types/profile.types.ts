@@ -46,6 +46,7 @@ export interface IProfile {
   description?: string;
   isActive: boolean;
   isDeleted?: boolean;
+  category?: string; // Nueva propiedad para la categoría
   location: ProfileLocation;
   features: {
     group_id: string;
@@ -195,8 +196,13 @@ export interface ProfileCardData {
   hasVideo?: boolean;
   hasDestacadoUpgrade?: boolean;
   hasImpulsoUpgrade?: boolean;
+  category?: string;
   slug?: string;
   services?: AttributeValue[];
+  features?: {
+    group_id: string | { name: string; label: string; key?: string };
+    value: AttributeValue[];
+  }[];
   planAssignment?: {
     planCode: string;
     variantDays: number;

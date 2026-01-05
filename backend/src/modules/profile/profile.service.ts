@@ -7,6 +7,7 @@ import InvoiceModel from '../payments/invoice.model';
 import invoiceService from '../payments/invoice.service';
 import { PlanDefinitionModel } from '../plans/plan.model';
 import { UpgradeDefinitionModel } from '../plans/upgrade.model';
+import { ProfileVerification } from '../profile-verification/profile-verification.model';
 import { createProfileVerification, updatePhoneChangeDetectionStatus } from '../profile-verification/profile-verification.service';
 import { enrichProfileVerification } from '../profile-verification/verification.helper';
 import UserModel from '../user/User.model';
@@ -801,6 +802,39 @@ export const createProfileWithInvoice = async (data: CreateProfileDTO & { planId
   return { profile, invoice, whatsAppMessage };
 };
 
+// Helper para extraer categoría de features
+export const extractCategoryFromFeatures = (features: any[]): string | null => {
+  if (!features || !Array.isArray(features)) return null;
+
+  const categoryFeature = features.find((f: any) => {
+    // CASO 1: group_id es un objeto poblado
+    if (f.group_id && typeof f.group_id === 'object') {
+      const key = f.group_id.key?.toLowerCase();
+      const name = f.group_id.name?.toLowerCase();
+      return key === 'category' || name === 'categoría' || name === 'categoria';
+    }
+    
+    // CASO 2: group_id es un string (ID) pero el valor nos da una pista
+    else if (f.value && Array.isArray(f.value) && f.value.length > 0) {
+      const val = f.value[0];
+      if (typeof val === 'object' && val !== null && val.key) {
+         const key = val.key.toLowerCase();
+         return ['escort', 'escorts', 'masajista', 'masajistas', 'trans', 'bdsm', 'pareja', 'parejas'].includes(key);
+      }
+    }
+    return false;
+  });
+
+  if (categoryFeature && categoryFeature.value && categoryFeature.value.length > 0) {
+    const val = categoryFeature.value[0];
+    if (typeof val === 'object' && val !== null) {
+      return val.label || val.value || val.key;
+    }
+    return val;
+  }
+  return null;
+};
+
 export const getProfiles = async (page: number = 1, limit: number = 10, fields?: string): Promise<{ profiles: IProfile[]; pagination: { page: number; limit: number; total: number; pages: number } }> => {
   const skip = (page - 1) * limit;
 
@@ -879,10 +913,15 @@ export const getProfiles = async (page: number = 1, limit: number = 10, fields?:
       (upgrade.code === 'DESTACADO' || upgrade.code === 'HIGHLIGHT') &&
       new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
     ) || false;
+
+    // Extraer categoría
+    const category = extractCategoryFromFeatures(profile.features);
+
     return {
       ...profile,
       isVerified,
-      featured
+      featured,
+      category
     };
   }) as unknown as IProfile[];
 
@@ -943,13 +982,18 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
       upgrades: 1,
       lastLogin: 1,
       createdAt: 1,
-      updatedAt: 1
+      updatedAt: 1,
+      features: 1 // Incluir features para mostrar categoría
     })
     .populate({
       path: 'user',
       model: 'User',
       select: 'name email isVerified',
       match: { isVerified: true } // FILTRO CRÍTICO: Solo usuarios verificados
+    })
+    .populate({
+      path: 'features.group_id',
+      select: 'name label key', // Incluir key para búsqueda segura
     })
     .populate({
       path: 'verification',
@@ -996,7 +1040,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
       defaultPlanFeatures = planCodeToFeatures[defaultPlanConfig.planCode];
     }
   } catch (error) {
-    // Error al obtener configuración del plan por defecto
+    console.error('Error getting default plan config:', error);
   }
 
   // Debug: Log información de filtrado
@@ -1090,10 +1134,14 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
       }
     }
 
+    // Extraer categoría
+    const category = extractCategoryFromFeatures(profile.features);
+
     return {
       ...profile,
       hasDestacadoUpgrade,
       hasImpulsoUpgrade,
+      category, // Nueva propiedad
       verification: {
         ...(typeof profile.verification === 'object' && profile.verification !== null ? profile.verification : {}),
         isVerified,
@@ -2279,6 +2327,7 @@ export const upgradePlan = async (profileId: string, newPlanCode: string, varian
   const updatedProfile = await ProfileModel.findByIdAndUpdate(
     profileId,
     {
+      isActive: true, // Reactivar perfil al renovar plan
       planAssignment: {
         planId: newPlan._id,
         planCode: normalizedPlanCode,
@@ -2490,7 +2539,10 @@ export const getAllProfilesForAdmin = async (
   fields?: string | string[],
   userId?: string,
   profileName?: string,
-  profileId?: string
+  profileId?: string,
+  isActive?: boolean,
+  isDeleted?: boolean,
+  isVerified?: boolean | 'pending'
 ): Promise<{
   docs: IProfile[];
   totalDocs: number;
@@ -2510,6 +2562,38 @@ export const getAllProfilesForAdmin = async (
   if (userId) filter.user = userId;
   if (profileId) filter._id = profileId;
   if (profileName) filter.name = { $regex: profileName, $options: 'i' };
+  if (typeof isActive === 'boolean') filter.isActive = isActive;
+  if (typeof isDeleted === 'boolean') filter.isDeleted = isDeleted;
+
+  // Filtro por verificación (requiere consulta a ProfileVerification)
+  if (isVerified !== undefined) {
+    const verificationFilter: any = {};
+    
+    if (isVerified === 'pending') {
+      verificationFilter.verificationStatus = 'pending';
+    } else if (isVerified === true) {
+      verificationFilter.verificationStatus = 'check';
+    } else {
+      verificationFilter.verificationStatus = { $ne: 'check' };
+    }
+
+    const verifications = await ProfileVerification.find(verificationFilter).select('_id');
+    const verificationIds = verifications.map(v => v._id);
+
+    if (isVerified === 'pending') {
+      filter.verification = { $in: verificationIds };
+    } else if (isVerified === true) {
+      filter.verification = { $in: verificationIds };
+    } else {
+      // Si no está verificado, puede ser que tenga una verificación no 'check' O que no tenga campo verification
+      // NOTA: Si buscamos 'pending', solo queremos los que tienen verificationStatus='pending', no los que no tienen verificación.
+      filter.$or = [
+        { verification: { $in: verificationIds } },
+        { verification: { $exists: false } },
+        { verification: null }
+      ];
+    }
+  }
 
   let query = ProfileModel.find(filter);
 
@@ -2591,9 +2675,8 @@ export const getAllProfilesForAdmin = async (
         verificationStatus = verification.verificationStatus;
       }
 
-      const verifiedCount = Object.values(verification).filter(status => status === 'verified').length;
-      const totalFields = Object.keys(verification).length;
-      if (verifiedCount === totalFields && totalFields > 0) {
+      // Usar el estado maestro de la verificación
+      if (verificationStatus === 'check') {
         isVerified = true;
       }
     }
@@ -2606,11 +2689,15 @@ export const getAllProfilesForAdmin = async (
           new Date(upgrade.endAt) > now
       ) || false;
 
+    // Extraer categoría
+    const category = extractCategoryFromFeatures(profile.features);
+
     return {
       ...profile,
       isVerified,
       verificationStatus,
       featured,
+      category,
     };
   }) as unknown as IProfile[];
 

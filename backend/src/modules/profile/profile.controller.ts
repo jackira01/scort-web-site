@@ -414,11 +414,11 @@ export const getAllProfilesForAdmin = async (req: AuthRequest, res: Response) =>
     }
 
     // Recibir parámetros del body en lugar de query params
-    const { page = 1, limit = 10, fields, userId, profileName, profileId } = req.body;
+    const { page = 1, limit = 10, fields, userId, profileName, profileId, isActive, isDeleted, isVerified } = req.body;
 
-    console.log('📋 [ADMIN] Solicitando perfiles:', { page, limit, userId, profileName, profileId, fieldsCount: fields?.length || 0 });
+    console.log('📋 [ADMIN] Solicitando perfiles:', { page, limit, userId, profileName, profileId, isActive, isDeleted, isVerified, fieldsCount: fields?.length || 0 });
 
-    const result = await service.getAllProfilesForAdmin(page, limit, fields, userId, profileName, profileId);
+    const result = await service.getAllProfilesForAdmin(page, limit, fields, userId, profileName, profileId, isActive, isDeleted, isVerified);
 
     res.json({
       success: true,

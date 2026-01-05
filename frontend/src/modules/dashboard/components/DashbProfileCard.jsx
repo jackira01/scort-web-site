@@ -1,30 +1,26 @@
-import {
-  Calendar,
-  CheckCircle,
-  DollarSign,
-  Edit,
-  Eye,
-  MapPin,
-  Rocket,
-  Shield,
-  Star,
-  Trash2,
-  Upload,
-  Zap,
-} from 'lucide-react';
-import Link from 'next/link';
-import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { hardDeleteProfile } from '@/services/user.service';
-import toast from 'react-hot-toast';
-import { hasDestacadoUpgrade, hasImpulsoUpgrade } from '@/utils/profile.utils';
 import UnifiedUpgradesModal from '@/components/upgrades/UnifiedUpgradesModal';
+import { hardDeleteProfile } from '@/services/user.service';
+import { hasDestacadoUpgrade, hasImpulsoUpgrade } from '@/utils/profile.utils';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+    CheckCircle,
+    DollarSign,
+    Edit,
+    Eye,
+    Rocket,
+    Shield,
+    Star,
+    Trash2,
+    Upload
+} from 'lucide-react';
+import Link from 'next/link';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 export const DashbProfileCard = ({
   profile,
@@ -92,16 +88,18 @@ export const DashbProfileCard = ({
   {/* BADGES a la derecha verticalmente */}
   <div className="flex flex-col space-y-2">
 
-    <Badge
-      variant={profile.isActive ? "default" : "secondary"}
-      className={`w-fit ${
-        profile.isActive
-          ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100"
-          : ""
-      }`}
-    >
-      {profile.isActive ? "Activo" : "Inactivo"}
-    </Badge>
+    {!profile.isDeleted && (
+      <Badge
+        variant={profile.isActive ? "default" : "secondary"}
+        className={`w-fit ${
+          profile.isActive
+            ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100"
+            : ""
+        }`}
+      >
+        {profile.isActive ? "Activo" : "Inactivo"}
+      </Badge>
+    )}
 
     {profile.isDeleted && (
       <Badge

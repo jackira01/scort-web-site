@@ -2,6 +2,7 @@ import { ProfileModel } from '../profile/profile.model';
 import { PlanDefinitionModel } from '../plans/plan.model';
 import { AttributeGroupModel as AttributeGroup } from '../attribute-group/attribute-group.model';
 import { sortProfiles } from '../visibility/visibility.service';
+import { extractCategoryFromFeatures } from '../profile/profile.service';
 import type { IProfile } from '../profile/profile.types';
 
 export interface SponsoredProfilesQuery {
@@ -225,7 +226,7 @@ export const getSponsoredProfiles = async (
     };
 
     // Construir proyección de campos
-    const requiredFields = ['planAssignment', 'upgrades', 'lastShownAt', 'createdAt', 'name'];
+    const requiredFields = ['planAssignment', 'upgrades', 'lastShownAt', 'createdAt', 'name', 'features'];
     let projection: Record<string, number> = {};
 
     if (fields.length > 0) {
@@ -244,6 +245,7 @@ export const getSponsoredProfiles = async (
         .populate('user', 'email username')
         .populate('planAssignment.planId', 'code name level features includedUpgrades')
         .populate('verification', 'status verifiedAt')
+        .populate('features.group_id', 'key name')
         .lean(),
       ProfileModel.countDocuments(finalFilters)
     ]);
@@ -306,10 +308,14 @@ export const getSponsoredProfiles = async (
         }
       );
 
+      // Extraer categoría
+      const category = extractCategoryFromFeatures(profile.features);
+
       return {
         ...profile,
         upgrades,
-        hasDestacadoUpgrade
+        hasDestacadoUpgrade,
+        category
       };
     });
 

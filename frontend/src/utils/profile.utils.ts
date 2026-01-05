@@ -53,6 +53,7 @@ export const transformProfileToCard = (profile: Profile): ProfileCardData => {
 
     // Campos adicionales requeridos por ProfileCardData
     slug: p.slug || p._id,
+    category: p.category,
     planAssignment: p.planAssignment,
     price: p.price || { amount: 0, currency: 'COP' },
     services: p.services || []

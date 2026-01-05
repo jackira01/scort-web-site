@@ -50,6 +50,7 @@ export interface Profile {
   user: string;
   name: string;
   description?: string;
+  category?: string;
   location: {
     country: {
       value: string;

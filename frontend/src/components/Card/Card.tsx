@@ -1,4 +1,4 @@
-import { Calendar, CheckCircle, MapPin, Star } from 'lucide-react';
+import { Calendar, CheckCircle, MapPin, Star, Tag } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -92,6 +92,12 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                             'N/A'}
                         </span>
                       </span>
+                      {profile.category && (
+                        <span className="flex items-center text-purple-300 font-medium">
+                          <Tag className="h-3 w-3 mr-1" />
+                          {profile.category}
+                        </span>
+                      )}
                     </div>
 
                     {profile.description && (
@@ -132,6 +138,12 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                           'Ubicación no disponible'}
                       </span>
                     </span>
+                    {profile.category && (
+                      <span className="flex items-center text-purple-600 dark:text-purple-400 font-medium hover:text-purple-700 dark:hover:text-purple-300 transition-colors duration-200">
+                        <Tag className="h-2 w-2 mr-1" />
+                        {profile.category}
+                      </span>
+                    )}
                   </div>
 
                   {profile.description && (

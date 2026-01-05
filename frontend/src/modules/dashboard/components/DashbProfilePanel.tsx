@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Loader from '@/components/Loader';
 import { Pagination } from '@/components/Pagination';
+import ManagePlansModal from '@/components/plans/ManagePlansModal';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAdminProfiles } from '@/hooks/use-admin-profiles';
 import { useAllUsers } from '@/hooks/use-all-users';
-import AdminProfileVerificationCarousel from '@/modules/dashboard/components/AdminProfileVerificationCarousel';
-import ManagePlansModal from '@/components/plans/ManagePlansModal';
 import UploadStoryModal from '@/modules/account/components/UploadStoryModal';
-import { DashbProfileCard } from './DashbProfileCard';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import AdminProfileVerificationCarousel from '@/modules/dashboard/components/AdminProfileVerificationCarousel';
 import { X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { DashbProfileCard } from './DashbProfileCard';
 
 export const DashProfilePanel = () => {
   const [verificationCarouselOpen, setVerificationCarouselOpen] =
@@ -31,6 +31,9 @@ export const DashProfilePanel = () => {
   const [profileIdInput, setProfileIdInput] = useState('');
   const [profileName, setProfileName] = useState<string | undefined>(undefined);
   const [profileId, setProfileId] = useState<string | undefined>(undefined);
+  const [isActive, setIsActive] = useState<boolean | undefined>(undefined);
+  const [isDeleted, setIsDeleted] = useState<boolean | undefined>(undefined);
+  const [isVerified, setIsVerified] = useState<boolean | 'pending' | undefined>(undefined);
 
   // Obtener usuarios para el selector
   const { data: usersData, isLoading: isLoadingUsers } = useAllUsers(1, 100);
@@ -40,18 +43,21 @@ export const DashProfilePanel = () => {
     isLoading,
     error,
   } = useAdminProfiles(
-    currentPage, 
-    limit, 
-    '_id,name,profileName,age,isActive,isDeleted,media,featured,location,verification,isVerified,planAssignment,upgrades', 
+    currentPage,
+    limit,
+    '_id,name,profileName,age,isActive,isDeleted,media,featured,location,verification,isVerified,planAssignment,upgrades,features',
     userId,
     profileName,
-    profileId
+    profileId,
+    isActive,
+    isDeleted,
+    isVerified
   );
 
   // Extraer los datos de la respuesta del nuevo endpoint
   const profilesData = profilesResponse?.success ? profilesResponse.data : null;
 
-  // Resetear la página cuando cambia el filtro de usuario
+  // Resetear la página cuando cambi, isActive, isDeleted, isVerifieda el filtro de usuario
   useEffect(() => {
     setCurrentPage(1);
   }, [userId, profileName, profileId]);
@@ -77,6 +83,9 @@ export const DashProfilePanel = () => {
     setProfileNameInput('');
     setProfileId(undefined);
     setProfileIdInput('');
+    setIsActive(undefined);
+    setIsDeleted(undefined);
+    setIsVerified(undefined);
   };
 
   if (isLoading) {
@@ -183,10 +192,69 @@ export const DashProfilePanel = () => {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Filtro Activo */}
+          <div className="space-y-2">
+            <Label>Estado Activo</Label>
+            <Select
+              value={isActive === undefined ? 'all' : isActive ? 'true' : 'false'}
+              onValueChange={(value) => setIsActive(value === 'all' ? undefined : value === 'true')}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="true">Activos</SelectItem>
+                <SelectItem value="false">Inactivos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Filtro Eliminado */}
+          <div className="space-y-2">
+            <Label>Estado Eliminado</Label>
+            <Select
+              value={isDeleted === undefined ? 'all' : isDeleted ? 'true' : 'false'}
+              onValueChange={(value) => setIsDeleted(value === 'all' ? undefined : value === 'true')}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="true">Eliminados</SelectItem>
+                <SelectItem value="false">No Eliminados</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Filtro Verificado */}
+          <div className="space-y-2">
+            <Label>Estado Verificado</Label>
+            <Select
+              value={isVerified === undefined ? 'all' : isVerified === 'pending' ? 'pending' : isVerified ? 'true' : 'false'}
+              onValueChange={(value) => {
+                if (value === 'all') setIsVerified(undefined);
+                else if (value === 'pending') setIsVerified('pending');
+                else setIsVerified(value === 'true');
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="true">Verificados</SelectItem>
+                <SelectItem value="pending">Verificación pendiente</SelectItem>
+                <SelectItem value="false">No Verificados</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Botón limpiar filtros */}
-        {(userId || profileName || profileId) && (
+        {(userId || profileName || profileId || isActive !== undefined || isDeleted !== undefined || isVerified !== undefined) && (
           <div className="flex justify-end">
             <Button
               variant="outline"
