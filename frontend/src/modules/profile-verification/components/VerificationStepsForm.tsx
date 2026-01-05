@@ -68,6 +68,8 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
   const queryClient = useQueryClient();
   const router = useRouter();
 
+  const isVerified = initialData.verificationStatus === 'check';
+
   // Refs for scrolling
   const step1Ref = useRef<HTMLDivElement>(null);
   const step2Ref = useRef<HTMLDivElement>(null);
@@ -368,26 +370,40 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   Ver
                 </Button>
               </div>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                <Input
-                  type="file"
-                  accept={(fieldName === 'mediaVerification' || fieldName === 'cartelVerification') ? 'video/*' : 'image/*'}
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    if (files.length > 0) {
-                      handleFileUpload(files, fieldName);
-                    }
-                  }}
-                  disabled={!isEnabled || isUploading}
-                  className="hidden"
-                  id={`${fieldName}-replace`}
-                />
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center flex flex-col items-center justify-center gap-2">
                 <label
                   htmlFor={`${fieldName}-replace`}
-                  className={`cursor-pointer text-sm text-gray-600 dark:text-gray-300 ${!isEnabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                  className={`cursor-pointer flex items-center gap-2 text-sm font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 ${!isEnabled ? 'cursor-not-allowed opacity-50' : ''}`}
                 >
+                  <Input
+                    type="file"
+                    accept={(fieldName === 'mediaVerification' || fieldName === 'cartelVerification') ? 'video/*' : 'image/*'}
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      if (files.length > 0) {
+                        handleFileUpload(files, fieldName);
+                      }
+                      // Reset input value to allow selecting same file
+                      e.target.value = '';
+                    }}
+                    disabled={!isEnabled || isUploading}
+                    className="hidden"
+                    id={`${fieldName}-replace`}
+                  />
+                  <Upload className="h-4 w-4" />
                   Cambiar archivo
                 </label>
+                {!isEnabled && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {isVerified 
+                      ? 'Este campo ya ha sido verificado y no se puede editar'
+                      : 'Debes completar los pasos anteriores para modificar este archivo.'
+                    }
+                  </p>
+                )}
+                <p className="text-xs text-gray-500">
+                  {(fieldName === 'mediaVerification' || fieldName === 'cartelVerification') ? 'Formatos: MP4, MOV, AVI' : 'Formatos: JPG, PNG, WEBP'}
+                </p>
               </div>
             </div>
           ) : (
@@ -521,7 +537,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   '',
                   '',
                   <></>,
-                  true,
+                  !isVerified,
                   watchedValues.documentVerification.frontPhoto
                 )}
               </CardContent>
@@ -567,7 +583,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   '',
                   '',
                   <></>,
-                  isStep1Complete,
+                  !isVerified && isStep1Complete,
                   watchedValues.documentVerification.backPhoto
                 )}
               </CardContent>
@@ -615,7 +631,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   '',
                   '',
                   <></>,
-                  isStep1Complete && isStep2Complete,
+                  !isVerified && isStep1Complete && isStep2Complete,
                   watchedValues.cartelVerification.mediaLink
                 )}
               </CardContent>
@@ -661,7 +677,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   '',
                   '',
                   <></>,
-                  isStep1Complete && isStep2Complete && isStep3Complete,
+                  !isVerified && isStep1Complete && isStep2Complete && isStep3Complete,
                   watchedValues.selfieVerification.photo
                 )}
               </CardContent>
@@ -681,6 +697,16 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {isVerified && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                      <p className="text-sm text-red-800 dark:text-red-900">
+                        Este perfil ya ha sido verificado. No puedes editar la información.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
@@ -696,6 +722,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                     <Input
                       placeholder="@usuario"
                       {...form.register('socialMedia.instagram')}
+                      disabled={isVerified}
                     />
                   </div>
                   <div className="space-y-2">
@@ -703,6 +730,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                     <Input
                       placeholder="usuario o enlace"
                       {...form.register('socialMedia.facebook')}
+                      disabled={isVerified}
                     />
                   </div>
                   <div className="space-y-2">
@@ -710,6 +738,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                     <Input
                       placeholder="@usuario"
                       {...form.register('socialMedia.tiktok')}
+                      disabled={isVerified}
                     />
                   </div>
                   <div className="space-y-2">
@@ -717,6 +746,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                     <Input
                       placeholder="@usuario"
                       {...form.register('socialMedia.twitter')}
+                      disabled={isVerified}
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
@@ -724,6 +754,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                     <Input
                       placeholder="usuario o enlace"
                       {...form.register('socialMedia.onlyFans')}
+                      disabled={isVerified}
                     />
                   </div>
                 </div>
@@ -745,18 +776,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
             </Card>
           )}
 
-          {isStep2Complete && !isStep3Complete && (
-            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-blue-500" />
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
-                    <strong>Opcional:</strong> Puedes completar el Paso 3 (video de verificación) para mayor confianza.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+
 
           {isStep3Complete && !isStep4Complete && (
             <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
@@ -810,6 +830,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
             <Button
               type="submit"
               disabled={
+                isVerified ||
                 isSubmitting ||
                 Object.values(uploadingFiles).some(Boolean) ||
                 !isStep1Complete ||

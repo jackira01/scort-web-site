@@ -256,7 +256,8 @@ export const getSponsoredProfilesForCards = async (
     'activeUpgrades',
     'hasDestacadoUpgrade',
     'isActive',
-    'visible'
+    'visible',
+    'category'
   ];
 
   return getSponsoredProfiles({

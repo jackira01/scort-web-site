@@ -29,12 +29,15 @@ export const getProfilesWithStories = async (page: number = 1, limit: number = 1
 };
 
 export const getAllProfilesForAdmin = async (
-  page: number = 1, 
-  limit: number = 10, 
-  fields?: string | string[], 
+  page: number = 1,
+  limit: number = 10,
+  fields?: string | string[],
   userId?: string,
   profileName?: string,
-  profileId?: string
+  profileId?: string,
+  isActive?: boolean,
+  isDeleted?: boolean,
+  isVerified?: boolean | 'pending'
 ) => {
   // Convertir fields a array si es string
   const fieldsArray = typeof fields === 'string'
@@ -47,11 +50,12 @@ export const getAllProfilesForAdmin = async (
     ...(fieldsArray && { fields: fieldsArray }),
     ...(userId && { userId }),
     ...(profileName && { profileName }),
-    ...(profileId && { profileId })
+    ...(profileId && { profileId }),
+    ...(typeof isActive === 'boolean' && { isActive }),
+    ...(typeof isDeleted === 'boolean' && { isDeleted }),
+    ...(isVerified !== undefined && { isVerified })
   };
 
-  console.log('📡 [ADMIN API] Solicitando perfiles:', payload);
-
-  const response = await axios.post(`${API_URL}/api/profile/admin/all`, payload);
+  const response = await axios.post('/api/profile/admin/all', payload);
   return response.data;
 };

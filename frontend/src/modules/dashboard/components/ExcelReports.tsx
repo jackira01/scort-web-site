@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Download, FileSpreadsheet, Loader2 } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -29,6 +29,11 @@ export function ExcelReports() {
             });
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    toast.error('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+                    await signOut({ callbackUrl: '/autenticacion/ingresar' });
+                    return;
+                }
                 throw new Error('Error al descargar el reporte');
             }
 

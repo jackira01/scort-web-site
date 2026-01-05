@@ -103,8 +103,26 @@ const UpdateInvoiceStatusModal: React.FC<UpdateInvoiceStatusModalProps> = ({
               <span className="text-sm text-gray-50 dark:text-gray-400">{invoice._id}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">Monto:</span>
-              <span className="text-sm font-semibold">{formatCurrency(invoice.totalAmount)}</span>
+              <span className="text-sm font-medium">Número de Factura:</span>
+              <span className="text-sm font-semibold">{invoice.invoiceNumber || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Servicio:</span>
+              <span className="text-sm font-semibold">{invoice.items?.[0]?.name || invoice.items?.[0]?.description || 'Servicio desconocido'}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Precio:</span>
+              <span className="text-sm font-semibold">{formatCurrency(invoice.coupon?.originalAmount || invoice.subtotal || invoice.totalAmount)}</span>
+            </div>
+            {(invoice.coupon?.discountAmount > 0 || invoice.discount > 0) && (
+              <div className="flex justify-between items-center text-green-600">
+                <span className="text-sm font-medium">Descuento:</span>
+                <span className="text-sm font-semibold">-{formatCurrency(invoice.coupon?.discountAmount || invoice.discount || 0)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center border-t pt-2 mt-2">
+              <span className="text-sm font-bold">Total:</span>
+              <span className="text-sm font-bold text-lg">{formatCurrency(invoice.totalAmount)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Estado actual:</span>

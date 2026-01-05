@@ -48,7 +48,9 @@ const dayLabels = {
 
 // Función para convertir tiempo de 24h a 12h con AM/PM
 const formatTime12Hour = (time24: string): string => {
+    if (!time24) return '';
     const [hours, minutes] = time24.split(':').map(Number);
+    if (minutes === undefined) return '';
     const period = hours >= 12 ? 'PM' : 'AM';
     const hours12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
     return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
@@ -92,11 +94,11 @@ export function AvailabilitySchedule({
                     startTime:
                         hasSlots && existingDay!.slots[0]
                             ? existingDay!.slots[0].start
-                            : '09:00',
+                            : '',
                     endTime:
                         hasSlots && existingDay!.slots[0]
                             ? existingDay!.slots[0].end
-                            : '17:00',
+                            : '',
                 };
                 return acc;
             },
@@ -109,8 +111,8 @@ export function AvailabilitySchedule({
 
     // Estados para la funcionalidad de horarios múltiples
     const [selectedDays, setSelectedDays] = useState<string[]>([]);
-    const [bulkStartTime, setBulkStartTime] = useState('09:00');
-    const [bulkEndTime, setBulkEndTime] = useState('17:00');
+    const [bulkStartTime, setBulkStartTime] = useState('');
+    const [bulkEndTime, setBulkEndTime] = useState('');
     const [showBulkSchedule, setShowBulkSchedule] = useState(false);
     const [copiedFromDay, setCopiedFromDay] = useState<string | null>(null);
 
@@ -435,7 +437,7 @@ export function AvailabilitySchedule({
                                         <TimePicker
                                             value={dayStates[day].endTime}
                                             onChange={(value) => handleTimeChange(day, 'endTime', value)}
-                                            disabled={!dayStates[day].isAvailable}
+                                            disabled={!dayStates[day].isAvailable || !dayStates[day].startTime}
                                             className="flex-1"
                                             placeholder="Seleccionar hora"
                                             minTime={dayStates[day].startTime} // ✅ No permitir <= hora inicio

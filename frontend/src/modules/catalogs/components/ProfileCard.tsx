@@ -1,23 +1,22 @@
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { VerificationBar } from '@/components/VerificationBar/VerificationBar';
+import type { LocationValue, ProfileCardData } from '@/types/profile.types';
+import {
+  formatLocation
+} from '@/utils/profile.utils';
+import { createProfileSlug } from '@/utils/slug';
 import {
   Calendar,
   CheckCircle,
   MapPin,
   Star,
+  Tag,
   Video,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { VerificationBar } from '@/components/VerificationBar/VerificationBar';
-import { createProfileSlug } from '@/utils/slug';
-import type { Profile } from '@/types/user.types';
-import type { ProfileCardData, LocationValue } from '@/types/profile.types';
-import {
-  formatLocation,
-  hasDestacadoUpgrade,
-} from '@/utils/profile.utils';
 
 interface ProfileCardProps {
   profile: ProfileCardData;
@@ -26,6 +25,9 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileCardProps) {
+  // Usar la categoría que viene directamente del backend
+  const category = profile.category;
+
   // Variante para destacados: solo imagen rectangular
   if (variant === 'featured') {
     return (
@@ -56,13 +58,17 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
             {/* Badges siempre visibles */}
-            <div className="absolute top-3 right-3 flex space-x-2 z-10">
+            <div className="absolute top-3 right-3 flex flex-col items-end space-y-2 z-10">
               {profile.verification?.isVerified && (
                 <Badge className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100">
                   <CheckCircle className="h-3 w-3" />
                 </Badge>
               )}
-
+              {category && (
+                <Badge variant="secondary" className="bg-black/50 text-white backdrop-blur-sm border-none text-xs">
+                  {category}
+                </Badge>
+              )}
             </div>
 
             {/* Overlay con información con pulso */}
@@ -168,6 +174,13 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                       {formatLocation(profile.location)}
                     </span>
                   </span>
+                  {category && (
+                    <span className="flex items-center text-purple-300 font-medium">
+                      <Tag className="h-3 w-3 mr-1" />
+                      
+                      {category}
+                    </span>
+                  )}
                 </div>
 
                 {profile.description && (
@@ -202,6 +215,12 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                     <Calendar className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
                     {profile.age} años
                   </span>
+                  {profile.category && (
+                    <span className="flex items-center text-purple-600 dark:text-purple-400 font-medium">
+                      <Tag className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
+                      {profile.category}
+                    </span>
+                  )}
                   <span className="flex items-center">
                     <MapPin className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
                     <span className="line-clamp-1">
