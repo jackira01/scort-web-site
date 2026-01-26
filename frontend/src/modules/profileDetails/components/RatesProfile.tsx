@@ -1,3 +1,5 @@
+import { getDisplayDuration } from '@/utils/time-format';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign } from 'lucide-react';
 export default function RatesProfile({
@@ -32,7 +34,7 @@ export default function RatesProfile({
               <div className="flex flex-col items-start gap-1">
                 <span className="text-muted-foreground text-xs">Tiempo</span>
                 <span className="text-foreground text-xs">
-                  {rate.hour} hora{rate.hour !== '1' && rate.hour !== '01:00' ? 's' : ''}
+                  {getDisplayDuration(rate.hour)}
                 </span>
               </div>
 

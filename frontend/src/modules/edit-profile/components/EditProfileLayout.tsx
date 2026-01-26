@@ -841,6 +841,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
             eyeGroup={groupMap.eyes}
             hairGroup={groupMap.hair}
             bodyGroup={groupMap.body}
+            isEditing={true}
           />
         );
       case 4:

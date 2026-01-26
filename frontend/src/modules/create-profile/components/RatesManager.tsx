@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { formatDurationForBackend, getDisplayDuration, parseDuration } from '@/utils/time-format';
 import { DollarSign, Edit2, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { Rate } from '../types';
@@ -42,38 +43,6 @@ export function RatesManager({ rates, onChange, deposito, onDepositChange }: Rat
     }).format(price);
   };
 
-  const formatTimeForBackend = (
-    days: string,
-    hours: string,
-    minutes: string,
-  ): string => {
-    const totalMinutes =
-      (parseInt(days) || 0) * 24 * 60 +
-      (parseInt(hours) || 0) * 60 +
-      (parseInt(minutes) || 0);
-
-    const finalHours = Math.floor(totalMinutes / 60);
-    const finalMinutes = totalMinutes % 60;
-
-    return `${finalHours.toString().padStart(2, '0')}:${finalMinutes.toString().padStart(2, '0')}`;
-  };
-
-  const parseTimeFromBackend = (timeStr: string) => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const totalMinutes = hours * 60 + minutes;
-
-    const days = Math.floor(totalMinutes / (24 * 60));
-    const remainingMinutes = totalMinutes % (24 * 60);
-    const finalHours = Math.floor(remainingMinutes / 60);
-    const finalMins = remainingMinutes % 60;
-
-    return {
-      days: days > 0 ? days.toString() : '',
-      hours: finalHours > 0 ? finalHours.toString() : '',
-      minutes: finalMins > 0 ? finalMins.toString() : '',
-    };
-  };
-
   const addRate = () => {
     const hasValidTime =
       (newRate.days && parseInt(newRate.days) > 0) ||
@@ -85,7 +54,7 @@ export function RatesManager({ rates, onChange, deposito, onDepositChange }: Rat
       return;
     }
 
-    const timeForBackend = formatTimeForBackend(
+    const timeForBackend = formatDurationForBackend(
       newRate.days,
       newRate.hours,
       newRate.minutes,
@@ -132,7 +101,7 @@ export function RatesManager({ rates, onChange, deposito, onDepositChange }: Rat
   };
 
   const editRate = (rate: Rate) => {
-    const { days, hours, minutes } = parseTimeFromBackend(rate.time);
+    const { days, hours, minutes } = parseDuration(rate.time);
     setNewRate({
       days,
       hours,
@@ -154,18 +123,6 @@ export function RatesManager({ rates, onChange, deposito, onDepositChange }: Rat
       delivery: false,
     });
     setShowValidationError(false);
-  };
-
-  const getDisplayTime = (timeStr: string) => {
-    const { days, hours, minutes } = parseTimeFromBackend(timeStr);
-    const parts = [];
-
-    if (days) parts.push(`${days} día${parseInt(days) > 1 ? 's' : ''}`);
-    if (hours) parts.push(`${hours} hora${parseInt(hours) > 1 ? 's' : ''}`);
-    if (minutes)
-      parts.push(`${minutes} minuto${parseInt(minutes) > 1 ? 's' : ''}`);
-
-    return parts.join(', ');
   };
 
   const handlePriceChange = (value: string) => {
@@ -211,7 +168,7 @@ export function RatesManager({ rates, onChange, deposito, onDepositChange }: Rat
                 <div className="flex-1">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
                     <span className="font-medium text-foreground">
-                      {getDisplayTime(rate.time)}
+                      {getDisplayDuration(rate.time)}
                     </span>
 
                     <span className="text-xl sm:text-2xl font-bold text-green-600">
