@@ -4,6 +4,7 @@ import { AvailabilitySchedule } from '@/components/availability/AvailabilitySche
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { AlertTriangle } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 import { useFormContext } from '../context/FormContext';
 import type { AttributeGroup, Rate } from '../types';
@@ -14,6 +15,7 @@ interface Step3DetailsProps {
   eyeGroup: AttributeGroup;
   hairGroup: AttributeGroup;
   bodyGroup: AttributeGroup;
+  isEditing?: boolean;
 }
 
 export function Step3Details({
@@ -21,6 +23,7 @@ export function Step3Details({
   eyeGroup,
   hairGroup,
   bodyGroup,
+  isEditing = false,
 }: Step3DetailsProps) {
   const { control, watch, setValue, formState: { errors } } = useFormContext();
   const formData = watch();
@@ -41,7 +44,12 @@ export function Step3Details({
       <div className="space-y-6">
         {/* Rates Section */}
         <div>
-          <RatesManager rates={formData.rates || []} onChange={handleRatesChange} />
+          <RatesManager
+            rates={formData.rates || []}
+            onChange={handleRatesChange}
+            deposito={formData.deposito}
+            onDepositChange={(value) => setValue('deposito', value, { shouldValidate: true, shouldDirty: true, shouldTouch: true })}
+          />
           {errors.rates && (
             <p className="text-red-500 text-sm mt-2">
               {errors.rates.message}
@@ -68,6 +76,19 @@ export function Step3Details({
           <p className="text-sm text-muted-foreground -mt-2">
             Debes proporcionar al menos un método de contacto
           </p>
+
+          {isEditing && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5" />
+              <div className="text-sm text-yellow-700 dark:text-yellow-400">
+                <p className="font-semibold mb-1">Advertencia de Verificación</p>
+                <p>
+                  Si modificas tu número de contacto principal, tu estado de verificación se verá afectado (si ya estás verificado)
+                  y será necesario volver a realizar el proceso de validación.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Número de contacto */}

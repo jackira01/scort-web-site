@@ -44,9 +44,9 @@ export interface ProfileVerificationData {
           hasChanged?: boolean;
           lastChangeDate?: Date;
           hasContactNumber?: boolean;
-          calculatedAt?: string;
         };
       };
+      deposito?: boolean;
     };
   };
 }
@@ -69,6 +69,6 @@ export interface VerificationStepRenderProps {
   step: VerificationStep;
   stepData: ProfileVerificationData['data']['steps'][keyof ProfileVerificationData['data']['steps']] | undefined;
   onPreviewImage: (image: string) => void;
-  getCurrentVideoLink: (stepKey: 'mediaVerification' | 'videoCallRequested') => string;
-  handleVideoLinkChange: (stepKey: 'mediaVerification' | 'videoCallRequested', videoLink: string) => void;
+  getCurrentVideoLink: (stepKey: 'mediaVerification' | 'videoCallRequested' | 'cartelVerification') => string;
+  handleVideoLinkChange: (stepKey: 'mediaVerification' | 'videoCallRequested' | 'cartelVerification', videoLink: string) => void;
 }

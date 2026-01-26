@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { ProcessedImageResult } from '@/utils/imageProcessor';
 
 // Re-export step1Schema for backward compatibility
 export { step1Schema, type Step1FormData } from './step1';
@@ -57,7 +56,9 @@ export const formSchema = z.object({
     onlyFans: z.string().optional(),
   }).optional(),
   // bustSize: z.string().optional(),
+  // bustSize: z.string().optional(),
   rates: z.array(z.any()).optional(),
+  deposito: z.boolean().optional(),
   availability: z.array(z.any()).optional(),
 
   // Step 4 - Multimedia

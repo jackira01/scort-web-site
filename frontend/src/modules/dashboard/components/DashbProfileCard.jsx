@@ -232,7 +232,7 @@ export const DashbProfileCard = ({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Link href={`/cuenta/editar-perfil/${profile._id}`}>
+          <Link href={`/cuenta/editar-perfil/${profile._id}?returnUrl=${encodeURIComponent('/adminboard?section=perfiles')}`}>
             <Button
               size="sm"
               variant="outline"

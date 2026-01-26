@@ -138,6 +138,7 @@ export interface CreateProfileDTO {
         whatsapp?: string;
         telegram?: string;
     };
+    deposito?: boolean;
     height: string;
     socialMedia?: {
         instagram?: string;
@@ -205,6 +206,7 @@ export interface IProfileInput {
         whatsapp?: string;
         telegram?: string;
     };
+    deposito?: boolean;
     height: string;
     socialMedia?: {
         instagram?: string;
@@ -283,9 +285,9 @@ export interface IProfileVerification extends Document {
                 hasChanged?: boolean;
                 lastChangeDate?: Date;
                 hasContactNumber?: boolean;
-                calculatedAt?: string;
             };
         };
+        deposito?: boolean;
     }
 
     verifiedAt: Date; // Date when profile was verified.

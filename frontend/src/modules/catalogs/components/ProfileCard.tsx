@@ -164,6 +164,13 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                 </h3>
 
                 <div className="flex flex-col space-y-1 text-xs lg:text-sm text-white/90">
+                  {category && (
+                    <span className="flex items-center text-purple-300 font-medium">
+                      <Tag className="h-3 w-3 mr-1" />
+
+                      {category}
+                    </span>
+                  )}
                   <span className="flex items-center">
                     <Calendar className="h-3 w-3 mr-1" />
                     {profile.age} años
@@ -174,13 +181,6 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                       {formatLocation(profile.location)}
                     </span>
                   </span>
-                  {category && (
-                    <span className="flex items-center text-purple-300 font-medium">
-                      <Tag className="h-3 w-3 mr-1" />
-                      
-                      {category}
-                    </span>
-                  )}
                 </div>
 
                 {profile.description && (
@@ -211,16 +211,16 @@ export function ProfileCard({ profile, viewMode, variant = 'default' }: ProfileC
                   {profile.name}
                 </h3>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 text-xs lg:text-sm text-muted-foreground mt-1 space-y-1 sm:space-y-0">
-                  <span className="flex items-center">
-                    <Calendar className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
-                    {profile.age} años
-                  </span>
                   {profile.category && (
                     <span className="flex items-center text-purple-600 dark:text-purple-400 font-medium">
                       <Tag className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
                       {profile.category}
                     </span>
                   )}
+                  <span className="flex items-center">
+                    <Calendar className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
+                    {profile.age} años
+                  </span>
                   <span className="flex items-center">
                     <MapPin className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
                     <span className="line-clamp-1">

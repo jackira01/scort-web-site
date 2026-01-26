@@ -1,8 +1,8 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
-import { createContext, useContext, type ReactNode } from 'react';
 import type { Session } from 'next-auth';
+import { useSession } from 'next-auth/react';
+import { createContext, useContext, useEffect, type ReactNode } from 'react';
 
 /**
  * Contexto centralizado para la sesión de autenticación.
@@ -48,8 +48,18 @@ export function SessionContextProvider({ children }: { children: ReactNode }) {
         userId: session?.user?._id || null,
         userEmail: session?.user?.email || null,
         userName: session?.user?.name || null,
-        accessToken: (session as any)?.accessToken || null,
+        accessToken: (session?.user as any)?.accessToken || null,
     };
+
+    // Keep localStorage in sync for non-React services
+    useEffect(() => {
+        const token = (session?.user as any)?.accessToken;
+        if (session && token) {
+            localStorage.setItem('authToken', token);
+        } else if (status === 'unauthenticated') {
+            localStorage.removeItem('authToken');
+        }
+    }, [session, status]);
 
     return (
         <SessionContext.Provider value={value}>

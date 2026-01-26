@@ -1,27 +1,31 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, CheckCircle, Loader } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
-import { useEffect, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { useAttributeGroups } from '@/hooks/use-attribute-groups';
 import { useProfile } from '@/hooks/use-profile';
 import { usePlans } from '@/hooks/usePlans';
 import { updateProfile } from '@/services/user.service';
+import { normalizeSimpleText } from '@/utils/normalize-text';
 import {
   uploadMultipleAudios,
   uploadMultipleImages,
   uploadMultipleVideos,
 } from '@/utils/tools';
+import { useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, ArrowRight, CheckCircle, Loader } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
+import { SidebarContent } from '../../create-profile/components/SidebarContent';
+import { Step1EssentialInfo } from '../../create-profile/components/Step1EssentialInfo';
+import { Step2Description } from '../../create-profile/components/Step2Description';
+import { Step3Details } from '../../create-profile/components/Step3Details';
+import { Step5Multimedia } from '../../create-profile/components/Step5Multimedia';
 import { FormProvider } from '../../create-profile/context/FormContext';
-import { editSteps } from '../data';
 import type { FormData } from '../../create-profile/schemas';
-import { normalizeSimpleText } from '@/utils/normalize-text';
 import {
   step1Schema,
   step2Schema,
@@ -29,11 +33,7 @@ import {
   step4Schema,
 } from '../../create-profile/schemas';
 import type { AttributeGroup, Rate } from '../../create-profile/types';
-import { SidebarContent } from '../../create-profile/components/SidebarContent';
-import { Step1EssentialInfo } from '../../create-profile/components/Step1EssentialInfo';
-import { Step2Description } from '../../create-profile/components/Step2Description';
-import { Step3Details } from '../../create-profile/components/Step3Details';
-import { Step5Multimedia } from '../../create-profile/components/Step5Multimedia';
+import { editSteps } from '../data';
 
 interface EditProfileLayoutProps {
   profileId: string;
@@ -43,12 +43,15 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [uploading, setUploading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
   const queryClient = useQueryClient();
   const { data: session } = useSession();
 
   // Obtener datos del perfil existente
   const { data: profileDetails, isLoading: isLoadingProfile, error: profileError } = useProfile(profileId);
   const { data: attributeGroups, isLoading: isLoadingAttributes, error: attributesError } = useAttributeGroups();
+
 
   // 🎯 Obtener planes disponibles para buscar el plan asignado
   const { data: plansResponse } = usePlans({
@@ -297,6 +300,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         },
         selectedUpgrades: [],
         acceptTerms: true, // Ya aceptó términos al crear el perfil
+        deposito: profileDetails.deposito ?? true,
       };
 
       // Establecer cada valor individualmente para asegurar que los campos controlados se actualicen
@@ -376,6 +380,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       // Step 5 - Finalizar
       form.setValue('selectedUpgrades', formData.selectedUpgrades);
       form.setValue('acceptTerms', formData.acceptTerms);
+      form.setValue('deposito', formData.deposito);
 
       // Forzar re-render de los campos controlados
       form.trigger();
@@ -608,6 +613,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
       verification: null,
       availability: formData.availability,
       rates,
+      deposito: formData.deposito,
     };
   };
 
@@ -804,7 +810,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         }
 
         toast.success('Perfil actualizado exitosamente');
-        router.push('/cuenta');
+        router.push(returnUrl || '/cuenta');
       } catch (profileError) {
         toast.dismiss(loadingToast);
         toast.error('Error al actualizar perfil. Contacta con servicio al cliente.');
@@ -835,6 +841,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
             eyeGroup={groupMap.eyes}
             hairGroup={groupMap.hair}
             bodyGroup={groupMap.body}
+            isEditing={true}
           />
         );
       case 4:
@@ -859,7 +866,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-red-600 mb-4">Error</h2>
           <p className="text-gray-600 mb-4">No se pudo cargar la información del perfil.</p>
-          <Link href="/cuenta">
+          <Link href={returnUrl || "/cuenta"}>
             <Button variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver a mis perfiles
@@ -890,7 +897,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
                 {/* Navigation Buttons */}
                 <div className="flex justify-between items-center mt-8 pt-6 border-t border-border">
                   {currentStep === 1 ? (
-                    <Link href="/cuenta">
+                    <Link href={returnUrl || "/cuenta"}>
                       <Button
                         variant="outline"
                         className="hover:bg-muted/50 transition-colors duration-200"

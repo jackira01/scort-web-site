@@ -1,10 +1,9 @@
 import {
   Camera,
   FileText,
-  Phone,
   Users,
   Video,
-  VideoIcon,
+  VideoIcon
 } from 'lucide-react';
 import type { VerificationStep } from '../types/verification.types';
 
@@ -46,6 +45,12 @@ export const verificationSteps: VerificationStep[] = [
     label: 'Redes Sociales',
     icon: <Users className="h-5 w-5" />,
     description: 'Verificación de cuentas de redes sociales',
+  },
+  {
+    key: 'deposito',
+    label: 'Información de Depósito',
+    icon: <FileText className="h-5 w-5" />, // Reusing FileText or finding a better icon like 'Coins' or 'Banknote' if available. Using FileText for now as safe bet or Money icon if imported.
+    description: 'Información sobre si solicitas depósito por adelantado',
   },
 ];
 

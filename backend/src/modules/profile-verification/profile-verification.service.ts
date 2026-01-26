@@ -1,20 +1,18 @@
-import ProfileVerification from './profile-verification.model';
-import type { IProfileVerification } from '../profile/profile.types';
 import type { Types } from 'mongoose';
-import { type IUser } from '../user/User.model';
+import { ConfigParameterService } from '../config-parameter/config-parameter.service';
 import { ProfileModel } from '../profile/profile.model';
-import type { IProfile } from '../profile/profile.types';
-import { enrichProfileVerification } from './verification.helper';
+import type { IProfile, IProfileVerification } from '../profile/profile.types';
+import { type IUser } from '../user/User.model';
+import { calculatePhoneChangeStatus } from './phone-verification.utils';
+import ProfileVerification from './profile-verification.model';
 import {
   CreateProfileVerificationDTO,
+  ProfileVerificationFiltersDTO,
   UpdateProfileVerificationDTO,
-  UpdateVerificationStatusDTO,
-  UpdateVerificationStepsDTO,
-  ProfileVerificationFiltersDTO
+  UpdateVerificationStepsDTO
 } from './profile-verification.types';
 import { calculateVerificationProgress } from './verification-progress.utils';
-import { calculatePhoneChangeStatus } from './phone-verification.utils';
-import { ConfigParameterService } from '../config-parameter/config-parameter.service';
+import { enrichProfileVerification } from './verification.helper';
 
 // Interface para Profile con User poblado
 interface IProfileWithUser extends Omit<IProfile, 'user'> {
@@ -72,7 +70,8 @@ const getDefaultVerificationSteps = (accountType: string, requiresIndependentVer
     lastLogin: {
       isVerified: lastLoginVerified,
       date: userLastLoginDate
-    }
+    },
+    deposito: true // Default: Asks for deposit (requires explicit change to false)
   };
 
   if (accountType === 'common' && !requiresIndependentVerification) {
@@ -134,9 +133,6 @@ const recalculateVerificationProgress = async (verification: IProfileVerificatio
 // Obtener verificación por ID de perfil
 export const getProfileVerificationByProfileId = async (profileId: string | Types.ObjectId) => {
   try {
-    console.group('🔍 DEBUG: getProfileVerificationByProfileId');
-    console.log('Profile ID:', profileId);
-
     const verification = await ProfileVerification.findOne({ profile: profileId })
       .populate({
         path: 'profile',
@@ -147,8 +143,6 @@ export const getProfileVerificationByProfileId = async (profileId: string | Type
         }
       })
       .lean();
-
-    console.log('Found Verification:', !!verification);
 
     if (verification && verification.profile) {
       const minAgeMonths = await ConfigParameterService.getValue('profile.verification.minimum_age_months') || 12;
@@ -172,7 +166,6 @@ export const getProfileVerificationByProfileId = async (profileId: string | Type
         // No copiamos el verificationProgress del enrichedProfile (que viene incompleto).
         // En su lugar, recalculamos usando el objeto 'verification' completo que ya tiene las fotos fusionadas.
 
-        console.log('🔄 Recalculating Full Progress in Service...');
         const fullProgress = calculateVerificationProgress(
           verification as any,
           (verification.profile as any)?.user,
@@ -180,16 +173,9 @@ export const getProfileVerificationByProfileId = async (profileId: string | Type
           Number(minAgeMonths)
         );
 
-        console.log('Syncing Progress:', {
-          old: verification.verificationProgress,
-          helperPartial: enrichedProfile.verification.verificationProgress, // El que daba 29%
-          newCorrect: fullProgress // El que debería dar 100%
-        });
-
         verification.verificationProgress = fullProgress;
       }
     }
-    console.groupEnd();
 
     return verification;
   } catch (error) {
@@ -240,7 +226,7 @@ export const createProfileVerification = async (verificationData: CreateProfileV
 
     const verificationWithDefaults = {
       ...verificationData,
-      steps: defaultSteps,
+      steps: { ...defaultSteps, ...(verificationData.steps || {}) },
       verificationProgress: 0,
       requiresIndependentVerification
     };
@@ -490,8 +476,6 @@ export const updatePhoneChangeDetectionStatus = async (profile: IProfile): Promi
     if (updatedVerification) {
       await recalculateVerificationProgress(updatedVerification as unknown as IProfileVerification);
     }
-
-    console.log(`✅ Estado de phoneChangeDetected actualizado para perfil ${profile._id}: ${phoneChangeDetected}`);
 
   } catch (error) {
     console.error('Error al actualizar phoneChangeDetected:', error);

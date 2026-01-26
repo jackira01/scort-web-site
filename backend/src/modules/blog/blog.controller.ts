@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { BlogService, CreateBlogData, UpdateBlogData, BlogFilters } from './blog.service';
 import { validationResult } from 'express-validator';
+import { BlogFilters, BlogService, CreateBlogData, UpdateBlogData } from './blog.service';
 
 export class BlogController {
   /**
@@ -93,6 +93,8 @@ export class BlogController {
   static async getBlogByIdOrSlug(req: Request, res: Response): Promise<void> {
     try {
       const { identifier } = req.params;
+      console.log(`[BlogController] Request for: ${identifier}`);
+      console.log(`[BlogController] Authorization Header: ${req.headers.authorization}`);
 
       if (!identifier) {
         res.status(400).json({

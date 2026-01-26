@@ -1,8 +1,8 @@
+import CloudinaryImage from '@/components/CloudinaryImage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import CloudinaryImage from '@/components/CloudinaryImage';
 import { ExternalLink, Eye } from 'lucide-react';
-import type { ProfileVerificationData, VerificationStepRenderProps } from '../types/verification.types';
+import type { VerificationStepRenderProps } from '../types/verification.types';
 
 const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
   step,
@@ -255,6 +255,26 @@ const VerificationStepRenderer: React.FC<VerificationStepRenderProps> = ({
           <div className="text-center p-4 border rounded-lg">
             <p className="text-sm text-gray-600">
               Estado de verificación social: {socialMediaData.isVerified ? 'Verificado' : 'Pendiente'}
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    case 'deposito': {
+      const asksForDeposit = stepData as unknown as boolean;
+      return (
+        <div className="mt-4">
+          <div className={`text-center p-4 border rounded-lg ${asksForDeposit === false ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+            <p className={`text-lg font-medium ${asksForDeposit === false ? 'text-green-800' : 'text-yellow-800'}`}>
+              {asksForDeposit === false
+                ? '✅ No solicita depósito por adelantado'
+                : '⚠️ Solicita depósito por adelantado'}
+            </p>
+            <p className="text-sm text-gray-600 mt-2">
+              {asksForDeposit === false
+                ? 'Este perfil gana puntos de confianza.'
+                : 'Este perfil no gana puntos extra por este factor.'}
             </p>
           </div>
         </div>

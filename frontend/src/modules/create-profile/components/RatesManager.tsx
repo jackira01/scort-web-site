@@ -1,7 +1,5 @@
 'use client';
 
-import { DollarSign, Edit2, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -14,14 +12,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { formatDurationForBackend, getDisplayDuration, parseDuration } from '@/utils/time-format';
+import { DollarSign, Edit2, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import type { Rate } from '../types';
 
 interface RatesManagerProps {
   rates: Rate[];
   onChange: (rates: Rate[]) => void;
+  deposito?: boolean;
+  onDepositChange?: (value: boolean) => void;
 }
 
-export function RatesManager({ rates, onChange }: RatesManagerProps) {
+export function RatesManager({ rates, onChange, deposito, onDepositChange }: RatesManagerProps) {
   const [newRate, setNewRate] = useState({
     days: '',
     hours: '',
@@ -40,38 +43,6 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
     }).format(price);
   };
 
-  const formatTimeForBackend = (
-    days: string,
-    hours: string,
-    minutes: string,
-  ): string => {
-    const totalMinutes =
-      (parseInt(days) || 0) * 24 * 60 +
-      (parseInt(hours) || 0) * 60 +
-      (parseInt(minutes) || 0);
-
-    const finalHours = Math.floor(totalMinutes / 60);
-    const finalMinutes = totalMinutes % 60;
-
-    return `${finalHours.toString().padStart(2, '0')}:${finalMinutes.toString().padStart(2, '0')}`;
-  };
-
-  const parseTimeFromBackend = (timeStr: string) => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const totalMinutes = hours * 60 + minutes;
-
-    const days = Math.floor(totalMinutes / (24 * 60));
-    const remainingMinutes = totalMinutes % (24 * 60);
-    const finalHours = Math.floor(remainingMinutes / 60);
-    const finalMins = remainingMinutes % 60;
-
-    return {
-      days: days > 0 ? days.toString() : '',
-      hours: finalHours > 0 ? finalHours.toString() : '',
-      minutes: finalMins > 0 ? finalMins.toString() : '',
-    };
-  };
-
   const addRate = () => {
     const hasValidTime =
       (newRate.days && parseInt(newRate.days) > 0) ||
@@ -83,7 +54,7 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
       return;
     }
 
-    const timeForBackend = formatTimeForBackend(
+    const timeForBackend = formatDurationForBackend(
       newRate.days,
       newRate.hours,
       newRate.minutes,
@@ -130,7 +101,7 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
   };
 
   const editRate = (rate: Rate) => {
-    const { days, hours, minutes } = parseTimeFromBackend(rate.time);
+    const { days, hours, minutes } = parseDuration(rate.time);
     setNewRate({
       days,
       hours,
@@ -154,18 +125,6 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
     setShowValidationError(false);
   };
 
-  const getDisplayTime = (timeStr: string) => {
-    const { days, hours, minutes } = parseTimeFromBackend(timeStr);
-    const parts = [];
-
-    if (days) parts.push(`${days} día${parseInt(days) > 1 ? 's' : ''}`);
-    if (hours) parts.push(`${hours} hora${parseInt(hours) > 1 ? 's' : ''}`);
-    if (minutes)
-      parts.push(`${minutes} minuto${parseInt(minutes) > 1 ? 's' : ''}`);
-
-    return parts.join(', ');
-  };
-
   const handlePriceChange = (value: string) => {
     const numericValue = value.replace(/[^\d]/g, '');
     setNewRate((prev) => ({ ...prev, price: numericValue }));
@@ -181,6 +140,18 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
           <DollarSign className="h-5 w-5" />
           Mis tarifas
         </CardTitle>
+        {onDepositChange && (
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="deposito"
+              checked={deposito || false}
+              onCheckedChange={(checked) => onDepositChange(checked === true)}
+            />
+            <Label htmlFor="deposito" className="text-sm font-medium cursor-pointer">
+              Pido plata por anticipado
+            </Label>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Lista de tarifas existentes */}
@@ -190,14 +161,14 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
               <div
                 key={rate.id}
                 className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 border rounded-lg ${editingRateId === rate.id
-                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
-                    : 'border-border bg-muted/50'
+                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
+                  : 'border-border bg-muted/50'
                   }`}
               >
                 <div className="flex-1">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
                     <span className="font-medium text-foreground">
-                      {getDisplayTime(rate.time)}
+                      {getDisplayDuration(rate.time)}
                     </span>
 
                     <span className="text-xl sm:text-2xl font-bold text-green-600">
@@ -378,8 +349,8 @@ export function RatesManager({ rates, onChange }: RatesManagerProps) {
           <Button
             onClick={addRate}
             className={`w-full ${editingRateId
-                ? 'bg-purple-600 hover:bg-purple-700'
-                : 'bg-green-600 hover:bg-green-700'
+              ? 'bg-purple-600 hover:bg-purple-700'
+              : 'bg-green-600 hover:bg-green-700'
               } text-white`}
           >
             {editingRateId ? (

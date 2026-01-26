@@ -1,5 +1,5 @@
-import { Blog, BlogFilters, CreateBlogData, UpdateBlogData, BlogsResponse } from '../hooks/use-blogs';
 import { API_URL } from '@/lib/config';
+import { Blog, BlogFilters, BlogsResponse, CreateBlogData, UpdateBlogData } from '../hooks/use-blogs';
 
 const API_BASE_URL = API_URL;
 
@@ -127,9 +127,7 @@ class BlogService {
     try {
       const response = await fetch(`${this.baseUrl}/${identifier}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
       });
 
       return await this.handleResponse<Blog>(response);

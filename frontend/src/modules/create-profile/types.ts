@@ -45,6 +45,7 @@ export interface FormData {
     onlyFans?: string;
   };
   rates: Rate[];
+  deposito?: boolean;
   availability: Array<{
     dayOfWeek: string;
     slots: Array<{

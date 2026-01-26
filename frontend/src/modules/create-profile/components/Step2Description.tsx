@@ -1,12 +1,12 @@
 'use client';
 
-import { useFormContext } from '../context/FormContext';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Star, Plus } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { AlertCircle, Plus, Star } from 'lucide-react';
+import { useFormContext } from '../context/FormContext';
 import type { AttributeGroup } from '../types';
 
 interface Step2DescriptionProps {
@@ -106,13 +106,13 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
                   message: 'La descripción debe tener al menos 50 caracteres',
                 },
                 maxLength: {
-                  value: 1200,
-                  message: 'La descripción no puede exceder 1200 caracteres',
+                  value: 600,
+                  message: 'La descripción no puede exceder 600 caracteres',
                 },
               })}
             />
             <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">
-              {description?.length || 0} / 1200 caracteres restantes
+              {description?.length || 0} / 600 caracteres restantes
             </div>
           </div>
           {errors.description && (

@@ -1,5 +1,7 @@
-import { DollarSign } from 'lucide-react';
+import { getDisplayDuration } from '@/utils/time-format';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DollarSign } from 'lucide-react';
 export default function RatesProfile({
   rates,
 }: {
@@ -21,7 +23,7 @@ export default function RatesProfile({
               className="p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors duration-200 space-y-2"
             >
               {/* Precio */}
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col items-start gap-1">
                 <span className="text-foreground text-sm font-medium">Tarifa/precio</span>
                 <span className="text-foreground font-medium">
                   ${rate.price.toLocaleString('es-CO')} COP
@@ -29,16 +31,16 @@ export default function RatesProfile({
               </div>
 
               {/* Tiempo */}
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col items-start gap-1">
                 <span className="text-muted-foreground text-xs">Tiempo</span>
                 <span className="text-foreground text-xs">
-                  {rate.hour} hora{rate.hour !== '1' && rate.hour !== '01:00' ? 's' : ''}
+                  {getDisplayDuration(rate.hour)}
                 </span>
               </div>
 
               {/* Domicilio */}
               {rate.delivery !== undefined && (
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col items-start gap-1">
                   <span className="text-muted-foreground text-xs">Domicilio</span>
                   <span className="text-xs text-foreground">
                     {rate.delivery ? "Incluido" : "No incluido"}

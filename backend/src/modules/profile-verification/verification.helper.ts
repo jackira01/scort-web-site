@@ -1,4 +1,3 @@
-import type { IProfile, IProfileVerification } from '../profile/profile.types';
 
 /**
  * Enriches a profile with dynamic verification data calculated at runtime.
@@ -103,17 +102,12 @@ export const enrichProfileVerification = (profile: any, minAgeMonths: number = 1
     const { calculateVerificationProgress } = require('./verification-progress.utils');
 
     if (calculateVerificationProgress) {
-        console.group('🔄 Recalculating Progress in enrichProfileVerification');
-        console.log('Profile ID:', profile._id);
         const newProgress = calculateVerificationProgress(
             enrichedProfile.verification,
             enrichedProfile.user,
             enrichedProfile,
             minAgeMonths
         );
-        console.log('Old Progress:', enrichedProfile.verification.verificationProgress);
-        console.log('New Progress:', newProgress);
-        console.groupEnd();
         enrichedProfile.verification.verificationProgress = newProgress;
     }
 

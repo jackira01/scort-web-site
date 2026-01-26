@@ -43,11 +43,12 @@ export interface ProcessedImageResult {
 
 // Configuración de marca de agua
 const WATERMARK_CONFIG = {
-  text: '© ScortWeb',
-  fontSize: 17,
-  fontFamily: 'Arial',
-  color: 'rgba(255, 255, 255, 0.2)',
-  padding: 15,
+  type: 'image', // 'text' | 'image'
+  text: '© ScortWeb', // Fallback or previous usage
+  imageSrc: '/images/logo 1.png',
+  opacity: 0.8,
+  scale: 0.3, // Escala relativa al ancho de la imagen principal
+  minWidth: 100, // Ancho mínimo en píxeles
 };
 
 /**
@@ -63,16 +64,71 @@ const createImage = (url: string): Promise<HTMLImageElement> =>
   });
 
 /**
- * Aplica marca de agua diagonal repetida a un contexto de canvas
+ * Aplica marca de agua de imagen centrada
  */
-const applyWatermarkToContext = (
+const applyImageWatermarkToContext = (
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  watermarkImage: HTMLImageElement
+) => {
+  const { width, height } = canvas;
+
+  // Calcular dimensiones de la marca de agua manteniendo su aspecto original
+  const watermarkAspect = watermarkImage.width / watermarkImage.height;
+
+  // Calcular ancho objetivo (porcentaje del ancho del canvas)
+  let targetWidth = width * WATERMARK_CONFIG.scale;
+
+  // Asegurar ancho mínimo si es posible (sin exceder el canvas)
+  if (targetWidth < WATERMARK_CONFIG.minWidth && width > WATERMARK_CONFIG.minWidth) {
+    targetWidth = WATERMARK_CONFIG.minWidth;
+  }
+
+  // Si el ancho calculado es mayor que el canvas (improbable con scale 0.3 pero posible en imgs pequeñas), limitar
+  if (targetWidth > width * 0.9) {
+    targetWidth = width * 0.9;
+  }
+
+  let targetHeight = targetWidth / watermarkAspect;
+
+  // Verificar que la altura no exceda el canvas
+  if (targetHeight > height * 0.9) {
+    targetHeight = height * 0.9;
+    targetWidth = targetHeight * watermarkAspect;
+  }
+
+  // Calcular posición para centrar
+  const x = (width - targetWidth) / 2;
+  const y = (height - targetHeight) / 2;
+
+  // Guardar estado
+  ctx.save();
+
+  // Configurar opacidad
+  ctx.globalAlpha = WATERMARK_CONFIG.opacity;
+
+  // Dibujar imagen (usando high quality)
+  ctx.drawImage(watermarkImage, x, y, targetWidth, targetHeight);
+
+  // Restaurar estado
+  ctx.restore();
+};
+
+/**
+ * Aplica marca de agua diagonal repetida a un contexto de canvas (Legacy text mode)
+ */
+const applyTextWatermarkToContext = (
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
   watermarkText: string
 ) => {
+  const fontSize = 26;
+  const fontFamily = 'Arial';
+  const color = 'rgba(255, 255, 255, 0.2)';
+
   // Configurar el estilo de la marca de agua
-  ctx.font = `${WATERMARK_CONFIG.fontSize}px ${WATERMARK_CONFIG.fontFamily}`;
-  ctx.fillStyle = WATERMARK_CONFIG.color;
+  ctx.font = `${fontSize}px ${fontFamily}`;
+  ctx.fillStyle = color;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
@@ -83,8 +139,8 @@ const applyWatermarkToContext = (
   ctx.rotate(-Math.PI / 4);
 
   // Calcular el espaciado entre marcas de agua
-  const spacingX = WATERMARK_CONFIG.fontSize * 8;
-  const spacingY = WATERMARK_CONFIG.fontSize * 4;
+  const spacingX = fontSize * 8;
+  const spacingY = fontSize * 4;
 
   // Calcular los límites extendidos para cubrir toda el área rotada
   const diagonal = Math.sqrt(canvas.width * canvas.width + canvas.height * canvas.height);
@@ -122,7 +178,7 @@ export const processCroppedImageCentralized = async (
     maxSizeMB = 0.6,
     maxWidthOrHeight = 1024,
     initialQuality = 0.9,
-    applyWatermark = true, // Habilitado para aplicar marca de agua
+    applyWatermark = true, // Default true según requerimiento
     watermarkText = WATERMARK_CONFIG.text,
     outputFormat = 'image/jpeg'
   } = options;
@@ -203,16 +259,18 @@ export const processCroppedImageCentralized = async (
 
     // PASO 2: APLICAR MARCA DE AGUA (si está habilitada)
     if (applyWatermark) {
-      // Guardar el estado antes de aplicar marca de agua
-      ctx.save();
-
-      // Resetear transformaciones para aplicar marca de agua sin afectar el crop
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-      applyWatermarkToContext(ctx, canvas, watermarkText);
-
-      // Restaurar el estado
-      ctx.restore();
+      if (WATERMARK_CONFIG.type === 'image') {
+        try {
+          const watermarkImage = await createImage(WATERMARK_CONFIG.imageSrc);
+          applyImageWatermarkToContext(ctx, canvas, watermarkImage);
+        } catch (watermarkError) {
+          console.error("Error cargando watermark image:", watermarkError);
+          // Fallback a texto si falla la imagen
+          applyTextWatermarkToContext(ctx, canvas, watermarkText);
+        }
+      } else {
+        applyTextWatermarkToContext(ctx, canvas, watermarkText);
+      }
     }
 
     // PASO 3: CONVERTIR A BLOB CON CALIDAD OPTIMIZADA
@@ -317,7 +375,7 @@ export const calculateOptimalProcessingOptions = (
     maxSizeMB,
     maxWidthOrHeight,
     initialQuality,
-    applyWatermark: true, // Habilitado para aplicar marca de agua
+    applyWatermark: true, // Re-habilitado para usar la marca de agua centrada
     watermarkText: WATERMARK_CONFIG.text,
     outputFormat: 'image/jpeg'
   };

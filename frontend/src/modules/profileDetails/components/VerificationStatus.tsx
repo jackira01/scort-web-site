@@ -1,9 +1,9 @@
 'use client';
 
-import { CheckCircle, Clock, XCircle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useProfileVerification } from '@/hooks/use-profile-verification';
+import { CheckCircle, XCircle } from 'lucide-react';
 
 interface VerificationStatusProps {
   profileId: string;
@@ -17,6 +17,9 @@ interface VerificationStep {
 }
 
 const getStatusBadge = (step: VerificationStep) => {
+  if (step.label === "Política de Depósito") {
+    return null;
+  }
   if (step.isVerified) {
     return (
       <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
@@ -123,6 +126,12 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
       isVerified: !!data.steps?.socialMedia?.isVerified,
       hasData: true
     },
+    {
+      label: "Política de Depósito",
+      isVerified: data.steps?.deposito === false, // True if they DON'T ask for deposit
+      hasData: true,
+      details: { deposito: data.steps?.deposito }
+    }
   ];
 
   return (
@@ -196,18 +205,18 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
                     (() => {
                       const lastChange = step.details?.debug?.lastChangeDate;
                       if (!lastChange) return "El perfil no ha cambiado su teléfono recientemente.";
-                      
+
                       const diffTime = Math.abs(new Date().getTime() - new Date(lastChange).getTime());
                       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                       const diffMonths = Math.floor(diffDays / 30);
-                      
+
                       let timeString = "";
                       if (diffMonths > 0) {
                         timeString = `${diffMonths} ${diffMonths === 1 ? 'mes' : 'meses'}`;
                       } else {
                         timeString = `${diffDays} ${diffDays === 1 ? 'día' : 'días'}`;
                       }
-                      
+
                       return `El perfil no ha cambiado su teléfono en ${timeString}.`;
                     })()
                   ) : (
@@ -222,6 +231,13 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
                   {step.isVerified
                     ? "El perfil ha proporcionado redes sociales confiables y coinciden con la información de este perfil."
                     : "Este perfil aún no ha proporcionado información de redes sociales para verificación."}
+                </p>
+              )}
+              {step.label === "Política de Depósito" && (
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {step.isVerified
+                    ? "Este usuario tiene política de NO cobro por adelantado."
+                    : "Este usuario cobra dinero por adelantado."}
                 </p>
               )}
             </div>

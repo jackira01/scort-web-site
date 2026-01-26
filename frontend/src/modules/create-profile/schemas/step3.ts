@@ -155,7 +155,19 @@ export const step3Schema = z.object({
         ),
       }),
     )
-    .min(1, 'Debes seleccionar al menos un día disponible'),
+    .min(1, 'Debes seleccionar al menos un día disponible')
+    .refine(
+      (days) => {
+        // Verificar que todos los días seleccionados tengan hora de inicio y fin
+        return days.every((day) =>
+          day.slots.length > 0 &&
+          day.slots.every((slot) => slot.start && slot.end)
+        );
+      },
+      {
+        message: 'Debes seleccionar hora de inicio y fin para todos los días seleccionados',
+      }
+    ),
 });
 
 export type Step3FormData = z.infer<typeof step3Schema>;

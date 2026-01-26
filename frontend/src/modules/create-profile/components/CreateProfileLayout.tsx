@@ -1,13 +1,5 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, CheckCircle, Loader } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
-import { useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -18,20 +10,27 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAttributeGroups } from '@/hooks/use-attribute-groups';
+import { validateMaxProfiles, validatePlanSelection } from '@/services/profile-validation.service';
 import { createProfile } from '@/services/user.service';
-import { validatePlanSelection, validateMaxProfiles } from '@/services/profile-validation.service';
+import { ProcessedImageResult } from '@/utils/imageProcessor';
+import { normalizeSimpleText } from '@/utils/normalize-text';
 import {
   uploadMultipleAudios,
   uploadMultipleImages,
   uploadMultipleVideos,
   uploadProcessedImages,
 } from '@/utils/tools';
-import { ProcessedImageResult } from '@/utils/imageProcessor';
+import { useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, ArrowRight, CheckCircle, Loader } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { FormProvider } from '../context/FormContext';
 import { steps } from '../data';
 import type { FormData } from '../schemas';
-import type { AttributeGroup, Rate } from '../types';
-import { normalizeSimpleText } from '@/utils/normalize-text';
 import {
   step1Schema,
   step2Schema,
@@ -39,6 +38,14 @@ import {
   step4Schema,
   step5Schema,
 } from '../schemas';
+import type { AttributeGroup, Rate } from '../types';
+import { ProfileVerificationPrompt } from './ProfileVerificationPrompt';
+import { SidebarContent } from './SidebarContent';
+import { Step1EssentialInfo } from './Step1EssentialInfo';
+import { Step2Description } from './Step2Description';
+import { Step3Details } from './Step3Details';
+import { Step4Plan } from './Step4Plan';
+import { Step5Multimedia } from './Step5Multimedia';
 
 // Interfaces para manejo de errores de validación
 interface ValidationError {
@@ -61,13 +68,6 @@ interface ApiError {
   };
   message?: string;
 }
-import { SidebarContent } from './SidebarContent';
-import { Step1EssentialInfo } from './Step1EssentialInfo';
-import { Step2Description } from './Step2Description';
-import { Step3Details } from './Step3Details';
-import { Step4Plan } from './Step4Plan';
-import { Step5Multimedia } from './Step5Multimedia';
-import { ProfileVerificationPrompt } from './ProfileVerificationPrompt';
 
 
 export function CreateProfileLayout() {
@@ -139,7 +139,9 @@ export function CreateProfileLayout() {
 
       // Step 5 - Selección de Plan (integrado en finalizar)
       selectedPlan: undefined,
+      selectedPlan: undefined,
       selectedVariant: undefined,
+      deposito: true,
     },
   });
 
@@ -471,6 +473,7 @@ export function CreateProfileLayout() {
       verification: null,
       availability: formData.availability,
       rates,
+      deposito: formData.deposito,
     };
   };
 
@@ -712,7 +715,8 @@ export function CreateProfileLayout() {
           const errorMessage = error?.response?.data?.message || 'Límite de perfiles excedido';
           toast.error(errorMessage, { duration: 6000 });
         } else if (profileError?.response?.status === 400) {
-          toast.error('Datos del perfil inválidos. Revisa la información ingresada.');
+          const errorMessage = profileError.response.data?.message || 'Datos del perfil inválidos. Revisa la información ingresada.';
+          toast.error(errorMessage);
         } else if (profileError?.response?.status === 401) {
           toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
           router.push('/login');
