@@ -40,6 +40,7 @@ const verificationSchema = z.object({
     twitter: z.string().optional(),
     onlyFans: z.string().optional(),
   }).optional(),
+  deposito: z.boolean().optional(),
 });
 
 type VerificationFormData = z.infer<typeof verificationSchema>;
@@ -76,10 +77,11 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
   const step3Ref = useRef<HTMLDivElement>(null);
   const step4Ref = useRef<HTMLDivElement>(null);
   const step5Ref = useRef<HTMLDivElement>(null);
+  const step6Ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (initialStep) {
-      const refs = [step1Ref, step2Ref, step3Ref, step4Ref, step5Ref];
+      const refs = [step1Ref, step2Ref, step3Ref, step4Ref, step5Ref, step6Ref];
       const ref = refs[initialStep - 1];
       if (ref && ref.current) {
         setTimeout(() => {
@@ -135,6 +137,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
         twitter: initialData.socialMedia?.twitter || '',
         onlyFans: initialData.socialMedia?.onlyFans || '',
       },
+      deposito: initialData.deposito !== undefined ? initialData.deposito : true, // Default true (asks for deposit)
     },
   });
 
@@ -162,8 +165,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
     const { frontPhoto, backPhoto } = watchedValues.documentVerification;
     const { photo: selfiePhoto } = watchedValues.selfieVerification;
     const { mediaLink } = watchedValues.cartelVerification;
-    // Social media is optional/additional, doesn't necessarily block steps, but let's include it in logic if needed
-    // For now, we keep the step logic as is for 1-4
+    const socialMediaFilled = Object.values(watchedValues.socialMedia || {}).some(val => !!val);
 
     if (!frontPhoto) {
       setCurrentStep(1);
@@ -173,10 +175,14 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
       setCurrentStep(3);
     } else if (!selfiePhoto) {
       setCurrentStep(4);
+    } else if (!socialMediaFilled) {
+      setCurrentStep(5);
+    } else if (watchedValues.deposito === undefined) {
+      setCurrentStep(6);
     } else {
-      setCurrentStep(5); // Assuming 5 is social media or completion
+      setCurrentStep(6); // If all previous steps are done, stay on step 6 or indicate completion
     }
-  }, [watchedValues.documentVerification, watchedValues.selfieVerification, watchedValues.cartelVerification]);
+  }, [watchedValues.documentVerification, watchedValues.selfieVerification, watchedValues.cartelVerification, watchedValues.socialMedia, watchedValues.deposito]);
 
   const updateVerificationMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -299,6 +305,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
         selfieVerification: uploadedData.selfieVerification,
         cartelVerification: uploadedData.cartelVerification,
         socialMedia: uploadedData.socialMedia,
+        deposito: uploadedData.deposito,
       });
 
       // Limpiar archivos pendientes después del éxito
@@ -395,7 +402,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 </label>
                 {!isEnabled && (
                   <p className="text-xs text-red-500 mt-1">
-                    {isVerified 
+                    {isVerified
                       ? 'Este campo ya ha sido verificado y no se puede editar'
                       : 'Debes completar los pasos anteriores para modificar este archivo.'
                     }
@@ -453,6 +460,8 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
   const isStep3Complete = !!watchedValues.cartelVerification.mediaLink;
   const isStep4Complete = !!watchedValues.selfieVerification.photo;
   const isStep5Complete = Object.values(watchedValues.socialMedia || {}).some(val => !!val);
+  const isStep6Complete = watchedValues.deposito !== undefined;
+
 
   return (
     <>
@@ -465,10 +474,10 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between mb-4 w-full">
-                {[1, 2, 3, 4, 5].map((step) => {
+                {[1, 2, 3, 4, 5, 6].map((step) => {
                   const status = getStepStatus(step);
                   return (
-                    <div key={step} className={`flex items-center ${step < 5 ? 'flex-1' : ''}`}>
+                    <div key={step} className={`flex items-center ${step < 6 ? 'flex-1' : ''}`}>
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0 ${status === 'completed'
                           ? 'bg-green-500 text-white'
@@ -479,7 +488,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                       >
                         {status === 'completed' ? <CheckCircle className="h-4 w-4" /> : step}
                       </div>
-                      {step < 5 && (
+                      {step < 6 && (
                         <div
                           className={`h-1 mx-2 flex-1 ${step < currentStep ? 'bg-green-500' : 'bg-gray-200'
                             }`}
@@ -490,12 +499,13 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 })}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-300">
-                Paso {currentStep} de 5: {
+                Paso {currentStep} de 6: {
                   currentStep === 1 ? 'Documento (frontal)' :
                     currentStep === 2 ? 'Documento (reverso)' :
                       currentStep === 3 ? 'Verificación con Cartel' :
                         currentStep === 4 ? 'Foto con documento' :
-                          'Redes Sociales'
+                          currentStep === 5 ? 'Redes Sociales' :
+                            'Información de Depósito'
                 }
               </div>
             </CardContent>
@@ -801,9 +811,6 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-green-700 dark:text-green-300">
-                  Solicita tu cita por WhatsApp. A mayor grado de verificación, mayor confianza y visibilidad en la plataforma.
-                </p>
                 <Button
                   type="button"
                   variant="outline"

@@ -158,6 +158,14 @@ export const createProfile = async (req: AuthRequest, res: Response) => {
       });
     }
   } catch (err: unknown) {
+    console.error('❌ Error creating profile:', err);
+    if (req.body) {
+      console.error('📦 Request body (partial):', JSON.stringify({
+        keys: Object.keys(req.body),
+        profileDataKeys: req.body.profileData ? Object.keys(req.body.profileData) : 'missing'
+      }, null, 2));
+    }
+
     // Manejar errores de validación de negocio
     if (err instanceof BusinessValidationError) {
       return res.status(409).json({ message: err.message });

@@ -1,23 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { Textarea } from '@/components/ui/textarea';
 import { couponService } from '@/services/coupon.service';
 import { plansService } from '@/services/plans.service';
 import type { CreateCouponInput } from '@/types/coupon.types';
 import type { IPlanDefinition } from '@/types/plans.types';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { ArrowLeft } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
+import { z } from 'zod';
 
 // Interfaz para combinaciones plan-variante
 interface PlanVariantCombination {
@@ -153,6 +153,8 @@ interface CreateCouponState {
 
 export default function CreateCouponPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
   const [state, setState] = useState<CreateCouponState>({
     loading: false,
     plans: [],
@@ -260,8 +262,9 @@ export default function CreateCouponPage() {
       };
 
       await couponService.createCoupon(payload as CreateCouponInput);
+      await couponService.createCoupon(payload as CreateCouponInput);
       toast.success('Cupón creado exitosamente');
-      router.push('/adminboard');
+      router.push(returnUrl || '/adminboard');
     } catch (error: any) {
       console.error('Error creating coupon:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Error al crear cupón';
@@ -279,7 +282,7 @@ export default function CreateCouponPage() {
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" onClick={() => router.push('/adminboard')}>
+        <Button variant="outline" onClick={() => router.push(returnUrl || '/adminboard')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Volver
         </Button>
@@ -471,8 +474,8 @@ export default function CreateCouponPage() {
                               <label
                                 key={variant.days}
                                 className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all ${isSelected
-                                    ? 'text-gray-800 dark:text-white border-2 border-blue-500 shadow-sm'
-                                    : 'text-gray-800 dark:text-white border-2 border-gray-200'
+                                  ? 'text-gray-800 dark:text-white border-2 border-blue-500 shadow-sm'
+                                  : 'text-gray-800 dark:text-white border-2 border-gray-200'
                                   }`}
                               >
                                 <input
@@ -630,7 +633,7 @@ export default function CreateCouponPage() {
         </Card>
 
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => router.back()}>
+          <Button type="button" variant="outline" onClick={() => router.push(returnUrl || '/adminboard')}>
             Cancelar
           </Button>
           <Button type="submit" disabled={state.loading}>

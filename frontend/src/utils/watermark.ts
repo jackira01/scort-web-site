@@ -7,11 +7,13 @@ import { useConfigValue } from '@/hooks/use-config-parameters';
 // Configuración de la marca de agua
 // Alinear con el procesador centralizado para consistencia visual
 const WATERMARK_CONFIG = {
-  fontSize: 17,
+  fontSize: 26,
   fontFamily: 'Arial',
-  color: 'rgba(255, 255, 255, 0.2)',
+  color: 'rgba(255, 255, 255, 0.2)', // Se aumentó la opacidad de 0.2 a 0.5
   position: 'bottom-right',
   padding: 15,
+  spacingXFactor: 15, // Espaciado horizontal (antes 8)
+  spacingYFactor: 6,  // Espaciado vertical (antes 4)
 };
 
 /**
@@ -68,8 +70,8 @@ export function applyWatermarkToImage(
           ctx.rotate(-Math.PI / 4);
 
           // Calcular el espaciado entre marcas de agua (patrón diagonal repetido)
-          const spacingX = WATERMARK_CONFIG.fontSize * 8;
-          const spacingY = WATERMARK_CONFIG.fontSize * 4;
+          const spacingX = WATERMARK_CONFIG.fontSize * WATERMARK_CONFIG.spacingXFactor;
+          const spacingY = WATERMARK_CONFIG.fontSize * WATERMARK_CONFIG.spacingYFactor;
 
           // Calcular los límites extendidos para cubrir toda el área rotada
           const diagonal = Math.sqrt(canvas.width * canvas.width + canvas.height * canvas.height);

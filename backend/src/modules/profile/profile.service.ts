@@ -375,6 +375,7 @@ export const createProfile = async (data: CreateProfileDTO, skipLimitsValidation
     const verification = await createProfileVerification({
       profile: profileIdStr,
       verificationStatus: 'check',
+      steps: { deposito: profileData.deposito }
     });
 
     // Actualizar el perfil con la referencia a la verificación
@@ -813,13 +814,13 @@ export const extractCategoryFromFeatures = (features: any[]): string | null => {
       const name = f.group_id.name?.toLowerCase();
       return key === 'category' || name === 'categoría' || name === 'categoria';
     }
-    
+
     // CASO 2: group_id es un string (ID) pero el valor nos da una pista
     else if (f.value && Array.isArray(f.value) && f.value.length > 0) {
       const val = f.value[0];
       if (typeof val === 'object' && val !== null && val.key) {
-         const key = val.key.toLowerCase();
-         return ['escort', 'escorts', 'masajista', 'masajistas', 'trans', 'bdsm', 'pareja', 'parejas'].includes(key);
+        const key = val.key.toLowerCase();
+        return ['escort', 'escorts', 'masajista', 'masajistas', 'trans', 'bdsm', 'pareja', 'parejas'].includes(key);
       }
     }
     return false;
@@ -1201,6 +1202,14 @@ export const getProfileById = async (id: string): Promise<IProfile | null> => {
     transformedProfile.createdAt = new Date();
   }
 
+  // Inyectar estado de depósito desde la verificación para que el frontend lo consuma
+  if (transformedProfile.verification && typeof transformedProfile.verification === 'object' && 'steps' in transformedProfile.verification) {
+    const verification = transformedProfile.verification as any;
+    if (verification.steps && verification.steps.deposito !== undefined) {
+      (transformedProfile as any).deposito = verification.steps.deposito;
+    }
+  }
+
   // Separar servicios del resto de features
   const services: string[] = [];
   const otherFeatures: any[] = [];
@@ -1303,6 +1312,23 @@ export const updateProfile = async (
   }
 
   const updatedProfile = await ProfileModel.findByIdAndUpdate(id, safeData, { new: true });
+
+  // Actualizar política de depósito si está presente
+  if (safeData.deposito !== undefined && updatedProfile) {
+    try {
+      // Buscar la verificación asociada
+      const verification = await ProfileVerification.findOne({ profile: updatedProfile._id });
+      if (verification) {
+        await ProfileVerification.findByIdAndUpdate(
+          verification._id,
+          { $set: { 'steps.deposito': safeData.deposito } },
+          { new: true }
+        );
+      }
+    } catch (error) {
+      console.error('Error al actualizar política de depósito:', error);
+    }
+  }
 
   // DISPARAR RECÁLCULO DE VERIFICACIÓN si cambió el teléfono
   if (safeData.contact?.number !== undefined && updatedProfile) {
@@ -2568,7 +2594,7 @@ export const getAllProfilesForAdmin = async (
   // Filtro por verificación (requiere consulta a ProfileVerification)
   if (isVerified !== undefined) {
     const verificationFilter: any = {};
-    
+
     if (isVerified === 'pending') {
       verificationFilter.verificationStatus = 'pending';
     } else if (isVerified === true) {

@@ -1,11 +1,11 @@
-import { Calendar, CheckCircle, MapPin, Star, Tag } from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { VerificationBar } from '@/components/VerificationBar/VerificationBar';
-import { createProfileSlug } from '@/utils/slug';
 import type { ProfileCardData } from '@/types/profile.types';
+import { createProfileSlug } from '@/utils/slug';
+import { Calendar, CheckCircle, MapPin, Star, Tag } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 
 interface CardComponentProps {
   profiles?: ProfileCardData[];
@@ -76,6 +76,12 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
 
                     {/* 🔽 Cambiado de "flex items-center space-x-3" a "flex flex-col space-y-1" */}
                     <div className="flex flex-col space-y-1 text-xs text-white/90">
+                      {profile.category && (
+                        <span className="flex items-center text-purple-300 font-medium">
+                          <Tag className="h-3 w-3 mr-1" />
+                          {profile.category}
+                        </span>
+                      )}
                       <span className="flex items-center">
                         <Calendar className="h-3 w-3 mr-1" />
                         {profile.age || 'N/A'} años
@@ -92,12 +98,6 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                             'N/A'}
                         </span>
                       </span>
-                      {profile.category && (
-                        <span className="flex items-center text-purple-300 font-medium">
-                          <Tag className="h-3 w-3 mr-1" />
-                          {profile.category}
-                        </span>
-                      )}
                     </div>
 
                     {profile.description && (
@@ -126,6 +126,12 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                     {profile.name}
                   </h3>
                   <div className="flex flex-col text-xs text-muted-foreground space-y-1">
+                    {profile.category && (
+                      <span className="flex items-center text-purple-600 dark:text-purple-400 font-medium hover:text-purple-700 dark:hover:text-purple-300 transition-colors duration-200">
+                        <Tag className="h-2 w-2 mr-1" />
+                        {profile.category}
+                      </span>
+                    )}
                     <span className="flex items-center hover:text-foreground transition-colors duration-200">
                       <Calendar className="h-2 w-2 mr-1" />
                       {profile.age || 'N/A'} años
@@ -138,12 +144,6 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
                           'Ubicación no disponible'}
                       </span>
                     </span>
-                    {profile.category && (
-                      <span className="flex items-center text-purple-600 dark:text-purple-400 font-medium hover:text-purple-700 dark:hover:text-purple-300 transition-colors duration-200">
-                        <Tag className="h-2 w-2 mr-1" />
-                        {profile.category}
-                      </span>
-                    )}
                   </div>
 
                   {profile.description && (

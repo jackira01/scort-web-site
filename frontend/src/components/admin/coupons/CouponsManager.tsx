@@ -1,14 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2, Eye, TrendingUp, Ticket } from 'lucide-react';
 import { useCoupons, useCouponStats, useDeleteCoupon } from '@/hooks/use-coupons';
 import type { ICoupon } from '@/types/coupon.types';
+import { Edit, Eye, Plus, Search, Ticket, Trash2, TrendingUp } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function CouponsManager() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -122,7 +122,7 @@ export default function CouponsManager() {
           </h1>
         </div>
         <Button
-          onClick={() => router.push('/adminboard/coupons/create')}
+          onClick={() => router.push(`/adminboard/coupons/create?returnUrl=${encodeURIComponent('/adminboard?section=cupones')}`)}
           className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -287,7 +287,7 @@ export default function CouponsManager() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push(`/adminboard/coupons/edit/${coupon._id}`)}
+                        onClick={() => router.push(`/adminboard/coupons/edit/${coupon._id}?returnUrl=${encodeURIComponent('/adminboard?section=cupones')}`)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>

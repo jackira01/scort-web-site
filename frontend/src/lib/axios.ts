@@ -18,6 +18,10 @@ const axiosInstance = axios.create({
   decompress: true,
 });
 
+// Apply Demo Mode Interceptor
+import { applyDemoMode } from './demo-adapter';
+applyDemoMode(axiosInstance);
+
 // Cache para evitar llamadas repetidas a getSession
 let sessionCache: any = null;
 let sessionCacheTime = 0;
@@ -34,11 +38,11 @@ axiosInstance.interceptors.request.use(
     // Intentar obtener la sesión de NextAuth.js con cache
     try {
       const now = Date.now();
-      
+
       // Usar cache si está disponible y no ha expirado
       if (sessionCache && (now - sessionCacheTime) < SESSION_CACHE_DURATION) {
         const session = sessionCache;
-        
+
         if (session?.accessToken) {
           config.headers['Authorization'] = `Bearer ${session.accessToken}`;
         } else if (session?.user && session.user._id) {
@@ -50,7 +54,7 @@ axiosInstance.interceptors.request.use(
         // Obtener nueva sesión solo si el cache ha expirado
         const { getSession } = await import('next-auth/react');
         const session = await getSession();
-        
+
         // Actualizar cache
         sessionCache = session;
         sessionCacheTime = now;

@@ -1,20 +1,17 @@
 import type { Request, Response } from 'express';
+import EmailService from '../../services/email.service';
 import * as profileVerificationService from './profile-verification.service';
-import { Types } from 'mongoose';
 import {
   CreateProfileVerificationDTO,
+  ProfileVerificationFiltersDTO,
   UpdateProfileVerificationDTO,
   UpdateVerificationStatusDTO,
-  UpdateVerificationStepsDTO,
-  ProfileVerificationFiltersDTO
+  UpdateVerificationStepsDTO
 } from './profile-verification.types';
-import EmailService from '../../services/email.service';
 
 // Obtener verificación por ID de perfil
 export const getProfileVerificationByProfileId = async (req: Request, res: Response) => {
   try {
-    console.group('🔍 DEBUG: Controller getProfileVerificationByProfileId');
-    console.log('Params:', req.params);
     const { profileId } = req.params;
 
     if (!profileId) {
@@ -25,12 +22,6 @@ export const getProfileVerificationByProfileId = async (req: Request, res: Respo
     }
 
     const verification = await profileVerificationService.getProfileVerificationByProfileId(profileId);
-    console.log('Fetched verification for profileId:', verification ? 'Found' : 'Not Found');
-    console.log('Service returned verification:', !!verification);
-    if (verification) {
-      console.log('Verification Progress:', verification.verificationProgress);
-    }
-    console.groupEnd();
 
     if (!verification) {
       return res.status(404).json({

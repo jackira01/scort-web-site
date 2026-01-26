@@ -1,20 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { Textarea } from '@/components/ui/textarea';
 import { useCoupon, useUpdateCoupon } from '@/hooks/use-coupons';
 import { plansService } from '@/services/plans.service';
 import type { UpdateCouponInput } from '@/types/coupon.types';
 import type { IPlanDefinition } from '@/types/plans.types';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 
 // Helper para convertir fecha a zona horaria de Bogotá
 const toBogotaDateTime = (date: string | Date): string => {
@@ -40,6 +40,8 @@ interface EditCouponState {
 export default function EditCouponPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
   const couponId = params.id as string;
 
   const { data: coupon, isLoading: couponLoading, error: couponError } = useCoupon(couponId);
@@ -152,7 +154,7 @@ export default function EditCouponPage() {
       });
 
       toast.success('Cupón actualizado exitosamente');
-      router.push('/adminboard/coupons');
+      router.push(returnUrl || '/adminboard/coupons');
     } catch (error: any) {
       toast.error(error.message || 'Error al actualizar el cupón');
     } finally {
@@ -181,7 +183,7 @@ export default function EditCouponPage() {
     return (
       <div className="container mx-auto p-6 max-w-4xl">
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" onClick={() => router.push('/adminboard')}>
+          <Button variant="outline" onClick={() => router.push(returnUrl || '/adminboard')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Volver
           </Button>
@@ -198,7 +200,7 @@ export default function EditCouponPage() {
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" onClick={() => router.push('/adminboard')}>
+        <Button variant="outline" onClick={() => router.push(returnUrl || '/adminboard')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Volver
         </Button>
@@ -509,7 +511,7 @@ export default function EditCouponPage() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.back()}
+            onClick={() => router.push(returnUrl || '/adminboard')}
             disabled={state.loading}
           >
             Cancelar

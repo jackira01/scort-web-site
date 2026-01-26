@@ -62,6 +62,10 @@ const ProfileVerificationSchema = new Schema<IProfileVerification>({
                 hasContactNumber: { type: Boolean, default: undefined },
                 calculatedAt: { type: String, default: undefined }
             }
+        },
+        deposito: {
+            type: Boolean,
+            default: true, // Default: assumes they ask for deposit (conservative)
         }
     },
     verifiedAt: { type: Date, default: undefined }, // Date when profile was verified.

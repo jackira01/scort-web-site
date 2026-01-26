@@ -1,16 +1,16 @@
 import { Types } from 'mongoose';
 import { AppError } from '../../utils/AppError';
-import { logger } from '../../utils/logger';
 import { isCouponValidForPlan } from '../../utils/coupon-validation';
-import CouponModel from './coupon.model';
+import { logger } from '../../utils/logger';
 import { PlanDefinitionModel } from '../plans/plan.model';
+import CouponModel from './coupon.model';
 import type {
-  ICoupon,
-  CreateCouponInput,
-  UpdateCouponInput,
-  CouponValidationResult,
   CouponApplicationResult,
-  CouponQuery
+  CouponQuery,
+  CouponValidationResult,
+  CreateCouponInput,
+  ICoupon,
+  UpdateCouponInput
 } from './coupon.types';
 
 export class CouponService {
@@ -35,6 +35,20 @@ export class CouponService {
       logger.info(`Verificación de código completada en ${codeCheckDuration}ms - Existe: ${!!existingCoupon}`);
 
       if (existingCoupon) {
+        // IDEMPOTENCY CHECK: Si el cupón existe y fue creado muy recientemente (mismo usuario, parámetros clave similares)
+        // asumimos que es una solicitud duplicada (doble click) y retornamos el éxito en lugar de error.
+        const isDuplicateRequest =
+          existingCoupon.type === input.type &&
+          existingCoupon.value === input.value &&
+          existingCoupon.name === input.name &&
+          existingCoupon.createdBy.toString() === createdBy &&
+          (Date.now() - existingCoupon.createdAt.getTime()) < 10000; // 10 segundos de ventana
+
+        if (isDuplicateRequest) {
+          logger.info(`Solicitud duplicada detectada para el cupón ${input.code}. Retornando cupón existente como éxito.`);
+          return existingCoupon.toObject();
+        }
+
         throw new AppError('El código de cupón ya existe', 400);
       }
 

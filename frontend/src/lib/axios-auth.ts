@@ -91,6 +91,15 @@ export function createAuthenticatedAxios(
         }
     );
 
+    // Apply Demo Mode Interceptor
+    // This allows testing UI interactions without persisting data
+    try {
+        const { applyDemoMode } = require('./demo-adapter');
+        applyDemoMode(instance);
+    } catch (e) {
+        // Ignore if module not found (shouldn't happen)
+    }
+
     return instance;
 }
 

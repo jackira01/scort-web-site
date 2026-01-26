@@ -41,7 +41,12 @@ export function Step3Details({
       <div className="space-y-6">
         {/* Rates Section */}
         <div>
-          <RatesManager rates={formData.rates || []} onChange={handleRatesChange} />
+          <RatesManager
+            rates={formData.rates || []}
+            onChange={handleRatesChange}
+            deposito={formData.deposito}
+            onDepositChange={(value) => setValue('deposito', value, { shouldValidate: true, shouldDirty: true, shouldTouch: true })}
+          />
           {errors.rates && (
             <p className="text-red-500 text-sm mt-2">
               {errors.rates.message}

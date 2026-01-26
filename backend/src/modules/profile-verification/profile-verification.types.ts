@@ -48,6 +48,7 @@ export interface UpdateVerificationStepsDTO {
       calculatedAt?: string;
     };
   };
+  deposito?: boolean;
 }
 
 // DTO para crear verificación de perfil
@@ -144,6 +145,7 @@ export interface ProfileVerificationResponseDTO {
         calculatedAt?: string;
       };
     };
+    deposito?: boolean;
   };
   verifiedAt?: Date;
   verificationFailedAt?: Date;
