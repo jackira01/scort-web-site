@@ -1,8 +1,8 @@
+import { Types } from 'mongoose';
+import { ConfigParameterService } from '../modules/config-parameter/config-parameter.service';
 import { IInvoice } from '../modules/payments/invoice.model';
 import { IProfile } from '../modules/profile/profile.types';
 import { IUser } from '../modules/user/User.model';
-import { ConfigParameterService } from '../modules/config-parameter/config-parameter.service';
-import { Types } from 'mongoose';
 
 export interface WhatsAppMessageData {
   message: string;
@@ -87,7 +87,7 @@ export class WhatsAppService {
       minute: '2-digit'
     });
 
-    return ` ¡Hola prepagoYA.com! \n\n Espero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago. \n\n` +
+    return ` ¡Hola PrepagoYa.com! \n\n Espero que estén muy bien. Acabo de adquirir un paquete en su plataforma y me gustaría conocer las opciones disponibles para realizar el pago. \n\n` +
       ` *Detalles de la compra:*\n` +
       `• Perfil: ${data.profileName}\n` +
       `• Cliente: ${data.userName}\n` +

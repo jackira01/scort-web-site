@@ -1,8 +1,8 @@
-import { Metadata } from 'next';
 import PlansPage from '@/modules/plans/components/PlansPage';
+import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Planes - Online Escorts',
+  title: 'Planes - PrepagoYa',
   description: 'Elige el plan perfecto para tu perfil. Opciones flexibles y precios competitivos.',
 };
 

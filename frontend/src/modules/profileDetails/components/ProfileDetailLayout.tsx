@@ -157,7 +157,7 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
             </svg>
           </div>
           <p className="text-sm text-rose-800 dark:text-rose-200 leading-relaxed">
-            <span className="font-bold">prepagoYa</span> <span className="font-bold">NUNCA</span> interviene en la relaciones entre usuarios y <span className="font-bold">NUNCA</span> contacta para solicitar dinero o cualquier otro dato personal.
+            <span className="font-bold">PrepagoYa</span> <span className="font-bold">NUNCA</span> interviene en la relaciones entre usuarios y <span className="font-bold">NUNCA</span> contacta para solicitar dinero o cualquier otro dato personal.
           </p>
         </div>
 

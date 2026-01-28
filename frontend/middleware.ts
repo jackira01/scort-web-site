@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { checkRateLimit, createRateLimitResponse } from './src/lib/rate-limit';
 import { getToken } from 'next-auth/jwt';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { checkRateLimit, createRateLimitResponse } from './src/lib/rate-limit';
 
 // Lista de categorías válidas (debe coincidir con el backend)
 const VALID_CATEGORIES = ['escort', 'masajista', 'modelo', 'acompañante'];
@@ -97,6 +97,38 @@ export async function middleware(request: NextRequest) {
     'Content-Security-Policy',
     `default-src 'self' ${backendUrl}; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob: https://res.cloudinary.com https://lh3.googleusercontent.com; media-src 'self' blob: https://res.cloudinary.com; connect-src 'self' ${backendUrl} https://api.cloudinary.com https://accounts.google.com https://oauth2.googleapis.com https://apis.google.com; worker-src 'self' blob:; frame-src 'self' https://accounts.google.com;`
   );
+
+  // ===== MANTENIMIENTO =====
+  const isMaintenanceMode = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true';
+
+  if (isMaintenanceMode) {
+    // Definir qué rutas estáticas PERMITIR (whitelist)
+    const isStaticAsset =
+      pathname.startsWith('/_next') ||
+      pathname.startsWith('/images') ||
+      pathname.startsWith('/favicon.ico') ||
+      pathname.endsWith('.png') ||
+      pathname.endsWith('.jpg') ||
+      pathname.endsWith('.jpeg') ||
+      pathname.endsWith('.svg') ||
+      pathname.endsWith('.css') ||
+      pathname.endsWith('.js') ||
+      pathname.endsWith('.json') ||
+      pathname.endsWith('.woff') ||
+      pathname.endsWith('.woff2');
+
+    const isMaintenancePage = pathname === '/maintenance';
+
+    // Si NO es asset estático NI la página de mantenimiento -> Redirigir a mantenimiento
+    if (!isStaticAsset && !isMaintenancePage) {
+      return NextResponse.redirect(new URL('/maintenance', request.url));
+    }
+  } else {
+    // Si NO estamos en mantenimiento, redirigir /maintenance a home
+    if (pathname === '/maintenance') {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+  }
 
   // ===== AUTENTICACIÓN ACTIVADA =====
   // Rate limiting para rutas protegidas
@@ -285,6 +317,6 @@ export const config = {
      * - file extensions (.js, .css, .map, etc.)
      * - installHook
      */
-    '/((?!api/auth|_next/static|_next/image|favicon\.ico|robots\.txt|sitemap\.xml|images|placeholder|autenticacion|perfil|adminboard|buscar|faq|precios|terminos|terms|blog|plans|.*\.js\.map$|.*\.css\.map$|.*\.js$|.*\.css$|.*\.ico$|.*\.png$|.*\.jpg$|.*\.jpeg$|.*\.svg$|.*\.gif$|.*\.webp$|installHook).*)',
+    '/((?!api/auth|_next/static|_next/image|favicon\.ico|robots\.txt|sitemap\.xml|images|placeholder|.*\.js\.map$|.*\.css\.map$|.*\.js$|.*\.css$|.*\.ico$|.*\.png$|.*\.jpg$|.*\.jpeg$|.*\.svg$|.*\.gif$|.*\.webp$|installHook).*)',
   ],
 };

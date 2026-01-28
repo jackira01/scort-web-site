@@ -1,10 +1,10 @@
-import { PlanDefinitionModel, IPlanDefinition, PlanVariant, PlanFeatures, ContentLimits } from './plan.model';
-import { UpgradeDefinitionModel, IUpgradeDefinition, StackingPolicy, UpgradeEffect } from './upgrade.model';
-import { ProfileModel } from '../profile/profile.model';
-import UserModel from '../user/User.model';
+import { Types } from 'mongoose';
 import { ConfigParameterService } from '../config-parameter/config-parameter.service';
 import InvoiceService from '../payments/invoice.service';
-import { Types } from 'mongoose';
+import { ProfileModel } from '../profile/profile.model';
+import UserModel from '../user/User.model';
+import { ContentLimits, IPlanDefinition, PlanDefinitionModel, PlanFeatures, PlanVariant } from './plan.model';
+import { IUpgradeDefinition, StackingPolicy, UpgradeDefinitionModel, UpgradeEffect } from './upgrade.model';
 
 /**
  * Limpia upgrades expirados y elimina duplicados del mismo tipo
@@ -160,7 +160,7 @@ const generateWhatsAppMessage = async (
         const userName = user?.name || 'Cliente';
         const profileName = fullProfile?.name || profileId;
 
-        const message = `¡Hola prepagoYA.com! \n\n Acabo de adquirir un paquete en su plataforma. \n\n *Detalles de Compra:*\n• Usuario: ${userName}\n• Perfil: ${profileName}\n• Plan Actual: ${currentPlanInfo}${invoiceNumber ? `\n• Factura: ${invoiceNumber}` : ''}${productInfo ? `\n• Productos/Servicios: ${productInfo}` : ''}${couponLine}\n\nGracias por tu compra.`;
+        const message = `¡Hola PrepagoYa.com! \n\n Acabo de adquirir un paquete en su plataforma. \n\n *Detalles de Compra:*\n• Usuario: ${userName}\n• Perfil: ${profileName}\n• Plan Actual: ${currentPlanInfo}${invoiceNumber ? `\n• Factura: ${invoiceNumber}` : ''}${productInfo ? `\n• Productos/Servicios: ${productInfo}` : ''}${couponLine}\n\nGracias por tu compra.`;
 
         return {
             userId,

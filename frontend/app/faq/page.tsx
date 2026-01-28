@@ -1,15 +1,15 @@
-import { Metadata } from 'next';
 import PublicContentPage from '@/components/public/PublicContentPage';
 import FAQPage from '@/modules/faq/components/FAQPage';
+import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'FAQ - Online Escorts',
+  title: 'FAQ - PrepagoYa',
   description: 'Encuentra respuestas a las preguntas más frecuentes sobre nuestros servicios.',
 };
 
 export default function FAQ() {
   return (
-    <PublicContentPage 
+    <PublicContentPage
       slug="faq"
       fallbackContent={<FAQPage />}
       showBackButton={true}

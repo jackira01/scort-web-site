@@ -58,6 +58,11 @@ if (ENVIROMENT === 'development') {
 
 
 
+import { maintenanceMiddleware } from './middlewares/maintenance.middleware';
+
+// Middleware de mantenimiento (antes de cualquier otra cosa excepto CORS si se desea)
+app.use(maintenanceMiddleware);
+
 // Compresión gzip para mejorar rendimiento
 app.use(compression({
   filter: (req, res) => {

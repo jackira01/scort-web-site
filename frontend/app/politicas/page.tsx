@@ -1,14 +1,14 @@
-import { Metadata } from 'next';
 import PublicContentPage from '@/components/public/PublicContentPage';
+import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Políticas de Privacidad - Online Escorts',
+  title: 'Políticas de Privacidad - PrepagoYa',
   description: 'Conoce nuestras políticas de privacidad y protección de datos.',
 };
 
 export default function PoliticasPage() {
   return (
-    <PublicContentPage 
+    <PublicContentPage
       slug="politicas"
       fallbackContent={
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-pink-900/20">
