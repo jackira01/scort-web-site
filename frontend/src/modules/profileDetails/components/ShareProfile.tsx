@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Share2, Copy, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Check, Copy, Share2 } from 'lucide-react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 interface ShareProfileProps {
@@ -16,7 +16,7 @@ export function ShareProfile({ profileName, profileUrl }: ShareProfileProps) {
     const [copied, setCopied] = useState(false);
 
     // Mensaje comercial para compartir
-    const shareMessage = `¡Mira el perfil de ${profileName} en Online Escorts!`;
+    const shareMessage = `¡Mira el perfil de ${profileName} en PrepagoYa!`;
     const encodedMessage = encodeURIComponent(shareMessage);
     const encodedUrl = encodeURIComponent(profileUrl);
 

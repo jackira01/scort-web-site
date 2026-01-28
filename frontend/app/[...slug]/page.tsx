@@ -1,7 +1,7 @@
-import { Metadata } from 'next';
-import type { ProfilesResponse } from '@/types/profile.types';
-import { PAGINATION, API_URL } from '@/lib/config';
+import { API_URL, PAGINATION } from '@/lib/config';
 import { locationService } from '@/services/location.service';
+import type { ProfilesResponse } from '@/types/profile.types';
+import { Metadata } from 'next';
 import SearchPageClient from './SearchPageClient';
 
 // Función helper para convertir slug a texto legible (solo para metadata)
@@ -169,7 +169,7 @@ export async function generateMetadata({
     // Validar categoría
     if (!(await isValidCategory(categoria))) {
       return {
-        title: 'Online Escorts - Premium Escort Services',
+        title: 'PrepagoYa - Premium Escort Services',
         description: 'Find premium escort services in your city. Professional, verified, and discreet companions.',
       };
     }
@@ -193,7 +193,7 @@ export async function generateMetadata({
   }
   // Caso: Sin filtros
   else {
-    pageTitle = 'Online Escorts - Premium Escort Services';
+    pageTitle = 'PrepagoYa - Premium Escort Services';
     pageDescription = 'Find premium escort services in your city. Professional, verified, and discreet companions.';
     keywords = 'escorts, services, verified, premium';
   }

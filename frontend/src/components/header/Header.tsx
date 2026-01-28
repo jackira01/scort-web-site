@@ -93,7 +93,7 @@ const HeaderComponent = () => {
               <Link href="/">
                 <Image
                   src="/images/logo 1.png" // tu archivo debe estar en /public/logo.png
-                  alt="Prepago Ya"
+                  alt="PrepagoYa"
                   width={300}     // ancho en píxeles
                   height={60}     // alto en píxeles
                 />

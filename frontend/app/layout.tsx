@@ -1,11 +1,11 @@
+import { auth } from '@/auth';
+import ConditionalHeader from '@/components/layout/ConditionalHeader';
+import { Providers } from '@/config/providers';
+import { GoogleAnalytics } from '@next/third-parties/google';
 import type { Metadata } from 'next';
+import { Poppins } from "next/font/google";
 import type React from 'react';
 import '../src/styles/globals.css';
-import { Providers } from '@/config/providers';
-import { Poppins } from "next/font/google";
-import ConditionalHeader from '@/components/layout/ConditionalHeader';
-import { auth } from '@/auth';
-import { GoogleAnalytics } from '@next/third-parties/google'
 const gaId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID || '';
 
 const poppins = Poppins({
@@ -15,7 +15,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'Online Escorts - Premium Escort Services',
+  title: 'PrepagoYa - Premium Escort Services',
   description:
     'Encuentra servicios de Escorts premium en tu ciudad. Profesionales, verificados y compañeros discretos.',
   icons: {

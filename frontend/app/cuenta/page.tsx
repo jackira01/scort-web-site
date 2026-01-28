@@ -1,9 +1,9 @@
-import { Metadata } from 'next';
 import AccountLayout from "@/modules/account/components/AccountLayout";
+import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Cuenta - Online Escorts',
-  description: 'Gestiona tu cuenta, perfiles y configuraciones en Online Escorts.',
+  title: 'Cuenta - PrepagoYa',
+  description: 'Gestiona tu cuenta, perfiles y configuraciones en PrepagoYa.',
 };
 
 export default function AccountPage() {
