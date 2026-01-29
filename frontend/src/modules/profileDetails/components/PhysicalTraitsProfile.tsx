@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAttributeGroups } from '@/hooks/use-attribute-groups';
 import type { AttributeValue } from '@/types/profile.types';
+import { useMemo } from 'react';
 
 export default function PhysicalTraitsProfile({
   physicalTraits,
@@ -44,7 +44,7 @@ export default function PhysicalTraitsProfile({
               <span className="text-muted-foreground text-sm capitalize">
                 {groupLabelMap[key] || key}
               </span>
-              <span className="text-foreground text-sm font-medium">
+              <span className="text-foreground text-sm font-medium text-right">
                 {getDisplayValue(value)}
               </span>
             </div>
