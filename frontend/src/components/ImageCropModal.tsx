@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useCallback, useRef } from 'react';
-import Cropper, { Point, Area } from 'react-easy-crop';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Crop, RotateCcw, ZoomIn } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { processCroppedImageCentralized, calculateOptimalProcessingOptions } from '../utils/centralizedImageProcessor';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Slider } from '@/components/ui/slider';
+import { AlertTriangle, Crop, RotateCcw, ZoomIn } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+import Cropper, { Area, Point } from 'react-easy-crop';
+import { calculateOptimalProcessingOptions, processCroppedImageCentralized } from '../utils/centralizedImageProcessor';
 
 interface ImageCropModalProps {
   isOpen: boolean;
@@ -248,18 +248,18 @@ export function ImageCropModal({
           </Button>
 
           {/* Botones principales */}
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto justify-center">
+          <div className="flex flex-row gap-3 w-full sm:w-auto justify-center">
             <Button
               variant="outline"
               onClick={onClose}
-              className="w-full sm:w-auto"
+              className="flex-1 sm:w-auto"
             >
               Cancelar
             </Button>
             <Button
               onClick={handleCropImage}
               disabled={!croppedAreaPixels || isProcessing}
-              className="w-full sm:w-auto"
+              className="flex-1 sm:w-auto"
             >
               {isProcessing ? 'Procesando...' : 'Aplicar recorte'}
             </Button>

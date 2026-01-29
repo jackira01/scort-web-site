@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
-import { useCookieConsent } from '@/contexts/CookieConsentContext';
 import CookieConsentModal from '@/components/CookieConsentModal';
 import CookieSettingsButton from '@/components/CookieSettingsButton';
+import { useCookieConsent } from '@/contexts/CookieConsentContext';
+import React from 'react';
 
 interface CookieConsentWrapperProps {
   children: React.ReactNode;
@@ -16,10 +16,7 @@ const CookieConsentWrapper: React.FC<CookieConsentWrapperProps> = ({ children })
     <>
       {/* Contenido principal con bloqueo condicional */}
       <div
-        className={`${showModal && !hasConsent
-            ? 'pointer-events-none'
-            : ''
-          } transition-all duration-300`}
+        className="transition-all duration-300"
       >
         {children}
       </div>
