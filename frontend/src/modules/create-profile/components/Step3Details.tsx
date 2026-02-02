@@ -83,8 +83,8 @@ export function Step3Details({
               <div className="text-sm text-yellow-700 dark:text-yellow-400">
                 <p className="font-semibold mb-1">Advertencia de Verificación</p>
                 <p>
-                  Si modificas tu número de contacto principal, tu estado de verificación se verá afectado (si ya estás verificado)
-                  y será necesario volver a realizar el proceso de validación.
+                  Si modificas tu número de contacto principal, tu estado de verificación de "Confiabilidad de numero de contacto" (si ya estás verificado)
+                  se vera afectado y será necesario volver a realizar el proceso de validación.
                 </p>
               </div>
             </div>

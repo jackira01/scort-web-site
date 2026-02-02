@@ -1340,6 +1340,40 @@ export const updateProfile = async (
     }
   }
 
+  // INVALIDAR VERIFICACIÓN DE MULTIMEDIA si cambió la galería
+  // Si se envió media.gallery y es diferente a la existente (longitud o contenido)
+  if (safeData.media?.gallery && existingProfile && updatedProfile) {
+    const oldGallery = existingProfile.media?.gallery || [];
+    const newGallery = safeData.media.gallery;
+
+    // Comparación simple de arrays (orden importa, pero en galería generalmente sí)
+    const hasGalleryChanged =
+      oldGallery.length !== newGallery.length ||
+      !oldGallery.every((val, index) => val === newGallery[index]);
+
+    if (hasGalleryChanged) {
+      try {
+        const verification = await ProfileVerification.findOne({ profile: updatedProfile._id });
+        if (verification) {
+          // Invalidar "Verificación con Multimedia" (cartelVerification)
+          await ProfileVerification.findByIdAndUpdate(
+            verification._id,
+            {
+              $set: {
+                'steps.cartelVerification.isVerified': false,
+                // Opcional: Si queremos ser más estrictos, también podemos poner el estado general en 'check'
+                // y marcar que requiere verificación independiente si no lo estaba.
+                // Por ahora, solo invalidamos el paso específico como se solicitó.
+              }
+            }
+          );
+        }
+      } catch (error) {
+        console.error('Error al invalidar verificación de multimedia:', error);
+      }
+    }
+  }
+
   return updatedProfile;
 };
 
