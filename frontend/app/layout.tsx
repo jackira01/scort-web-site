@@ -15,9 +15,9 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'PrepagoYa - Preppagos Premium',
+  title: 'PrepagoYa - Prepagos Premium',
   description:
-    'Encuentra servicios de Pregagos premium en tu ciudad. Profesionales, verificados y compañeros discretos.',
+    'Encuentra servicios de Prepagos premium en tu ciudad. Profesionales, verificados y compañeros discretos.',
   icons: {
     icon: "/images/kiss.png", // o /logo.png
   },
