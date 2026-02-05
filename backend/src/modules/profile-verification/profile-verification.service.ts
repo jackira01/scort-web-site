@@ -173,6 +173,8 @@ export const getProfileVerificationByProfileId = async (profileId: string | Type
           Number(minAgeMonths)
         );
 
+
+
         verification.verificationProgress = fullProgress;
       }
     }
