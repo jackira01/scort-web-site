@@ -1,7 +1,7 @@
 'use client';
-import { MessageCircle, Phone, Instagram, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Instagram } from 'lucide-react';
 
 type ContactData = {
   number: string;
@@ -20,11 +20,13 @@ type SocialMediaData = {
 interface SocialMediaProfileProps {
   contact: ContactData;
   socialMedia?: SocialMediaData;
+  profileName?: string;
 }
 
 export const SocialMediaProfile = ({
   contact,
   socialMedia,
+  profileName = '',
 }: SocialMediaProfileProps) => {
   // Helper function to check if contact method is valid
   const isValidContactMethod = (value?: string): boolean => {
@@ -62,11 +64,24 @@ export const SocialMediaProfile = ({
       return;
     }
 
+    const cleanNumber = number.replace(/\s+/g, '');
+
+    if (platform === 'whatsapp') {
+      const message = `Hola ${profileName} vi tu perfil en prepagoya.com y deseo un encuentro contigo.`;
+      const url = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
+      window.open(url, '_blank');
+      return;
+    }
+
     const urls = {
-      whatsapp: `https://wa.me/${number.replace(/\s+/g, '')}`,
-      telegram: `https://t.me/${number.replace(/\s+/g, '')}`,
+      telegram: `https://t.me/${cleanNumber}`,
     };
-    window.open(urls[platform as keyof typeof urls], '_blank');
+
+    // @ts-ignore
+    const url = urls[platform as keyof typeof urls];
+    if (url) {
+      window.open(url, '_blank');
+    }
   };
 
   const handleSocialClick = (platform: string, handle: string) => {

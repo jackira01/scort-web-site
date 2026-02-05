@@ -75,10 +75,10 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
       .replace(/,\s*,/g, ','),
     category: (() => {
       const cat = profile.features?.find((feature: any) => feature.groupName === 'Categoría');
-      if (!cat) return 'ESCORT';
+      if (!cat) return 'SCORT';
       const v = Array.isArray(cat.value) ? cat.value[0] : cat.value;
       if (v && typeof v === 'object' && 'label' in v) return (v as any).label;
-      return v || 'ESCORT';
+      return v || 'SCORT';
     })(),
     verified: profile.verification?.verificationStatus === 'check',
     description: profile.description,
@@ -181,6 +181,7 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
               />
               <SocialMediaProfile
                 contact={adaptedProfileData.contact}
+                profileName={adaptedProfileData.name}
               // socialMedia={adaptedProfileData.socialMedia}
               />
 
@@ -251,6 +252,7 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
               />
               <SocialMediaProfile
                 contact={adaptedProfileData.contact}
+                profileName={adaptedProfileData.name}
               // socialMedia={adaptedProfileData.socialMedia}
               />
 

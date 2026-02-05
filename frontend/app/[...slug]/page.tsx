@@ -8,7 +8,8 @@ import SearchPageClient from './SearchPageClient';
 const slugToReadable = (slug: string): string => {
   return slug
     .replace(/-/g, ' ')
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .replace(/\bEscort\b/g, 'Scort');
 };
 
 // Forzar renderizado dinámico para evitar DYNAMIC_SERVER_USAGE
@@ -169,8 +170,8 @@ export async function generateMetadata({
     // Validar categoría
     if (!(await isValidCategory(categoria))) {
       return {
-        title: 'PrepagoYa - Premium Escort Services',
-        description: 'Find premium escort services in your city. Professional, verified, and discreet companions.',
+        title: 'PrepagoYa - Premium Scort Services',
+        description: 'Find premium scort services in your city. Professional, verified, and discreet companions.',
       };
     }
 
@@ -182,20 +183,20 @@ export async function generateMetadata({
       keywords = `${categoria}, ${cityLabel}, ${deptLabel}, perfiles, verificados`;
     } else if (departamento) {
       const deptLabel = slugToReadable(departamento);
-      pageTitle = `${categoria.charAt(0).toUpperCase() + categoria.slice(1)} en ${deptLabel} - Perfiles Verificados`;
+      pageTitle = `${slugToReadable(categoria)} en ${deptLabel} - Perfiles Verificados`;
       pageDescription = `Encuentra los mejores perfiles de ${categoria} en ${deptLabel}. Perfiles verificados y actualizados.`;
       keywords = `${categoria}, ${deptLabel}, perfiles, verificados`;
     } else {
-      pageTitle = `${categoria.charAt(0).toUpperCase() + categoria.slice(1)} - Perfiles Verificados`;
+      pageTitle = `${slugToReadable(categoria)} - Perfiles Verificados`;
       pageDescription = `Encuentra los mejores perfiles de ${categoria}. Perfiles verificados y actualizados en toda Colombia.`;
       keywords = `${categoria}, perfiles, verificados, Colombia`;
     }
   }
   // Caso: Sin filtros
   else {
-    pageTitle = 'PrepagoYa - Premium Escort Services';
-    pageDescription = 'Find premium escort services in your city. Professional, verified, and discreet companions.';
-    keywords = 'escorts, services, verified, premium';
+    pageTitle = 'PrepagoYa - Premium Scort Services';
+    pageDescription = 'Find premium scort services in your city. Professional, verified, and discreet companions.';
+    keywords = 'scorts, services, verified, premium';
   }
 
   return {

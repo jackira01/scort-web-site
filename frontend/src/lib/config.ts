@@ -21,7 +21,7 @@ export const PAGINATION = {
 
 // Categorías disponibles
 export const CATEGORIES = [
-  { value: 'escort', label: 'Escort' },
+  { value: 'escort', label: 'Scort' },
   { value: 'masajista', label: 'Masajista' },
   { value: 'modelo', label: 'Modelo' },
   { value: 'acompanante', label: 'Acompañante' },

@@ -3,7 +3,7 @@ export const profileData = {
   name: 'Jane Ximena',
   age: 23,
   location: 'Colombia, Huila',
-  category: 'ESCORT',
+  category: 'SCORT',
   verified: true,
   online: true,
   rating: 4.9,

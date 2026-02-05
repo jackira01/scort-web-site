@@ -148,7 +148,7 @@ export function RatesManager({ rates, onChange, deposito, onDepositChange }: Rat
               onCheckedChange={(checked) => onDepositChange(checked === true)}
             />
             <Label htmlFor="deposito" className="text-sm font-medium cursor-pointer">
-              Pido plata por anticipado
+              Pido deposito por anticipado
             </Label>
           </div>
         )}
