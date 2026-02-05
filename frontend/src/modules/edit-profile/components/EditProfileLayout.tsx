@@ -300,7 +300,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
         },
         selectedUpgrades: [],
         acceptTerms: true, // Ya aceptó términos al crear el perfil
-        deposito: profileDetails.deposito ?? true,
+        deposito: profileDetails.deposito ?? false,
       };
 
       // Establecer cada valor individualmente para asegurar que los campos controlados se actualicen

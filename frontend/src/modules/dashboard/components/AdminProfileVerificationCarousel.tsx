@@ -1,19 +1,6 @@
 'use client';
 
-import {
-  Check,
-  CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-  X,
-  Instagram,
-  Facebook,
-  Twitter,
-  ExternalLink,
-} from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import CloudinaryImage from '@/components/CloudinaryImage';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,15 +11,28 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import { useProfileVerification } from '@/hooks/use-profile-verification';
 import { useProfile } from '@/hooks/use-profile';
-import CloudinaryImage from '@/components/CloudinaryImage';
+import { useProfileVerification } from '@/hooks/use-profile-verification';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  Check,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Facebook,
+  Instagram,
+  Twitter,
+  X,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import { getVerifiedCount, verificationSteps } from '../config/verificationSteps.config';
 import { useProfileVerificationMutation, useUpdateVerificationStatusMutation } from '../hooks/useProfileVerificationMutation';
 import { useUpdateProfileMutation } from '../hooks/useUpdateProfileMutation';
 import { useVerificationChanges } from '../hooks/useVerificationChanges';
-import { verificationSteps, getVerifiedCount } from '../config/verificationSteps.config';
-import VerificationStepRenderer from './VerificationStepRenderer';
 import type { AdminProfileVerificationCarouselProps, ProfileVerificationData } from '../types/verification.types';
+import VerificationStepRenderer from './VerificationStepRenderer';
 
 // Component implementation
 
@@ -42,6 +42,7 @@ const AdminProfileVerificationCarousel: React.FC<
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isActiveLocal, setIsActiveLocal] = useState<boolean>(true);
+  const [isVisibleLocal, setIsVisibleLocal] = useState<boolean>(false);
   const [verificationStatusLocal, setVerificationStatusLocal] = useState<string>('pending');
   const queryClient = useQueryClient();
 
@@ -108,30 +109,39 @@ const AdminProfileVerificationCarousel: React.FC<
     }
   });
 
-  // Sincronizar isActiveLocal con los datos del perfil
+  // Sincronizar isActiveLocal y isVisibleLocal con los datos del perfil
   useEffect(() => {
     if (profileData.data?.isActive !== undefined) {
       setIsActiveLocal(profileData.data.isActive);
     }
-  }, [profileData.data?.isActive]);
+    if (profileData.data?.visible !== undefined) {
+      setIsVisibleLocal(profileData.data.visible);
+    }
+  }, [profileData.data?.isActive, profileData.data?.visible]);
 
   // Detectar si isActive ha cambiado
   const hasIsActiveChanged = profileData.data?.isActive !== undefined && profileData.data.isActive !== isActiveLocal;
+
+  // Detectar si visible ha cambiado
+  const hasIsVisibleChanged = profileData.data?.visible !== undefined && profileData.data.visible !== isVisibleLocal;
 
   // Detectar si verificationStatus ha cambiado
   const originalVerificationStatus = verificationData?.verificationStatus || (verificationData as any)?.data?.verificationStatus || 'pending';
   const hasVerificationStatusChanged = verificationStatusLocal !== originalVerificationStatus;
 
-  // Detectar si hay cambios en general (verificación + isActive + verificationStatus)
-  const hasAnyChanges = hasChanges || hasIsActiveChanged || hasVerificationStatusChanged;
+  // Detectar si hay cambios en general (verificación + isActive + visible + verificationStatus)
+  const hasAnyChanges = hasChanges || hasIsActiveChanged || hasIsVisibleChanged || hasVerificationStatusChanged;
 
   // Función personalizada para guardar todos los cambios
   const handleSaveAllChanges = async () => {
 
     try {
-      // Guardar cambios de isActive si han cambiado
-      if (hasIsActiveChanged) {
-        await updateProfileMutation.mutateAsync({ isActive: isActiveLocal });
+      // Guardar cambios de isActive o visible si han cambiado
+      if (hasIsActiveChanged || hasIsVisibleChanged) {
+        const updateData: any = {};
+        if (hasIsActiveChanged) updateData.isActive = isActiveLocal;
+        if (hasIsVisibleChanged) updateData.visible = isVisibleLocal;
+        await updateProfileMutation.mutateAsync(updateData);
       }
 
       // Guardar cambios de verificationStatus si han cambiado
@@ -159,9 +169,12 @@ const AdminProfileVerificationCarousel: React.FC<
 
   // Función personalizada para cancelar todos los cambios
   const handleCancelAllChanges = () => {
-    // Restaurar isActive al valor original
+    // Restaurar isActive y visible al valor original
     if (profileData.data?.isActive !== undefined) {
       setIsActiveLocal(profileData.data.isActive);
+    }
+    if (profileData.data?.visible !== undefined) {
+      setIsVisibleLocal(profileData.data.visible);
     }
 
     // Restaurar verificationStatus al valor original
@@ -309,15 +322,32 @@ const AdminProfileVerificationCarousel: React.FC<
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    Estado del perfil
+                    Perfil Activo
                   </span>
                   <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {isActiveLocal ? 'Perfil activo y visible' : 'Perfil inactivo y oculto'}
+                    {isActiveLocal ? 'El perfil está activo' : 'El perfil está inactivo'}
                   </span>
                 </div>
                 <Switch
                   checked={isActiveLocal}
                   onCheckedChange={setIsActiveLocal}
+                  disabled={profileData.isLoading}
+                />
+              </div>
+
+              {/* Toggle para Visible */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Perfil Visible
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {isVisibleLocal ? 'El perfil es visible' : 'El perfil está oculto'}
+                  </span>
+                </div>
+                <Switch
+                  checked={isVisibleLocal}
+                  onCheckedChange={setIsVisibleLocal}
                   disabled={profileData.isLoading}
                 />
               </div>

@@ -141,7 +141,7 @@ export function CreateProfileLayout() {
       selectedPlan: undefined,
       selectedPlan: undefined,
       selectedVariant: undefined,
-      deposito: true,
+      deposito: false,
     },
   });
 

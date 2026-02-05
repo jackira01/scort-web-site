@@ -9,6 +9,7 @@ import { PlanDefinitionModel } from '../plans/plan.model';
 import { UpgradeDefinitionModel } from '../plans/upgrade.model';
 import { ProfileVerification } from '../profile-verification/profile-verification.model';
 import { createProfileVerification, updatePhoneChangeDetectionStatus } from '../profile-verification/profile-verification.service';
+import { calculateVerificationProgress } from '../profile-verification/verification-progress.utils';
 import { enrichProfileVerification } from '../profile-verification/verification.helper';
 import UserModel from '../user/User.model';
 import { sortProfiles } from '../visibility/visibility.service';
@@ -897,6 +898,17 @@ export const getProfiles = async (page: number = 1, limit: number = 10, fields?:
     // Enriquecer perfil con cálculo dinámico de verificación
     const profile = enrichProfileVerification(rawProfile, Number(minAgeMonths));
 
+    // Force recalculation of verification progress to ensure consistency
+    if (profile.verification) {
+      const fullProgress = calculateVerificationProgress(
+        profile.verification as any,
+        (profile.user as any),
+        profile as any,
+        Number(minAgeMonths)
+      );
+      (profile.verification as any).verificationProgress = fullProgress;
+    }
+
     // Calcular estado de verificación basado en campos individuales
     let isVerified = false;
     if (profile.verification) {
@@ -1097,6 +1109,17 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
     // Enriquecer perfil con cálculo dinámico de verificación (Score y Steps)
     const profile = enrichProfileVerification(rawProfile, Number(minAgeMonths));
 
+    // Force recalculation of verification progress to ensure consistency with Detail View
+    if (profile.verification) {
+      const fullProgress = calculateVerificationProgress(
+        profile.verification as any,
+        (profile.user as any),
+        profile as any,
+        Number(minAgeMonths)
+      );
+      (profile.verification as any).verificationProgress = fullProgress;
+    }
+
     // Verificar upgrades activos para incluir en respuesta
     const activeUpgrades = profile.upgrades?.filter((upgrade: any) =>
       new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
@@ -1265,34 +1288,45 @@ export const updateProfile = async (
     throw new Error('Perfil no encontrado');
   }
 
-  // DETECCIÓN DE CAMBIO DE TELÉFONO
-  if (safeData.contact?.number !== undefined) {
-    const oldNumber = existingProfile.contact?.number;
-    const newNumber = safeData.contact.number;
+  // DETECCIÓN DE CAMBIO DE CONTACTO (Teléfono, WhatsApp, Telegram)
+  if (safeData.contact) {
+    const oldContact = existingProfile.contact || {} as any;
+    const newContact = safeData.contact;
 
-    if (oldNumber !== newNumber) {
-      // Caso 1: Primer número (no penalizar)
-      if (!oldNumber || oldNumber === null) {
+    const numberChanged = newContact.number !== undefined && newContact.number !== oldContact.number;
+    const whatsappChanged = newContact.whatsapp !== undefined && newContact.whatsapp !== oldContact.whatsapp;
+    const telegramChanged = newContact.telegram !== undefined && newContact.telegram !== oldContact.telegram;
+
+    if (numberChanged || whatsappChanged || telegramChanged) {
+      // Determinar si es un cambio penalizable (edición de dato existente)
+      // Si el dato anterior no existía (era null/undefined), se considera inicialización y no penaliza
+      let isPenalizingChange = false;
+
+      if (numberChanged && oldContact.number) isPenalizingChange = true;
+      if (whatsappChanged && oldContact.whatsapp) isPenalizingChange = true;
+      if (telegramChanged && oldContact.telegram) isPenalizingChange = true;
+
+      if (isPenalizingChange) {
+        // Caso: Cambio de dato existente (penalizar)
+        safeData.contact = {
+          ...safeData.contact,
+          hasChanged: true,
+          lastChangeDate: new Date()
+        } as any;
+      } else {
+        // Caso: Inicialización (primer dato) - no penalizar
         safeData.contact = {
           ...safeData.contact,
           hasChanged: false,
           lastChangeDate: new Date()
         } as any;
       }
-      // Caso 2: Cambio de número (penalizar)
-      else {
-        safeData.contact = {
-          ...safeData.contact,
-          hasChanged: true,
-          lastChangeDate: new Date()
-        } as any;
-      }
     } else {
-      // Caso 3: Número igual - preservar valores existentes
+      // Caso: Datos iguales - preservar valores existentes
       safeData.contact = {
         ...safeData.contact,
-        hasChanged: existingProfile.contact?.hasChanged ?? false,
-        lastChangeDate: existingProfile.contact?.lastChangeDate ?? new Date()
+        hasChanged: oldContact.hasChanged ?? false,
+        lastChangeDate: oldContact.lastChangeDate ?? new Date()
       } as any;
     }
   }
@@ -1330,8 +1364,8 @@ export const updateProfile = async (
     }
   }
 
-  // DISPARAR RECÁLCULO DE VERIFICACIÓN si cambió el teléfono
-  if (safeData.contact?.number !== undefined && updatedProfile) {
+  // DISPARAR RECÁLCULO DE VERIFICACIÓN si cambió el contacto (Teléfono, WhatsApp, Telegram)
+  if (safeData.contact && updatedProfile) {
     try {
       await updatePhoneChangeDetectionStatus(updatedProfile);
     } catch (error) {

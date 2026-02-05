@@ -1052,7 +1052,7 @@ export default function ManagePlansModal({
               />
               <label
                 htmlFor="generate-invoice"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 dark:text-gray-500"
               >
                 Generar factura
               </label>

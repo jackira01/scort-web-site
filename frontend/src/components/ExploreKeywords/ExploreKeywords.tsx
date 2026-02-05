@@ -13,11 +13,11 @@ const keywords: Keyword[] = [
     { text: 'PREPAGOS CALI', url: '/escort/valle-del-cauca/cali' },
     { text: 'PREPAGOS BARRANQUILLA', url: '/escort/atlantico/barranquilla' },
     { text: 'PREPAGOS BUCARAMANGA', url: '/escort/santander/bucaramanga' },
-    { text: 'ESCORT BOGOTÁ', url: '/escort/cundinamarca/bogota' },
-    { text: 'ESCORT MEDELLÍN', url: '/escort/antioquia/medellin' },
-    { text: 'ESCORT CALI', url: '/escort/valle-del-cauca/cali' },
-    { text: 'ESCORT BARRANQUILLA', url: '/escort/atlantico/barranquilla' },
-    { text: 'ESCORT BUCARAMANGA', url: '/escort/santander/bucaramanga' },
+    { text: 'SCORT BOGOTÁ', url: '/escort/cundinamarca/bogota' },
+    { text: 'SCORT MEDELLÍN', url: '/escort/antioquia/medellin' },
+    { text: 'SCORT CALI', url: '/escort/valle-del-cauca/cali' },
+    { text: 'SCORT BARRANQUILLA', url: '/escort/atlantico/barranquilla' },
+    { text: 'SCORT BUCARAMANGA', url: '/escort/santander/bucaramanga' },
     { text: 'TRANS BOGOTÁ', url: '/trans/cundinamarca/bogota' },
     { text: 'TRANS MEDELLÍN', url: '/trans/antioquia/medellin' },
     { text: 'TRANS CALI', url: '/trans/valle-del-cauca/cali' },
@@ -32,9 +32,38 @@ const keywords: Keyword[] = [
     { text: 'GIGOLO BOGOTÁ', url: '/gigolo/cundinamarca/bogota' },
     { text: 'GIGOLO MEDELLÍN', url: '/gigolo/antioquia/medellin' },
     { text: 'GIGOLO CALI', url: '/gigolo/valle-del-cauca/cali' },
+    { text: 'SCORT GAY BOGOTÁ', url: '/escort-gay/cundinamarca/bogota' },
+    { text: 'SCORT GAY MEDELLÍN', url: '/escort-gay/antioquia/medellin' },
+    { text: 'SEXO EN BOGOTÁ', url: '/escort/cundinamarca/bogota' },
+    { text: 'ENCUENTROS SEXO CALI', url: '/escort/valle-del-cauca/cali' },
+    { text: 'PUTAS PEREIRA', url: '/escort/risaralda/pereira' },
+    { text: 'PUTAS CARTAGENA', url: '/escort/bolivar/cartagena' },
+    { text: 'PREPAGOS PEREIRA', url: '/escort/risaralda/pereira' },
+    { text: 'PREPAGOS CARTAGENA', url: '/escort/bolivar/cartagena' },
+    { text: 'MASAJISTAS BOGOTÁ', url: '/masajistas/cundinamarca/bogota' },
+    { text: 'MASAJISTAS MEDELLÍN', url: '/masajistas/antioquia/medellin' },
 ];
 
 const ExploreKeywords = () => {
+    const generateTitleFromUrl = (url: string) => {
+        try {
+            const parts = url.split('/').filter(Boolean);
+            const formatPart = (str: string) =>
+                str.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+
+            if (parts.length === 3) {
+                const [category, department, city] = parts;
+                return `${formatPart(category)} en ${formatPart(city)}, ${formatPart(department)}`;
+            } else if (parts.length === 2) {
+                const [category, department] = parts;
+                return `${formatPart(category)} en ${formatPart(department)}`;
+            }
+            return parts.map(formatPart).join(' ');
+        } catch (error) {
+            return '';
+        }
+    };
+
     return (
         <section className="w-full bg-gray-50 dark:bg-gray-900/30 py-12 mt-12 transition-colors duration-500">
             <div className="lg:container lg:mx-auto md:px-0 md:mx-0 md:w-full px-4">
@@ -53,6 +82,7 @@ const ExploreKeywords = () => {
                             <Link
                                 key={index}
                                 href={keyword.url}
+                                title={generateTitleFromUrl(keyword.url)}
                                 className="group inline-flex items-center justify-center px-4 py-2.5 
                          bg-white dark:bg-gray-800 
                          border border-gray-200 dark:border-gray-700 

@@ -15,11 +15,42 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'PrepagoYa - Prepagos Premium',
+  metadataBase: new URL('https://www.prepagoya.com'),
+  title: {
+    default: 'PrepagoYa - Scorts, Putas y Gigolós en Colombia',
+    template: '%s | PrepagoYa Services'
+  },
   description:
-    'Encuentra servicios de Prepagos premium en tu ciudad. Profesionales, verificados y compañeros discretos.',
+    'Encuentra servicios de Prepagos, Scorts, Putas, Gigolós y encuentros de Sexo en tu ciudad. Profesionales verificados, servicios Gay y compañeras discretas.',
+  keywords: ['prepagos', 'putas', 'scorts', 'gigolo', 'gay', 'sexo', 'servicios sexuales', 'adultos', 'colombia', 'encuentros'],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    title: 'PrepagoYa - La mejor guía de Scorts y Prepagos',
+    description: 'Directorio líder de servicios para adultos. Encuentra scorts, putas, gigolós y más.',
+    url: 'https://www.prepagoya.com',
+    siteName: 'PrepagoYa',
+    locale: 'es_CO',
+    type: 'website',
+    images: [
+      {
+        url: '/images/kiss.png', // Fallback image
+        width: 800,
+        height: 600,
+      },
+    ],
+  },
   icons: {
-    icon: "/images/kiss.png", // o /logo.png
+    icon: "/images/kiss.png",
   },
 };
 
