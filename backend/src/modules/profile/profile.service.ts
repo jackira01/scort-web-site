@@ -906,6 +906,18 @@ export const getProfiles = async (page: number = 1, limit: number = 10, fields?:
         profile as any,
         Number(minAgeMonths)
       );
+
+      // --- DEBUG VERIFICACIÓN 2 ---
+      if (profile.name === 'INDIA PELINEGRA' || profile.name.includes('INDIA')) {
+        console.log('--- DEBUG VERIFICACIÓN HOME 2 ---');
+        console.log('Perfil:', profile.name);
+        console.log('Verification Object:', profile.verification);
+        console.log('Verification Steps:', (profile.verification as any)?.steps);
+        console.log('Deposito Step:', (profile.verification as any)?.steps?.deposito);
+        console.log('Calculated Progress:', fullProgress);
+      }
+      // --------------------------
+
       (profile.verification as any).verificationProgress = fullProgress;
     }
 
@@ -996,7 +1008,8 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
       lastLogin: 1,
       createdAt: 1,
       updatedAt: 1,
-      features: 1 // Incluir features para mostrar categoría
+      features: 1, // Incluir features para mostrar categoría
+      verification: 1 // IMPORTANTE: Incluir para poder poblar la información de verificación
     })
     .populate({
       path: 'user',
@@ -1011,7 +1024,7 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
     .populate({
       path: 'verification',
       model: 'ProfileVerification',
-      select: 'verificationProgress verificationStatus steps'
+      // select removed to fetch all fields
     })
     .populate({
       path: 'planAssignment.planId',
@@ -1117,7 +1130,28 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
         profile as any,
         Number(minAgeMonths)
       );
+
       (profile.verification as any).verificationProgress = fullProgress;
+
+      // --- DEBUG VERIFICACIÓN EN HOME (CORRECTO) ---
+      if (profile.name === 'INDIA PELINEGRA' || profile.name.includes('INDIA')) {
+        console.log('--- DEBUG VERIFICACIÓN HOME (FINAL) ---');
+        console.log('Perfil:', profile.name);
+        // Check if verification is populated (has _id and steps, not just an ID string)
+        const isPopulated = profile.verification && typeof profile.verification === 'object' && 'steps' in profile.verification;
+        console.log('Is Verification Populated:', isPopulated);
+        console.log('Verification Object Keys:', Object.keys(profile.verification as any || {}));
+
+        if (isPopulated) {
+          console.log('Verification Steps:', (profile.verification as any).steps);
+          console.log('Deposito Step:', (profile.verification as any).steps?.deposito);
+          console.log('Steps Object Keys:', Object.keys((profile.verification as any).steps || {}));
+        } else {
+          console.log('Verification is NOT populated. Value:', profile.verification);
+        }
+        console.log('Calculated Progress:', fullProgress);
+      }
+      // --------------------------
     }
 
     // Verificar upgrades activos para incluir en respuesta
