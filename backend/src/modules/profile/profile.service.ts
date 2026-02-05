@@ -1132,101 +1132,82 @@ export const getProfilesForHome = async (page: number = 1, limit: number = 20): 
       );
 
       (profile.verification as any).verificationProgress = fullProgress;
-
-      // --- DEBUG VERIFICACIÓN EN HOME (CORRECTO) ---
-      if (profile.name === 'INDIA PELINEGRA' || profile.name.includes('INDIA')) {
-        console.log('--- DEBUG VERIFICACIÓN HOME (FINAL) ---');
-        console.log('Perfil:', profile.name);
-        // Check if verification is populated (has _id and steps, not just an ID string)
-        const isPopulated = profile.verification && typeof profile.verification === 'object' && 'steps' in profile.verification;
-        console.log('Is Verification Populated:', isPopulated);
-        console.log('Verification Object Keys:', Object.keys(profile.verification as any || {}));
-
-        if (isPopulated) {
-          console.log('Verification Steps:', (profile.verification as any).steps);
-          console.log('Deposito Step:', (profile.verification as any).steps?.deposito);
-          console.log('Steps Object Keys:', Object.keys((profile.verification as any).steps || {}));
-        } else {
-          console.log('Verification is NOT populated. Value:', profile.verification);
-        }
-        console.log('Calculated Progress:', fullProgress);
-      }
-      // --------------------------
     }
+  }
 
     // Verificar upgrades activos para incluir en respuesta
     const activeUpgrades = profile.upgrades?.filter((upgrade: any) =>
-      new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
-    ) || [];
+    new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
+  ) || [];
 
-    const hasDestacadoUpgrade = activeUpgrades.some((u: any) =>
-      u.code === 'DESTACADO' || u.code === 'HIGHLIGHT'
-    );
-    const hasImpulsoUpgrade = activeUpgrades.some((u: any) =>
-      u.code === 'IMPULSO' || u.code === 'BOOST'
-    );
+  const hasDestacadoUpgrade = activeUpgrades.some((u: any) =>
+    u.code === 'DESTACADO' || u.code === 'HIGHLIGHT'
+  );
+  const hasImpulsoUpgrade = activeUpgrades.some((u: any) =>
+    u.code === 'IMPULSO' || u.code === 'BOOST'
+  );
 
-    // Calcular estado de verificación basado en campos individuales
-    // NOTA: enrichProfileVerification ya calculó el verificationProgress
-    let isVerified = false;
-    let verificationLevel = 'pending';
+  // Calcular estado de verificación basado en campos individuales
+  // NOTA: enrichProfileVerification ya calculó el verificationProgress
+  let isVerified = false;
+  let verificationLevel = 'pending';
 
-    if (profile.verification) {
-      const verification = profile.verification as any;
-      // Mantenemos la lógica de isVerified basada en steps explícitos si es necesario,
-      // o podemos confiar en el progress. Por ahora mantenemos la lógica existente para isVerified
-      // pero usamos el progress calculado dinámicamente.
+  if (profile.verification) {
+    const verification = profile.verification as any;
+    // Mantenemos la lógica de isVerified basada en steps explícitos si es necesario,
+    // o podemos confiar en el progress. Por ahora mantenemos la lógica existente para isVerified
+    // pero usamos el progress calculado dinámicamente.
 
-      // La lógica original contaba 'verified' values.
-      // Ahora verification.steps tiene objetos con { isVerified: boolean }
-      // Adaptamos la lógica si es necesario, pero enrichProfileVerification devuelve una estructura compatible
+    // La lógica original contaba 'verified' values.
+    // Ahora verification.steps tiene objetos con { isVerified: boolean }
+    // Adaptamos la lógica si es necesario, pero enrichProfileVerification devuelve una estructura compatible
 
-      const verifiedCount = Object.values(verification.steps || {}).filter((step: any) => step?.isVerified === true).length;
-      // Total steps considerados en el helper son 5
+    const verifiedCount = Object.values(verification.steps || {}).filter((step: any) => step?.isVerified === true).length;
+    // Total steps considerados en el helper son 5
 
-      if (verifiedCount >= 5) { // Si tiene los 5 pasos
-        isVerified = true;
-        verificationLevel = 'verified';
-      } else if (verifiedCount > 0) {
-        verificationLevel = 'partial';
-      }
+    if (verifiedCount >= 5) { // Si tiene los 5 pasos
+      isVerified = true;
+      verificationLevel = 'verified';
+    } else if (verifiedCount > 0) {
+      verificationLevel = 'partial';
     }
+  }
 
-    // Extraer categoría
-    const category = extractCategoryFromFeatures(profile.features);
-
-    return {
-      ...profile,
-      hasDestacadoUpgrade,
-      hasImpulsoUpgrade,
-      category, // Nueva propiedad
-      verification: {
-        ...(typeof profile.verification === 'object' && profile.verification !== null ? profile.verification : {}),
-        isVerified,
-        verificationLevel
-      }
-    };
-  });
-
-  const total = filteredProfiles.length;
-
-  // DEBUG - Resultado final
-
-  // Debug: Mostrar algunos perfiles de ejemplo
-  cleanProfiles.slice(0, 3).forEach((profile, index) => {
-    const user = profile.user as any;
-    // DEBUG - Perfil info
-  });
+  // Extraer categoría
+  const category = extractCategoryFromFeatures(profile.features);
 
   return {
-    profiles: cleanProfiles,
-    pagination: {
-      page,
-      limit,
-      total,
-      pages: Math.ceil(total / limit),
-    },
+    ...profile,
+    hasDestacadoUpgrade,
+    hasImpulsoUpgrade,
+    category, // Nueva propiedad
+    verification: {
+      ...(typeof profile.verification === 'object' && profile.verification !== null ? profile.verification : {}),
+      isVerified,
+      verificationLevel
+    }
   };
+});
+
+const total = filteredProfiles.length;
+
+// DEBUG - Resultado final
+
+// Debug: Mostrar algunos perfiles de ejemplo
+cleanProfiles.slice(0, 3).forEach((profile, index) => {
+  const user = profile.user as any;
+  // DEBUG - Perfil info
+});
+
+return {
+  profiles: cleanProfiles,
+  pagination: {
+    page,
+    limit,
+    total,
+    pages: Math.ceil(total / limit),
+  },
+};
 };
 
 export const getProfileById = async (id: string): Promise<IProfile | null> => {

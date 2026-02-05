@@ -173,15 +173,7 @@ export const getProfileVerificationByProfileId = async (profileId: string | Type
           Number(minAgeMonths)
         );
 
-        // --- DEBUG DETAIL CALCULATION ---
-        if (verification.profile && ((verification.profile as any).name === 'INDIA PELINEGRA' || (verification.profile as any).name?.includes('INDIA'))) {
-          console.log('--- DEBUG DETAIL PRE-CALC ---');
-          console.log('Profile Name:', (verification.profile as any).name);
-          console.log('Verification Steps (DB + Enriched):', verification.steps);
-          console.log('Deposito Step:', verification.steps?.deposito);
-          console.log('Calculated Full Progress:', fullProgress);
-        }
-        // -------------------------------
+
 
         verification.verificationProgress = fullProgress;
       }
