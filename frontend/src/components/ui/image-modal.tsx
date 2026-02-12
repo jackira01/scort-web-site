@@ -1,11 +1,11 @@
 'use client';
 
-import { ZoomIn, ZoomOut, RotateCw, X } from 'lucide-react';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+import { RotateCw, X, ZoomIn, ZoomOut } from 'lucide-react';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from './button';
 import { Dialog, DialogContent, DialogTitle } from './dialog';
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 interface ImageModalProps {
     isOpen: boolean;
@@ -215,6 +215,7 @@ export const ImageModal = ({
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
                         onMouseLeave={handleMouseUp}
+                        onContextMenu={(e) => e.preventDefault()}
                         style={{
                             transform: `translate(${position.x}px, ${position.y}px) scale(${zoom}) rotate(${rotation}deg)`,
                             transition: isDragging ? 'none' : 'transform 0.2s ease-out'
@@ -239,6 +240,7 @@ export const ImageModal = ({
                                     <button
                                         key={index}
                                         onClick={() => onIndexChange(index)}
+                                        onContextMenu={(e) => e.preventDefault()}
                                         className={`relative flex-shrink-0 w-12 h-12 rounded overflow-hidden transition-all ${index === currentIndex
                                             ? 'ring-2 ring-white'
                                             : 'opacity-70 hover:opacity-100'

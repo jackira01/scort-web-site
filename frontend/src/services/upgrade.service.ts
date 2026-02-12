@@ -58,7 +58,12 @@ export const purchaseUpgrade = async (
 export const getAvailableUpgrades = async () => {
   try {
     const response = await axios.get(`${API_URL}/api/plans/upgrades`);
-    return response.data;
+    // Transformar la respuesta al formato que esperan los hooks { upgrades: [...] }
+    const result = response.data;
+    return {
+      upgrades: result.data || [],
+      total: result.pagination?.total || 0
+    };
   } catch (error) {
     throw error;
   }

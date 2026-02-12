@@ -1,11 +1,11 @@
 'use client'
 
-import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react';
-import { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
+import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 interface VideoPlayerProps {
   videos: Array<{ link: string; preview: string } | string>;
@@ -138,7 +138,7 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
     <>
       <Card className="bg-card border-border animate-in fade-in-50 slide-in-from-right-10 duration-1000">
         <CardContent className="p-4">
-          <div className="relative aspect-video bg-muted rounded-lg overflow-hidden group">
+          <div className="relative aspect-video bg-muted rounded-lg overflow-hidden group" onContextMenu={(e) => e.preventDefault()}>
             {videoError ? (
               <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground bg-muted">
                 <div className="text-4xl mb-2">📹</div>
@@ -250,6 +250,8 @@ export default function VideoPlayer({ videos }: VideoPlayerProps) {
                   ref={modalVideoRef}
                   className="max-w-full max-h-[85vh] w-auto h-auto object-contain"
                   style={{ maxHeight: 'calc(95vh - 8rem)' }}
+                  contextMenu="return false;"
+                  onContextMenu={(e) => e.preventDefault()}
                   muted={isVideoMuted}
                   onError={handleVideoError}
                   onLoadedData={handleVideoLoad}

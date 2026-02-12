@@ -1,25 +1,24 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, Save, X, Zap } from 'lucide-react';
-import { useCreateUpgrade, useUpdateUpgrade, usePlans } from '@/hooks/usePlans';
-import { 
-  Upgrade, 
-  UpgradeEffect, 
-  CreateUpgradeRequest, 
-  UpdateUpgradeRequest, 
-  UPGRADE_EFFECT_TYPES 
+import { Textarea } from '@/components/ui/textarea';
+import { useUpgrades } from '@/hooks/use-upgrades';
+import { useCreateUpgrade, useUpdateUpgrade } from '@/hooks/usePlans';
+import {
+  CreateUpgradeRequest,
+  UpdateUpgradeRequest,
+  Upgrade,
+  UpgradeEffect
 } from '@/types/plans';
+import { Plus, Save, X, Zap } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 interface UpgradeFormProps {
@@ -63,13 +62,19 @@ const defaultFormData: FormData = {
 export const UpgradeForm: React.FC<UpgradeFormProps> = ({ isOpen, onClose, upgrade, mode }) => {
   const [formData, setFormData] = useState<FormData>(defaultFormData);
   const [newDependency, setNewDependency] = useState('');
+  const [isDependent, setIsDependent] = useState(false);
 
   const createUpgradeMutation = useCreateUpgrade();
   const updateUpgradeMutation = useUpdateUpgrade();
-  const { data: plansData } = usePlans({ limit: 100 }); // Para obtener códigos de planes disponibles
+
+  // CAMBIO: Usar hook de upgrades en lugar de planes
+  const { data: upgradesData } = useUpgrades();
 
   useEffect(() => {
     if (upgrade && mode === 'edit') {
+      const hasDependencies = (upgrade.requires && upgrade.requires.length > 0);
+      setIsDependent(hasDependencies);
+
       setFormData({
         code: upgrade.code,
         name: upgrade.name,
@@ -83,6 +88,7 @@ export const UpgradeForm: React.FC<UpgradeFormProps> = ({ isOpen, onClose, upgra
       });
     } else {
       setFormData(defaultFormData);
+      setIsDependent(false);
     }
   }, [upgrade, mode, isOpen]);
 
@@ -99,12 +105,12 @@ export const UpgradeForm: React.FC<UpgradeFormProps> = ({ isOpen, onClose, upgra
 
   const addDependency = () => {
     if (!newDependency.trim()) return;
-    
+
     if (formData.requires.includes(newDependency.trim())) {
       toast.error('Esta dependencia ya existe');
       return;
     }
-    
+
     setFormData(prev => ({
       ...prev,
       requires: [...prev.requires, newDependency.trim()],
@@ -117,6 +123,14 @@ export const UpgradeForm: React.FC<UpgradeFormProps> = ({ isOpen, onClose, upgra
       ...prev,
       requires: prev.requires.filter((_, i) => i !== index),
     }));
+  };
+
+  // Limpiar dependencias si se desmarca el checkbox
+  const handleDependencyCheckChange = (checked: boolean) => {
+    setIsDependent(checked);
+    if (!checked) {
+      setFormData(prev => ({ ...prev, requires: [] }));
+    }
   };
 
   const getEffectTypeLabel = (type: string): string => {
@@ -159,7 +173,13 @@ export const UpgradeForm: React.FC<UpgradeFormProps> = ({ isOpen, onClose, upgra
       toast.error('Debe definir al menos un efecto (levelDelta, setLevelTo o priorityBonus)');
       return false;
     }
-    
+
+    // Validar dependencia si está marcada
+    if (isDependent && formData.requires.length === 0) {
+      toast.error('Si marca "Es dependiente", debe seleccionar al menos un upgrade requerido');
+      return false;
+    }
+
     return true;
   };
 
@@ -197,7 +217,7 @@ export const UpgradeForm: React.FC<UpgradeFormProps> = ({ isOpen, onClose, upgra
       }
       onClose();
     } catch (error) {
-      
+
     }
   };
 
@@ -241,7 +261,7 @@ export const UpgradeForm: React.FC<UpgradeFormProps> = ({ isOpen, onClose, upgra
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="description">Descripción *</Label>
                 <Textarea
@@ -252,7 +272,7 @@ export const UpgradeForm: React.FC<UpgradeFormProps> = ({ isOpen, onClose, upgra
                   rows={3}
                 />
               </div>
-              
+
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price">Precio *</Label>
@@ -308,7 +328,7 @@ export const UpgradeForm: React.FC<UpgradeFormProps> = ({ isOpen, onClose, upgra
                     Incremento de nivel
                   </p>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label>Set Level To</Label>
                   <Input
@@ -321,7 +341,7 @@ export const UpgradeForm: React.FC<UpgradeFormProps> = ({ isOpen, onClose, upgra
                     Establecer nivel específico
                   </p>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label>Priority Bonus</Label>
                   <Input
@@ -335,7 +355,7 @@ export const UpgradeForm: React.FC<UpgradeFormProps> = ({ isOpen, onClose, upgra
                   </p>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Position Rule</Label>
                 <Select
@@ -352,7 +372,7 @@ export const UpgradeForm: React.FC<UpgradeFormProps> = ({ isOpen, onClose, upgra
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Stacking Policy</Label>
                 <Select
@@ -372,59 +392,86 @@ export const UpgradeForm: React.FC<UpgradeFormProps> = ({ isOpen, onClose, upgra
             </CardContent>
           </Card>
 
-          {/* Dependencias */}
+          {/* Dependencias - AHORA DINÁMICO */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Dependencias de Planes</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Códigos de planes requeridos para poder adquirir este upgrade
-              </p>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-lg">Dependencias de Upgrades</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Definir si este upgrade requiere tener otro activo previamente
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="isDependent"
+                    checked={isDependent}
+                    onCheckedChange={handleDependencyCheckChange}
+                  />
+                  <Label htmlFor="isDependent">Es dependiente</Label>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Select
-                  value={newDependency}
-                  onValueChange={setNewDependency}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Seleccionar plan..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {plansData?.plans
-                      .filter(plan => !formData.requires.includes(plan.code))
-                      .map((plan) => (
-                        <SelectItem key={plan.code} value={plan.code}>
-                          {plan.code} - {plan.name}
-                        </SelectItem>
-                      ))
-                    }
-                  </SelectContent>
-                </Select>
-                <Button onClick={addDependency} size="sm" disabled={!newDependency}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="flex flex-wrap gap-2">
-                {formData.requires.map((dependency, index) => (
-                  <Badge key={index} variant="outline" className="flex items-center gap-1 font-mono">
-                    {dependency}
-                    <span
-                      className="h-4 w-4 p-0 inline-flex items-center justify-center rounded hover:bg-black/10 cursor-pointer"
-                      onClick={() => removeDependency(index)}
-                    >
-                      <X className="h-3 w-3" />
-                    </span>
-                  </Badge>
-                ))}
-              </div>
-              
-              {formData.requires.length === 0 && (
+
+            {isDependent && (
+              <CardContent className="space-y-4 animate-in fade-in slide-in-from-top-4">
+                <div className="flex gap-2">
+                  <Select
+                    value={newDependency}
+                    onValueChange={setNewDependency}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Seleccionar upgrade requerido..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(upgradesData?.upgrades || [])
+                        // Filtrar para no mostrarse a sí mismo ni dependencias ya agregadas
+                        .filter(u => u.code !== formData.code && !formData.requires.includes(u.code))
+                        .map((u) => (
+                          <SelectItem key={u.code} value={u.code}>
+                            {u.code} - {u.name}
+                          </SelectItem>
+                        ))
+                      }
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={addDependency} size="sm" disabled={!newDependency}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {formData.requires.map((dependency, index) => (
+                    <Badge key={index} variant="secondary" className="flex items-center gap-1 font-mono pl-2 pr-1 py-1">
+                      {dependency}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-4 w-4 rounded-full ml-1 hover:bg-destructive/20 hover:text-destructive"
+                        onClick={() => removeDependency(index)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+
+                {formData.requires.length === 0 && (
+                  <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-md text-sm">
+                    <Zap className="h-4 w-4" />
+                    <span>Selecciona al menos un upgrade de la lista si marcaste "Es dependiente"</span>
+                  </div>
+                )}
+              </CardContent>
+            )}
+
+            {!isDependent && (
+              <CardContent>
                 <p className="text-sm text-muted-foreground italic">
-                  Sin dependencias - Disponible para todos los planes
+                  Sin dependencias - Disponible para todos los perfiles independientemente de sus otros upgrades.
                 </p>
-              )}
-            </CardContent>
+              </CardContent>
+            )}
           </Card>
         </div>
 

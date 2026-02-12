@@ -36,11 +36,11 @@ export const SocialMediaProfile = ({
   // Helper function to check if any social media is configured
   const hasSocialMedia = (): boolean => {
     return !!(
-      socialMedia?.instagram ||
-      socialMedia?.onlyfans ||
-      socialMedia?.twitter ||
-      socialMedia?.facebook ||
-      socialMedia?.tiktok
+      socialMedia?.instagram
+      // socialMedia?.onlyfans ||
+      // socialMedia?.twitter ||
+      // socialMedia?.facebook ||
+      // socialMedia?.tiktok
     );
   };
 
@@ -167,7 +167,7 @@ export const SocialMediaProfile = ({
           </Button>
         )} */}
 
-        {socialMedia?.twitter && (
+        {/* {socialMedia?.twitter && (
           <Button
             variant="outline"
             className="w-full hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-500"
@@ -180,9 +180,9 @@ export const SocialMediaProfile = ({
             </svg>
             Ver Twitter/X
           </Button>
-        )}
+        )} */}
 
-        {socialMedia?.facebook && (
+        {/* {socialMedia?.facebook && (
           <Button
             variant="outline"
             className="w-full hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-500"
@@ -195,9 +195,9 @@ export const SocialMediaProfile = ({
             </svg>
             Ver Facebook
           </Button>
-        )}
+        )} */}
 
-        {socialMedia?.tiktok && (
+        {/* {socialMedia?.tiktok && (
           <Button
             variant="outline"
             className="w-full hover:bg-pink-50 dark:hover:bg-pink-950/20 hover:border-pink-500"
@@ -210,7 +210,7 @@ export const SocialMediaProfile = ({
             </svg>
             Ver TikTok
           </Button>
-        )}
+        )} */}
       </CardContent>
     </Card>
   );

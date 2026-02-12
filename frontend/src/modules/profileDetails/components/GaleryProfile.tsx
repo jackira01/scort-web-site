@@ -1,10 +1,10 @@
 'use client';
 
-import { CheckCircle, Search, ChevronRight } from 'lucide-react';
-import Image from 'next/image';
-import { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ImageModal } from '@/components/ui/image-modal';
+import { CheckCircle, ChevronRight, Search } from 'lucide-react';
+import Image from 'next/image';
+import { useEffect, useRef, useState } from 'react';
 
 export const ProfileGallery = ({
   images,
@@ -85,6 +85,7 @@ export const ProfileGallery = ({
           setModalImageIndex(selectedImage);
           setIsModalOpen(true);
         }}
+        onContextMenu={(e) => e.preventDefault()}
       >
         <Image
           width={600}
@@ -129,6 +130,7 @@ export const ProfileGallery = ({
             onClick={() => {
               setSelectedImage(index);
             }}
+            onContextMenu={(e) => e.preventDefault()}
             className={`relative overflow-hidden rounded-lg aspect-square group transition-all duration-200 h-20 md:h-36 ${selectedImage === index
               ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-background'
               : 'hover:ring-2 hover:ring-purple-300 hover:ring-offset-2 hover:ring-offset-background'
