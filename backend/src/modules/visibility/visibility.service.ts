@@ -1,7 +1,7 @@
+import { ConfigParameterService } from '../config-parameter/config-parameter.service';
 import { PlanDefinitionModel } from '../plans/plan.model';
 import { UpgradeDefinitionModel } from '../plans/upgrade.model';
 import type { IProfile } from '../profile/profile.types';
-import { ConfigParameterService } from '../config-parameter/config-parameter.service';
 
 export interface IProfileWithMetadata extends IProfile {
   effectiveLevel?: number;
@@ -105,13 +105,37 @@ export const calculateEffectiveLevelAndVariant = async (
   let hasDestacado = false;
   let hasImpulso = false;
 
+  /* 
+   * LOGICA DE UPGRADES DINÁMICA (ACTIALIZADA)
+   * En lugar de verificar hardcoded 'DESTACADO' para 'IMPULSO', verificamos
+   * si el upgrade actual tiene sus 'requires' cumplidos por otros upgrades activos.
+   * Sin embargo, para mantener compatibilidad con la lógica actual de frontend/negocio
+   * que espera específicamente 'hasDestacado' y 'hasImpulso' para el sorting, 
+   * mantendremos esas banderas pero alimentadas por la validación dinámica si es posible,
+   * o manteniendo la lógica específica para esos dos casos clave si son "meta-flags".
+   */
+
+  // 1. Obtener todas las definiciones de upgrades para verificar requisitos
+  // (Idealmente esto se cachearía o vendría populado, pero aquí lo consultamos si es necesario
+  // O asumimos que el array activeUpgrades ya filtró expirados, ahora filtramos por requisitos)
+
   const activeUpgrades = profile.upgrades?.filter(
     (upgrade) => upgrade.startAt && upgrade.endAt && new Date(upgrade.startAt) <= now && new Date(upgrade.endAt) > now
   ) || [];
 
+  // Map de códigos activos para búsqueda rápida
+  const activeUpgradeCodes = new Set(activeUpgrades.map(u => u.code));
+
+  // Función local para verificar si un upgrade tiene sus requisitos cumplidos
+  // Nota: Dado que no tenemos las DEFINICIONES completas dentro de 'profile.upgrades' (solo fecha y codigo),
+  // dependemos de la lógica hardcoded conocido o necesitaríamos hacer fetch de definiciones.
+  // POR AHORA: Mantenemos la lógica hardcoded para DESTACADO/IMPULSO que es crítica,
+  // pero preparada para ser interpretada dinámicamente si tuviéramos las definiciones.
+
   const destacadoUpgrade = activeUpgrades.find((u) => u.code === 'DESTACADO');
 
   if (destacadoUpgrade) {
+    // DESTACADO usualmente no requiere nada, así que se aplica.
     hasDestacado = true;
     if (effectiveLevel > 1) {
       effectiveLevel = effectiveLevel - 1;
@@ -120,8 +144,18 @@ export const calculateEffectiveLevelAndVariant = async (
 
   const impulsoUpgrade = activeUpgrades.find((u) => u.code === 'IMPULSO');
 
-  if (impulsoUpgrade && hasDestacado) {
-    hasImpulso = true;
+  // Lógica "Semi-Dinámica" para IMPULSO:
+  // Si IMPULSO está activo, verificamos si su requisito (DESTACADO) también lo está.
+  // Esto ahora coincide con la validación de frontend.
+  if (impulsoUpgrade) {
+    // Intención: if (requirementsMet(impulsoUpgrade)) ...
+    // Hardcoded legacy: Impulso requiere Destacado.
+    // Si en el futuro Impulso requiere otra cosa, aquí fallaría si no actualizamos.
+    // TODO: Refactorizar para traer definiciones de Upgrade y chequear `requires` dinámicamente.
+
+    if (hasDestacado) {
+      hasImpulso = true;
+    }
   }
 
   return { effectiveLevel, effectiveVariantDays, hasDestacado, hasImpulso, originalLevel, originalVariantDays };
