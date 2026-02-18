@@ -41,14 +41,17 @@ export interface ProcessedImageResult {
   originalFileName?: string;
 }
 
-// Configuración de marca de agua
+// Configuración de marca de agua - DEBE COINCIDIR CON watermark.ts para consistencia
+// Usar marca diagonal de TEXTO para mantener uniformidad en toda la plataforma
 const WATERMARK_CONFIG = {
-  type: 'image', // 'text' | 'image'
-  text: '© ScortWeb', // Fallback or previous usage
-  imageSrc: '/images/logo 1.png',
-  opacity: 0.8,
-  scale: 0.3, // Escala relativa al ancho de la imagen principal
-  minWidth: 100, // Ancho mínimo en píxeles
+  fontSize: 26,
+  fontFamily: 'Arial',
+  color: 'rgba(255, 255, 255, 0.2)',
+  position: 'bottom-right',
+  padding: 15,
+  spacingXFactor: 15, // Espaciado horizontal
+  spacingYFactor: 6,  // Espaciado vertical
+  text: 'ScortWeb', // Texto para marca diagonal
 };
 
 /**
@@ -115,20 +118,17 @@ const applyImageWatermarkToContext = (
 };
 
 /**
- * Aplica marca de agua diagonal repetida a un contexto de canvas (Legacy text mode)
+ * Aplica marca de agua diagonal repetida a un contexto de canvas
+ * CONSISTENTE CON watermark.ts para uniformidad en toda la plataforma
  */
 const applyTextWatermarkToContext = (
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
   watermarkText: string
 ) => {
-  const fontSize = 26;
-  const fontFamily = 'Arial';
-  const color = 'rgba(255, 255, 255, 0.2)';
-
-  // Configurar el estilo de la marca de agua
-  ctx.font = `${fontSize}px ${fontFamily}`;
-  ctx.fillStyle = color;
+  // Usar configuración centralizada para mantener consistencia
+  ctx.font = `${WATERMARK_CONFIG.fontSize}px ${WATERMARK_CONFIG.fontFamily}`;
+  ctx.fillStyle = WATERMARK_CONFIG.color;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
@@ -138,9 +138,9 @@ const applyTextWatermarkToContext = (
   // Rotar el canvas para inclinar el texto en diagonal (-45 grados)
   ctx.rotate(-Math.PI / 4);
 
-  // Calcular el espaciado entre marcas de agua
-  const spacingX = fontSize * 8;
-  const spacingY = fontSize * 4;
+  // Calcular el espaciado entre marcas de agua (patrón diagonal repetido)
+  const spacingX = WATERMARK_CONFIG.fontSize * WATERMARK_CONFIG.spacingXFactor;
+  const spacingY = WATERMARK_CONFIG.fontSize * WATERMARK_CONFIG.spacingYFactor;
 
   // Calcular los límites extendidos para cubrir toda el área rotada
   const diagonal = Math.sqrt(canvas.width * canvas.width + canvas.height * canvas.height);
@@ -258,19 +258,9 @@ export const processCroppedImageCentralized = async (
     }
 
     // PASO 2: APLICAR MARCA DE AGUA (si está habilitada)
+    // Usar marca diagonal de TEXTO consistente con watermark.ts
     if (applyWatermark) {
-      if (WATERMARK_CONFIG.type === 'image') {
-        try {
-          const watermarkImage = await createImage(WATERMARK_CONFIG.imageSrc);
-          applyImageWatermarkToContext(ctx, canvas, watermarkImage);
-        } catch (watermarkError) {
-          console.error("Error cargando watermark image:", watermarkError);
-          // Fallback a texto si falla la imagen
-          applyTextWatermarkToContext(ctx, canvas, watermarkText);
-        }
-      } else {
-        applyTextWatermarkToContext(ctx, canvas, watermarkText);
-      }
+      applyTextWatermarkToContext(ctx, canvas, watermarkText || WATERMARK_CONFIG.text);
     }
 
     // PASO 3: CONVERTIR A BLOB CON CALIDAD OPTIMIZADA

@@ -17,12 +17,12 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.prepagoya.com'),
   title: {
-    default: 'PrepagoYa - Scorts, Putas y Gigolós en Colombia',
+    default: 'PrepagoYa - Escorts, Putas y Gigolós en Colombia',
     template: '%s | PrepagoYa Services'
   },
   description:
-    'Encuentra servicios de Prepagos, Scorts, Putas, Gigolós y encuentros de Sexo en tu ciudad. Profesionales verificados, servicios Gay y compañeras discretas.',
-  keywords: ['prepagos', 'putas', 'scorts', 'gigolo', 'gay', 'sexo', 'servicios sexuales', 'adultos', 'colombia', 'encuentros'],
+    'Servicios de Prepagos, Escorts, Putas, Gigolós. Encuentros de Sexo en tu ciudad. Profesionales verificados, servicios Gay, Acompañantes y Trans discretos.',
+  keywords: ['prepagos', 'putas', 'Escorts', 'gigolo', 'gay', 'sexo', 'servicios sexuales', 'adultos', 'colombia', 'encuentros', 'trans', 'acompañantes', 'sex'],
   robots: {
     index: true,
     follow: true,
@@ -35,8 +35,8 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'PrepagoYa - La mejor guía de Scorts y Prepagos',
-    description: 'Directorio líder de servicios para adultos. Encuentra scorts, putas, gigolós y más.',
+    title: 'PrepagoYa - La mejor guía de Escorts y Prepagos',
+    description: 'Directorio líder de servicios para adultos. Encuentra Escorts, putas, gigolós y más.',
     url: 'https://www.prepagoya.com',
     siteName: 'PrepagoYa',
     locale: 'es_CO',

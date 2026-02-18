@@ -229,21 +229,33 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
   };
 
   const onSubmit = async (data: VerificationFormData) => {
-    // Validar que se complete al menos el Paso 1 y Paso 2
     const { frontPhoto, backPhoto } = data.documentVerification;
+    const isDocumentVerificationComplete = frontPhoto && backPhoto;
+    const isCartelVerificationComplete = !!data.cartelVerification?.mediaLink;
+    const isSelfieVerificationComplete = !!data.selfieVerification?.photo;
 
-    if (!frontPhoto) {
-      toast.error('Debes completar el Paso 1 (foto frontal del documento)');
+    // Validación: Se debe cumplir al menos uno de los bloques principales
+    // Bloque A: Documento (Paso 1 y 2)
+    // Bloque B: Cartel (Paso 3)
+    // El Paso 4 requiere obligatoriamente el Bloque A
+
+    if (!isDocumentVerificationComplete && !isCartelVerificationComplete) {
+      toast.error('Debes completar al menos la verificación de documento (Pasos 1 y 2) o la verificación con cartel (Paso 3)');
       return;
     }
 
-    if (!backPhoto) {
-      toast.error('Debes completar el Paso 2 (foto reverso del documento)');
+    // Si tiene el paso 1 pero no el 2, o viceversa (Incoherencia en Bloque A)
+    if ((frontPhoto && !backPhoto) || (!frontPhoto && backPhoto)) {
+      if (frontPhoto && !backPhoto) toast.error('Si subes el documento frontal (Paso 1), debes subir el reverso (Paso 2)');
+      if (!frontPhoto && backPhoto) toast.error('Si subes el documento reverso (Paso 2), debes subir el frontal (Paso 1)');
       return;
     }
 
-    // Los pasos 3 y 4 son opcionales
-
+    // Si sube el paso 4, requiere pasos 1 y 2
+    if (isSelfieVerificationComplete && !isDocumentVerificationComplete) {
+      toast.error('Para enviar la foto con documento (Paso 4), debes completar primero la verificación de documento (Pasos 1 y 2)');
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -381,6 +393,12 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 <label
                   htmlFor={`${fieldName}-replace`}
                   className={`cursor-pointer flex items-center gap-2 text-sm font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 ${!isEnabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                  onClick={(e) => {
+                    if (!isEnabled && !isVerified) {
+                      e.preventDefault();
+                      toast.error(getDisabledToastMessage(fieldName));
+                    }
+                  }}
                 >
                   <Input
                     type="file"
@@ -433,6 +451,12 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 htmlFor={fieldName}
                 className={`cursor-pointer flex flex-col items-center gap-2 ${!isEnabled ? 'cursor-not-allowed opacity-50' : ''
                   }`}
+                onClick={(e) => {
+                  if (!isEnabled && !isVerified) {
+                    e.preventDefault();
+                    toast.error(getDisabledToastMessage(fieldName));
+                  }
+                }}
               >
                 <Upload className="h-8 w-8 text-gray-400" />
                 <span className="text-sm font-medium text-gray-700">
@@ -453,6 +477,17 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
     if (step < currentStep) return 'completed';
     if (step === currentStep) return 'current';
     return 'pending';
+  };
+
+  const getDisabledToastMessage = (fieldName: string): string => {
+    switch (fieldName) {
+      case 'backPhoto':
+        return 'Debes completar el paso 1 para poder completar el paso 2';
+      case 'selfiePhoto':
+        return 'Debes completar los pasos 1 y 2 para poder completar el paso 4';
+      default:
+        return 'Debes completar los pasos anteriores para poder completar este paso';
+    }
   };
 
   const isStep1Complete = !!watchedValues.documentVerification.frontPhoto;
@@ -602,7 +637,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
           {/* Step 3: Video de verificación con cartel */}
           <div ref={step3Ref}>
-            <Card className={`border-2 transition-all duration-300 ${isStep1Complete && isStep2Complete
+            <Card className={`border-2 transition-all duration-300 ${!isVerified
               ? 'border-purple-200 bg-purple-50 dark:bg-purple-950/20'
               : 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
               }`}>
@@ -641,7 +676,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   '',
                   '',
                   <></>,
-                  !isVerified && isStep1Complete && isStep2Complete,
+                  !isVerified,
                   watchedValues.cartelVerification.mediaLink
                 )}
               </CardContent>
@@ -650,7 +685,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
           {/* Step 4: Foto con documento al lado del rostro */}
           <div ref={step4Ref}>
-            <Card className={`border-2 transition-all duration-300 ${isStep1Complete && isStep2Complete && isStep3Complete
+            <Card className={`border-2 transition-all duration-300 ${isStep1Complete && isStep2Complete
               ? 'border-purple-200 bg-purple-50 dark:bg-purple-950/20'
               : 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
               }`}>
@@ -687,7 +722,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   '',
                   '',
                   <></>,
-                  !isVerified && isStep1Complete && isStep2Complete && isStep3Complete,
+                  !isVerified && isStep1Complete && isStep2Complete,
                   watchedValues.selfieVerification.photo
                 )}
               </CardContent>
@@ -721,7 +756,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   <div className="flex items-start gap-2">
                     <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
                     <p className="text-sm text-amber-800 dark:text-amber-900">
-                      <strong>Importante:</strong> Las redes sociales deben ser públicas mientras se realiza el proceso de validación para poder verificar que te pertenecen. Estas no se mostrarán en tu perfil. Puedes diligenciar una o todas.
+                      <strong>Importante:</strong> Las redes sociales deben ser públicas mientras se realiza el proceso de validación para poder verificar que te pertenecen. Estas no se mostrarán en tu perfil (a excepción del instagram). Puedes diligenciar una o todas.
                     </p>
                   </div>
                 </div>
@@ -788,18 +823,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
 
 
-          {isStep3Complete && !isStep4Complete && (
-            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-blue-500" />
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
-                    <strong>Opcional:</strong> Puedes completar el Paso 4 (foto con documento) para mayor confianza.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+
 
           {/* Sección de Verificación por Videollamada */}
           {companyWhatsApp && (
@@ -840,10 +864,12 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 isVerified ||
                 isSubmitting ||
                 Object.values(uploadingFiles).some(Boolean) ||
-                !isStep1Complete ||
-                !isStep2Complete
+                (!isStep1Complete && !isStep3Complete) // Debe tener al menos algo iniciado (Paso 1 o Paso 3)
               }
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              className={`bg-gradient-to-r from-purple-600 to-pink-600 text-white ${!isVerified && !isSubmitting && !Object.values(uploadingFiles).some(Boolean) && (isStep1Complete || isStep3Complete)
+                ? 'hover:from-purple-700 hover:to-pink-700'
+                : 'opacity-50 cursor-not-allowed'
+                }`}
             >
               {isSubmitting ? 'Guardando...' : 'Enviar Verificación'}
             </Button>

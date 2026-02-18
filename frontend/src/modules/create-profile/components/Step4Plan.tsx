@@ -1,23 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useSession } from 'next-auth/react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
 import { useFormContext } from '../context/FormContext';
 
-import { usePlans } from '@/hooks/usePlans';
 import { useConfigValue } from '@/hooks/use-config-parameters';
 import { useValidateCoupon } from '@/hooks/use-coupons';
+import { usePlans } from '@/hooks/usePlans';
 import { couponService } from '@/services/coupon.service';
-import { Loader, CheckCircle, AlertCircle, X, Image, Video, Music, Users, Star, Crown, Gem, Shield, Zap, Ticket } from 'lucide-react';
+import { AlertCircle, CheckCircle, Image, Loader, Music, Star, Ticket, Video, X, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Plan {
@@ -464,18 +463,25 @@ export function Step4Plan() {
               />
             </SelectTrigger>
             <SelectContent>
-              {filteredPlans.map((plan) => (
-                <SelectItem key={plan._id} value={plan._id}>
-                  <div className="flex items-center justify-between w-full">
-                    <span>{plan.name}</span>
-                    {plan.variants.length > 0 && (
-                      <Badge variant="secondary" className="ml-2">
-                        Desde ${plan.variants[0].price.toLocaleString()}
-                      </Badge>
-                    )}
-                  </div>
-                </SelectItem>
-              ))}
+              {filteredPlans.map((plan) => {
+                // Calcular el precio mínimo entre todas las variantes
+                const minPrice = plan.variants.length > 0
+                  ? Math.min(...plan.variants.map(v => v.price))
+                  : 0;
+
+                return (
+                  <SelectItem key={plan._id} value={plan._id}>
+                    <div className="flex items-center justify-between w-full">
+                      <span>{plan.name}</span>
+                      {plan.variants.length > 0 && (
+                        <Badge variant="secondary" className="ml-2">
+                          Desde ${minPrice.toLocaleString()}
+                        </Badge>
+                      )}
+                    </div>
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
           {errors.selectedPlan && (

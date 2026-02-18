@@ -1,27 +1,39 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { Camera, Mic, Video } from 'lucide-react';
-import { useState } from 'react';
-import toast from 'react-hot-toast';
+import { ImageCropModal } from '@/components/ImageCropModal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ImageCropModal } from '@/components/ImageCropModal';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import Link from 'next/link';
 import { ProcessedImageResult } from '@/utils/imageProcessor';
-import { useFormContext } from '../../context/FormContext';
 import { useCompanyName } from '@/utils/watermark';
+import { Camera, Mic, Video } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import { useFormContext } from '../../context/FormContext';
 
 // Imports de módulos locales
-import { useContentLimits, useImageProcessing, useFileHandlers } from './hooks';
-import type { ImageToCrop, VideoCoverToCrop } from './types';
 import { AudioPreviewCard, PhotoPreviewCard, VideoPreviewCard } from './components/ImagePreviewCard';
+import { useContentLimits, useFileHandlers, useImageProcessing } from './hooks';
+import type { ImageToCrop, VideoCoverToCrop } from './types';
 
-type Step5MultimediaProps = {};
+type Step5MultimediaProps = {
+  isVerified?: boolean;
+  profileId?: string; // Agregar profileId para hacer localStorage específico por perfil
+};
 
-export function Step5Multimedia({ }: Step5MultimediaProps) {
+export function Step5Multimedia({ isVerified = false, profileId }: Step5MultimediaProps) {
   const {
     watch,
     setValue,
@@ -66,6 +78,23 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
 
   // ✅ NUEVO: Estado para trackear qué imágenes originalmente eran URLs (para NO aplicar marca de agua)
   const [imagesFromUrl, setImagesFromUrl] = useState<Map<number, boolean>>(new Map());
+
+  // ✅ NUEVO: Estados para el modal de advertencia de desverificación
+  const [showVerificationWarning, setShowVerificationWarning] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [dontShowWarningAgain, setDontShowWarningAgain] = useState(false);
+
+  // Cargar preferencia de "no volver a mostrar" del localStorage (específica por perfil)
+  const warningStorageKey = profileId
+    ? `dontShowVerificationWarning-${profileId}`
+    : 'dontShowVerificationWarning';
+
+  useEffect(() => {
+    const savedPreference = localStorage.getItem(warningStorageKey);
+    if (savedPreference === 'true') {
+      setDontShowWarningAgain(true);
+    }
+  }, [warningStorageKey]);
 
   // ✅ LUEGO los useEffects de sincronización
   // Sincronizar processedImages con el formulario
@@ -435,6 +464,57 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
     }
   };
 
+
+  // Función wrapper para manejar acciones con advertencia de desverificación
+  const handleActionWithWarning = (action: () => void) => {
+    // Si no está verificado o el usuario eligió no ver la advertencia, proceder directamente
+    if (!isVerified || dontShowWarningAgain) {
+      action();
+      return;
+    }
+
+    // Si está verificado, mostrar advertencia
+    setPendingAction(() => action);
+    setShowVerificationWarning(true);
+  };
+
+  const handleConfirmWarning = () => {
+    if (pendingAction) {
+      pendingAction();
+      setPendingAction(null);
+    }
+    setShowVerificationWarning(false);
+
+    // Guardar preferencia si se marcó el checkbox
+    if (dontShowWarningAgain) {
+      localStorage.setItem(warningStorageKey, 'true');
+    }
+  };
+
+  const handleCancelWarning = () => {
+    setPendingAction(null);
+    setShowVerificationWarning(false);
+    // Resetear checkbox si cancela (opcional, pero buena UX)
+    setDontShowWarningAgain(false);
+  };
+
+  // Wrappers específicos para fotos
+  const handlePhotoSelectWrapper = (name: string, files: FileList | null, event: React.ChangeEvent<HTMLInputElement>) => {
+    handleActionWithWarning(() => {
+      handleFileSelect(name, files, event);
+    });
+  };
+
+  const handlePhotoRemoveWrapper = (type: 'photos' | 'videos' | 'audios', index: number) => {
+    if (type === 'photos') {
+      handleActionWithWarning(() => {
+        handleFileRemove(type, index);
+      });
+    } else {
+      handleFileRemove(type, index);
+    }
+  };
+
   // Función para renderizar la vista previa de archivos
 
   return (
@@ -544,7 +624,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(e) => handleFileSelect('photos', e.target.files, e)}
+                  onChange={(e) => handlePhotoSelectWrapper('photos', e.target.files, e)}
                   id="photos-upload"
                   disabled={photos.length >= contentLimits.maxPhotos}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
@@ -588,7 +668,7 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
                           processedImage={processedImages.get(index)}
                           isProcessingImage={isProcessingImage}
                           coverImageIndex={coverImageIndex}
-                          onRemove={handleFileRemove}
+                          onRemove={handlePhotoRemoveWrapper}
                           onEdit={handleEditImage}
                           onSetCover={handleSetCoverImage}
                         />
@@ -967,6 +1047,35 @@ export function Step5Multimedia({ }: Step5MultimediaProps) {
           aspectRatio={16 / 9}  // Aspect ratio 16:9 para portadas de video (horizontal)
         />
       )}
+      {/* Modal de Advertencia de Desverificación */}
+      <AlertDialog open={showVerificationWarning} onOpenChange={setShowVerificationWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro de realizar esta acción?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Al modificar tus fotos, <span className="font-bold text-red-500">se perderá la verificación de identidad de tu perfil</span> y tendrás que pasar nuevamente por el proceso de verificación.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="flex items-center space-x-2 py-4">
+            <Checkbox
+              id="dont-show-again"
+              checked={dontShowWarningAgain}
+              onCheckedChange={(checked) => setDontShowWarningAgain(checked as boolean)}
+            />
+            <Label htmlFor="dont-show-again" className="text-sm cursor-pointer">
+              No volver a mostrar esta advertencia
+            </Label>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelWarning}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmWarning} className="bg-red-600 hover:bg-red-700">
+              Continuar y perder verificación
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
