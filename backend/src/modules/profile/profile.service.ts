@@ -1389,36 +1389,40 @@ export const updateProfile = async (
     }
   }
 
-  // INVALIDAR VERIFICACIÓN DE MULTIMEDIA si cambió la galería
-  // Si se envió media.gallery y es diferente a la existente (longitud o contenido)
+  // INVALIDAR VERIFICATION SELFIE si cambió la galería
+  // Detecta cuando se AGREGA/ELIMINA/REEMPLAZA fotos (cambio de contenido real)
+  // NO invalida si solo se RECORTA una foto (URL diferente pero sin cambios en cantidad)
   if (safeData.media?.gallery && existingProfile && updatedProfile) {
     const oldGallery = existingProfile.media?.gallery || [];
     const newGallery = safeData.media.gallery;
 
-    // Comparación simple de arrays (orden importa, pero en galería generalmente sí)
-    const hasGalleryChanged =
-      oldGallery.length !== newGallery.length ||
-      !oldGallery.every((val, index) => val === newGallery[index]);
+    // Detectar URLs que fueron eliminadas (estaban en old pero no en new)
+    const removedUrls = oldGallery.filter(url => !newGallery.includes(url));
+
+    // Detectar URLs que fueron agregadas (están en new pero no estaban en old)
+    const addedUrls = newGallery.filter(url => !oldGallery.includes(url));
+
+    // Galería cambió si se eliminó o agregó alguna URL
+    const hasGalleryChanged = removedUrls.length > 0 || addedUrls.length > 0;
 
     if (hasGalleryChanged) {
       try {
         const verification = await ProfileVerification.findOne({ profile: updatedProfile._id });
         if (verification) {
-          // Invalidar "Verificación con Multimedia" (cartelVerification)
+          // Invalidar "Selfie Verification" cuando la galería cambia
           await ProfileVerification.findByIdAndUpdate(
             verification._id,
             {
               $set: {
-                'steps.cartelVerification.isVerified': false,
-                // Opcional: Si queremos ser más estrictos, también podemos poner el estado general en 'check'
-                // y marcar que requiere verificación independiente si no lo estaba.
-                // Por ahora, solo invalidamos el paso específico como se solicitó.
+                'steps.selfieVerification.isVerified': false,
+                // Cuando se eliminan/agregan fotos, la verificación de selfie requiere re-validación
+                // ya que el usuario podría haber usado fotos específicas de la galería en la selfie
               }
             }
           );
         }
       } catch (error) {
-        console.error('Error al invalidar verificación de multimedia:', error);
+        console.error('Error al invalidar verificación de selfie:', error);
       }
     }
   }

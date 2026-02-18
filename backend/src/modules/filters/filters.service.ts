@@ -1,16 +1,15 @@
+import { CACHE_KEYS, CACHE_TTL, cacheService } from '../../services/cache.service';
+import { logger } from '../../utils/logger';
 import { AttributeGroupModel as AttributeGroup } from '../attribute-group/attribute-group.model';
+import { updateLastShownAt } from '../feeds/feeds.service';
 import { ProfileModel as Profile } from '../profile/profile.model';
 import { extractCategoryFromFeatures } from '../profile/profile.service';
 import { sortProfiles } from '../visibility/visibility.service';
-import { updateLastShownAt } from '../feeds/feeds.service';
-import { cacheService, CACHE_TTL, CACHE_KEYS } from '../../services/cache.service';
-import { logger } from '../../utils/logger';
 import type {
   FilterOptions,
   FilterQuery,
   FilterResponse,
 } from './filters.types';
-import { enrichProfileVerification } from '../profile-verification/verification.helper';
 
 /**
  * Obtiene todos los perfiles con filtros aplicados
@@ -125,10 +124,10 @@ export const getFilteredProfiles = async (
       }
     }
 
-    // Filtro por verificación
-    if (isVerified !== undefined) {
-      query['user.isVerified'] = isVerified;
-    }
+    // Filtro por verificación (MOVIDO a la agregación para filtrar correctamente después del lookup)
+    // if (isVerified !== undefined) {
+    //   query['user.isVerified'] = isVerified;
+    // }
 
     // Filtro por verificación de perfil (basado en videoVerification)
     if (profileVerified !== undefined) {
@@ -463,7 +462,15 @@ export const getFilteredProfiles = async (
         $project: {
           userInfo: 0
         }
+      },
+      // ✨ VALIDACIÓN DE SEGURIDAD: Solo mostrar perfiles de usuarios verificados
+      // Esto es crítico para asegurar que los perfiles visibles sean legítimos
+      {
+        $match: {
+          'user.isVerified': true
+        }
       }
+
     ];
 
     // Agregar lookup para verification si es necesario
@@ -535,7 +542,7 @@ export const getFilteredProfiles = async (
 
     // Asegurar que siempre incluimos el campo user para verificaciones
     projectionFields['user'] = 1;
-    
+
     // Asegurar que featureGroups esté disponible para el mapeo posterior
     projectionFields['featureGroups'] = 1;
 
@@ -651,34 +658,34 @@ export const getFilteredProfiles = async (
 
       // Manually populate features if featureGroups exists or using fallback
       if (profile.features && Array.isArray(profile.features)) {
-         // DEBUG: Log para verificar población de features
-         if (index === 0) {
-             // console.log('🔍 [FILTROS DEBUG] FeatureGroups count:', (profile as any).featureGroups?.length || 0);
-             // console.log('🔍 [FILTROS DEBUG] Features before populate:', JSON.stringify(profile.features.slice(0, 2)));
-         }
+        // DEBUG: Log para verificar población de features
+        if (index === 0) {
+          // console.log('🔍 [FILTROS DEBUG] FeatureGroups count:', (profile as any).featureGroups?.length || 0);
+          // console.log('🔍 [FILTROS DEBUG] Features before populate:', JSON.stringify(profile.features.slice(0, 2)));
+        }
 
-         profile.features = profile.features.map((f: any) => {
-             // Intentar usar featureGroups del lookup primero
-             let group = (profile as any).featureGroups?.find((g: any) => g._id.toString() === f.group_id.toString());
-             
-             // Si no se encuentra (por fallo en lookup o tipos), usar la lista completa
-             if (!group && allAttributeGroups) {
-                 group = allAttributeGroups.find((g: any) => g._id.toString() === f.group_id.toString());
-             }
-             
-             return { ...f, group_id: group || f.group_id };
-         });
+        profile.features = profile.features.map((f: any) => {
+          // Intentar usar featureGroups del lookup primero
+          let group = (profile as any).featureGroups?.find((g: any) => g._id.toString() === f.group_id.toString());
 
-         if (index === 0) {
-             // console.log('🔍 [FILTROS DEBUG] Features after populate:', JSON.stringify(profile.features.slice(0, 2)));
-         }
+          // Si no se encuentra (por fallo en lookup o tipos), usar la lista completa
+          if (!group && allAttributeGroups) {
+            group = allAttributeGroups.find((g: any) => g._id.toString() === f.group_id.toString());
+          }
+
+          return { ...f, group_id: group || f.group_id };
+        });
+
+        if (index === 0) {
+          // console.log('🔍 [FILTROS DEBUG] Features after populate:', JSON.stringify(profile.features.slice(0, 2)));
+        }
       }
 
       // Extraer categoría
       const category = extractCategoryFromFeatures(profile.features);
-      
+
       if (index === 0) {
-          console.log('🔍 [FILTROS DEBUG] Extracted category:', category);
+        console.log('🔍 [FILTROS DEBUG] Extracted category:', category);
       }
 
       return {

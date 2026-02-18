@@ -196,7 +196,7 @@ export async function generateMetadata({
   else {
     pageTitle = 'PrepagoYa - Premium Scort Services';
     pageDescription = 'Find premium scort services in your city. Professional, verified, and discreet companions.';
-    keywords = 'scorts, services, verified, premium';
+    keywords = 'Escorts, services, verified, premium';
   }
 
   return {

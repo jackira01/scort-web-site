@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { useAttributeGroups } from '@/hooks/use-attribute-groups';
 import { useProfile } from '@/hooks/use-profile';
+import { useProfileVerification } from '@/hooks/use-profile-verification';
 import { usePlans } from '@/hooks/usePlans';
 import { updateProfile } from '@/services/user.service';
 import { normalizeSimpleText } from '@/utils/normalize-text';
@@ -12,7 +13,7 @@ import {
   uploadMultipleVideos,
 } from '@/utils/tools';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, CheckCircle, Loader } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle, Loader } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -59,6 +60,12 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
     page: 1,
     isActive: true
   });
+
+  // Obtener estado de verificación
+  const { data: verificationData } = useProfileVerification(profileId);
+  // Consideramos verificado si el status es 'check' (estado en el que está aprobado)
+  // El perfil está verificado cuando verificationStatus === 'check'
+  const isProfileVerified = verificationData?.data?.verificationStatus === 'check';
 
   // Memorizar planes y buscar el plan asignado al perfil
   const assignedPlan = useMemo(() => {
@@ -845,7 +852,7 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
           />
         );
       case 4:
-        return <Step5Multimedia />; // Multimedia ahora es paso 4
+        return <Step5Multimedia isVerified={isProfileVerified} profileId={profileId} />; // Multimedia ahora es paso 4
 
       default:
         return null;
@@ -892,6 +899,19 @@ export function EditProfileLayout({ profileId }: EditProfileLayoutProps) {
             {/* Main Content */}
             <div className="lg:col-span-3">
               <div className="bg-background rounded-xl shadow-sm border border-border p-8">
+                {/* Aviso de cambio de imágenes */}
+                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6 flex gap-3">
+                  <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-1">
+                      Cambios en las imágenes
+                    </p>
+                    <p className="text-sm text-amber-700 dark:text-amber-300">
+                      Si cambias las imágenes, tu perfil debe pasar nuevamente por el proceso de verificación.
+                    </p>
+                  </div>
+                </div>
+
                 {renderStepContent()}
 
                 {/* Navigation Buttons */}
