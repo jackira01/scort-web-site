@@ -138,7 +138,7 @@ export default function ProfileDetailLayout({ id }: { id: string }) {
       telegram: profile.contact?.telegram || false,
     },
     socialMedia: {
-      instagram: profile.socialMedia?.instagram || null,
+      instagram: (profile.verification as any)?.steps?.socialMedia?.instagram || profile.socialMedia?.instagram || null,
       onlyfans: profile.socialMedia?.onlyFans || null,
       twitter: profile.socialMedia?.twitter || null,
       facebook: profile.socialMedia?.facebook || null,

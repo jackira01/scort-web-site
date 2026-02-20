@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script de despliegue para producción - Scort Web Site
+# Script de despliegue para producción - Prepago Ya
 # Uso: ./scripts/deploy.sh [staging|production]
 
 set -e  # Salir si cualquier comando falla
@@ -69,8 +69,8 @@ backup_database() {
         BACKUP_DIR="./backups/$(date +%Y%m%d_%H%M%S)"
         mkdir -p "$BACKUP_DIR"
         
-        if docker ps | grep -q "scort-mongodb-prod"; then
-            docker exec scort-mongodb-prod mongodump --out "/backup/$(date +%Y%m%d_%H%M%S)" || {
+        if docker ps | grep -q "prepago-ya-mongodb-prod"; then
+            docker exec prepago-ya-mongodb-prod mongodump --out "/backup/$(date +%Y%m%d_%H%M%S)" || {
                 log_warning "No se pudo crear backup automático de MongoDB"
             }
         else
@@ -210,7 +210,7 @@ rollback() {
 trap 'log_error "Despliegue interrumpido"; exit 1' INT TERM
 
 # Ejecutar despliegue
-log "=== Iniciando despliegue de Scort Web Site ==="
+log "=== Iniciando despliegue de Prepago Ya ==="
 log "Ambiente: $ENVIRONMENT"
 log "Fecha: $(date)"
 log "Usuario: $(whoami)"

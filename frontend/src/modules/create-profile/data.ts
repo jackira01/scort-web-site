@@ -2,11 +2,11 @@ import { Step, UpgradeOption } from './types';
 
 export const steps: Step[] = [
   { id: 1, title: 'Lo esencial', description: 'Información básica del perfil' },
-  { id: 2, title: 'Descripción', description: 'Descripción y servicios' },
+  { id: 2, title: 'Descripción', description: 'Descripción y físico' },
   {
     id: 3,
     title: 'Detalles',
-    description: 'Características físicas y contacto',
+    description: 'Contacto y tarifas',
   },
   { id: 4, title: 'Plan', description: 'Selección de plan y publicación' },
   { id: 5, title: 'Multimedia', description: 'Fotos, videos y audios' },

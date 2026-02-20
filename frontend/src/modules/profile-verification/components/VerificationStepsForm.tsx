@@ -239,8 +239,10 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
     // Bloque B: Cartel (Paso 3)
     // El Paso 4 requiere obligatoriamente el Bloque A
 
-    if (!isDocumentVerificationComplete && !isCartelVerificationComplete) {
-      toast.error('Debes completar al menos la verificación de documento (Pasos 1 y 2) o la verificación con cartel (Paso 3)');
+    const isStep5Complete = Object.values(data.socialMedia || {}).some(val => !!val);
+
+    if (!isDocumentVerificationComplete && !isCartelVerificationComplete && !isStep5Complete) {
+      toast.error('Debes completar al menos la verificación de documento (Pasos 1 y 2), la verificación con cartel (Paso 3) o las redes sociales (Paso 5)');
       return;
     }
 
@@ -731,7 +733,7 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
 
           {/* Step 5: Redes Sociales */}
           <div ref={step5Ref}>
-            <Card className={`border-2 transition-all duration-300 ${isStep1Complete && isStep2Complete && isStep3Complete && isStep4Complete
+            <Card className={`border-2 transition-all duration-300 ${!isVerified
               ? 'border-purple-200 bg-purple-50 dark:bg-purple-950/20'
               : 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
               }`}>
@@ -864,9 +866,9 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                 isVerified ||
                 isSubmitting ||
                 Object.values(uploadingFiles).some(Boolean) ||
-                (!isStep1Complete && !isStep3Complete) // Debe tener al menos algo iniciado (Paso 1 o Paso 3)
+                (!isStep1Complete && !isStep3Complete && !isStep5Complete) // Debe tener al menos algo iniciado (Paso 1, Paso 3 o Paso 5)
               }
-              className={`bg-gradient-to-r from-purple-600 to-pink-600 text-white ${!isVerified && !isSubmitting && !Object.values(uploadingFiles).some(Boolean) && (isStep1Complete || isStep3Complete)
+              className={`bg-gradient-to-r from-purple-600 to-pink-600 text-white ${!isVerified && !isSubmitting && !Object.values(uploadingFiles).some(Boolean) && (isStep1Complete || isStep3Complete || isStep5Complete)
                 ? 'hover:from-purple-700 hover:to-pink-700'
                 : 'opacity-50 cursor-not-allowed'
                 }`}

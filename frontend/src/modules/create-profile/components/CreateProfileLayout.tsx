@@ -139,7 +139,6 @@ export function CreateProfileLayout() {
 
       // Step 5 - Selección de Plan (integrado en finalizar)
       selectedPlan: undefined,
-      selectedPlan: undefined,
       selectedVariant: undefined,
       deposito: false,
     },
@@ -184,6 +183,13 @@ export function CreateProfileLayout() {
             selectedServices: form.getValues('selectedServices') || [],
             basicServices: form.getValues('basicServices') || [],
             additionalServices: form.getValues('additionalServices') || [],
+            // Added fields moved from step 3
+            age: form.getValues('age') || undefined,
+            skinColor: form.getValues('skinColor') || '',
+            eyeColor: form.getValues('eyeColor') || '',
+            hairColor: form.getValues('hairColor') || '',
+            bodyType: form.getValues('bodyType') || '',
+            height: form.getValues('height') || '',
           };
           return step2Schema.safeParse(step2Data);
         }
@@ -194,20 +200,14 @@ export function CreateProfileLayout() {
             whatsapp: '',
             telegram: '',
           };
-          const ageValue = form.getValues('age');
+          // const ageValue = form.getValues('age');
           const step3Data = {
             contact: {
               number: contactData.number || '',
               whatsapp: contactData.whatsapp || undefined,
               telegram: contactData.telegram || undefined,
             },
-            age: ageValue && ageValue !== '' ? ageValue : undefined,
-            skinColor: form.getValues('skinColor') || '',
-            eyeColor: form.getValues('eyeColor') || '',
-            hairColor: form.getValues('hairColor') || '',
-            bodyType: form.getValues('bodyType') || '',
-            height: form.getValues('height') || '',
-            // bustSize: form.getValues('bustSize') || '',
+            // age: ageValue && ageValue !== '' ? ageValue : undefined,
             rates: form.getValues('rates') || [],
             availability: form.getValues('availability') || [],
           };
@@ -325,6 +325,52 @@ export function CreateProfileLayout() {
     } catch (error) {
       console.error('Error en handleNext:', error);
       toast.error('Error inesperado en la validación');
+    }
+  };
+
+  const handleStepClick = async (targetStep: number) => {
+    // Si es el mismo paso, no hacer nada
+    if (targetStep === currentStep) return;
+
+    // Si vamos hacia atrás, permitimos siempre
+    if (targetStep < currentStep) {
+      setCurrentStep(targetStep);
+      // ✅ Scroll después de que React actualice el DOM
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      return;
+    }
+
+    // Si vamos hacia adelante (incluso saltando pasos), validamos TODOS los pasos intermedios
+    // desde el actual hasta el targetStep - 1
+    let isValid = true;
+    for (let step = currentStep; step < targetStep; step++) {
+      const result = validateStep(step);
+      // Special logic for step 4 (plan) in Create Profile context?
+      // In create profile, step 4 is Plan. Step 5 is Multimedia.
+      // Wait, validatePlanSelection is async and happens in handleNext for step 4.
+      // If jumping over step 4, we might skip that check.
+      // Ideally, we shouldn't allow jumping AHEAD of step 4 if plan is not selected/validated.
+      // But for now let's use the basic validation.
+
+      if (!result.success) {
+        isValid = false;
+        setValidationErrors(result);
+        toast.error(`Por favor completa el paso ${step} antes de continuar`);
+        // Opcional: mover al usuario al paso que falló si saltó mucho
+        if (step !== currentStep) {
+          setCurrentStep(step);
+        }
+        break;
+      }
+    }
+
+    if (isValid) {
+      setCurrentStep(targetStep);
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
     }
   };
 
@@ -745,15 +791,16 @@ export function CreateProfileLayout() {
           />
         );
       case 2:
-        return <Step2Description serviceGroup={groupMap.services} />;
+        return <Step2Description
+          serviceGroup={groupMap.services}
+          skinGroup={groupMap.skin}
+          eyeGroup={groupMap.eyes}
+          hairGroup={groupMap.hair}
+          bodyGroup={groupMap.body}
+        />;
       case 3:
         return (
-          <Step3Details
-            skinGroup={groupMap.skin}
-            eyeGroup={groupMap.eyes}
-            hairGroup={groupMap.hair}
-            bodyGroup={groupMap.body}
-          />
+          <Step3Details />
         );
       case 4:
         return <Step4Plan />; // Plan selection es paso 4
@@ -851,11 +898,12 @@ export function CreateProfileLayout() {
               {steps.map((step) => (
                 <div
                   key={step.id}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 ${currentStep === step.id
+                  onClick={() => handleStepClick(step.id)}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm transition-all duration-200 cursor-pointer ${currentStep === step.id
                     ? 'bg-gradient-to-r from-red-600 to-pink-500 text-white'
                     : currentStep > step.id
                       ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
-                      : 'bg-muted text-muted-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
                     }`}
                 >
                   <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">

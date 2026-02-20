@@ -3,19 +3,32 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertCircle, Plus, Star } from 'lucide-react';
+import { Controller } from 'react-hook-form';
 import { useFormContext } from '../context/FormContext';
 import type { AttributeGroup } from '../types';
 
 interface Step2DescriptionProps {
   serviceGroup: AttributeGroup | null;
+  skinGroup: AttributeGroup;
+  eyeGroup: AttributeGroup;
+  hairGroup: AttributeGroup;
+  bodyGroup: AttributeGroup;
 }
 
-export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
+export const Step2Description = ({
+  serviceGroup,
+  skinGroup,
+  eyeGroup,
+  hairGroup,
+  bodyGroup,
+}: Step2DescriptionProps) => {
   const {
     register,
+    control,
     formState: { errors },
     watch,
     setValue,
@@ -26,6 +39,7 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
   const selectedServices = watch('selectedServices') || [];
   const basicServices = watch('basicServices') || [];
   const additionalServices = watch('additionalServices') || [];
+  const formData = watch();
 
   const handleServiceToggle = (serviceValue: string) => {
     const currentServices = getValues('selectedServices') || [];
@@ -88,7 +102,7 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
         <h2 className="text-2xl font-bold text-foreground">Descripción</h2>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Descripción */}
         <div className="space-y-2">
           <Label htmlFor="description" className="text-sm font-medium">
@@ -122,6 +136,175 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
             </div>
           )}
         </div>
+
+        {/* Separator */}
+        <div className="border-t border-border/50" />
+
+        {/* Appearance Details & Age/Height - MOVED HERE */}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="age" className="text-foreground">
+                Edad <span className="text-red-500">*</span>
+              </Label>
+              <Controller
+                name="age"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="age"
+                    type="number"
+                    step="1"
+                    placeholder="23"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onInput={(e) => {
+                      const input = e.target as HTMLInputElement;
+                      input.value = input.value.replace(/[^0-9]/g, '');
+                    }}
+                    className={`mt-2 ${errors.age ? 'border-red-500 focus:border-red-500' : ''}`}
+                  />
+                )}
+              />
+              {errors.age && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.age.message as string}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="height" className="text-foreground">
+                Altura <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="height"
+                type="number"
+                step="1"
+                placeholder="173"
+                value={formData.height}
+                onChange={(e) => setValue('height', e.target.value)}
+                onInput={(e) => {
+                  const input = e.target as HTMLInputElement;
+                  input.value = input.value.replace(/[^0-9]/g, '');
+                }}
+                className={`mt-2 ${errors.height ? 'border-red-500 focus:border-red-500' : ''}`}
+              />
+              {errors.height && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.height.message as string}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-foreground text-lg font-semibold mb-4 block">
+              ¿Cómo me veo?
+            </Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label className="text-foreground">Ojos <span className="text-red-500">*</span></Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {eyeGroup?.variants
+                    .filter((v) => v.active)
+                    .map((variant) => (
+                      <Button
+                        key={variant._id}
+                        type="button"
+                        variant={formData.eyeColor === variant.value ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setValue('eyeColor', variant.value)}
+                      >
+                        {variant.label || variant.value}
+                      </Button>
+                    ))}
+                </div>
+                {errors.eyeColor && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.eyeColor.message as string}
+                  </p>
+                )}
+              </div>
+
+              {/* Physical Characteristics */}
+              <div>
+                <Label className="text-foreground">Piel <span className="text-red-500">*</span></Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {skinGroup?.variants
+                    .filter((v) => v.active)
+                    .map((variant) => (
+                      <Button
+                        key={variant._id}
+                        type="button"
+                        variant={formData.skinColor === variant.value ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setValue('skinColor', variant.value)}
+                      >
+                        {variant.label || variant.value}
+                      </Button>
+                    ))}
+                </div>
+                {errors.skinColor && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.skinColor.message as string}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label className="text-foreground">Pelo <span className="text-red-500">*</span></Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {hairGroup?.variants
+                    .filter((v) => v.active)
+                    .map((variant) => (
+                      <Button
+                        key={variant._id}
+                        type="button"
+                        variant={formData.hairColor === variant.value ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setValue('hairColor', variant.value)}
+                      >
+                        {variant.label || variant.value}
+                      </Button>
+                    ))}
+                </div>
+                {errors.hairColor && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.hairColor.message as string}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label className="text-foreground">Cuerpo <span className="text-red-500">*</span></Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {bodyGroup?.variants
+                    .filter((v) => v.active)
+                    .map((variant) => (
+                      <Button
+                        key={variant._id}
+                        type="button"
+                        variant={formData.bodyType === variant.value ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setValue('bodyType', variant.value)}
+                      >
+                        {variant.label || variant.value}
+                      </Button>
+                    ))}
+                </div>
+                {errors.bodyType && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.bodyType.message as string}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Separator */}
+        <div className="border-t border-border/50" />
 
         {/* Servicios */}
         <div className="space-y-4">
@@ -208,7 +391,7 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Servicios básicos ({basicServices.length}):</p>
                   <div className="flex flex-wrap gap-1">
-                    {basicServices.map((service) => (
+                    {basicServices.map((service: string) => (
                       <Badge key={service} variant="default" className="text-xs">
                         {serviceGroup?.variants.find(v => v.value === service)?.label || service}
                       </Badge>
@@ -221,7 +404,7 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Servicios adicionales ({additionalServices.length}):</p>
                   <div className="flex flex-wrap gap-1">
-                    {additionalServices.map((service) => (
+                    {additionalServices.map((service: string) => (
                       <Badge key={service} variant="secondary" className="text-xs">
                         {serviceGroup?.variants.find(v => v.value === service)?.label || service}
                       </Badge>
@@ -236,3 +419,5 @@ export const Step2Description = ({ serviceGroup }: Step2DescriptionProps) => {
     </div>
   );
 }
+
+
