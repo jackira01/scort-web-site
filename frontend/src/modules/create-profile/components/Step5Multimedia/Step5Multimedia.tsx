@@ -506,13 +506,8 @@ export function Step5Multimedia({ isVerified = false, profileId }: Step5Multimed
   };
 
   const handlePhotoRemoveWrapper = (type: 'photos' | 'videos' | 'audios', index: number) => {
-    if (type === 'photos') {
-      handleActionWithWarning(() => {
-        handleFileRemove(type, index);
-      });
-    } else {
-      handleFileRemove(type, index);
-    }
+    // Ya no mostramos advertencia al eliminar fotos, solo al agregar
+    handleFileRemove(type, index);
   };
 
   // Función para renderizar la vista previa de archivos

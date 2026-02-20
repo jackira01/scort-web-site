@@ -1,7 +1,7 @@
 services:
   # Backend Service en Render
   - type: web
-    name: scort-backend
+    name: prepago-ya-backend
     env: node
     region: oregon
     plan: starter
@@ -15,12 +15,12 @@ services:
         value: 5000
       - key: MONGO_URI
         fromDatabase:
-          name: scort-mongodb
+          name: prepago-ya-mongodb
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        value: https://scort-web-site.vercel.app
+        value: https://prepago-ya.vercel.app
       - key: MAILJET_API_KEY
         sync: false
       - key: MAILJET_SECRET_KEY
@@ -41,12 +41,12 @@ services:
       - key: MONGO_INITDB_ROOT_PASSWORD
         generateValue: true
       - key: MONGO_INITDB_DATABASE
-        value: scort-web-site
+        value: prepago-ya
 
 databases:
-  - name: scort-mongodb
-    databaseName: scort-web-site
-    user: scort-app
+  - name: prepago-ya-mongodb
+    databaseName: prepago-ya
+    user: prepago-ya-app
     region: oregon
     plan: starter
     ipAllowList: []

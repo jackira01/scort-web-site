@@ -1389,33 +1389,30 @@ export const updateProfile = async (
     }
   }
 
-  // INVALIDAR VERIFICATION SELFIE si cambió la galería
-  // Detecta cuando se AGREGA/ELIMINA/REEMPLAZA fotos (cambio de contenido real)
+  // INVALIDAR VERIFICATION SELFIE si se AGREGA una foto a la galería
+  // Solo desverifica cuando se agregan fotos, NO cuando se eliminan
   // NO invalida si solo se RECORTA una foto (URL diferente pero sin cambios en cantidad)
   if (safeData.media?.gallery && existingProfile && updatedProfile) {
     const oldGallery = existingProfile.media?.gallery || [];
     const newGallery = safeData.media.gallery;
 
-    // Detectar URLs que fueron eliminadas (estaban en old pero no en new)
-    const removedUrls = oldGallery.filter(url => !newGallery.includes(url));
-
     // Detectar URLs que fueron agregadas (están en new pero no estaban en old)
     const addedUrls = newGallery.filter(url => !oldGallery.includes(url));
 
-    // Galería cambió si se eliminó o agregó alguna URL
-    const hasGalleryChanged = removedUrls.length > 0 || addedUrls.length > 0;
+    // Solo desverificy si se agregaron fotos (no por eliminación)
+    const hasPhotosAdded = addedUrls.length > 0;
 
-    if (hasGalleryChanged) {
+    if (hasPhotosAdded) {
       try {
         const verification = await ProfileVerification.findOne({ profile: updatedProfile._id });
         if (verification) {
-          // Invalidar "Selfie Verification" cuando la galería cambia
+          // Invalidar "Selfie Verification" solo cuando se agregan nuevas fotos
           await ProfileVerification.findByIdAndUpdate(
             verification._id,
             {
               $set: {
                 'steps.selfieVerification.isVerified': false,
-                // Cuando se eliminan/agregan fotos, la verificación de selfie requiere re-validación
+                // Cuando se agregan fotos, la verificación de selfie requiere re-validación
                 // ya que el usuario podría haber usado fotos específicas de la galería en la selfie
               }
             }
@@ -2779,7 +2776,7 @@ export const getAllProfilesForAdmin = async (
   const now = new Date();
   const profiles = rawProfiles.map(profile => {
     let isVerified = false;
-    let verificationStatus = 'unverified';
+    let verificationStatus = 'pending';
 
     if (profile.verification) {
       const verification = profile.verification as any;

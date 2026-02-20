@@ -1,28 +1,19 @@
 'use client';
 
 import { AvailabilitySchedule } from '@/components/availability/AvailabilitySchedule';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertTriangle } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 import { useFormContext } from '../context/FormContext';
-import type { AttributeGroup, Rate } from '../types';
+import { Rate } from '../types';
 import { RatesManager } from './RatesManager';
 
 interface Step3DetailsProps {
-  skinGroup: AttributeGroup;
-  eyeGroup: AttributeGroup;
-  hairGroup: AttributeGroup;
-  bodyGroup: AttributeGroup;
   isEditing?: boolean;
 }
 
 export function Step3Details({
-  skinGroup,
-  eyeGroup,
-  hairGroup,
-  bodyGroup,
   isEditing = false,
 }: Step3DetailsProps) {
   const { control, watch, setValue, formState: { errors } } = useFormContext();
@@ -42,34 +33,6 @@ export function Step3Details({
       </div>
 
       <div className="space-y-6">
-        {/* Rates Section */}
-        <div>
-          <RatesManager
-            rates={formData.rates || []}
-            onChange={handleRatesChange}
-            deposito={formData.deposito}
-            onDepositChange={(value) => setValue('deposito', value, { shouldValidate: true, shouldDirty: true, shouldTouch: true })}
-          />
-          {errors.rates && (
-            <p className="text-red-500 text-sm mt-2">
-              {errors.rates.message}
-            </p>
-          )}
-        </div>
-
-        {/* Availability Section */}
-        <AvailabilitySchedule
-          availability={formData.availability || []}
-          onChange={(newAvailability) =>
-            setValue('availability', newAvailability)
-          }
-        />
-        {errors.availability && (
-          <p className="text-red-500 text-sm mt-1">
-            {errors.availability.message}
-          </p>
-        )}
-
         {/* Contact Details */}
         <div className="space-y-6">
           <h3 className="text-lg font-semibold text-foreground">Donde contactarme</h3>
@@ -117,7 +80,7 @@ export function Step3Details({
               </div>
               {errors.contact?.number && (
                 <p className="text-red-500 text-sm mt-1">
-                  {errors.contact.number.message}
+                  {errors.contact.number.message as string}
                 </p>
               )}
             </div>
@@ -148,7 +111,7 @@ export function Step3Details({
               </div>
               {errors.contact?.whatsapp && (
                 <p className="text-red-500 text-sm mt-1">
-                  {errors.contact.whatsapp.message}
+                  {errors.contact.whatsapp.message as string}
                 </p>
               )}
             </div>
@@ -179,7 +142,7 @@ export function Step3Details({
               </div>
               {errors.contact?.telegram && (
                 <p className="text-red-500 text-sm mt-1">
-                  {errors.contact.telegram.message}
+                  {errors.contact.telegram.message as string}
                 </p>
               )}
             </div>
@@ -193,196 +156,35 @@ export function Step3Details({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-          <div>
-            <Label htmlFor="age" className="text-foreground">
-              Edad <span className="text-red-500">*</span>
-            </Label>
-            <Controller
-              name="age"
-              control={control}
-              render={({ field }) => (
-                <Input
-                  id="age"
-                  type="number"
-                  step="1"
-                  placeholder="23"
-                  value={field.value}
-                  onChange={field.onChange}
-                  onInput={(e) => {
-                    const input = e.target as HTMLInputElement;
-                    input.value = input.value.replace(/[^0-9]/g, '');
-                  }}
-                  className={`mt-2 ${errors.age ? 'border-red-500 focus:border-red-500' : ''
-                    }`}
-                />
-              )}
-            />
-            {errors.age && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.age.message}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Appearance Details */}
+        {/* Rates Section */}
         <div>
-          <Label className="text-foreground text-lg font-semibold mb-4 block">
-            ¿Cómo me veo?
-          </Label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label className="text-foreground">Ojos <span className="text-red-500">*</span></Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {eyeGroup.variants
-                  .filter((v) => v.active)
-                  .map((variant) => (
-                    <Button
-                      key={variant._id}
-                      variant={
-                        formData.eyeColor === variant.value ? 'default' : 'outline'
-                      }
-                      size="sm"
-                      onClick={() => setValue('eyeColor', variant.value)}
-                    >
-                      {variant.label || variant.value}
-                    </Button>
-                  ))}
-              </div>
-              {errors.eyeColor && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.eyeColor.message}
-                </p>
-              )}
-            </div>
-
-            {/* Physical Characteristics */}
-            <div>
-              <Label className="text-foreground">Piel <span className="text-red-500">*</span></Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {skinGroup.variants
-                  .filter((v) => v.active)
-                  .map((variant) => (
-                    <Button
-                      key={variant._id}
-                      variant={
-                        formData.skinColor === variant.value ? 'default' : 'outline'
-                      }
-                      size="sm"
-                      onClick={() => setValue('skinColor', variant.value)}
-                    >
-                      {variant.label || variant.value}
-                    </Button>
-                  ))}
-              </div>
-              {errors.skinColor && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.skinColor.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label className="text-foreground">Pelo <span className="text-red-500">*</span></Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {hairGroup.variants
-                  .filter((v) => v.active)
-                  .map((variant) => (
-                    <Button
-                      key={variant._id}
-                      variant={
-                        formData.hairColor === variant.value ? 'default' : 'outline'
-                      }
-                      size="sm"
-                      onClick={() => setValue('hairColor', variant.value)}
-                    >
-                      {variant.label || variant.value}
-                    </Button>
-                  ))}
-              </div>
-              {errors.hairColor && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.hairColor.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label className="text-foreground">Cuerpo <span className="text-red-500">*</span></Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {bodyGroup.variants
-                  .filter((v) => v.active)
-                  .map((variant) => (
-                    <Button
-                      key={variant._id}
-                      variant={formData.bodyType === variant.value ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setValue('bodyType', variant.value)}
-                    >
-                      {variant.label || variant.value}
-                    </Button>
-                  ))}
-              </div>
-              {errors.bodyType && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.bodyType.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="height" className="text-foreground">
-                Altura <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="height"
-                type="number"
-                step="1"
-                placeholder="173"
-                value={formData.height}
-                onChange={(e) => setValue('height', e.target.value)}
-                onInput={(e) => {
-                  const input = e.target as HTMLInputElement;
-                  input.value = input.value.replace(/[^0-9]/g, '');
-                }}
-                className={`mt-2 ${errors.height ? 'border-red-500 focus:border-red-500' : ''
-                  }`}
-              />
-              {errors.height && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.height.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Social Media Section Removed */}
-
-          {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <div>
-              <Label htmlFor="bustSize" className="text-foreground">
-                Talla del busto <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="bustSize"
-                placeholder="COPA_D"
-                value={formData.bustSize}
-                onChange={(e) => setValue('bustSize', e.target.value)}
-                className={`mt-2 ${
-                  errors.bustSize ? 'border-red-500 focus:border-red-500' : ''
-                }`}
-              />
-              {errors.bustSize && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.bustSize.message}
-                </p>
-              )}
-            </div>
-          </div> */}
+          <RatesManager
+            rates={formData.rates || []}
+            onChange={handleRatesChange}
+            deposito={formData.deposito}
+            onDepositChange={(value) => setValue('deposito', value, { shouldValidate: true, shouldDirty: true, shouldTouch: true })}
+          />
+          {errors.rates && (
+            <p className="text-red-500 text-sm mt-2">
+              {errors.rates.message as string}
+            </p>
+          )}
         </div>
+
+        {/* Availability Section */}
+        <AvailabilitySchedule
+          availability={formData.availability || []}
+          onChange={(newAvailability) =>
+            setValue('availability', newAvailability)
+          }
+        />
+        {errors.availability && (
+          <p className="text-red-500 text-sm mt-1">
+            {errors.availability.message as string}
+          </p>
+        )}
       </div>
     </div>
   );
 }
+

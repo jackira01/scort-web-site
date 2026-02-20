@@ -6,7 +6,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: scort-backend-prod
+    container_name: prepago-ya-backend-prod
     restart: unless-stopped
     ports:
       - "5000:5000"
@@ -16,7 +16,7 @@ services:
     env_file:
       - ./backend/.env.production
     networks:
-      - scort-network
+      - prepago-ya-network
     depends_on:
       - mongodb
     volumes:
@@ -33,7 +33,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: scort-frontend-prod
+    container_name: prepago-ya-frontend-prod
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -44,7 +44,7 @@ services:
     env_file:
       - ./frontend/.env.production
     networks:
-      - scort-network
+      - prepago-ya-network
     depends_on:
       - backend
     healthcheck:
@@ -57,26 +57,26 @@ services:
   # MongoDB Service
   mongodb:
     image: mongo:7.0
-    container_name: scort-mongodb-prod
+    container_name: prepago-ya-mongodb-prod
     restart: unless-stopped
     ports:
       - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
-      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-scort-web-site}
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-prepago-ya}
     volumes:
       - mongodb-data:/data/db
       - mongodb-config:/data/configdb
       - ./backend/scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
-      - scort-network
+      - prepago-ya-network
     command: mongod --auth --bind_ip_all
 
   # Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
-    container_name: scort-nginx-prod
+    container_name: prepago-ya-nginx-prod
     restart: unless-stopped
     ports:
       - "80:80"
@@ -86,14 +86,14 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - nginx-logs:/var/log/nginx
     networks:
-      - scort-network
+      - prepago-ya-network
     depends_on:
       - frontend
       - backend
 
 # Networks
 networks:
-  scort-network:
+  prepago-ya-network:
     driver: bridge
     ipam:
       config:
