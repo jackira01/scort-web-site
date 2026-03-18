@@ -60,28 +60,6 @@ const EMAIL_VERIFICATION_REQUIRED_ROUTES = [
   '/adminboard',
 ];
 
-// Rutas que requieren que el usuario tenga contraseña configurada
-const PASSWORD_REQUIRED_ROUTES = [
-  '/cuenta/crear-perfil',
-  '/cuenta/configuracion',
-  '/cuenta/facturacion',
-  '/cuenta/suscripcion',
-  '/perfil',
-  '/adminboard',
-];
-
-// Rutas que deben ser accesibles sin contraseña configurada
-const ALLOWED_WITHOUT_PASSWORD = [
-  '/autenticacion/post-register',
-  '/autenticacion/ingresar',
-  '/autenticacion/registrarse',
-  '/api/auth',
-  '/_next',
-  '/favicon.ico',
-  '/robots.txt',
-  '/sitemap.xml',
-];
-
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -193,34 +171,6 @@ export async function middleware(request: NextRequest) {
     if (!token.emailVerified) {
       const verificationUrl = new URL('/autenticacion/verificar-email', request.url);
       return NextResponse.redirect(verificationUrl);
-    }
-  }
-
-  // ===== PROTECCIÓN ESPECÍFICA PARA POST-REGISTER =====
-  if (pathname === '/autenticacion/post-register') {
-
-    if (!token) {
-      // Usuario no autenticado, redirigir al login
-      const loginUrl = new URL('/autenticacion/ingresar', request.url);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    if (token.hasPassword === true) {
-      // Usuario ya tiene contraseña, redirigir al home
-      const homeUrl = new URL('/', request.url);
-      return NextResponse.redirect(homeUrl);
-    }
-  }
-
-  // Verificación de contraseña para rutas específicas (excluyendo post-register que ya se maneja arriba)
-  if (PASSWORD_REQUIRED_ROUTES.some(route => pathname.startsWith(route)) &&
-    !ALLOWED_WITHOUT_PASSWORD.some(route => pathname.startsWith(route)) &&
-    pathname !== '/autenticacion/post-register') {
-    // Para rutas que requieren contraseña
-    // Verificación más estricta: solo redirigir si hasPassword es explícitamente false
-    if (token?.hasPassword === false) {
-      const postRegisterUrl = new URL('/autenticacion/post-register', request.url);
-      return NextResponse.redirect(postRegisterUrl);
     }
   }
 

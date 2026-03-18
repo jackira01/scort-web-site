@@ -154,7 +154,7 @@ scort-web-site/
 - **Cache**: Redis para sesiones y cache de datos
 - **WebSockets**: Socket.io para comunicación en tiempo real
 - **Pagos**: Stripe API para procesamiento de pagos
-- **Email**: Nodemailer con templates HTML
+- **Email**: Mailjet para envío de correos transaccionales
 - **Validación**: Joi para validación de esquemas
 - **Testing**: Jest + Supertest para testing
 

@@ -1,30 +1,32 @@
 'use client';
 
-import {
-    AlertTriangle,
-    Camera,
-    CheckCircle,
-    Clock,
-    Info,
-    Shield,
-    Settings,
-    FileText,
-} from 'lucide-react';
-import { useState } from 'react';
-import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { useUpdateUser, useUser } from '@/hooks/use-user';
 import type { User } from '@/types/user.types';
 import { uploadMultipleImages } from '@/utils/tools';
+import {
+    AlertTriangle,
+    Building2,
+    Camera,
+    CheckCircle,
+    Clock,
+    FileText,
+    Info,
+    Shield,
+    User as UserIcon,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 
 interface AccountVerificationModalProps {
     isOpen: boolean;
@@ -41,13 +43,20 @@ export default function AccountVerificationModal({
 }: AccountVerificationModalProps) {
     const [loading, setLoading] = useState(false);
     const [showUploadForm, setShowUploadForm] = useState(false);
+    const [selectedAccountType, setSelectedAccountType] = useState<'common' | 'agency'>('common');
     const [uploadedFiles, setUploadedFiles] = useState({
         image1: null as File | null,
         image2: null as File | null,
         image3: null as File | null,
     });
-    const { mutate: updateUserMutation } = useUpdateUser();
+    const { mutateAsync: updateUserMutation } = useUpdateUser();
     const { data: user } = useUser();
+
+    useEffect(() => {
+        if (user?.accountType) {
+            setSelectedAccountType(user.accountType);
+        }
+    }, [user?.accountType]);
 
     const handleFileUpload = (fileType: 'image1' | 'image2' | 'image3', file: File) => {
         setUploadedFiles((prev) => ({
@@ -56,8 +65,11 @@ export default function AccountVerificationModal({
         }));
     };
 
-    const handleSubmitVerification = () => {
-        toast.loading('Subiendo imagenes...');
+    const handleSubmitVerification = async () => {
+        const toastId = 'account-verification';
+        toast.loading('Guardando verificación...', { id: toastId });
+
+        const existingUrls = user?.verificationDocument || [];
 
         // Recopilar solo los archivos que se han subido
         const filesToUpload = [
@@ -66,57 +78,67 @@ export default function AccountVerificationModal({
             uploadedFiles.image3,
         ].filter((file): file is File => file !== null);
 
-        if (filesToUpload.length > 0) {
+        try {
             setLoading(true);
-            uploadMultipleImages(filesToUpload)
-                .then((urls) => {
-                    const filteredUrls = urls.filter(
-                        (url): url is string => url !== null,
-                    );
+            const updatedUrls = [...existingUrls];
 
-                    // Combinar URLs existentes con las nuevas
-                    const existingUrls = user?.verificationDocument || [];
+            if (filesToUpload.length > 0) {
+                const urls = await uploadMultipleImages(filesToUpload);
+                const filteredUrls = urls.filter(
+                    (url): url is string => url !== null,
+                );
+                let urlIndex = 0;
 
-                    // Crear array con las URLs actualizadas
-                    // Si hay nuevos archivos, reemplazar en las posiciones correspondientes
-                    const updatedUrls = [...existingUrls];
-                    let urlIndex = 0;
+                if (uploadedFiles.image1) {
+                    updatedUrls[0] = filteredUrls[urlIndex++];
+                }
+                if (uploadedFiles.image2) {
+                    updatedUrls[1] = filteredUrls[urlIndex++];
+                }
+                if (uploadedFiles.image3) {
+                    updatedUrls[2] = filteredUrls[urlIndex++];
+                }
+            }
 
-                    if (uploadedFiles.image1) {
-                        updatedUrls[0] = filteredUrls[urlIndex++];
-                    }
-                    if (uploadedFiles.image2) {
-                        updatedUrls[1] = filteredUrls[urlIndex++];
-                    }
-                    if (uploadedFiles.image3) {
-                        updatedUrls[2] = filteredUrls[urlIndex++];
-                    }
+            const verificationDocument = updatedUrls.filter(Boolean);
 
-                    const data: Partial<User> = {
-                        verificationDocument: updatedUrls.filter(url => url), // Filtrar valores vacíos
-                        verification_in_progress: true,
-                    };
-                    updateUserMutation({
-                        userId,
-                        data,
-                    });
-                    setLoading(false);
-                    setShowUploadForm(false);
-                    toast.dismiss();
-                    toast.success('Imagenes subidas con exito');
-                    onClose();
-                })
-                .catch((error) => {
-                    // Error al subir las imagenes
-                    setLoading(false);
-                    toast.dismiss();
-                    toast.error('Error al subir las imagenes');
-                });
+            if (verificationDocument.length === 0) {
+                throw new Error('Debes subir al menos un documento para enviar la verificación.');
+            }
+
+            const shouldMarkVerificationInProgress = user?.isVerified
+                ? hasNewFiles
+                : true;
+
+            const data: Partial<User> = {
+                accountType: selectedAccountType,
+                verificationDocument,
+                verification_in_progress: shouldMarkVerificationInProgress,
+            };
+
+            await updateUserMutation({
+                userId,
+                data,
+            });
+
+            setShowUploadForm(false);
+            setUploadedFiles({ image1: null, image2: null, image3: null });
+            toast.success('Información de cuenta actualizada con éxito.', { id: toastId });
+            onClose();
+        } catch (error) {
+            const message = error instanceof Error
+                ? error.message
+                : 'Error al guardar la información de verificación.';
+            toast.error(message, { id: toastId });
+        } finally {
+            setLoading(false);
         }
     };
 
-    // Permitir envío si hay al menos un archivo nuevo subido
-    const canSubmit = uploadedFiles.image1 || uploadedFiles.image2 || uploadedFiles.image3;
+    const hasExistingDocuments = Boolean(user?.verificationDocument?.filter(Boolean).length);
+    const hasNewFiles = Boolean(uploadedFiles.image1 || uploadedFiles.image2 || uploadedFiles.image3);
+    const accountTypeChanged = selectedAccountType !== (user?.accountType || 'common');
+    const canSubmit = Boolean(selectedAccountType) && (hasNewFiles || hasExistingDocuments || accountTypeChanged);
 
     const handleClose = () => {
         setShowUploadForm(false);
@@ -165,17 +187,23 @@ export default function AccountVerificationModal({
                                 </CardContent>
                             </Card>
 
-                            {/* No mostrar botón de actualizar documentos cuando está verificado */}
-                            {/* <div className="space-y-2">
-                                <Button
-                                    onClick={() => setShowUploadForm(true)}
-                                    variant="outline"
-                                    className="w-full justify-start"
-                                >
-                                    <FileText className="h-4 w-4 mr-2" />
-                                    Actualizar Documentos
-                                </Button>
-                            </div> */}
+                            <Card className="bg-muted/40 border-border">
+                                <CardContent className="p-4 flex items-center justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-medium text-foreground">Tipo de cuenta</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {user?.accountType === 'agency' ? 'Agencia' : 'Individual'}
+                                        </p>
+                                    </div>
+                                    <Button
+                                        onClick={() => setShowUploadForm(true)}
+                                        variant="outline"
+                                    >
+                                        <FileText className="h-4 w-4 mr-2" />
+                                        Actualizar datos
+                                    </Button>
+                                </CardContent>
+                            </Card>
                         </div>
 
                         <div className="text-center">
@@ -213,6 +241,8 @@ export default function AccountVerificationModal({
                                 <strong>Tiempo estimado:</strong> 24-48 horas
                                 <br />
                                 <strong>Estado:</strong> En revisión
+                                <br />
+                                <strong>Tipo de cuenta:</strong> {user?.accountType === 'agency' ? 'Agencia' : 'Individual'}
                             </p>
                         </div>
 
@@ -223,7 +253,7 @@ export default function AccountVerificationModal({
                             className="w-full justify-center"
                         >
                             <FileText className="h-4 w-4 mr-2" />
-                            Actualizar Documentos
+                            Actualizar documentos y tipo de cuenta
                         </Button>
 
                         <p className="text-xs text-muted-foreground mt-4">
@@ -252,6 +282,40 @@ export default function AccountVerificationModal({
                     </DialogHeader>
 
                     <div className="space-y-6">
+                        <div className="space-y-3">
+                            <Label className="text-foreground font-medium">Tipo de cuenta</Label>
+                            <RadioGroup
+                                value={selectedAccountType}
+                                onValueChange={(value) => setSelectedAccountType(value as 'common' | 'agency')}
+                                className="space-y-3"
+                            >
+                                <Label htmlFor="verification-common" className="flex items-center space-x-3 border rounded-lg p-4 cursor-pointer hover:bg-muted/40 transition-colors flex-1">
+                                    <RadioGroupItem value="common" id="verification-common" />
+                                    <div className="flex items-center gap-3 cursor-pointer flex-1">
+                                        <div className="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-full">
+                                            <UserIcon className="w-5 h-5 text-purple-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-medium">Cuenta Individual</p>
+                                            <p className="text-sm text-muted-foreground">Para gestionar tu actividad personal.</p>
+                                        </div>
+                                    </div>
+                                </Label>
+                                <Label htmlFor="verification-agency" className="flex items-center space-x-3 border rounded-lg p-4 cursor-pointer hover:bg-muted/40 transition-colors flex-1">
+                                    <RadioGroupItem value="agency" id="verification-agency" />
+                                    <div className="flex items-center gap-3 cursor-pointer flex-1">
+                                        <div className="flex items-center justify-center w-10 h-10 bg-pink-100 rounded-full">
+                                            <Building2 className="w-5 h-5 text-pink-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-medium">Cuenta de Agencia</p>
+                                            <p className="text-sm text-muted-foreground">Para administrar varios perfiles o un negocio.</p>
+                                        </div>
+                                    </div>
+                                </Label>
+                            </RadioGroup>
+                        </div>
+
                         <div className="grid grid-cols-1 gap-6">
 
                             {/* Imagen 1: Documento de Identidad (Frente) */}
@@ -584,10 +648,10 @@ export default function AccountVerificationModal({
                         className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25"
                     >
                         <Shield className="h-4 w-4 mr-2" />
-                        Ir a Verificar
+                        Completar verificación
                     </Button>
                     <p className="text-xs text-muted-foreground mt-4">
-                        El proceso de verificación es gratuito y toma solo unos minutos
+                        Aquí también podrás definir el tipo de cuenta con el que quieres operar.
                     </p>
                 </div>
             </DialogContent>

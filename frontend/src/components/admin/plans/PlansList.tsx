@@ -53,8 +53,7 @@ export const PlansList: React.FC<PlansListProps> = ({ onEdit }) => {
   };
 
   const getPlanLevelName = (level: number): string => {
-    const levelEntry = Object.entries(PLAN_LEVELS).find(([, value]) => value === level);
-    return levelEntry ? levelEntry[0] : `Nivel ${level}`;
+    return `Nivel ${level}`;
   };
 
   const formatPrice = (price: number): string => {
@@ -120,9 +119,9 @@ export const PlansList: React.FC<PlansListProps> = ({ onEdit }) => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los niveles</SelectItem>
-            {Object.entries(PLAN_LEVELS).map(([name, level]) => (
+            {Object.entries(PLAN_LEVELS).map(([, level]) => (
               <SelectItem key={level} value={level.toString()}>
-                {name} (Nivel {level})
+                Nivel {level}
               </SelectItem>
             ))}
           </SelectContent>

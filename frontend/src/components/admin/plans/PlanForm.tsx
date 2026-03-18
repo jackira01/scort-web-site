@@ -430,16 +430,16 @@ export const PlanForm: React.FC<PlanFormProps> = ({ isOpen, onClose, plan, mode 
                       <SelectValue placeholder="Seleccionar nivel del plan" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(PLAN_LEVELS).map(([name, level]) => (
+                      {Object.entries(PLAN_LEVELS).map(([, level]) => (
                         <SelectItem key={level} value={level.toString()}>
-                          {name} (Nivel {level})
+                          Nivel {level}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   <p className="text-sm text-muted-foreground">
                     El nivel determina la prioridad de visibilidad en los resultados de búsqueda.
-                    Nivel 1 (DIAMANTE) = máxima visibilidad, Nivel 5 (AMATISTA) = mínima visibilidad.
+                    Nivel 1 = máxima visibilidad, Nivel 5 = mínima visibilidad.
                     Los upgrades como IMPULSO pueden mejorar temporalmente la posición.
                   </p>
                 </div>

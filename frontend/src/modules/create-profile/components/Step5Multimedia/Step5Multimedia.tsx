@@ -91,6 +91,7 @@ export function Step5Multimedia({ isVerified = false, profileId }: Step5Multimed
 
   useEffect(() => {
     const savedPreference = localStorage.getItem(warningStorageKey);
+    console.log('💾 Preferencia de localStorage:', savedPreference, 'para key:', warningStorageKey);
     if (savedPreference === 'true') {
       setDontShowWarningAgain(true);
     }
@@ -467,18 +468,29 @@ export function Step5Multimedia({ isVerified = false, profileId }: Step5Multimed
 
   // Función wrapper para manejar acciones con advertencia de desverificación
   const handleActionWithWarning = (action: () => void) => {
-    // Si no está verificado o el usuario eligió no ver la advertencia, proceder directamente
-    if (!isVerified || dontShowWarningAgain) {
+    console.log('🔍 handleActionWithWarning:', {
+      profileId,
+      dontShowWarningAgain,
+      condition_notProfileId: !profileId,
+      condition_dontShowWarningAgain: dontShowWarningAgain,
+      shouldShowModal: profileId && !dontShowWarningAgain
+    });
+
+    // Si estamos en creación de perfil (no hay profileId) o el usuario eligió no ver la advertencia, proceder directamente
+    if (!profileId || dontShowWarningAgain) {
+      console.log('⏭️ Saltando modal - proceder directamente con la acción');
       action();
       return;
     }
 
-    // Si está verificado, mostrar advertencia
+    // Si estamos editando un perfil, mostrar advertencia antes de agregar fotos
+    console.log('⚠️ Mostrando modal de advertencia');
     setPendingAction(() => action);
     setShowVerificationWarning(true);
   };
 
   const handleConfirmWarning = () => {
+    console.log('✅ Modal confirmado - ejecutando acción pendiente');
     if (pendingAction) {
       pendingAction();
       setPendingAction(null);
@@ -487,21 +499,32 @@ export function Step5Multimedia({ isVerified = false, profileId }: Step5Multimed
 
     // Guardar preferencia si se marcó el checkbox
     if (dontShowWarningAgain) {
+      console.log('💾 Guardando preferencia en localStorage');
       localStorage.setItem(warningStorageKey, 'true');
     }
   };
 
   const handleCancelWarning = () => {
+    console.log('❌ Modal cancelado');
     setPendingAction(null);
     setShowVerificationWarning(false);
     // Resetear checkbox si cancela (opcional, pero buena UX)
     setDontShowWarningAgain(false);
   };
 
-  // Wrappers específicos para fotos
+  // Wrappers específicos para fotos - AHORA EXTRAE LOS ARCHIVOS INMEDIATAMENTE
   const handlePhotoSelectWrapper = (name: string, files: FileList | null, event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('📸 handlePhotoSelectWrapper llamado con:', name, 'files:', files?.length);
+
+    // ✅ CRÍTICO: Extraer los archivos INMEDIATAMENTE antes de que React sintetice el event
+    const filesArray = files ? Array.from(files) : [];
+    console.log('📂 Archivos extraídos inmediatamente:', filesArray.length);
+
     handleActionWithWarning(() => {
-      handleFileSelect(name, files, event);
+      console.log('✨ Procesando archivos después de confirmar modal');
+      // Ahora pasamos los archivos ya extraídos como array en lugar de FileList
+      // handleFileSelect ahora acepta File[] además de FileList
+      handleFileSelect(name, filesArray, event);
     });
   };
 
@@ -514,6 +537,11 @@ export function Step5Multimedia({ isVerified = false, profileId }: Step5Multimed
 
   return (
     <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-500">
+      {/* Log de estado del modal */}
+      {(() => {
+        console.log('🎬 Renderizando Step5Multimedia - showVerificationWarning:', showVerificationWarning, 'profileId:', profileId);
+        return null;
+      })()}
       <div className="flex items-center space-x-3 mb-6">
         <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
           05
@@ -1046,9 +1074,9 @@ export function Step5Multimedia({ isVerified = false, profileId }: Step5Multimed
       <AlertDialog open={showVerificationWarning} onOpenChange={setShowVerificationWarning}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro de realizar esta acción?</AlertDialogTitle>
+            <AlertDialogTitle>Cambio de imágenes</AlertDialogTitle>
             <AlertDialogDescription>
-              Al modificar tus fotos, <span className="font-bold text-red-500">se perderá la verificación de identidad de tu perfil</span> y tendrás que pasar nuevamente por el proceso de verificación.
+              Si cambias las imágenes, tu perfil debe pasar nuevamente por el proceso de verificación.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -1065,8 +1093,8 @@ export function Step5Multimedia({ isVerified = false, profileId }: Step5Multimed
 
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleCancelWarning}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmWarning} className="bg-red-600 hover:bg-red-700">
-              Continuar y perder verificación
+            <AlertDialogAction onClick={handleConfirmWarning} className="bg-purple-600 hover:bg-purple-700">
+              Continuar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

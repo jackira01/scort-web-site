@@ -1,9 +1,10 @@
 import axios from 'axios';
-import { applyWatermarkToImage } from './watermark';
 import { ProcessedImageResult } from './imageProcessor';
+import { applyWatermarkToImage } from './watermark';
 
 const upload_preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "";
 const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_NAME || "";
+const CLOUDINARY_FOLDER = process.env.CLOUDINARY_FOLDER || "PrepagoYa";
 
 /**
  * Carga dinámica de browser-image-compression solo en el cliente
@@ -23,69 +24,6 @@ const loadImageCompression = async () => {
 export const normalizeImageSize = async (file: File): Promise<File> => {
   // COMENTADO TEMPORALMENTE - Devolver archivo original sin procesar
   return file;
-
-  /* CÓDIGO ORIGINAL COMENTADO
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-
-          if (!ctx) {
-            reject(new Error('No se pudo obtener el contexto del canvas'));
-            return;
-          }
-
-          // Calcular nuevas dimensiones manteniendo la proporción
-          const maxSize = 1024; // Aumentar a 1024px para mantener mejor resolución
-          let { width, height } = img;
-
-          if (width > maxSize || height > maxSize) {
-            if (width > height) {
-              height = (height * maxSize) / width;
-              width = maxSize;
-            } else {
-              width = (width * maxSize) / height;
-              height = maxSize;
-            }
-          }
-
-          // Configurar el canvas con las nuevas dimensiones
-          canvas.width = width;
-          canvas.height = height;
-
-          // Dibujar la imagen redimensionada
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Convertir el canvas a blob y luego a File
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const normalizedFile = new File([blob], file.name, {
-                type: file.type,
-                lastModified: Date.now(),
-              });
-              resolve(normalizedFile);
-            } else {
-              reject(new Error('Error al generar el blob de la imagen normalizada'));
-            }
-          }, file.type, 0.98); // Calidad del 98% para mantener mejor resolución
-        } catch (error) {
-          reject(error);
-        }
-      };
-
-      img.onerror = () => reject(new Error('Error al cargar la imagen'));
-      img.src = e.target?.result as string;
-    };
-
-    reader.onerror = () => reject(new Error('Error al leer el archivo'));
-    reader.readAsDataURL(file);
-  });
-  */
 };
 
 
@@ -96,23 +34,6 @@ export const normalizeImageSize = async (file: File): Promise<File> => {
 export const compressImage = async (file: File): Promise<File> => {
   // COMENTADO TEMPORALMENTE - Devolver archivo original sin comprimir
   return file;
-
-  /* CÓDIGO ORIGINAL COMENTADO
-  const options = {
-    maxSizeMB: 1, // máximo 1MB
-    maxWidthOrHeight: 1280, // permitir hasta 1280px para mantener la resolución original
-    useWebWorker: true,
-    preserveExif: false, // remover metadatos para reducir tamaño
-    initialQuality: 0.9, // calidad inicial más alta
-  };
-  try {
-    const imageCompression = await loadImageCompression();
-    return await imageCompression(file, options);
-  } catch {
-    // Error al comprimir imagen
-    return file; // si falla, sigue con el original
-  }
-  */
 };
 
 export const uploadMultipleImages = async (
@@ -144,6 +65,7 @@ export const uploadMultipleImages = async (
       const formData = new FormData();
       formData.append('file', compressedFile);
       formData.append('upload_preset', upload_preset);
+      formData.append('folder', CLOUDINARY_FOLDER);
 
       const response = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
@@ -197,6 +119,7 @@ export const uploadProcessedImages = async (
       formData.append('file', processedImage.file);
       formData.append('upload_preset', upload_preset);
       formData.append('resource_type', 'image');
+      formData.append('folder', CLOUDINARY_FOLDER);
 
       const response = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
@@ -257,6 +180,7 @@ export const uploadMixedImages = async (
       formData.append('file', fileToUpload);
       formData.append('upload_preset', upload_preset);
       formData.append('resource_type', 'image');
+      formData.append('folder', CLOUDINARY_FOLDER);
 
       const response = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
@@ -303,6 +227,7 @@ export const uploadMultipleVideos = async (
       videoFormData.append('file', file);
       videoFormData.append('upload_preset', upload_preset);
       videoFormData.append('resource_type', 'video');
+      videoFormData.append('folder', CLOUDINARY_FOLDER);
 
       const videoResponse = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`,
@@ -326,6 +251,7 @@ export const uploadMultipleVideos = async (
           previewFormData.append('file', coverImage);
           previewFormData.append('upload_preset', upload_preset);
           previewFormData.append('resource_type', 'image');
+          previewFormData.append('folder', CLOUDINARY_FOLDER);
 
           const previewResponse = await axios.post(
             `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
@@ -381,6 +307,7 @@ export const uploadMultipleAudios = async (
       formData.append('file', file);
       formData.append('upload_preset', upload_preset);
       formData.append('resource_type', 'video'); // Cloudinary usa 'video' para audios también
+      formData.append('folder', CLOUDINARY_FOLDER);
 
       const response = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`,
