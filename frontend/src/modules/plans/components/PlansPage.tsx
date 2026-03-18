@@ -1,13 +1,11 @@
 'use client';
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { usePlans } from '@/hooks/usePlans';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Check, Star, Zap, Crown, ArrowRight } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { usePlans } from '@/hooks/usePlans';
+import { ArrowRight, Check, Crown, Star, Zap } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const PlansPage = () => {
   const router = useRouter();
