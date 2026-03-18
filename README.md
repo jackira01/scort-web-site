@@ -558,17 +558,15 @@ Este proyecto está licenciado bajo la Licencia MIT - ver el archivo [LICENSE](L
 
 ## 👥 Equipo
 
-- **Lead Developer**: [Tu Nombre](https://github.com/yourusername)
-- **Backend Developer**: [Nombre](https://github.com/username)
-- **Frontend Developer**: [Nombre](https://github.com/username)
-- **DevOps Engineer**: [Nombre](https://github.com/username)
+- **Lead Developer**: [Jhoan Alvarez](https://github.com/jackira)
+- **Backend Developer**: [Jhoan Alvarez](https://github.com/jackira)
+- **Frontend Developer**: [Jhoan Alvarez](https://github.com/jackira)
+- **DevOps Engineer**: [Jhoan Alvarez](https://github.com/jackira)
 
 ## 📞 Soporte
 
-- **Email**: support@scortwebsite.com
-- **Discord**: [Servidor de Discord](https://discord.gg/scortwebsite)
+- **Email**: info@prepagoya.com
 - **Issues**: [GitHub Issues](https://github.com/yourusername/scort-web-site/issues)
-- **Documentación**: [Wiki del Proyecto](https://github.com/yourusername/scort-web-site/wiki)
 
 ## 🗺️ Roadmap
 
