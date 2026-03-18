@@ -1,12 +1,12 @@
+import { ProcessedImageResult } from '@/utils/imageProcessor';
 import toast from 'react-hot-toast';
-import { FileType, ContentLimits } from '../types';
+import { ContentLimits, FileType } from '../types';
 import {
     extractFilesFromList,
-    validateFileTypes,
+    validateFileLimits,
     validateFileSize,
-    validateFileLimits
+    validateFileTypes
 } from '../utils/fileValidation';
-import { ProcessedImageResult } from '@/utils/imageProcessor';
 
 interface UseFileHandlersProps {
     contentLimits: ContentLimits;
@@ -42,10 +42,13 @@ export const useFileHandlers = ({
 
     const handleFileSelect = async (
         type: FileType,
-        files: FileList | null,
+        files: FileList | null | File[],
         event?: React.ChangeEvent<HTMLInputElement>,
     ) => {
-        const fileArray = extractFilesFromList(files, event);
+        // Si files es un array de File, usarlo directamente; si no, extraerlo del FileList/event
+        const fileArray = Array.isArray(files)
+            ? files
+            : extractFilesFromList(files as FileList | null, event);
 
         // Limpiar el input
         if (event?.target) {

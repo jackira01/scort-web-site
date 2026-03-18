@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useRef, useImperativeHandle, forwardRef, useState } from "react";
-import EditorJS from "@editorjs/editorjs";
-import type { OutputData } from "@editorjs/editorjs";
 import { Card, CardContent } from "@/components/ui/card";
+import type { OutputData } from "@editorjs/editorjs";
+import EditorJS from "@editorjs/editorjs";
 import { Loader2 } from "lucide-react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import toast from 'react-hot-toast';
 
 // Función para cargar dinámicamente las herramientas de EditorJS
@@ -164,7 +164,7 @@ const BlogEditor = forwardRef<BlogEditorRef, BlogEditorProps>((
                     const formData = new FormData();
                     formData.append('file', file);
                     formData.append('upload_preset', upload_preset);
-                    formData.append('folder', 'blog-images');
+                    formData.append('folder', 'PrepagoYa');
 
                     const response = await fetch(
                       `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,

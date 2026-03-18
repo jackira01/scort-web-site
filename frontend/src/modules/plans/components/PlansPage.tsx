@@ -1,13 +1,11 @@
 'use client';
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { usePlans } from '@/hooks/usePlans';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Check, Star, Zap, Crown, ArrowRight } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { usePlans } from '@/hooks/usePlans';
+import { ArrowRight, Check, Crown, Star, Zap } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const PlansPage = () => {
   const router = useRouter();
@@ -163,6 +161,15 @@ const PlansPage = () => {
                 </div>
 
                 <CardContent className="p-6">
+                  {/* Description */}
+                  {plan.description && (
+                    <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                      <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+                        {plan.description}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Features */}
                   {mainVariant && (
                     <div className="space-y-4 mb-6">
@@ -244,12 +251,12 @@ const PlansPage = () => {
                   {/* All Variants */}
                   {plan.variants && plan.variants.length > 1 && (
                     <div className="mb-6">
-                      <h4 className="font-semibold text-gray-900 dark:text-gray-200 mb-3">Opciones de duración:</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-3 text-sm uppercase tracking-wide">Opciones de duración:</h4>
                       <div className="space-y-2">
                         {plan.variants.map((variant, index) => (
-                          <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                            <span className="text-sm font-medium text-gray-800">{formatDays(variant.days)}</span>
-                            <span className="text-sm font-bold text-gray-900 dark:text-gray-200">
+                          <div key={index} className="flex justify-between items-center px-3 py-2 bg-gray-50 dark:bg-white/5 dark:border dark:border-white/10 rounded-lg">
+                            <span className="text-sm font-medium text-gray-700 dark:text-white">{formatDays(variant.days)}</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-white">
                               {formatPrice(variant.price)}
                             </span>
                           </div>

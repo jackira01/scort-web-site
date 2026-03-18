@@ -1,16 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Edit, Trash2, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
-import { usePlans, useDeletePlan } from '@/hooks/usePlans';
-import { Plan, PlansFilters, PLAN_LEVELS } from '@/types/plans';
-import toast from 'react-hot-toast';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useDeletePlan, usePlans } from '@/hooks/usePlans';
+import { Plan, PLAN_LEVELS, PlansFilters } from '@/types/plans';
+import { ChevronLeft, ChevronRight, Edit, Search, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface PlansListProps {
   onEdit: (plan: Plan) => void;
@@ -42,7 +41,7 @@ export const PlansList: React.FC<PlansListProps> = ({ onEdit }) => {
 
   const handleDelete = async (plan: Plan) => {
     if (!plan._id) return;
-    
+
     if (window.confirm(`¿Estás seguro de que deseas eliminar el plan "${plan.name}"?`)) {
       try {
         await deletePlanMutation.mutateAsync(plan._id);
@@ -53,8 +52,7 @@ export const PlansList: React.FC<PlansListProps> = ({ onEdit }) => {
   };
 
   const getPlanLevelName = (level: number): string => {
-    const levelEntry = Object.entries(PLAN_LEVELS).find(([, value]) => value === level);
-    return levelEntry ? levelEntry[0] : `Nivel ${level}`;
+    return `Nivel ${level}`;
   };
 
   const formatPrice = (price: number): string => {
@@ -92,10 +90,10 @@ export const PlansList: React.FC<PlansListProps> = ({ onEdit }) => {
             />
           </div>
         </div>
-        
+
         <Select
           value={filters.isActive?.toString() || 'all'}
-          onValueChange={(value) => 
+          onValueChange={(value) =>
             handleFilterChange('isActive', value === 'all' ? undefined : value === 'true')
           }
         >
@@ -111,7 +109,7 @@ export const PlansList: React.FC<PlansListProps> = ({ onEdit }) => {
 
         <Select
           value={filters.level?.toString() || 'all'}
-          onValueChange={(value) => 
+          onValueChange={(value) =>
             handleFilterChange('level', value === 'all' ? undefined : parseInt(value))
           }
         >
@@ -120,9 +118,9 @@ export const PlansList: React.FC<PlansListProps> = ({ onEdit }) => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los niveles</SelectItem>
-            {Object.entries(PLAN_LEVELS).map(([name, level]) => (
+            {Object.entries(PLAN_LEVELS).map(([, level]) => (
               <SelectItem key={level} value={level.toString()}>
-                {name} (Nivel {level})
+                Nivel {level}
               </SelectItem>
             ))}
           </SelectContent>
@@ -160,7 +158,7 @@ export const PlansList: React.FC<PlansListProps> = ({ onEdit }) => {
               ) : (
                 data?.plans?.map((plan) => {
                   const minPrice = Math.min(...plan.variants.map(v => v.price));
-                  
+
                   return (
                     <TableRow key={plan._id}>
                       <TableCell className="font-mono">{plan.code}</TableCell>
@@ -220,12 +218,12 @@ export const PlansList: React.FC<PlansListProps> = ({ onEdit }) => {
 
       {/* Paginación */}
       {data && data.total > 0 && (
-          <div className="flex items-center justify-between px-2">
-            <div className="text-sm text-muted-foreground">
-              Mostrando {(filters.page - 1) * filters.limit + 1} a{' '}
-              {Math.min(filters.page * filters.limit, data?.total || 0)} de {data?.total || 0} planes
-            </div>
-          
+        <div className="flex items-center justify-between px-2">
+          <div className="text-sm text-muted-foreground">
+            Mostrando {(filters.page - 1) * filters.limit + 1} a{' '}
+            {Math.min(filters.page * filters.limit, data?.total || 0)} de {data?.total || 0} planes
+          </div>
+
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -236,20 +234,20 @@ export const PlansList: React.FC<PlansListProps> = ({ onEdit }) => {
               <ChevronLeft className="h-4 w-4" />
               Anterior
             </Button>
-            
+
             <div className="flex items-center gap-1">
               {Array.from(
                 { length: Math.ceil((data?.total || 0) / filters.limit) },
                 (_, i) => i + 1
               )
-                .filter(page => 
-                  page === 1 || 
+                .filter(page =>
+                  page === 1 ||
                   page === Math.ceil((data?.total || 0) / filters.limit) ||
                   Math.abs(page - filters.page) <= 1
                 )
                 .map((page, index, array) => {
                   const showEllipsis = index > 0 && page - array[index - 1] > 1;
-                  
+
                   return (
                     <React.Fragment key={page}>
                       {showEllipsis && (
@@ -267,7 +265,7 @@ export const PlansList: React.FC<PlansListProps> = ({ onEdit }) => {
                 })
               }
             </div>
-            
+
             <Button
               variant="outline"
               size="sm"

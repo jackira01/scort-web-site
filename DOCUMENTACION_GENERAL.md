@@ -3,13 +3,14 @@
 ## Índice
 1. [Descripción General](#descripción-general)
 2. [Arquitectura del Sistema](#arquitectura-del-sistema)
-3. [Infraestructura](#infraestructura)
-4. [Configuración de Redis](#configuración-de-redis)
-5. [Sistema de Cupones](#sistema-de-cupones)
-6. [Sistema de Rotación de Perfiles](#sistema-de-rotación-de-perfiles)
-7. [Migración de Ubicaciones](#migración-de-ubicaciones)
-8. [Despliegue](#despliegue)
-9. [Troubleshooting](#troubleshooting)
+3. [Sistema de Autenticación y Registro](#sistema-de-autenticación-y-registro)
+4. [Infraestructura](#infraestructura)
+5. [Configuración de Redis](#configuración-de-redis)
+6. [Sistema de Cupones](#sistema-de-cupones)
+7. [Sistema de Rotación de Perfiles](#sistema-de-rotación-de-perfiles)
+8. [Migración de Ubicaciones](#migración-de-ubicaciones)
+9. [Despliegue](#despliegue)
+10. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -89,6 +90,705 @@ pnpm run build
 # Linting global
 pnpm run lint
 ```
+
+---
+
+## Sistema de Autenticación y Registro
+
+### Descripción General
+
+El sistema de autenticación es un flujo híbrido que soporta dos mecanismos de registro y login:
+
+1. **Registro directo con email**: El usuario proporciona email y contraseña, con posterior verificación por código
+2. **Registro/Login con Google OAuth**: Autenticación mediante Google usando Google Sign-In
+
+El sistema utiliza **NextAuth.js** en el frontend para gestionar sesiones y **JWT** en el backend para tokens de acceso.
+
+---
+
+### Diagrama de Flujo General
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                   USUARIO EN FRONTEND (Next.js)              │
+└────────────────┬─────────────────────────────┬───────────────┘
+                 │                             │
+        ┌────────▼────────┐          ┌────────▼────────┐
+        │ Opción 1:       │          │ Opción 2:       │
+        │ Email + Pass    │          │ Google OAuth    │
+        └────────┬────────┘          └────────┬────────┘
+                 │                             │
+                 │ POST /api/user/register     │ Redirige a Google
+                 │                             │
+        ┌────────▼─────────────────────────────▼────────┐
+        │    BACKEND (Node.js + Express)                │
+        │ - Crear usuario o verificar existencia        │
+        │ - Hashear contraseña (bcrypt, 12 rounds)      │
+        │ - Guardar en MongoDB                          │
+        │ - Generar token JWT                           │
+        │ - Enviar correo de verificación               │
+        └────────┬─────────────────────────────────────┘
+                 │
+        ┌────────▼─────────────────────────────┐
+        │    NEXTAUTH.JS (Callback signIn)     │
+        │ - Procesa respuesta del backend      │
+        │ - Actualiza sesión JWT               │
+        │ - Redirige a aplicación              │
+        └────────┬─────────────────────────────┘
+                 │
+        ┌────────▼─────────────────────────────┐
+        │  Usuario autenticado en la app       │
+        │  Acceso a recursos protegidos        │
+        └─────────────────────────────────────┘
+```
+
+---
+
+### 1. Modelo de Datos de Usuario (MongoDB)
+
+#### Esquema Completo
+
+```typescript
+interface IUser {
+  // Autenticación básica
+  email: string;                      // Único, requerido, en minúsculas
+  password?: string;                  // Hash bcrypt, solo para credentials
+  name: string;                       // Nombre del usuario
+  image?: string;                     // URL de foto de perfil
+  
+  // Verificación y proveedores
+  providers: string[];                // ['google'], ['credentials'], o ambos
+  hasPassword: boolean;               // ¿Tiene contraseña configurada?
+  emailVerified?: Date;               // Timestamp de verificación
+  isVerified: boolean;                // ¿Cuenta verificada?
+  verification_in_progress?: boolean; // En proceso de verificación
+  
+  // Roles y permisos
+  role: 'admin' | 'user' | 'guest';  // Rol del usuario
+  accountType: 'common' | 'agency';   // Tipo de cuenta
+  
+  // Información de agencia (opcional)
+  agencyInfo?: {
+    businessName?: string;
+    businessDocument?: string;
+    conversionRequestedAt?: Date;
+    conversionApprovedAt?: Date;
+    conversionApprovedBy?: ObjectId;
+    conversionStatus: 'pending' | 'approved' | 'rejected';
+    rejectionReason?: string;
+  };
+  
+  // Recuperación de contraseña
+  resetPasswordCode?: string;         // Código OTP de 6 dígitos
+  resetPasswordExpires?: Date;        // Expira en 15 minutos
+  resetPasswordToken?: string;        // Token temporal para cambio
+  resetPasswordTokenExpires?: Date;   // Expira en 10 minutos
+  
+  // Auditoría
+  lastLogin: {
+    date: Date;                       // Fecha del último login
+    isVerified: boolean;              // ¿Verificado en ese login?
+  };
+  
+  // Relaciones
+  profiles: ObjectId[];               // IDs de perfiles del usuario
+  verificationDocument?: string[];    // Documentos de verificación
+}
+```
+
+#### Índices de Base de Datos
+
+```mongodb
+// Búsquedas por usuario verificado
+db.users.createIndex({ isVerified: 1 })
+
+// Búsquedas por rol
+db.users.createIndex({ role: 1 })
+
+// Búsquedas por tipo de cuenta
+db.users.createIndex({ accountType: 1 })
+
+// Ordenar por último login
+db.users.createIndex({ 'lastLogin.date': -1 })
+```
+
+---
+
+### 2. Flujo de Registro con Email y Contraseña
+
+#### Endpoint: `POST /api/user/register`
+
+**Request Body:**
+```json
+{
+  "email": "usuario@example.com",
+  "password": "Password123",
+  "name": "Juan Pérez"
+}
+```
+
+**Proceso Backend:**
+
+```
+1. VALIDACIÓN
+   ├─ Verificar que email y password son requeridos
+   ├─ Normalizar email (lowercase, trim)
+   └─ Validar que no exista usuario con ese email
+
+2. CREACIÓN DE USUARIO
+   ├─ Hash de contraseña (bcrypt, 12 rounds)
+   ├─ Crear documento en MongoDB con:
+   │  ├─ email: normalizado
+   │  ├─ password: hasheada
+   │  ├─ name: desde request o extraído del email
+   │  ├─ providers: ['credentials']
+   │  ├─ hasPassword: true
+   │  ├─ emailVerified: null (NO verificado)
+   │  ├─ isVerified: false
+   │  └─ role: 'user' (default)
+   │
+   └─ Guardar en BD
+
+3. GENERACIÓN DE CÓDIGO DE VERIFICACIÓN
+   ├─ Generar código OTP de 6 dígitos (100000-999999)
+   ├─ Guardar en colección EmailVerification con:
+   │  ├─ email: email del usuario
+   │  ├─ code: código generado
+   │  ├─ expiresAt: Date.now() + 15 minutos
+   │  └─ attempts: 0
+   │
+   └─ TTL Index en MongoDB: expiración automática a los 15 min
+
+4. ENVÍO DE EMAIL
+   ├─ Usar Mailjet para enviar email
+   ├─ Template con código de 6 dígitos
+   ├─ Incluir instrucciones de verificación
+   └─ [OPCIONAL] Log del código en console si falla email
+
+5. RESPUESTA AL CLIENTE
+   ├─ status: 201 New Resource
+   ├─ success: true
+   ├─ user: { _id, email, name, role, emailVerified }
+   └─ message: "Usuario registrado. Verifica tu email."
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Usuario registrado exitosamente. Revisa tu email para verificar tu cuenta.",
+  "user": {
+    "_id": "507f1f77bcf86cd799439011",
+    "email": "usuario@example.com",
+    "name": "Juan Pérez",
+    "isVerified": false,
+    "role": "user",
+    "emailVerified": null
+  }
+}
+```
+
+---
+
+### 3. Flujo de Verificación de Email
+
+#### Endpoint: `POST /api/auth/verify-email`
+
+**Request Body:**
+```json
+{
+  "email": "usuario@example.com",
+  "code": "123456"
+}
+```
+
+**Proceso Backend:**
+
+```
+1. ENTRADA Y NORMALIZACIÓN
+   ├─ Validar que email y code son requeridos
+   └─ Normalizar email
+
+2. BÚSQUEDA DEL REGISTRO DE VERIFICACIÓN
+   ├─ Buscar en EmailVerification por email
+   ├─ Si no existe: throw error "Código inválido o expirado"
+   └─ Si existe: continuar
+
+3. VALIDACIONES
+   ├─ ¿Ha expirado? (expiresAt < now)
+   │  ├─ Si: Eliminar registro y throw error
+   │  └─ No: continuar
+   │
+   ├─ ¿Intentos >= 5? (límite anti-fuerza bruta)
+   │  ├─ Si: Eliminar registro y throw error "Demasiados intentos"
+   │  └─ No: continuar
+   │
+   └─ ¿Coinciden códigos?
+      ├─ Si: Eliminar registro de EmailVerification
+      └─ No: Incrementar attempts y throw error
+
+4. ACTUALIZACIÓN EN MONGODB
+   └─ UPDATE Users.findOneAndUpdate(
+      { email: normalizedEmail },
+      { emailVerified: new Date() }
+   )
+
+5. RESPUESTA
+   ├─ status: 200 OK
+   ├─ success: true
+   └─ message: "Email verificado exitosamente"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Email verificado exitosamente"
+}
+```
+
+#### Endpoint: `POST /api/auth/resend-verification`
+
+Reenvía el código de verificación si:
+- El usuario existe pero no está verificado
+- No hay un código activo ya (anti-spam)
+- Genera nuevo código y lo envía por email
+
+---
+
+### 4. Flujo de Login con Email y Contraseña
+
+#### Endpoint: `POST /api/user/login`
+
+**Request Body:**
+```json
+{
+  "email": "usuario@example.com",
+  "password": "Password123"
+}
+```
+
+**Proceso Backend:**
+
+```
+1. VALIDACIÓN INICIAL
+   ├─ Verificar que email y password son requeridos
+   └─ Normalizar email
+
+2. BÚSQUEDA DEL USUARIO
+   ├─ findUserByEmail(normalizedEmail)
+   ├─ Si no existe: return 401 "Credenciales inválidas"
+   └─ Si existe: continuar
+
+3. VERIFICACIÓN DE MÉTODO DE LOGIN
+   ├─ ¿Usuario tiene password? (hasPassword && password)
+   │  ├─ Si es false: return 401 "Esta cuenta no tiene contraseña"
+   │  └─ Si es true: continuar
+   │
+   └─ Nota: Usado para detectar usuarios solo-Google
+
+4. VALIDACIÓN DE CONTRASEÑA
+   ├─ bcrypt.compare(password, user.password)
+   ├─ Si no coincide: return 401 "Credenciales inválidas"
+   └─ Si coincide: continuar
+
+5. ACTUALIZACIÓN DE ÚLTIMO LOGIN
+   ├─ UPDATE Users.findByIdAndUpdate(userId, {
+   │  'lastLogin.date': new Date(),
+   │  'lastLogin.isVerified': true
+   │ })
+   └─ Nota: También actualiza ProfileVerification del usuario
+
+6. GENERACIÓN DE JWT TOKEN
+   ├─ JWTService.generateToken({
+   │  userId: user._id,
+   │  role: user.role,
+   │  isVerified: user.isVerified,
+   │  verification_in_progress: user.verification_in_progress
+   │ })
+   └─ Token válido por: 30 días (configurable)
+
+7. RESPUESTA AL CLIENTE
+   ├─ status: 200 OK
+   ├─ token: JWT token (para NextAuth)
+   ├─ success: true
+   └─ user: { _id, email, name, role, isVerified, emailVerified, hasPassword }
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Login exitoso",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "_id": "507f1f77bcf86cd799439011",
+    "email": "usuario@example.com",
+    "name": "Juan Pérez",
+    "role": "user",
+    "isVerified": true,
+    "emailVerified": "2024-03-10T15:30:00.000Z",
+    "hasPassword": true
+  }
+}
+```
+
+---
+
+### 5. Flujo de Registro/Login con Google OAuth
+
+#### Flow Diagram:
+
+```
+Usuario               Frontend (Next.js)         Backend           Google
+   │                        │                       │                │
+   ├─ Click "Login Google"──│                       │                │
+   │                        │                       │                │
+   │                        ├─────────────────────────────────────────>│
+   │                        │   Redirige al consent de Google        │
+   │                        │   (prompt: 'consent', access: 'offline')
+   │                        │                       │                │
+   │<─────────────────────────────────────────────────────────────────│
+   │ [Usuario autoriza en Google]                  │                │
+   │                        │<─ Redirige con código │                │
+   │                        │   authorization code  │                │
+   │                        │                       │                │
+   │                        ├─> POST /api/user/auth_google          │
+   │                        │   { email, name, image, googleId }   │
+   │                        │                       │                │
+   │                        │                       ├─ Verificar si existe
+   │                        │                       │                │
+   │                        │<─ Respuesta JWT token─┤                │
+   │                        │                       │                │
+   │                        ├─ NextAuth Callback    │                │
+   │                        │ (signIn y jwt)        │                │
+   │                        │                       │                │
+   │<──────────────────────── Sesión creada        │                │
+   │                        │                       │                │
+```
+
+#### Endpoint: `POST /api/user/auth_google`
+
+**Request Body:**
+```json
+{
+  "email": "usuario@google.com",
+  "name": "Juan Pérez",
+  "image": "https://lh3.googleusercontent.com/...",
+  "googleId": "1234567890"
+}
+```
+
+**Proceso Backend:**
+
+```
+1. VALIDACIÓN
+   ├─ Verificar que email es requerido
+   └─ Normalizar email (lowercase, trim)
+
+2. BÚSQUEDA DE USUARIO EXISTENTE
+   ├─ findUserByEmail(normalizedEmail)
+   │
+   ├─ SI EXISTE: (Login con Google)
+   │  └─ ¿Google ya es un provider?
+   │     ├─ Si: Solo actualizar nombre si es diferente
+   │     └─ No: Agregar 'google' a array de providers
+   │
+   └─ SI NO EXISTE: (Nuevo usuario con Google)
+      └─ Crear en MongoDB con:
+         ├─ email: normalizado
+         ├─ name: desde Google
+         ├─ image: URL de Google
+         ├─ providers: ['google']
+         ├─ hasPassword: false (sin contraseña)
+         ├─ emailVerified: new Date() (verificado automáticamente)
+         ├─ isVerified: false (solo email verificado)
+         ├─ role: 'user' (default)
+         └─ accountType: 'common' (default)
+
+3. ENVÍO DE EMAIL DE BIENVENIDA (solo si nuevo usuario)
+   ├─ Usar sendWelcomeEmail()
+   ├─ [OPCIONAL] Incluir opción de "Establecer contraseña"
+   └─ [FALLBACK] Si falla el email, no afecta el login
+
+4. GENERACIÓN DE JWT TOKEN
+   ├─ JWTService.generateToken({
+   │  userId: user._id,
+   │  role: user.role,
+   │  isVerified: user.isVerified,
+   │  verification_in_progress: user.verification_in_progress
+   │ })
+   └─ Token válido por: 30 días
+
+5. RESPUESTA AL CLIENTE
+   ├─ status: 200 OK
+   ├─ success: true
+   ├─ token: JWT token
+   └─ user: { _id, email, name, role, image, emailVerified, hasPassword }
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "_id": "507f1f77bcf86cd799439011",
+    "email": "usuario@google.com",
+    "name": "Juan Pérez",
+    "image": "https://lh3.googleusercontent.com/...",
+    "role": "user",
+    "isVerified": false,
+    "emailVerified": "2024-03-10T15:30:00.000Z",
+    "hasPassword": false
+  }
+}
+```
+
+---
+
+### 6. Flujo Posterior al Login: NextAuth.js Callbacks
+
+Una vez que el backend responde con el token JWT, NextAuth.js procesa dos callbacks importantes:
+
+#### Callback `signIn` (en `frontend/src/auth.ts`)
+
+```typescript
+async signIn({ user, account, profile }) {
+  if (account?.provider === 'google') {
+    // Llamar nuevamente a POST /api/user/auth_google para sincronizar
+    // Actualizar objeto user con datos del backend
+    user.id = result.user._id;
+    user.accessToken = result.token;
+    return true; // Permitir login
+  }
+  return true;
+}
+```
+
+**Propósito:**
+- Validar que el user es legítimo
+- Actualizar datos del usuario antes de crear sesión
+- Capturar token JWT del backend
+
+#### Callback `jwt` (Token Persistence)
+
+```typescript
+async jwt({ token, user, account, trigger }) {
+  if (user) {
+    // Primera vez: guardar datos del usuario en el token
+    token.id = user.id;
+    token.email = user.email;
+    token.name = user.name;
+    token.isVerified = user.isVerified;
+    token.hasPassword = user.hasPassword;
+    token.accessToken = user.accessToken; // Token JWT del backend
+  }
+  
+  if (trigger === 'update') {
+    // Actualizar sesión a partir de cambios en DB
+    // Sincroniza cambios como: cambio de contraseña, verificación, etc.
+  }
+  
+  return token;
+}
+```
+
+**Propósito:**
+- Persistir datos de user en JWT token de NextAuth
+- Mantener sincronizado el estado del usuario
+- Capturar accessToken para enviar al backend en requests
+
+#### Callback `session` (Session Object)
+
+```typescript
+async session({ session, token }) {
+  if (token) {
+    session.user.id = token.id;
+    session.user.email = token.email;
+    session.user.isVerified = token.isVerified;
+    session.user.hasPassword = token.hasPassword;
+    session.user.accessToken = token.accessToken;
+  }
+  return session;
+}
+```
+
+**Propósito:**
+- Disponibilizar datos del usuario en `useSession()` del frontend
+- Incluir el accessToken para hacer requests autenticados
+- Mantener sincronización cliente-servidor
+
+---
+
+### 7. Flujo de Protección de Rutas y Middleware
+
+#### Backend Middleware: `authMiddleware`
+
+```typescript
+export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  // Intenta extraer userId de dos fuentes:
+  
+  // 1. Bearer Token JWT en Authorization header
+  const authHeader = req.header('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = jwtService.extractTokenFromHeader(authHeader);
+    const payload = jwtService.verifyToken(token);
+    userId = payload.userId;
+  }
+  
+  // 2. Fallback a X-User-ID header (desarrollo)
+  if (!userId) {
+    userId = req.header('X-User-ID');
+  }
+  
+  // Validar que se encontró userId
+  if (!userId) {
+    return res.status(401).json({ message: 'Usuario no autenticado' });
+  }
+  
+  // Obtener usuario de BD
+  const user = await UserModel.findById(userId);
+  if (!user) {
+    return res.status(401).json({ message: 'Usuario no encontrado' });
+  }
+  
+  // Agregar usuario a request y proceder
+  req.user = user;
+  next();
+};
+```
+
+**Uso:**
+```typescript
+router.put('/:id/update-profile', authMiddleware, updateProfileController);
+router.delete('/:id', authMiddleware, authorize(['admin']), deleteUserController);
+```
+
+#### Frontend: Rutas Protegidas con Next.js
+
+```typescript
+// En app/cuenta/layout.tsx
+import { auth } from '@/auth';
+import { redirect } from 'next/navigation';
+
+export default async function CuentaLayout({ children }) {
+  const session = await auth();
+  
+  if (!session?.user) {
+    redirect('/autenticacion/ingresar');
+  }
+  
+  return <>{children}</>;
+}
+```
+
+---
+
+### 8. Recuperación de Contraseña
+
+#### Endpoint 1: `POST /api/user/request-password-reset`
+
+**Solicita código para cambiar contraseña:**
+
+```
+1. Validar que email existe
+2. Generar código OTP de 6 dígitos
+3. Guardar en user con resetPasswordCode y resetPasswordExpires (15 min)
+4. Enviar email con código
+5. Respuesta: Siempre "Si el email existe, recibirá un código" (seguridad)
+```
+
+#### Endpoint 2: `POST /api/user/verify-reset-code`
+
+**Verifica el código y retorna token temporal:**
+
+```
+1. Validar que código coincide y no ha expirado
+2. Generar resetPasswordToken temporal (válido 10 min)
+3. Responder con resetToken
+```
+
+#### Endpoint 3: `POST /api/user/reset-password`
+
+**Cambia la contraseña usando el token:**
+
+```
+1. Validar que token es válido y no ha expirado
+2. Validar formato de nueva contraseña:
+   - Mínimo 8 caracteres
+   - Mínimo 1 mayúscula
+   - Mínimo 1 minúscula
+   - Mínimo 1 número
+3. Hash de nueva contraseña (bcrypt, 12 rounds)
+4. Actualizar password y hasPassword: true
+5. Limpiar todos los tokens de recuperación
+```
+
+---
+
+### 9. Seguridad y Mejores Prácticas
+
+#### Hash de Contraseñas
+
+```typescript
+// bcrypt con 12 rounds (2^12 = 4096 iteraciones)
+const saltRounds = 12;
+const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+// Tiempo: ~300ms por hash (suficiente para ser seguro pero rápido)
+// Si toma < 50ms, aumentar rounds. Si > 500ms, disminuir.
+```
+
+#### JWT Token Expiration
+
+```typescript
+// Token válido por 30 días
+const token = jwtService.generateToken({...}, 30 * 24 * 60 * 60);
+
+// Almacenado en sesión segura (httpOnly cookie + CSRF token)
+// NextAuth maneja esto automáticamente
+```
+
+#### Validación de Email
+
+```
+- Normalización: lowercase() + trim()
+- Validar formato con regex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+- No permitir duplicados (índice unique en MongoDB)
+```
+
+#### Rate Limiting
+
+```
+- Verificación de código: máximo 5 intentos antes de expirar
+- Reenvío de código: máximo 1 código activo por email
+- [TODO] Agregar rate limiting global en auth endpoints
+```
+
+#### Contraseña
+
+```
+Requisitos:
+- Mínimo 8 caracteres
+- Mínimo 1 mayúscula (A-Z)
+- Mínimo 1 minúscula (a-z)
+- Mínimo 1 número (0-9)
+
+Validación: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
+```
+
+---
+
+### 10. Estado del Usuario: `isVerified` vs `emailVerified`
+
+| Campo | Significado | Cuándo es true |
+|-------|-------------|-----------------|
+| `emailVerified` | Email confirmado | Después de verificar código o login con Google |
+| `isVerified` | Cuenta completa verificada | [Depende del negocio - podría ser Kyc/verificación de documentos] |
+| `verification_in_progress` | En proceso de verificación | Mientras se verifica identidad |
+
+---
 
 ---
 

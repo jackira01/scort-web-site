@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import toast from 'react-hot-toast';
 
 interface PendingFile {
@@ -46,7 +46,7 @@ export const useDeferredUpload = () => {
   }, []);
 
   // Subir archivo individual a Cloudinary
-  const uploadSingleFile = async (file: File, folder: string = 'blog-images'): Promise<UploadResult> => {
+  const uploadSingleFile = async (file: File, folder: string = 'PrepagoYa'): Promise<UploadResult> => {
     try {
       // Validar tipo de archivo
       if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
@@ -97,7 +97,7 @@ export const useDeferredUpload = () => {
   };
 
   // Subir todos los archivos pendientes
-  const uploadAllPendingFiles = async (folder: string = 'blog-images'): Promise<{ [key: string]: string }> => {
+  const uploadAllPendingFiles = async (folder: string = 'PrepagoYa'): Promise<{ [key: string]: string }> => {
     if (pendingFiles.length === 0) {
       return {};
     }
