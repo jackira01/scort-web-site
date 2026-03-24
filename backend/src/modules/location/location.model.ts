@@ -1,4 +1,4 @@
-import { Schema, model, Types, Model } from 'mongoose';
+import { model, Model, Schema } from 'mongoose';
 import type { ILocation } from './location.types';
 
 const LocationSchema = new Schema<ILocation>(
@@ -64,7 +64,6 @@ const LocationSchema = new Schema<ILocation>(
 // Índices compuestos para búsquedas eficientes
 LocationSchema.index({ type: 1, parentId: 1, isActive: 1 });
 LocationSchema.index({ value: 1, parentId: 1 }, { unique: true });
-LocationSchema.index({ path: 1 }, { unique: true });
 LocationSchema.index({ level: 1, isActive: 1 });
 LocationSchema.index({ ancestorIds: 1 });
 

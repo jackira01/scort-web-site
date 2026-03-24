@@ -1,5 +1,5 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
-import { IContentPage, IContentSection, IContentBlock, ContentBlockType } from './content.types';
+import mongoose, { Document, Model, Schema } from 'mongoose';
+import { ContentBlockType, IContentBlock, IContentPage, IContentSection } from './content.types';
 
 // Interfaces para los métodos estáticos y de instancia
 interface IContentPageDocument extends IContentPage, Document {
@@ -112,7 +112,6 @@ const ContentPageSchema = new Schema<IContentPageDocument>({
 });
 
 // Índices para optimizar consultas
-ContentPageSchema.index({ slug: 1 });
 ContentPageSchema.index({ isActive: 1 });
 ContentPageSchema.index({ createdAt: -1 });
 

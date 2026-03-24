@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Document, Model, Schema } from 'mongoose';
 import type { ICoupon, PlanVariantCombination } from './coupon.types';
 
 export interface ICouponDocument extends ICoupon, Document { }
@@ -227,7 +227,6 @@ CouponSchema.virtual('remainingUses').get(function () {
 });
 
 // Índices para optimizar consultas
-CouponSchema.index({ code: 1 }); // Ya único, pero explícito
 CouponSchema.index({ type: 1, isActive: 1 });
 CouponSchema.index({ validFrom: 1, validUntil: 1 });
 CouponSchema.index({ isActive: 1, validFrom: 1, validUntil: 1 });
