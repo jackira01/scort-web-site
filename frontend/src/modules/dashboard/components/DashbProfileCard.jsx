@@ -114,7 +114,7 @@ export const DashbProfileCard = ({
     {profile.isVerified && (
       <div className="flex items-center space-x-1 text-sm">
         <CheckCircle className="h-4 w-4 text-green-500" />
-        <span className="text-green-600 dark:text-green-400">Verificado</span>
+        <span className="text-green-600 dark:text-green-400">Revisado</span>
       </div>
     )}
 

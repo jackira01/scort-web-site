@@ -1,14 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Star, Zap, Calendar, Clock } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { useUpgradePurchase } from '@/hooks/use-upgrade-purchase';
 import { useUpgrades } from '@/hooks/use-upgrades';
+import { Calendar, Clock, Star, Zap } from 'lucide-react';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 interface UnifiedUpgradesModalProps {
     isOpen: boolean;
@@ -299,7 +299,7 @@ export default function UnifiedUpgradesModal({
                                 </h4>
                                 <p className="text-sm text-muted-foreground">
                                     Potencia tu perfil destacado durante {formatDurationFromHours(impulsoDefinition?.durationHours || 1)}. Requiere tener el upgrade "Destacado"
-                                    activo. Tu perfil aparecerá en las primeras posiciones con máxima prioridad.
+                                    activo. Tu perfil aparecerá en las primeras posiciones dentro de tu categoria con máxima prioridad.
                                 </p>
 
                                 {/* Fechas si está activo */}

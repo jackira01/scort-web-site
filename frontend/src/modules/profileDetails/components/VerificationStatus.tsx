@@ -142,7 +142,13 @@ export function VerificationStatus({ profileId }: VerificationStatusProps) {
             Factores que garantizan la confiabilidad de este perfil:
           </CardTitle>
           <div className="text-right">
-            <div className="text-2xl font-bold text-red-600">
+            <div className={`text-2xl font-bold ${
+              (data.verificationProgress || 0) < 33
+                ? 'text-red-600'
+                : (data.verificationProgress || 0) < 66
+                  ? 'text-orange-500'
+                  : 'text-green-600'
+            }`}>
               {data.verificationProgress || 0}%
             </div>
             <p className="text-xs text-gray-600 dark:text-gray-400">Progreso de verificación</p>
