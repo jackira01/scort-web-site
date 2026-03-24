@@ -13,7 +13,7 @@ import {
 import { uploadMultipleImages, uploadMultipleVideos } from '@/utils/tools';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, Camera, CheckCircle, FileImage, MessageCircle, Share2, Upload, Video } from 'lucide-react';
+import { AlertCircle, Camera, CheckCircle, FileImage, MessageCircle, Upload, Video } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -76,12 +76,11 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
   const step2Ref = useRef<HTMLDivElement>(null);
   const step3Ref = useRef<HTMLDivElement>(null);
   const step4Ref = useRef<HTMLDivElement>(null);
-  const step5Ref = useRef<HTMLDivElement>(null);
   const step6Ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (initialStep) {
-      const refs = [step1Ref, step2Ref, step3Ref, step4Ref, step5Ref, step6Ref];
+      const refs = [step1Ref, step2Ref, step3Ref, step4Ref, step6Ref];
       const ref = refs[initialStep - 1];
       if (ref && ref.current) {
         setTimeout(() => {
@@ -727,84 +726,6 @@ export function VerificationStepsForm({ profileId, verificationId, initialData, 
                   !isVerified && isStep1Complete && isStep2Complete,
                   watchedValues.selfieVerification.photo
                 )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Step 5: Redes Sociales */}
-          <div ref={step5Ref}>
-            <Card className={`border-2 transition-all duration-300 ${!isVerified
-              ? 'border-purple-200 bg-purple-50 dark:bg-purple-950/20'
-              : 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
-              }`}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Share2 className="h-5 w-5 text-purple-500" />
-                  Paso 5: Redes Sociales
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {isVerified && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
-                      <p className="text-sm text-red-800 dark:text-red-900">
-                        Este perfil ya ha sido verificado. No puedes editar la información.
-                      </p>
-                    </div>
-                  </div>
-                )}
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
-                    <p className="text-sm text-amber-800 dark:text-amber-900">
-                      <strong>Importante:</strong> Las redes sociales deben ser públicas mientras se realiza el proceso de validación para poder verificar que te pertenecen. Estas no se mostrarán en tu perfil (a excepción del instagram). Puedes diligenciar una o todas.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Instagram</label>
-                    <Input
-                      placeholder="@usuario"
-                      {...form.register('socialMedia.instagram')}
-                      disabled={isVerified}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Facebook</label>
-                    <Input
-                      placeholder="usuario o enlace"
-                      {...form.register('socialMedia.facebook')}
-                      disabled={isVerified}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">TikTok</label>
-                    <Input
-                      placeholder="@usuario"
-                      {...form.register('socialMedia.tiktok')}
-                      disabled={isVerified}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Twitter/X</label>
-                    <Input
-                      placeholder="@usuario"
-                      {...form.register('socialMedia.twitter')}
-                      disabled={isVerified}
-                    />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-sm font-medium">OnlyFans</label>
-                    <Input
-                      placeholder="usuario o enlace"
-                      {...form.register('socialMedia.onlyFans')}
-                      disabled={isVerified}
-                    />
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>

@@ -19,6 +19,18 @@ const ContentRenderer = ({
   showTitle = true,
   showSectionTitles = true
 }: ContentRendererProps) => {
+  // Elimina estilos inline de color para respetar el modo claro/oscuro
+  const stripInlineColorStyles = (html: string): string => {
+    return html.replace(/style="([^"]*)"/gi, (_match, styleContent: string) => {
+      const cleaned = styleContent
+        .replace(/(?:color|background(?:-color)?)\s*:[^;]+(?:;|(?=\s*(?:"|$)))/gi, '')
+        .trim()
+        .replace(/;+$/, '')
+        .trim();
+      return cleaned ? `style="${cleaned}"` : '';
+    });
+  };
+
   const renderBlock = (block: IContentBlock) => {
     switch (block.type) {
       case ContentBlockType.PARAGRAPH:
@@ -26,7 +38,7 @@ const ContentRenderer = ({
           <div
             className="prose prose-sm max-w-none text-foreground [&_*]:text-foreground"
             dangerouslySetInnerHTML={{
-              __html: typeof block.value === 'string' ? block.value : ''
+              __html: stripInlineColorStyles(typeof block.value === 'string' ? block.value : '')
             }}
           />
         );

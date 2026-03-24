@@ -1076,7 +1076,7 @@ export function Step5Multimedia({ isVerified = false, profileId }: Step5Multimed
           <AlertDialogHeader>
             <AlertDialogTitle>Cambio de imágenes</AlertDialogTitle>
             <AlertDialogDescription>
-              Si cambias las imágenes, tu perfil debe pasar nuevamente por el proceso de verificación.
+              Si cambias las imágenes, tu perfil debe pasar nuevamente por el proceso de verificación de identidad.
             </AlertDialogDescription>
           </AlertDialogHeader>
 

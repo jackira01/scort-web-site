@@ -156,6 +156,93 @@ export function Step3Details({
           )}
         </div>
 
+        {/* Social Media Section */}
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">Redes sociales</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Opcional. El Instagram se mostrará en tu perfil; las demás redes son solo para verificación interna.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="socialMedia.instagram" className="text-foreground">Instagram</Label>
+              <Controller
+                name="socialMedia.instagram"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="socialMedia.instagram"
+                    placeholder="@usuario"
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="socialMedia.facebook" className="text-foreground">Facebook</Label>
+              <Controller
+                name="socialMedia.facebook"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="socialMedia.facebook"
+                    placeholder="usuario o enlace"
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="socialMedia.tiktok" className="text-foreground">TikTok</Label>
+              <Controller
+                name="socialMedia.tiktok"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="socialMedia.tiktok"
+                    placeholder="@usuario"
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="socialMedia.twitter" className="text-foreground">Twitter / X</Label>
+              <Controller
+                name="socialMedia.twitter"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="socialMedia.twitter"
+                    placeholder="@usuario"
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="socialMedia.onlyFans" className="text-foreground">OnlyFans</Label>
+              <Controller
+                name="socialMedia.onlyFans"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="socialMedia.onlyFans"
+                    placeholder="usuario o enlace"
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Rates Section */}
         <div>
           <RatesManager

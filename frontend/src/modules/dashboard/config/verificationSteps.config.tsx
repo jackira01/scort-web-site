@@ -1,6 +1,8 @@
 import {
   Camera,
+  Clock,
   FileText,
+  Phone,
   Users,
   Video,
   VideoIcon
@@ -49,24 +51,39 @@ export const verificationSteps: VerificationStep[] = [
   {
     key: 'deposito',
     label: 'Información de Depósito',
-    icon: <FileText className="h-5 w-5" />, // Reusing FileText or finding a better icon like 'Coins' or 'Banknote' if available. Using FileText for now as safe bet or Money icon if imported.
+    icon: <FileText className="h-5 w-5" />,
     description: 'Información sobre si solicitas depósito por adelantado',
+  },
+  {
+    key: 'accountAge',
+    label: 'Antigüedad de Cuenta',
+    icon: <Clock className="h-5 w-5" />,
+    description: 'Verificación basada en la antigüedad de la cuenta (mínimo 12 meses)',
+  },
+  {
+    key: 'contactConsistency',
+    label: 'Consistencia de Contacto',
+    icon: <Phone className="h-5 w-5" />,
+    description: 'Verificación de la consistencia del número de contacto (sin cambios por 3 meses)',
   },
 ];
 
 export const getVerifiedCount = (verification: ProfileVerificationSteps | unknown): number => {
   if (!verification || typeof verification !== 'object') return 0;
 
-  const verificationData = verification as ProfileVerificationSteps;
-  if (!verificationData?.steps) return 0;
+  const verificationData = verification as any;
+
+  // Soportar tanto { steps: {...} } como { data: { steps: {...} } }
+  const steps = verificationData?.data?.steps ?? verificationData?.steps;
+  if (!steps) return 0;
 
   let count = 0;
 
   // Contar solo los pasos verificados
   verificationSteps.forEach(step => {
-    const stepData = verificationData.steps[step.key as keyof typeof verificationData.steps];
+    const stepData = steps[step.key];
 
-    if (!stepData) return;
+    if (!stepData || typeof stepData !== 'object') return;
 
     // Verificar el isVerified del step
     if (stepData.isVerified) {

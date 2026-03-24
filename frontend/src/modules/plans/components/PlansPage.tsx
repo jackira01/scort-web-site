@@ -220,14 +220,21 @@ const PlansPage = () => {
                           {plan.features.showInFilters && (
                             <div className="flex items-center space-x-2">
                               <Check className="h-4 w-4 text-green-500" />
-                              <span className="text-sm text-gray-700 dark:text-gray-200">Aparece en filtros</span>
+                              <span className="text-sm text-gray-700 dark:text-gray-200">Aparece en filtros de búsqueda</span>
                             </div>
                           )}
 
                           {plan.features.showInHome && (
                             <div className="flex items-center space-x-2">
                               <Check className="h-4 w-4 text-green-500" />
-                              <span className="text-sm text-gray-700 dark:text-gray-200">Destacado en inicio</span>
+                              <span className="text-sm text-gray-700 dark:text-gray-200">Perfil en la página principal</span>
+                            </div>
+                          )}
+
+                          {plan.features.showInSponsored && (
+                            <div className="flex items-center space-x-2">
+                              <Check className="h-4 w-4 text-green-500" />
+                              <span className="text-sm text-gray-700 dark:text-gray-200">Perfil en secciones destacadas</span>
                             </div>
                           )}
                         </div>

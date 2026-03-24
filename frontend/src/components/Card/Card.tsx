@@ -21,7 +21,7 @@ const CardComponent = ({ profiles = [] }: CardComponentProps) => {
     );
   }
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {profiles.map((profile, index) => (
         <Link href={`/perfil/${createProfileSlug(profile.name, profile._id)}`} key={profile._id}>
           <Card

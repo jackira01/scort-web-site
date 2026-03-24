@@ -124,7 +124,10 @@ export function TimePicker({
               <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
                 Hora
               </div>
-              <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+              <div
+                className="max-h-48 overflow-y-scroll space-y-1"
+                style={{ WebkitOverflowScrolling: 'touch' }}
+              >
                 {hours.map((hour) => {
                   const disabled = isTimeDisabled(hour, selectedMinute || '00');
                   return (
@@ -153,7 +156,10 @@ export function TimePicker({
               <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
                 Minutos
               </div>
-              <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+              <div
+                className="max-h-48 overflow-y-scroll space-y-1"
+                style={{ WebkitOverflowScrolling: 'touch' }}
+              >
                 {minutes.map((minute) => {
                   const disabled = isTimeDisabled(selectedHour || '00', minute);
                   return (
